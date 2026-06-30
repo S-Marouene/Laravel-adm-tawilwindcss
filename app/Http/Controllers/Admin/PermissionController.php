@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 
@@ -26,10 +27,12 @@ class PermissionController extends Controller
             'guard_name' => ['nullable', 'string', 'in:web,api'],
         ]);
 
-        Permission::create([
+        $permission = Permission::create([
             'name' => $validated['name'],
             'guard_name' => $validated['guard_name'] ?? 'web',
         ]);
+
+        ActivityLogger::created("permission {$permission->name}", $permission);
 
         return redirect()->route('admin.permissions.index')
             ->with('success', 'Permission created successfully.');
@@ -47,9 +50,14 @@ class PermissionController extends Controller
             'guard_name' => ['nullable', 'string', 'in:web,api'],
         ]);
 
+        $oldName = $permission->name;
         $permission->update([
             'name' => $validated['name'],
             'guard_name' => $validated['guard_name'] ?? 'web',
+        ]);
+
+        ActivityLogger::updated("permission {$permission->name}", $permission, [
+            'name' => ['old' => $oldName, 'new' => $permission->name],
         ]);
 
         return redirect()->route('admin.permissions.index')
@@ -58,7 +66,10 @@ class PermissionController extends Controller
 
     public function destroy(Permission $permission)
     {
+        $permName = $permission->name;
         $permission->delete();
+
+        ActivityLogger::deleted("permission {$permName}", $permission, ['name' => $permName]);
 
         return redirect()->route('admin.permissions.index')
             ->with('success', 'Permission deleted successfully.');

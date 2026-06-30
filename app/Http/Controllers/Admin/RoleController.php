@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
@@ -38,7 +39,13 @@ class RoleController extends Controller
 
         if (isset($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);
+            $permNames = Permission::whereIn('id', $validated['permissions'])->pluck('name')->toArray();
         }
+
+        ActivityLogger::created("role {$role->name}", $role, [
+            'name' => $role->name,
+            'permissions' => $permNames ?? [],
+        ]);
 
         return redirect()->route('admin.roles.index')
             ->with('success', 'Role created successfully.');
@@ -61,6 +68,7 @@ class RoleController extends Controller
             'permissions.*' => ['exists:permissions,id'],
         ]);
 
+        $oldName = $role->name;
         $role->update(['name' => $validated['name']]);
 
         if (isset($validated['permissions'])) {
@@ -68,6 +76,10 @@ class RoleController extends Controller
         } else {
             $role->syncPermissions([]);
         }
+
+        ActivityLogger::updated("role {$role->name}", $role, [
+            'name' => ['old' => $oldName, 'new' => $role->name],
+        ]);
 
         return redirect()->route('admin.roles.index')
             ->with('success', 'Role updated successfully.');
@@ -79,7 +91,10 @@ class RoleController extends Controller
             return back()->with('error', 'Cannot delete the super admin role.');
         }
 
+        $roleName = $role->name;
         $role->delete();
+
+        ActivityLogger::deleted("role {$roleName}", $role, ['name' => $roleName]);
 
         return redirect()->route('admin.roles.index')
             ->with('success', 'Role deleted successfully.');

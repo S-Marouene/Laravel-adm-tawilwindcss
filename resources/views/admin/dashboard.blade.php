@@ -9,7 +9,7 @@
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-all duration-300 hover:shadow-md hover:scale-[1.02]">
             <div class="flex items-center justify-between">
                 <div>
@@ -69,43 +69,117 @@
                 </svg>
             </a>
         </div>
-    </div>
 
-    <!-- Recent Users -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-all duration-300 hover:shadow-md hover:scale-[1.02]">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Users</h2>
-                <a href="{{ route('admin.users.index') }}" class="text-sm text-purple-600 hover:text-purple-700 font-medium">View All</a>
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Activity (Today)</p>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{{ $activity_counts['today'] }}</p>
+                </div>
+                <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
+                <span>Week: <strong class="text-gray-700 dark:text-gray-300">{{ $activity_counts['week'] }}</strong></span>
+                <span>Month: <strong class="text-gray-700 dark:text-gray-300">{{ $activity_counts['month'] }}</strong></span>
             </div>
         </div>
-        <div class="divide-y divide-gray-200 dark:divide-gray-700">
-            @forelse($recent_users as $user)
-                <div class="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center">
-                            <span class="text-sm font-semibold text-white">{{ substr($user->name, 0, 1) }}</span>
+    </div>
+
+    <!-- Recent Activity & Users -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Recent Activity -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Recent Activity
+                    </h2>
+                    <a href="{{ route('admin.activity-logs.index') }}" class="text-sm text-purple-600 hover:text-purple-700 font-medium">View All</a>
+                </div>
+            </div>
+            <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                @forelse($recent_activities as $log)
+                    <div class="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <div class="flex items-center space-x-3 min-w-0">
+                            @if($log->user)
+                                <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-xs font-semibold text-white">{{ substr($log->user->name, 0, 1) }}</span>
+                                </div>
+                            @else
+                                <div class="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                            @endif
+                            <div class="min-w-0">
+                                <p class="text-sm text-gray-900 dark:text-gray-100 truncate">{{ $log->description }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $log->created_at->diffForHumans() }}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $user->name }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $user->email }}</p>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ml-2 {{ $log->badgeColor() }}">
+                            {{ ucfirst($log->type) }}
+                        </span>
+                    </div>
+                @empty
+                    <div class="p-6 text-center text-gray-500 dark:text-gray-400">
+                        <svg class="w-10 h-10 mx-auto text-gray-300 dark:text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <p>No recent activity.</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
+        <!-- Recent Users -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/>
+                        </svg>
+                        Recent Users
+                    </h2>
+                    <a href="{{ route('admin.users.index') }}" class="text-sm text-purple-600 hover:text-purple-700 font-medium">View All</a>
+                </div>
+            </div>
+            <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                @forelse($recent_users as $user)
+                    <div class="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center">
+                                <span class="text-sm font-semibold text-white">{{ substr($user->name, 0, 1) }}</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $user->name }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $user->email }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            @if($user->is_admin)
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300">Admin</span>
+                            @endif
+                            @foreach($user->roles as $role)
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300">{{ $role->name }}</span>
+                            @endforeach
+                            <span class="text-xs text-gray-400">{{ $user->created_at->diffForHumans() }}</span>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        @if($user->is_admin)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300">Admin</span>
-                        @endif
-                        @foreach($user->roles as $role)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300">{{ $role->name }}</span>
-                        @endforeach
-                        <span class="text-xs text-gray-400">{{ $user->created_at->diffForHumans() }}</span>
+                @empty
+                    <div class="p-6 text-center text-gray-500 dark:text-gray-400">
+                        No users found.
                     </div>
-                </div>
-            @empty
-                <div class="p-6 text-center text-gray-500 dark:text-gray-400">
-                    No users found.
-                </div>
-            @endforelse
+                @endforelse
+            </div>
         </div>
     </div>
 @endsection
