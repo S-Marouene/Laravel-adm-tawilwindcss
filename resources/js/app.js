@@ -111,38 +111,6 @@ Alpine.data('localeSwitcher', () => ({
         });
     },
 
-    syncToServer(locale) {
-        // Fire-and-forget fetch to update server session + cookie
-        fetch(`/locale/${locale}`, {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        }).catch(() => {
-            // Silent fail – localStorage will handle it
-        });
-    },
-
-    showTransitionOverlay() {
-        // Create a brief overlay for smooth transition feel
-        const overlay = document.createElement('div');
-        overlay.id = 'locale-transition';
-        overlay.style.cssText = `
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: #0F172A;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.25s ease-out;
-        `;
-        document.body.appendChild(overlay);
-
-        // Trigger fade-in
-        requestAnimationFrame(() => {
-            overlay.style.opacity = '1';
-        });
-    },
 }));
 
 // Mobile Menu Component
@@ -193,5 +161,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+/**
+ * Theme Toggle Component
+ * - Toggles dark class on <html>
+ * - Persists preference in localStorage
+ * - Default is light mode
+ */
+Alpine.data('themeToggle', () => ({
+    isDark: localStorage.getItem('theme') === 'dark',
+
+    init() {
+        const stored = localStorage.getItem('theme');
+        if (stored === 'dark') {
+            document.documentElement.classList.add('dark');
+            this.isDark = true;
+        } else {
+            document.documentElement.classList.remove('dark');
+            this.isDark = false;
+        }
+    },
+
+    toggle() {
+        this.isDark = !this.isDark;
+        if (this.isDark) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    },
+}));
 
 Alpine.start();

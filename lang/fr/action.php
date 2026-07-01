@@ -12,4 +12,6 @@ return [
     'filter' => 'Filtrer',
     'back' => 'Retour',
     'more' => 'En savoir plus',
+    'theme_light' => 'Activer le mode clair',
+    'theme_dark' => 'Activer le mode sombre',
 ];

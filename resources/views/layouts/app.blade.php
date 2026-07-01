@@ -21,6 +21,27 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        <!-- Theme: restore saved preference before page renders (prevent FOUC) -->
+        <script>
+            (function() {
+                var theme = localStorage.getItem('theme');
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    // Default is light mode
+                }
+                // Disable transitions temporarily to avoid flash animation
+                document.documentElement.classList.add('disable-transitions');
+                // Remove after first paint so user interactions get smooth transitions
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(function() {
+                        document.documentElement.classList.remove('disable-transitions');
+                    });
+                });
+            })();
+        </script>
     </head>
     <body class="font-sans antialiased bg-sand-50 dark:bg-gray-900">
         <!-- Skip Link for Accessibility -->
