@@ -128,7 +128,7 @@
 
                 <!-- Auth Card -->
                 <div class="w-full max-w-md">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-sand-200 dark:border-gray-700 p-6 sm:p-8">
+                    <div class="auth-card bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-sand-200 dark:border-gray-700 p-6 sm:p-8">
                         <!-- Page Header -->
                         <div class="mb-6">
                             <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
