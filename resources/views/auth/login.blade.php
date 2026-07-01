@@ -3,6 +3,7 @@
 @section('auth-title', __('login.title'))
 @section('auth-subtitle', __('login.subtitle'))
 
+
 @section('content')
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
@@ -44,13 +45,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
                     </svg>
                 </div>
-                <span class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">{{ __('Remember me') }}</span>
+                <span class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">{{ __('login.remember') }}</span>
             </label>
 
             @if (Route::has('password.request'))
                 <a href="{{ route('password.request') }}"
                     class="text-sm font-medium text-gov-600 dark:text-gov-400 hover:text-gov-700 dark:hover:text-gov-300 transition-colors">
-                    {{ __('Forgot your password?') }}
+                    {{ __('login.forgot') }}
                 </a>
             @endif
         </div>
@@ -60,13 +61,13 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
             </svg>
-            {{ __('Log in') }}
+            {{ __('login.submit') }}
         </x-primary-button>
 
         <!-- Register Link -->
         @if (Route::has('register'))
             <p class="text-center text-sm text-gray-500 dark:text-gray-400">
-                {{ __("Don't have an account?") }}
+                {{ __('login.no_account') }}
                 <a href="{{ route('register') }}" class="font-semibold text-gov-600 dark:text-gov-400 hover:text-gov-700 dark:hover:text-gov-300 transition-colors">
                     {{ __('Register') }}
                 </a>

@@ -7,7 +7,7 @@
         <meta name="theme-color" content="#1E40AF">
         <meta name="description" content="{{ __('app.description') }}">
 
-        <title>@yield('title', __('app.name')) - {{ config('app.name', __('app.name')) }}</title>
+        <title>@yield('title', setting('app_name', __('app.name'))) - {{ setting('app_name', config('app.name', __('app.name'))) }}</title>
 
         <!-- Fonts: Inter for French, Noto Sans Arabic for Arabic -->
         @if(app()->getLocale() === 'ar')

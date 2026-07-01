@@ -1,11 +1,17 @@
 <?php
 
+// Load application helpers
+require_once __DIR__.'/../app/helpers.php';
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
+    ->withProviders([
+        \App\Providers\MailSettingsServiceProvider::class,
+    ])
     ->withRouting(
         commands: __DIR__.'/../routes/console.php',
         using: function () {

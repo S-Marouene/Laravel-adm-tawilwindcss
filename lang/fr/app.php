@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'name' => 'Services Administratifs Tunisie',
+    'name' => 'Office national de la protection civile',
     'tagline' => 'Vos démarches administratives en ligne, sans vous déplacer',
-    'description' => 'Plateforme officielle des services administratifs tunisiens',
+    'description' => "Plateforme officielle de L'office national de la protection civile",
 ];

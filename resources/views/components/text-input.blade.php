@@ -2,7 +2,7 @@
 
 <div class="relative" x-data="{ show: false }">
     @if($leadingIcon)
-        <div class="absolute inset-y-0 {{ app()->getLocale() === 'ar' ? 'right-0 pr-3' : 'left-0 pl-3' }} flex items-center pointer-events-none">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             {!! $leadingIcon !!}
         </div>
     @endif
@@ -16,12 +16,12 @@
                     focus:outline-none
                     disabled:opacity-50 disabled:cursor-not-allowed
                     transition-all duration-200 ease-in-out
-                    ' . ($leadingIcon ? (app()->getLocale() === 'ar' ? 'pr-10' : 'pl-10') : '')
-                    . ' ' . ($trailingIcon ? (app()->getLocale() === 'ar' ? 'pl-10' : 'pr-10') : '')]) }}>
+                    ' . ($leadingIcon ? 'pl-10' : '')
+                    . ' ' . ($trailingIcon ? 'pr-10' : '')]) }}>
 
     @if($trailingIcon && $attributes->get('type') === 'password')
         <button type="button" @click="show = !show"
-            class="absolute inset-y-0 {{ app()->getLocale() === 'ar' ? 'left-0 pl-3' : 'right-0 pr-3' }} flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
             <svg x-show="!show" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -31,7 +31,7 @@
             </svg>
         </button>
     @elseif($trailingIcon)
-        <div class="absolute inset-y-0 {{ app()->getLocale() === 'ar' ? 'left-0 pl-3' : 'right-0 pr-3' }} flex items-center pointer-events-none text-gray-400">
+        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
             {!! $trailingIcon !!}
         </div>
     @endif
