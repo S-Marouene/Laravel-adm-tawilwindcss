@@ -7,6 +7,15 @@
         <meta name="theme-color" content="#1E40AF">
         <meta name="description" content="{{ __('app.description') }}">
 
+        <!-- Favicon -->
+        @php
+            $favicon = setting('app_favicon') ? Storage::url(setting('app_favicon')) . '?v=' . date('Ymd') : '/favicon.ico';
+            $icon192 = setting('app_icon') ? Storage::url(setting('app_icon')) . '?v=' . date('Ymd') : '/favicon.ico';
+        @endphp
+        <link rel="icon" type="image/x-icon" href="{{ $favicon }}">
+        <link rel="apple-touch-icon" href="{{ $icon192 }}">
+        <link rel="icon" type="image/png" sizes="192x192" href="{{ $icon192 }}">
+
         <title>@yield('title', __('login.title')) - {{ __('app.name') }}</title>
 
         <!-- Fonts -->
