@@ -44,46 +44,46 @@ Alpine.data('localeSwitcher', () => ({
         this.showTransitionOverlay();
 
         // 1. Update the page immediately (optimistic)
-        this.applyLocale(locale, true);
-
-        // 2. Persist to server (async – don't wait for it)
-        this.syncToServer(locale);
-    },
-
-    applyLocale(locale, withReload = true) {
         this.currentLocale = locale;
         const dir = locale === 'ar' ? 'rtl' : 'ltr';
-
-        // Update <html> attributes immediately (flips the page) 
         document.documentElement.setAttribute('lang', locale === 'ar' ? 'ar' : 'fr');
         document.documentElement.setAttribute('dir', dir);
-
-        // Store in localStorage for instant retrieval on next visit
         localStorage.setItem('user_locale', locale);
 
-        // Set a client-side cookie so the middleware can read it even if
-        // the server-side fetch hasn't completed before reload
-        document.cookie = `user_locale=${locale}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
-
-        if (withReload) {
-            // Reload page after transition overlay animation
-            // The cookie ensures the server reads the correct locale on reload
-            setTimeout(() => {
-                window.location.reload();
-            }, 400);
-        }
-    },
-
-    syncToServer(locale) {
-        // Fire-and-forget fetch to update server session + cookie
-        fetch(`/locale/${locale}`, {
+        // 2. Persist to server (async) then reload once complete
+        const serverSync = fetch(`/locale/${locale}`, {
             headers: {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
             },
         }).catch(() => {
-            // Silent fail – client-side cookie + localStorage handle it
+            // Silent fail – cookie + localStorage handle it
         });
+
+        // 3. Set client-side cookie (not encrypted, excluded from EncryptCookies)
+        document.cookie = `user_locale=${locale}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
+
+        // 4. Wait for server sync (up to 3s) then reload
+        Promise.race([
+            serverSync,
+            new Promise(resolve => setTimeout(resolve, 3000))
+        ]).finally(() => {
+            // Remove transition overlay
+            const overlay = document.getElementById('locale-transition');
+            if (overlay) overlay.remove();
+            window.location.reload();
+        });
+    },
+
+    applyLocale(locale, withReload = true) {
+        // Used for init() restore — no reload needed
+        this.currentLocale = locale;
+        const dir = locale === 'ar' ? 'rtl' : 'ltr';
+
+        document.documentElement.setAttribute('lang', locale === 'ar' ? 'ar' : 'fr');
+        document.documentElement.setAttribute('dir', dir);
+        localStorage.setItem('user_locale', locale);
+        document.cookie = `user_locale=${locale}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
     },
 
     showTransitionOverlay() {

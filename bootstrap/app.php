@@ -25,6 +25,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(prepend: [
             \App\Http\Middleware\LocalizationMiddleware::class,
         ]);
+
+        // Exclude user_locale from encryption so JS-set cookies are readable
+        $middleware->encryptCookies(except: [
+            'user_locale',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
