@@ -1,3 +1,237 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Government Services Design System - Tailwind v4 */
+@import "tailwindcss";
+
+@theme {
+    --color-gov-50: #EFF6FF;
+    --color-gov-100: #DBEAFE;
+    --color-gov-200: #BFDBFE;
+    --color-gov-300: #93C5FD;
+    --color-gov-400: #60A5FA;
+    --color-gov-500: #3B82F6;
+    --color-gov-600: #1E40AF;
+    --color-gov-700: #1E3A8A;
+    --color-gov-800: #1E3A5F;
+    --color-gov-900: #0F172A;
+
+    --color-sand-50: #F8FAFC;
+    --color-sand-100: #F1F5F9;
+    --color-sand-200: #E2E8F0;
+
+    --color-success: #16A34A;
+    --color-warning: #D97706;
+    --color-danger: #DC2626;
+}
+
+/* ==============================
+   BASE STYLES
+   ============================== */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==============================
+   ARABIC FONT & RTL BASE
+   ============================== */
+[dir="rtl"] {
+    font-family: 'Noto Sans Arabic', 'Tajawal', system-ui, -apple-system, sans-serif;
+}
+
+[dir="rtl"] .font-sans {
+    font-family: 'Noto Sans Arabic', 'Tajawal', system-ui, -apple-system, sans-serif !important;
+}
+
+/* ==============================
+   LOCALE TRANSITION OVERLAY
+   ============================== */
+#locale-transition {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #0F172A;
+    pointer-events: none;
+    transition: opacity 0.25s ease-out;
+}
+
+/* ==============================
+   COMPREHENSIVE RTL SUPPORT
+   Using CSS logical properties where possible.
+   ============================== */
+
+/* --- Margin overrides --- */
+[dir="rtl"] .ml-0 { margin-left: 0; margin-right: 0; }
+[dir="rtl"] .ml-1 { margin-left: 0; margin-right: 0.25rem; }
+[dir="rtl"] .ml-2 { margin-left: 0; margin-right: 0.5rem; }
+[dir="rtl"] .ml-3 { margin-left: 0; margin-right: 0.75rem; }
+[dir="rtl"] .ml-4 { margin-left: 0; margin-right: 1rem; }
+[dir="rtl"] .ml-5 { margin-left: 0; margin-right: 1.25rem; }
+[dir="rtl"] .ml-6 { margin-left: 0; margin-right: 1.5rem; }
+[dir="rtl"] .ml-8 { margin-left: 0; margin-right: 2rem; }
+[dir="rtl"] .ml-10 { margin-left: 0; margin-right: 2.5rem; }
+[dir="rtl"] .ml-auto { margin-left: 0; margin-right: auto; }
+
+[dir="rtl"] .mr-1 { margin-right: 0; margin-left: 0.25rem; }
+[dir="rtl"] .mr-2 { margin-right: 0; margin-left: 0.5rem; }
+[dir="rtl"] .mr-3 { margin-right: 0; margin-left: 0.75rem; }
+[dir="rtl"] .mr-4 { margin-right: 0; margin-left: 1rem; }
+[dir="rtl"] .mr-5 { margin-right: 0; margin-left: 1.25rem; }
+[dir="rtl"] .mr-6 { margin-right: 0; margin-left: 1.5rem; }
+[dir="rtl"] .mr-8 { margin-right: 0; margin-left: 2rem; }
+[dir="rtl"] .mr-10 { margin-right: 0; margin-left: 2.5rem; }
+[dir="rtl"] .mr-auto { margin-right: 0; margin-left: auto; }
+
+/* --- Padding overrides --- */
+[dir="rtl"] .pl-0 { padding-left: 0; padding-right: 0; }
+[dir="rtl"] .pl-1 { padding-left: 0; padding-right: 0.25rem; }
+[dir="rtl"] .pl-2 { padding-left: 0; padding-right: 0.5rem; }
+[dir="rtl"] .pl-3 { padding-left: 0; padding-right: 0.75rem; }
+[dir="rtl"] .pl-4 { padding-left: 0; padding-right: 1rem; }
+[dir="rtl"] .pl-5 { padding-left: 0; padding-right: 1.25rem; }
+[dir="rtl"] .pl-6 { padding-left: 0; padding-right: 1.5rem; }
+[dir="rtl"] .pl-8 { padding-left: 0; padding-right: 2rem; }
+[dir="rtl"] .pl-10 { padding-left: 0; padding-right: 2.5rem; }
+
+[dir="rtl"] .pr-0 { padding-right: 0; padding-left: 0; }
+[dir="rtl"] .pr-1 { padding-right: 0; padding-left: 0.25rem; }
+[dir="rtl"] .pr-2 { padding-right: 0; padding-left: 0.5rem; }
+[dir="rtl"] .pr-3 { padding-right: 0; padding-left: 0.75rem; }
+[dir="rtl"] .pr-4 { padding-right: 0; padding-left: 1rem; }
+[dir="rtl"] .pr-5 { padding-right: 0; padding-left: 1.25rem; }
+[dir="rtl"] .pr-6 { padding-right: 0; padding-left: 1.5rem; }
+[dir="rtl"] .pr-8 { padding-right: 0; padding-left: 2rem; }
+[dir="rtl"] .pr-10 { padding-right: 0; padding-left: 2.5rem; }
+
+/* --- Gap & space overrides --- */
+[dir="rtl"] .space-x-1 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+[dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+[dir="rtl"] .space-x-6 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+[dir="rtl"] .space-x-8 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+[dir="rtl"] .space-x-reverse > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+[dir="rtl"] .divide-x > :not([hidden]) ~ :not([hidden]) { --tw-divide-x-reverse: 1; }
+
+/* --- Position overrides --- */
+[dir="rtl"] .left-0 { left: auto; right: 0; }
+[dir="rtl"] .left-4 { left: auto; right: 1rem; }
+[dir="rtl"] .left-1\/2 { left: auto; right: 50%; }
+[dir="rtl"] .right-0 { right: auto; left: 0; }
+[dir="rtl"] .right-4 { right: auto; left: 1rem; }
+
+/* --- Inline start/end shorthand --- */
+[dir="rtl"] .-me-2 { margin-inline-end: -0.5rem; }
+[dir="rtl"] .ms-1 { margin-inline-start: 0.25rem; }
+[dir="rtl"] .ms-2 { margin-inline-start: 0.5rem; }
+[dir="rtl"] .ms-3 { margin-inline-start: 0.75rem; }
+[dir="rtl"] .ms-auto { margin-inline-start: auto; }
+
+/* --- Text alignment --- */
+[dir="rtl"] .text-left { text-align: right; }
+[dir="rtl"] .text-right { text-align: left; }
+
+/* --- Border radius (keep left/right correct) --- */
+[dir="rtl"] .rounded-l-lg { border-radius: 0 0.5rem 0.5rem 0; }
+[dir="rtl"] .rounded-r-lg { border-radius: 0.5rem 0 0 0.5rem; }
+[dir="rtl"] .rounded-l-xl { border-radius: 0 0.75rem 0.75rem 0; }
+[dir="rtl"] .rounded-r-xl { border-radius: 0.75rem 0 0 0.75rem; }
+[dir="rtl"] .rounded-l-2xl { border-radius: 0 1rem 1rem 0; }
+[dir="rtl"] .rounded-r-2xl { border-radius: 1rem 0 0 1rem; }
+[dir="rtl"] .rounded-l-none { border-radius: 0 0.5rem 0.5rem 0; }
+[dir="rtl"] .rounded-r-none { border-radius: 0.5rem 0 0 0.5rem; }
+
+/* --- Borders (flip left/right) --- */
+[dir="rtl"] .border-l { border-left-width: 0; border-right-width: 1px; }
+[dir="rtl"] .border-l-2 { border-left-width: 0; border-right-width: 2px; }
+[dir="rtl"] .border-l-4 { border-left-width: 0; border-right-width: 4px; }
+[dir="rtl"] .border-r { border-right-width: 0; border-left-width: 1px; }
+[dir="rtl"] .border-r-2 { border-right-width: 0; border-left-width: 2px; }
+[dir="rtl"] .border-r-4 { border-right-width: 0; border-left-width: 4px; }
+
+/* --- Translate transforms --- */
+[dir="rtl"] .-translate-x-1\/2 { --tw-translate-x: 50%; }
+[dir="rtl"] .translate-x-1\/2 { --tw-translate-x: -50%; }
+[dir="rtl"] .-translate-x-full { --tw-translate-x: 100%; }
+[dir="rtl"] .translate-x-full { --tw-translate-x: -100%; }
+[dir="rtl"] .translate-x-0 { --tw-translate-x: 0; }
+
+/* --- Chevron/icon rotation in RTL --- */
+[dir="rtl"] .chevron-rotate {
+    --tw-rotate: -180deg;
+}
+[dir="rtl"] .rotate-180 {
+    --tw-rotate: -180deg;
+}
+
+/* --- Transform origin --- */
+[dir="rtl"] .origin-top-right { transform-origin: top left; }
+[dir="rtl"] .origin-top-left { transform-origin: top right; }
+
+/* ==============================
+   COMPONENT STYLES
+   ============================== */
+
+/* Service Card Hover */
+.service-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.service-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -8px rgba(30, 64, 175, 0.15);
+}
+
+/* Touch Targets - 44px minimum for mobile */
+.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Focus Rings (Accessibility) */
+*:focus-visible {
+    outline: 2px solid #3B82F6;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Skip Link for Keyboard Users */
+.skip-link {
+    position: absolute;
+    top: -100%;
+    left: 0;
+    z-index: 100;
+    padding: 8px 16px;
+    background: #1E40AF;
+    color: white;
+    text-decoration: none;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Skeleton Loading Animation */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Dropdown transitions */
+.dropdown-enter {
+    transition: all 0.1s ease-out;
+}
+
+/* Print Styles */
+@media print {
+    .no-print { display: none; }
+}
