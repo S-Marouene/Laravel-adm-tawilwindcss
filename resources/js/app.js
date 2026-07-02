@@ -1,4 +1,5 @@
 import Alpine from 'alpinejs';
+import 'boxicons/css/boxicons.min.css';
 
 window.Alpine = Alpine;
 
@@ -192,6 +193,154 @@ Alpine.data('themeToggle', () => ({
             localStorage.setItem('theme', 'light');
         }
     },
+}));
+
+/**
+ * Fullscreen Toggle Component
+ */
+Alpine.data('fullscreenToggle', () => ({
+    isFullscreen: false,
+
+    toggle() {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            this.openFullscreen();
+        } else {
+            this.closeFullscreen();
+        }
+    },
+
+    openFullscreen() {
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+            el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+            el.webkitRequestFullscreen();
+        }
+        this.isFullscreen = true;
+    },
+
+    closeFullscreen() {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+        this.isFullscreen = false;
+    },
+
+    init() {
+        document.addEventListener('fullscreenchange', () => {
+            this.isFullscreen = !!document.fullscreenElement;
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            this.isFullscreen = !!document.webkitFullscreenElement;
+        });
+    }
+}));
+
+/**
+ * Search Modal Component
+ */
+Alpine.data('searchModal', () => ({
+    open: false,
+    query: '',
+    results: [],
+    recentSearches: ['Dashboard', 'Users', 'Roles', 'Settings'],
+
+    init() {
+        this.$watch('open', (val) => {
+            if (val) {
+                this.$nextTick(() => {
+                    this.$el.querySelector('input').focus();
+                });
+            }
+        });
+
+        // Listen for keyboard shortcut (Ctrl+K / Cmd+K)
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                this.open = !this.open;
+            }
+            if (e.key === 'Escape') {
+                this.open = false;
+            }
+        });
+    },
+
+    search() {
+        if (!this.query.trim()) {
+            this.results = [];
+            return;
+        }
+        // Simple client-side search suggestions
+        const pages = [
+            { title: 'Dashboard', url: '/admin', icon: 'bx bx-home' },
+            { title: 'Users', url: '/admin/users', icon: 'bx bx-user' },
+            { title: 'Roles', url: '/admin/roles', icon: 'bx bx-shield' },
+            { title: 'Permissions', url: '/admin/permissions', icon: 'bx bx-lock' },
+            { title: 'Activity Logs', url: '/admin/activity-logs', icon: 'bx bx-history' },
+            { title: 'Settings', url: '/admin/settings', icon: 'bx bx-cog' },
+        ];
+        const q = this.query.toLowerCase();
+        this.results = pages.filter(p =>
+            p.title.toLowerCase().includes(q)
+        );
+    }
+}));
+
+/**
+ * Notification Dropdown Component
+ */
+Alpine.data('notificationPanel', () => ({
+    open: false,
+    notifications: [],
+    unreadCount: 0,
+
+    init() {
+        this.fetchNotifications();
+    },
+
+    fetchNotifications() {
+        // For now, we'll load from the page's meta data if available
+        const el = document.getElementById('notification-data');
+        if (el) {
+            try {
+                this.notifications = JSON.parse(el.textContent || '[]');
+                this.unreadCount = this.notifications.filter(n => !n.read_at).length;
+            } catch(e) {
+                this.notifications = [];
+            }
+        }
+    },
+
+    markAllRead() {
+        this.notifications.forEach(n => n.read_at = new Date().toISOString());
+        this.unreadCount = 0;
+    },
+
+    removeNotification(index) {
+        this.notifications.splice(index, 1);
+        this.unreadCount = this.notifications.filter(n => !n.read_at).length;
+    }
+}));
+
+/**
+ * Sidebar Manager Component
+ * Manages the desktop sidebar collapsed/expanded state
+ * Persists preference in localStorage
+ */
+Alpine.data('sidebarManager', () => ({
+    collapsed: localStorage.getItem('sidebar_collapsed') === 'true',
+
+    get sidebarWidth() {
+        return this.collapsed ? 'w-16' : 'w-64';
+    },
+
+    toggle() {
+        this.collapsed = !this.collapsed;
+        localStorage.setItem('sidebar_collapsed', this.collapsed);
+    }
 }));
 
 Alpine.start();
