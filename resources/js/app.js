@@ -334,7 +334,7 @@ Alpine.data('sidebarManager', () => ({
     collapsed: localStorage.getItem('sidebar_collapsed') === 'true',
 
     get sidebarWidth() {
-        return this.collapsed ? 'w-16' : 'w-64';
+        return this.collapsed ? 'w-16' : 'w-60';
     },
 
     toggle() {

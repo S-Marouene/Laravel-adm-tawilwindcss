@@ -43,7 +43,7 @@
             })();
         </script>
     </head>
-    <body class="font-sans antialiased bg-sand-50 dark:bg-gray-900">
+    <body class="font-sans antialiased bg-[#F5F6FA] dark:bg-gray-900">
         <div class="min-h-screen" x-data="sidebarManager()">
             <!-- Admin Top Bar (Ynex Design) -->
             <header class="app-header">
@@ -266,56 +266,56 @@
 
             <div class="flex">
                 <!-- Admin Sidebar -->
-                <aside class="hidden lg:block bg-white dark:bg-gray-800 border-r border-sand-200 dark:border-gray-700 min-h-[calc(100vh-4rem)] flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden" :class="[sidebarWidth, { 'sidebar-collapsed': collapsed }]">
-                    <nav class="p-4 space-y-1">
-                        <a href="{{ route('admin.dashboard') }}" data-tooltip="{{ __('nav.dashboard') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.dashboard') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-700 dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                <aside class="hidden lg:block ynex-sidebar border-r min-h-[calc(100vh-4rem)] flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden" :class="[sidebarWidth, { 'sidebar-collapsed': collapsed }]">
+                    <nav class="p-3 space-y-0.5 ynex-sidebar-scroll" style="max-height: calc(100vh - 4rem); overflow-y: auto;">
+                        <a href="{{ route('admin.dashboard') }}" data-tooltip="{{ __('nav.dashboard') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                             </svg>
                             <span x-show="!collapsed" class="truncate">{{ __('nav.dashboard') }}</span>
                         </a>
 
-                        <div class="pt-4 pb-2" x-show="!collapsed">
-                            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ __('nav.services') }}</p>
+                        <div class="pt-4 pb-1" x-show="!collapsed">
+                            <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('nav.services') }}</p>
                         </div>
 
-                        <a href="{{ route('admin.users.index') }}" data-tooltip="{{ __('admin.users') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.users.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-700 dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                        <a href="{{ route('admin.users.index') }}" data-tooltip="{{ __('admin.users') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/>
                             </svg>
                             <span x-show="!collapsed" class="truncate">{{ __('admin.users') }}</span>
                         </a>
 
-                        <a href="{{ route('admin.roles.index') }}" data-tooltip="{{ __('admin.roles') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.roles.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-700 dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                        <a href="{{ route('admin.roles.index') }}" data-tooltip="{{ __('admin.roles') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                             </svg>
                             <span x-show="!collapsed" class="truncate">{{ __('admin.roles') }}</span>
                         </a>
 
-                        <a href="{{ route('admin.permissions.index') }}" data-tooltip="{{ __('admin.permissions') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.permissions.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-700 dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                        <a href="{{ route('admin.permissions.index') }}" data-tooltip="{{ __('admin.permissions') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                             </svg>
                             <span x-show="!collapsed" class="truncate">{{ __('admin.permissions') }}</span>
                         </a>
 
-                        <div class="pt-4 pb-2" x-show="!collapsed">
-                            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ __('admin.logs') }}</p>
+                        <div class="pt-4 pb-1" x-show="!collapsed">
+                            <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('admin.logs') }}</p>
                         </div>
 
-                        <a href="{{ route('admin.activity-logs.index') }}" data-tooltip="{{ __('admin.logs') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.activity-logs.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-700 dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                        <a href="{{ route('admin.activity-logs.index') }}" data-tooltip="{{ __('admin.logs') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.activity-logs.*') ? 'active' : '' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                             </svg>
                             <span x-show="!collapsed" class="truncate">{{ __('admin.logs') }}</span>
                         </a>
 
-                        <div class="pt-4 pb-2" x-show="!collapsed">
-                            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ __('admin.configuration') }}</p>
+                        <div class="pt-4 pb-1" x-show="!collapsed">
+                            <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('admin.configuration') }}</p>
                         </div>
 
-                        <a href="{{ route('admin.settings.index') }}" data-tooltip="{{ __('admin.settings') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.settings.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-700 dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                        <a href="{{ route('admin.settings.index') }}" data-tooltip="{{ __('admin.settings') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             <span x-show="!collapsed" class="truncate">{{ __('admin.settings') }}</span>
                         </a>
