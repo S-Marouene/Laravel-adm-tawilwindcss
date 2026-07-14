@@ -1,5 +1,5 @@
 <nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-sand-200 dark:border-gray-700 sticky top-0 z-50 no-print">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div style="margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); width: 100vw;" class="px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
             <!-- Logo -->
             <div class="shrink-0 flex items-center">

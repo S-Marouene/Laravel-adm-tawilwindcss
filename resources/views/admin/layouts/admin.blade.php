@@ -144,6 +144,14 @@
                             <!-- Right Section -->
                             <div class="header-content-right">
 
+                                <!-- Home Icon -->
+                                <div class="header-element py-[1rem] md:px-[0.65rem] px-2">
+                                    <a href="{{ route('dashboard') }}" class="inline-flex flex-shrink-0 justify-center items-center w-9 h-9 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gov-600 dark:hover:text-gov-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-all duration-200" aria-label="{{ __('nav.dashboard') }}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                        </svg>
+                                    </a>
+                                </div>
                                 <!-- Search -->
                                 <div class="header-element py-[1rem] md:px-[0.65rem] px-2" x-data="searchModal()">
                                     <button @click="open = true" type="button" class="inline-flex flex-shrink-0 justify-center items-center rounded-full transition-all text-xs dark:text-gray-400 dark:hover:text-white">
@@ -202,14 +210,7 @@
                                     </button>
                                 </div>
 
-                                <!-- Home Icon -->
-                                <div class="header-element py-[1rem] md:px-[0.65rem] px-2">
-                                    <a href="{{ route('dashboard') }}" class="inline-flex flex-shrink-0 justify-center items-center w-9 h-9 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gov-600 dark:hover:text-gov-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-all duration-200" aria-label="{{ __('nav.dashboard') }}">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                                        </svg>
-                                    </a>
-                                </div>
+
 
                                 <!-- Notifications Dropdown -->
                                 <div class="header-element py-[1rem] md:px-[0.65rem] px-2 hidden md:block" x-data="notificationPanel()">
