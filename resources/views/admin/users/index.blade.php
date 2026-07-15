@@ -8,7 +8,7 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Users</h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage all registered users.</p>
         </div>
-        <a href="{{ route('admin.users.create') }}" class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors">
+        <a href="{{ route('admin.users.create') }}" class="admin-add-button px-4 py-2 text-sm">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -16,11 +16,11 @@
         </a>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class="admin-table-card">
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead>
-                    <tr class="bg-gray-50 dark:bg-gray-700/50">
+                    <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Roles</th>
@@ -34,7 +34,7 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <div class="admin-avatar w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
                                         <span class="text-xs font-semibold text-white">{{ substr($user->name, 0, 1) }}</span>
                                     </div>
                                     <div class="ml-3">
@@ -46,7 +46,7 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex flex-wrap gap-1">
                                     @forelse($user->roles as $role)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300">{{ $role->name }}</span>
+                                        <span class="admin-badge inline-flex items-center px-2 py-0.5 text-xs font-medium bg-gov-50 dark:bg-gov-900/40 text-gov-700 dark:text-gov-300">{{ $role->name }}</span>
                                     @empty
                                         <span class="text-xs text-gray-400">No roles</span>
                                     @endforelse
@@ -54,18 +54,18 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($user->is_admin)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300">Admin</span>
+                                    <span class="admin-badge inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-gov-50 dark:bg-gov-900/45 text-gov-700 dark:text-gov-300">Admin</span>
                                 @else
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">User</span>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $user->created_at->format('M d, Y') }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="{{ route('admin.users.edit', $user) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3">Edit</a>
+                                <a href="{{ route('admin.users.edit', $user) }}" class="admin-action-link mr-3">Edit</a>
                                 <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this user?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
+                                    <button type="submit" class="admin-danger-link">Delete</button>
                                 </form>
                             </td>
                         </tr>

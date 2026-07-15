@@ -24,7 +24,7 @@
 
         <div class="space-y-6">
             @foreach($settings as $group => $groupSettings)
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="admin-form-card">
                     <!-- Group Header -->
                     <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
                         <div class="flex items-center gap-3">
@@ -179,7 +179,7 @@
 
         <!-- Submit Button -->
         <div class="mt-8 flex items-center justify-end gap-4">
-            <button type="submit" class="relative inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-gov-600 to-gov-700 hover:from-gov-700 hover:to-gov-800 dark:from-gov-500 dark:to-gov-600 dark:hover:from-gov-600 dark:hover:to-gov-700 rounded-xl font-semibold text-sm text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 ease-in-out active:scale-[0.98]">
+            <button type="submit" class="admin-add-button px-6 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
@@ -189,7 +189,7 @@
     </form>
 
     <!-- Test Email Form (outside the main form) -->
-    <div class="mt-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class="mt-6 admin-form-card">
         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
             <div class="flex items-center gap-3">
                 <div class="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400">

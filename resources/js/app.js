@@ -332,6 +332,7 @@ Alpine.data('notificationPanel', () => ({
  */
 Alpine.data('sidebarManager', () => ({
     collapsed: localStorage.getItem('sidebar_collapsed') === 'true',
+    mobileOpen: false,
 
     get sidebarWidth() {
         return this.collapsed ? 'w-16' : 'w-60';
@@ -340,6 +341,14 @@ Alpine.data('sidebarManager', () => ({
     toggle() {
         this.collapsed = !this.collapsed;
         localStorage.setItem('sidebar_collapsed', this.collapsed);
+    },
+
+    toggleMobile() {
+        this.mobileOpen = !this.mobileOpen;
+    },
+
+    closeMobile() {
+        this.mobileOpen = false;
     }
 }));
 

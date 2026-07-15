@@ -52,7 +52,7 @@
             })();
         </script>
     </head>
-    <body class="font-sans antialiased bg-sand-50 dark:bg-gray-900">
+    <body class="font-sans antialiased bg-sand-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <!-- Skip Link for Accessibility -->
         <a href="#main-content" class="skip-link no-print">
             {{ app()->getLocale() === 'fr' ? 'Aller au contenu principal' : 'الانتقال إلى المحتوى الرئيسي' }}
@@ -63,7 +63,7 @@
 
             <!-- Page Heading -->
             @isset($header)
-                <header class="bg-white dark:bg-gray-800 border-b border-sand-200 dark:border-gray-700 shadow-sm">
+                <header class="bg-white/85 dark:bg-gray-800/85 border-b border-sand-200/80 dark:border-gray-700/80 shadow-sm backdrop-blur-xl">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                         {{ $header }}
                     </div>

@@ -9,7 +9,7 @@
     </div>
 
     <div class="max-w-xl">
-        <form action="{{ route('admin.permissions.update', $permission) }}" method="POST" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+        <form action="{{ route('admin.permissions.update', $permission) }}" method="POST" class="admin-form-card p-6 space-y-6">
             @csrf
             @method('PATCH')
 
@@ -33,7 +33,7 @@
 
             <div class="flex items-center justify-end space-x-3">
                 <a href="{{ route('admin.permissions.index') }}" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-500">Cancel</a>
-                <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors">Update Permission</button>
+                <button type="submit" class="admin-add-button px-4 py-2 text-sm">Update Permission</button>
             </div>
         </form>
     </div>

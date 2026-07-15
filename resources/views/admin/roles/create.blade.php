@@ -9,7 +9,7 @@
     </div>
 
     <div class="max-w-2xl">
-        <form action="{{ route('admin.roles.store') }}" method="POST" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+        <form action="{{ route('admin.roles.store') }}" method="POST" class="admin-form-card p-6 space-y-6">
             @csrf
 
             <div>
@@ -29,7 +29,7 @@
                         <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">{{ $group }}</h4>
                         <div class="grid grid-cols-2 gap-2">
                             @foreach($groupPermissions as $permission)
-                                <label class="inline-flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <label class="inline-flex items-center p-2 rounded-lg hover:bg-sand-50 dark:hover:bg-gray-700/50 transition-colors">
                                     <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" class="rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500">
                                     <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ $permission->name }}</span>
                                 </label>
@@ -41,7 +41,7 @@
 
             <div class="flex items-center justify-end space-x-3">
                 <a href="{{ route('admin.roles.index') }}" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-500">Cancel</a>
-                <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors">Create Role</button>
+                <button type="submit" class="admin-add-button px-4 py-2 text-sm">Create Role</button>
             </div>
         </form>
     </div>

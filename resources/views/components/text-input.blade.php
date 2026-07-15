@@ -9,10 +9,11 @@
 
     <input @disabled($disabled) {{ $attributes->merge([
         'class' => 'block w-full px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500
-                    bg-white dark:bg-gray-900/50
-                    border border-gray-300 dark:border-gray-600
+                    bg-white/95 dark:bg-gray-900/55
+                    border border-gray-300/90 dark:border-gray-600/90
                     rounded-xl shadow-sm
-                    focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 dark:focus:border-gov-400
+                    hover:border-gov-300 dark:hover:border-gov-700
+                    focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 dark:focus:border-gov-400 focus:shadow-[0_0_0_4px_rgba(132,90,223,0.08)]
                     focus:outline-none
                     disabled:opacity-50 disabled:cursor-not-allowed
                     transition-all duration-200 ease-in-out

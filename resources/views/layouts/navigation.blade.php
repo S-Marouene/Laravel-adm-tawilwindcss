@@ -1,11 +1,11 @@
-<nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-sand-200 dark:border-gray-700 sticky top-0 z-50 no-print">
+<nav x-data="{ open: false }" class="bg-white/90 dark:bg-gray-800/90 border-b border-sand-200/80 dark:border-gray-700/80 sticky top-0 z-50 no-print shadow-sm backdrop-blur-xl">
     <div style="margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); width: 100vw;" class="px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
             <!-- Logo -->
             <div class="shrink-0 flex items-center">
                 <a href="{{ route('dashboard') }}" class="flex items-center gap-2 sm:gap-3 group">
                     <!-- Tunisian Services Logo -->
-                    <div class="w-9 h-9 bg-gradient-to-br from-gov-600 to-gov-800 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-200 group-hover:scale-105">
+                    <div class="w-9 h-9 bg-gradient-to-br from-gov-600 via-gov-700 to-accent-600 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-200 group-hover:scale-105">
                         <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                         </svg>
@@ -37,7 +37,7 @@
                 <!-- Theme Toggle -->
                 <div x-data="themeToggle()" class="relative">
                     <button @click="toggle" type="button"
-                        class="relative p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200 touch-target focus:outline-none focus:ring-2 focus:ring-gov-500"
+                        class="relative inline-flex cursor-pointer items-center justify-center w-11 h-11 rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200 touch-target focus:outline-none focus:ring-2 focus:ring-gov-500"
                         :aria-label="isDark ? '{{ __('action.theme_light') }}' : '{{ __('action.theme_dark') }}'">
                         <!-- Sun (light mode) -->
                         <svg x-show="!isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,7 +58,7 @@
                     <div class="hidden sm:flex sm:items-center sm:gap-2">
                         <x-dropdown align="{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}" width="48">
                             <x-slot name="trigger">
-                                <button class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gov-600 dark:hover:text-gov-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 touch-target">
+                                <button type="button" class="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gov-600 dark:hover:text-gov-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 touch-target">
                                     <div class="w-8 h-8 bg-gov-100 dark:bg-gov-900/50 rounded-full flex items-center justify-center">
                                         <span class="text-sm font-semibold text-gov-600 dark:text-gov-400">{{ substr(Auth::user()->name, 0, 1) }}</span>
                                     </div>
@@ -96,7 +96,7 @@
                     </div>
 
                     <!-- Mobile Hamburger -->
-                    <button @click="open = !open" class="sm:hidden inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gov-500 touch-target transition-all duration-200">
+                    <button @click="open = !open" type="button" class="sm:hidden inline-flex cursor-pointer items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gov-500 touch-target transition-all duration-200">
                         <svg class="w-6 h-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                             <path :class="{'hidden': open, 'inline-flex': !open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                             <path :class="{'hidden': !open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -105,14 +105,14 @@
                 @else
                     <!-- Guest Actions -->
                     <div class="hidden sm:flex items-center gap-2">
-                        <a href="{{ route('login') }}" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gov-600 dark:hover:text-gov-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200">
+                        <a href="{{ route('login') }}" class="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gov-600 dark:hover:text-gov-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200">
                             {{ __('nav.login') }}
                         </a>
-                        <a href="{{ route('register') }}" class="px-4 py-2 text-sm font-semibold text-white bg-gov-600 hover:bg-gov-700 rounded-lg shadow-sm hover:shadow transition-all duration-200">
+                        <a href="{{ route('register') }}" class="ui-btn-primary cursor-pointer px-4 py-2 text-sm">
                             {{ __('nav.register') }}
                         </a>
                     </div>
-                    <a href="{{ route('login') }}" class="sm:hidden p-2 text-gray-500 hover:text-gov-600 touch-target">
+                    <a href="{{ route('login') }}" class="sm:hidden cursor-pointer p-2 text-gray-500 hover:text-gov-600 touch-target">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
                         </svg>
