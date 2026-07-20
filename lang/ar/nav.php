@@ -9,4 +9,15 @@ return [
     'login' => 'تسجيل الدخول',
     'register' => 'إنشاء حساب',
     'logout' => 'تسجيل الخروج',
+
+    // Advanced UI
+    'advanced_ui' => 'واجهة متقدمة',
+    'stepper' => 'خطوات',
+    'modals' => 'النوافذ المنبثقة',
+    'accordions' => 'الأكورديون',
+    'tabs' => 'علامات التبويب',
+    'carousel' => 'العرض الدوار',
+    'tooltips' => 'تلميحات الأدوات',
+    'dropdowns' => 'القوائم المنسدلة',
+    'sweet_alerts' => 'التنبيهات',
 ];

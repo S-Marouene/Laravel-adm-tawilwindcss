@@ -100,6 +100,76 @@
                         <span x-show="!collapsed" class="truncate">{{ __('admin.permissions') }}</span>
                     </a>
 
+                    <!-- Advanced UI (Collapsible Submenu) -->
+                    <div class="pt-4 pb-1" x-show="!collapsed">
+                        <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('nav.advanced_ui') }}</p>
+                    </div>
+
+                    <div x-data="{ advancedOpen: {{ request()->routeIs('admin.advanced-ui.*') ? 'true' : 'false' }} }" class="space-y-0.5">
+                        <button @click="advancedOpen = !advancedOpen; if(collapsed) collapsed = false" data-tooltip="{{ __('nav.advanced_ui') }}" class="sidebar-nav-link flex items-center justify-between w-full gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.advanced-ui.*') ? 'active' : '' }}">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                </svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('nav.advanced_ui') }}</span>
+                            </div>
+                            <svg x-show="!collapsed" class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': advancedOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+
+                        <div x-show="advancedOpen || collapsed" class="space-y-0.5 {{ app()->getLocale() === 'ar' ? 'pr-4' : 'pl-4' }}">
+                            <a href="{{ route('admin.advanced-ui.stepper') }}" data-tooltip="{{ __('nav.stepper') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.advanced-ui.stepper') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 4v11"/>
+                                </svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('nav.stepper') }}</span>
+                            </a>
+                            <a href="{{ route('admin.advanced-ui.modals') }}" data-tooltip="{{ __('nav.modals') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.advanced-ui.modals') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M3 10v11h18V10"/>
+                                </svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('nav.modals') }}</span>
+                            </a>
+                            <a href="{{ route('admin.advanced-ui.accordions') }}" data-tooltip="{{ __('nav.accordions') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.advanced-ui.accordions') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('nav.accordions') }}</span>
+                            </a>
+                            <a href="{{ route('admin.advanced-ui.tabs') }}" data-tooltip="{{ __('nav.tabs') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.advanced-ui.tabs') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+                                </svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('nav.tabs') }}</span>
+                            </a>
+                            <a href="{{ route('admin.advanced-ui.carousel') }}" data-tooltip="{{ __('nav.carousel') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.advanced-ui.carousel') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                </svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('nav.carousel') }}</span>
+                            </a>
+                            <a href="{{ route('admin.advanced-ui.tooltips') }}" data-tooltip="{{ __('nav.tooltips') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.advanced-ui.tooltips') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('nav.tooltips') }}</span>
+                            </a>
+                            <a href="{{ route('admin.advanced-ui.dropdowns') }}" data-tooltip="{{ __('nav.dropdowns') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.advanced-ui.dropdowns') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('nav.dropdowns') }}</span>
+                            </a>
+                            <a href="{{ route('admin.advanced-ui.sweet-alerts') }}" data-tooltip="{{ __('nav.sweet_alerts') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.advanced-ui.sweet-alerts') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('nav.sweet_alerts') }}</span>
+                            </a>
+                        </div>
+                    </div>
+
                     <div class="pt-4 pb-1" x-show="!collapsed">
                         <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('admin.logs') }}</p>
                     </div>
@@ -355,6 +425,52 @@
                                     <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                                     {{ __('admin.permissions') }}
                                 </a>
+
+                                <!-- Mobile Advanced UI Submenu -->
+                                <div x-data="{ advOpen: {{ request()->routeIs('admin.advanced-ui.*') ? 'true' : 'false' }} }">
+                                    <button @click="advOpen = !advOpen" class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.advanced-ui.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-700 dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                                        <div class="flex items-center">
+                                            <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                                            {{ __('nav.advanced_ui') }}
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': advOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                    <div x-show="advOpen" class="{{ app()->getLocale() === 'ar' ? 'pr-4' : 'pl-4' }} space-y-0.5 mt-0.5">
+                                        <a href="{{ route('admin.advanced-ui.stepper') }}" @click="closeMobile()" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('admin.advanced-ui.stepper') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-600 dark:text-gray-400 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                                            <svg class="w-4 h-4 me-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 4v11"/></svg>
+                                            {{ __('nav.stepper') }}
+                                        </a>
+                                        <a href="{{ route('admin.advanced-ui.modals') }}" @click="closeMobile()" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('admin.advanced-ui.modals') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-600 dark:text-gray-400 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                                            <svg class="w-4 h-4 me-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M3 10v11h18V10"/></svg>
+                                            {{ __('nav.modals') }}
+                                        </a>
+                                        <a href="{{ route('admin.advanced-ui.accordions') }}" @click="closeMobile()" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('admin.advanced-ui.accordions') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-600 dark:text-gray-400 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                                            <svg class="w-4 h-4 me-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                            {{ __('nav.accordions') }}
+                                        </a>
+                                        <a href="{{ route('admin.advanced-ui.tabs') }}" @click="closeMobile()" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('admin.advanced-ui.tabs') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-600 dark:text-gray-400 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                                            <svg class="w-4 h-4 me-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+                                            {{ __('nav.tabs') }}
+                                        </a>
+                                        <a href="{{ route('admin.advanced-ui.carousel') }}" @click="closeMobile()" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('admin.advanced-ui.carousel') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-600 dark:text-gray-400 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                                            <svg class="w-4 h-4 me-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                                            {{ __('nav.carousel') }}
+                                        </a>
+                                        <a href="{{ route('admin.advanced-ui.tooltips') }}" @click="closeMobile()" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('admin.advanced-ui.tooltips') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-600 dark:text-gray-400 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                                            <svg class="w-4 h-4 me-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            {{ __('nav.tooltips') }}
+                                        </a>
+                                        <a href="{{ route('admin.advanced-ui.dropdowns') }}" @click="closeMobile()" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('admin.advanced-ui.dropdowns') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-600 dark:text-gray-400 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                                            <svg class="w-4 h-4 me-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                            {{ __('nav.dropdowns') }}
+                                        </a>
+                                        <a href="{{ route('admin.advanced-ui.sweet-alerts') }}" @click="closeMobile()" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('admin.advanced-ui.sweet-alerts') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-600 dark:text-gray-400 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                                            <svg class="w-4 h-4 me-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            {{ __('nav.sweet_alerts') }}
+                                        </a>
+                                    </div>
+                                </div>
+
                                 <a href="{{ route('admin.activity-logs.index') }}" @click="closeMobile()" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.activity-logs.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-gray-700 dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
                                     <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                                     {{ __('admin.logs') }}

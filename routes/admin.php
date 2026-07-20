@@ -19,6 +19,34 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::delete('activity-logs/clear', [ActivityLogController::class, 'clear'])->name('activity-logs.clear');
     Route::resource('activity-logs', ActivityLogController::class)->only(['index', 'show', 'destroy']);
 
+    // Advanced UI Routes
+    Route::prefix('advanced-ui')->name('advanced-ui.')->group(function () {
+        Route::get('stepper', function () {
+            return view('admin.advanced-ui.stepper');
+        })->name('stepper');
+        Route::get('modals', function () {
+            return view('admin.advanced-ui.modals');
+        })->name('modals');
+        Route::get('accordions', function () {
+            return view('admin.advanced-ui.accordions');
+        })->name('accordions');
+        Route::get('tabs', function () {
+            return view('admin.advanced-ui.tabs');
+        })->name('tabs');
+        Route::get('carousel', function () {
+            return view('admin.advanced-ui.carousel');
+        })->name('carousel');
+        Route::get('tooltips', function () {
+            return view('admin.advanced-ui.tooltips');
+        })->name('tooltips');
+        Route::get('dropdowns', function () {
+            return view('admin.advanced-ui.dropdowns');
+        })->name('dropdowns');
+        Route::get('sweet-alerts', function () {
+            return view('admin.advanced-ui.sweet-alerts');
+        })->name('sweet-alerts');
+    });
+
     // Settings
     Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
