@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\ThemeSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin'])->group(function () {
@@ -52,4 +53,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::delete('settings/image/{key}', [SettingsController::class, 'removeImage'])->name('settings.remove-image');
     Route::post('settings/test-mail', [SettingsController::class, 'testMail'])->name('settings.test-mail');
+
+    // Theme settings
+    Route::get('theme-settings', [ThemeSettingsController::class, 'index'])->name('theme-settings.index');
+    Route::put('theme-settings', [ThemeSettingsController::class, 'update'])->name('theme-settings.update');
 });

@@ -59,11 +59,22 @@ html.disable-transitions *::after {
 }
 
 body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: var(--app-font-family, 'Inter', system-ui, -apple-system, sans-serif);
+    font-size: var(--app-base-font-size, 16px);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background:
-        linear-gradient(180deg, rgba(248, 250, 252, 0.96) 0%, rgba(241, 245, 249, 0.92) 100%);
+        linear-gradient(180deg, color-mix(in srgb, var(--color-body) 96%, white) 0%, color-mix(in srgb, var(--color-body) 88%, #E2E8F0) 100%);
+}
+
+.font-sans {
+    font-family: var(--app-font-family, 'Inter', system-ui, -apple-system, sans-serif) !important;
+}
+
+h1,
+h2,
+h3 {
+    font-weight: var(--app-heading-weight, 700);
 }
 
 .dark body {
@@ -233,7 +244,7 @@ button:disabled,
    ============================== */
 .ynex-sidebar {
     background:
-        linear-gradient(180deg, #111C43 0%, #151F49 52%, #0D1634 100%);
+        linear-gradient(180deg, var(--color-sidebar) 0%, color-mix(in srgb, var(--color-sidebar) 84%, var(--color-gov-500)) 52%, color-mix(in srgb, var(--color-sidebar) 78%, black) 100%);
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: inset -1px 0 0 rgba(255,255,255,0.04);
 }
@@ -1100,9 +1111,10 @@ button:disabled,
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.75rem;
-    background: linear-gradient(135deg, var(--color-gov-600), var(--color-gov-700) 55%, #214C85);
-    color: white;
+    border: var(--app-primary-button-border, 1px solid transparent);
+    border-radius: var(--app-radius, 12px);
+    background: var(--app-primary-button-background, linear-gradient(135deg, var(--color-gov-600), var(--color-gov-700) 55%, color-mix(in srgb, var(--color-accent-600) 52%, black)));
+    color: var(--app-primary-button-color, white);
     font-weight: 700;
     box-shadow: 0 12px 22px -14px rgba(85, 50, 143, 0.95);
     transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
@@ -1144,9 +1156,18 @@ button:disabled,
 .admin-form-card {
     background: rgba(255, 255, 255, 0.92);
     border: 1px solid rgba(226, 232, 240, 0.95);
-    border-radius: 0.875rem;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 20px 42px -36px rgba(15, 23, 42, 0.55);
+    border-radius: var(--app-radius, 12px);
+    box-shadow: var(--app-card-shadow, 0 1px 2px rgba(15, 23, 42, 0.04), 0 20px 42px -36px rgba(15, 23, 42, 0.55));
     overflow: hidden;
+}
+
+.admin-form-card .p-6 {
+    padding: calc(var(--app-density, 1) * 1.5rem);
+}
+
+.admin-table-card th,
+.admin-table-card td {
+    padding-block: calc(var(--app-density, 1) * 0.75rem);
 }
 
 .dark .admin-table-card,

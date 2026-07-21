@@ -30,6 +30,7 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @include('partials.theme-styles')
 
         <!-- Theme: restore saved preference before page renders (prevent FOUC) -->
         <script>
