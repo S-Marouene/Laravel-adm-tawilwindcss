@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PreventionRequestController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\App;
@@ -17,7 +18,7 @@ Route::get('locale/{locale}', function (string $locale) {
     // Also set a cookie for instant read by middleware
     cookie()->queue(cookie()->forever('user_locale', $locale));
 
-    // AJAX request – return JSON so Alpine can handle the switch
+    // AJAX request - return JSON so Alpine can handle the switch
     if (request()->expectsJson() || request()->ajax()) {
         return response()->json([
             'locale' => $locale,
@@ -35,6 +36,11 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/prevention-requests/create', [PreventionRequestController::class, 'create'])->name('prevention-requests.create');
+    Route::get('/prevention-requests/structures', [PreventionRequestController::class, 'structures'])->name('prevention-requests.structures');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

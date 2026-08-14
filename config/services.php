@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'prevention_api' => [
+        'base_url' => env('PREVENTION_API_BASE_URL', 'http://127.0.0.1:8000/api'),
+        'timeout' => env('PREVENTION_API_TIMEOUT', 10),
+    ],
+
 ];
