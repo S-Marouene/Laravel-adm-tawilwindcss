@@ -39,6 +39,7 @@ Route::get('/dashboard', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/prevention-requests/create', [PreventionRequestController::class, 'create'])->name('prevention-requests.create');
+    Route::post('/prevention-requests', [PreventionRequestController::class, 'store'])->name('prevention-requests.store');
     Route::get('/prevention-requests/structures', [PreventionRequestController::class, 'structures'])->name('prevention-requests.structures');
 });
 
