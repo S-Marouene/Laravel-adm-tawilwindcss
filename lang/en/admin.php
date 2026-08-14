@@ -49,6 +49,7 @@ return [
     'theme_settings_updated' => 'Theme settings updated successfully.',
     'theme_colors' => 'Colors',
     'theme_colors_desc' => 'Brand colors used across navigation, buttons, and highlights.',
+    'theme_colors_reset' => 'Default colors',
     'theme_typography' => 'Typography',
     'theme_typography_desc' => 'Font family, base size, and heading weight.',
     'theme_layout' => 'Layout',

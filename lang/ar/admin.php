@@ -88,4 +88,5 @@ return [
     'theme_option_none' => 'بدون',
     'theme_option_soft' => 'ناعم',
     'theme_option_deep' => 'عميق',
+    'theme_colors_reset' => 'الألوان الافتراضية',
 ];

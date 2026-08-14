@@ -40,6 +40,10 @@
         $optionLabelFor = fn ($option) => \Illuminate\Support\Facades\Lang::has("admin.theme_option_{$option}")
             ? __("admin.theme_option_{$option}")
             : \Illuminate\Support\Str::headline($option);
+        $defaultColorValues = collect(\App\Models\ThemeSetting::defaults())
+            ->where('group', 'colors')
+            ->where('type', 'color')
+            ->pluck('value', 'key');
     @endphp
 
     <div class="mb-8">
@@ -67,16 +71,27 @@
 
                     <section class="admin-form-card">
                         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
-                            <div class="flex items-center gap-3">
-                                <div class="p-2 rounded-lg {{ $meta['classes'] }}">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $meta['icon'] }}"/>
-                                    </svg>
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 rounded-lg {{ $meta['classes'] }}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $meta['icon'] }}"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ $meta['title'] }}</h2>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ $meta['description'] }}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ $meta['title'] }}</h2>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ $meta['description'] }}</p>
-                                </div>
+
+                                @if($group === 'colors')
+                                    <button type="button" id="reset-theme-colors" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gov-500/30 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9M4.582 9H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        {{ __('admin.theme_colors_reset') }}
+                                    </button>
+                                @endif
                             </div>
                         </div>
 
@@ -152,6 +167,7 @@
     <script>
         (function() {
             var preview = document.getElementById('theme-preview');
+            var defaultColors = @json($defaultColorValues);
 
             function fieldValue(name, fallback) {
                 var field = document.querySelector('[name="' + name + '"]');
@@ -236,6 +252,28 @@
                 field.addEventListener('input', applyPreview);
                 field.addEventListener('change', applyPreview);
             });
+
+            var resetColorsButton = document.getElementById('reset-theme-colors');
+
+            if (resetColorsButton) {
+                resetColorsButton.addEventListener('click', function() {
+                    Object.keys(defaultColors).forEach(function(key) {
+                        var picker = document.getElementById(key);
+                        var textInput = document.querySelector('.theme-color-text[data-color-target="' + key + '"]');
+
+                        if (picker) {
+                            picker.value = defaultColors[key];
+                            picker.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+
+                        if (textInput) {
+                            textInput.value = defaultColors[key];
+                        }
+                    });
+
+                    applyPreview();
+                });
+            }
 
             applyPreview();
         })();

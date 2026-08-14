@@ -45,6 +45,7 @@ return [
     'theme_settings_updated' => 'Parametres du theme mis a jour avec succes.',
     'theme_colors' => 'Couleurs',
     'theme_colors_desc' => 'Couleurs utilisees dans la navigation, les boutons et les accents.',
+    'theme_colors_reset' => 'Couleurs par defaut',
     'theme_typography' => 'Typographie',
     'theme_typography_desc' => 'Police, taille de base et style des titres.',
     'theme_layout' => 'Mise en page',
