@@ -27,11 +27,11 @@
                             </p>
                         </div>
 
-                        <a href="{{ route('prevention-requests.create') }}" class="ui-btn-primary inline-flex min-w-[11rem] items-center justify-center gap-2 px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                        <a href="{{ route('prevention-requests.index') }}" class="ui-btn-primary inline-flex min-w-[11rem] items-center justify-center gap-2 px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h6m-6 4h6m-7 4h8m-9 8h10a2 2 0 002-2V7.414a1 1 0 00-.293-.707l-3.414-3.414A1 1 0 0014.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
-                            <span>{{ __('prevention_request.new_request') }}</span>
+                            <span>{{ __('prevention_request.list_requests') }}</span>
                         </a>
                     </div>
                 </div>
