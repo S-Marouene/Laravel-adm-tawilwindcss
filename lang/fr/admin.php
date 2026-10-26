@@ -39,7 +39,53 @@ return [
     'mail_test_send' => 'Envoyer le test',
     'mail_test_success' => 'Email de test envoyé avec succès à :email.',
     'mail_test_error' => 'Erreur lors de l\'envoi de l\'email de test :',
-    // Theme Settings
+    // Reference data management
+    'ref_data' => 'Données de référence',
+    'ref_data_desc' => 'Gouvernorats, délégations, types de bâtiments et documents requis',
+    'ref_created' => 'Enregistrement créé avec succès.',
+    'ref_updated' => 'Enregistrement mis à jour avec succès.',
+    'ref_deleted' => 'Enregistrement supprimé avec succès.',
+    'confirm_delete' => 'Êtes-vous sûr de vouloir supprimer cet enregistrement ?',
+    'no_data' => 'Aucune donnée trouvée.',
+    'actions' => 'Actions',
+    'yes' => 'Oui',
+    'no' => 'Non',
+
+    // Fields
+    'name_ar' => 'Nom (Arabe)',
+    'name_fr' => 'Nom (Français)',
+    'name_en' => 'Nom (Anglais)',
+    'sort_order' => 'Ordre',
+    'has_activities' => 'A des activités',
+    'activities_count' => 'Activités',
+    'delegations_count' => 'Délégations',
+    'conditional' => 'Conditionnel',
+    'governorate' => 'Gouvernorat',
+    'building_type' => 'Type de bâtiment',
+
+    // Governorates
+    'governorates' => 'Gouvernorats',
+    'governorates_desc' => 'Gérer les gouvernorats et leurs traductions',
+    'all_governorates' => 'Tous les gouvernorats',
+    'select_governorate' => 'Sélectionnez un gouvernorat',
+
+    // Delegations
+    'delegations' => 'Délégations',
+    'delegations_desc' => 'Gérer les délégations par gouvernorat',
+
+    // Building types
+    'building_types' => 'Types de bâtiments',
+    'building_types_desc' => 'Gérer les types de bâtiments utilisés dans les dossiers',
+    'all_types' => 'Tous les types',
+    'select_type' => 'Sélectionnez un type',
+
+    // Building activities
+    'building_activities' => 'Activités',
+    'building_activities_desc' => 'Gérer les activités par type de bâtiment',
+
+    // Document types
+    'document_types' => 'Types de documents',
+    'document_types_desc' => 'Gérer les documents requis pour les dossiers',
     'theme_settings' => 'Theme settings',
     'theme_settings_desc' => 'Controler les couleurs, la typographie, les espacements et les composants.',
     'theme_settings_updated' => 'Parametres du theme mis a jour avec succes.',

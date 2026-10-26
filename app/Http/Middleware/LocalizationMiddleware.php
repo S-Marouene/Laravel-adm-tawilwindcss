@@ -27,7 +27,7 @@ class LocalizationMiddleware
             $locale = $request->cookie('user_locale');
         }
 
-        // Validate and fallback
+        // Validate and fallback — only fr and ar are supported
         if (! $locale || ! in_array($locale, ['fr', 'ar'])) {
             $locale = 'fr';
         }

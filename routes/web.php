@@ -38,10 +38,29 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Dossier list
     Route::get('/prevention-requests', [PreventionRequestController::class, 'index'])->name('prevention-requests.index');
+
+    // Multi-step create
     Route::get('/prevention-requests/create', [PreventionRequestController::class, 'create'])->name('prevention-requests.create');
+    Route::post('/prevention-requests/step1', [PreventionRequestController::class, 'storeStep1'])->name('prevention-requests.step1.store');
+    Route::get('/prevention-requests/{dossier}/step1/edit', [PreventionRequestController::class, 'editStep1'])->name('prevention-requests.step1.edit');
+    Route::put('/prevention-requests/{dossier}/step1', [PreventionRequestController::class, 'updateStep1'])->name('prevention-requests.step1.update');
+    Route::get('/prevention-requests/{dossier}/step2', [PreventionRequestController::class, 'showStep2'])->name('prevention-requests.step2.show');
+    Route::post('/prevention-requests/{dossier}/step2', [PreventionRequestController::class, 'storeStep2'])->name('prevention-requests.step2.store');
+    Route::get('/prevention-requests/{dossier}/step3', [PreventionRequestController::class, 'showStep3'])->name('prevention-requests.step3.show');
+    Route::post('/prevention-requests/{dossier}/step3', [PreventionRequestController::class, 'storeStep3'])->name('prevention-requests.step3.store');
+
+    // Legacy store (kept for backward-compat, now redirects to step1)
     Route::post('/prevention-requests', [PreventionRequestController::class, 'store'])->name('prevention-requests.store');
+
+    // Resubmit after correction
+    Route::post('/prevention-requests/{dossier}/resubmit', [PreventionRequestController::class, 'resubmit'])->name('prevention-requests.resubmit');
+
+    // Structures JSON endpoint (kept for edit form)
     Route::get('/prevention-requests/structures', [PreventionRequestController::class, 'structures'])->name('prevention-requests.structures');
+
+    // Edit / Update / Delete
     Route::get('/prevention-requests/{id}/edit', [PreventionRequestController::class, 'edit'])->name('prevention-requests.edit');
     Route::put('/prevention-requests/{id}', [PreventionRequestController::class, 'update'])->name('prevention-requests.update');
     Route::delete('/prevention-requests/{id}', [PreventionRequestController::class, 'destroy'])->name('prevention-requests.destroy');

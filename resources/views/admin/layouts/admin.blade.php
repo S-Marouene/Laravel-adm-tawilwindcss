@@ -172,6 +172,57 @@
                     </div>
 
                     <div class="pt-4 pb-1" x-show="!collapsed">
+                        <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('admin.ref_data') }}</p>
+                    </div>
+
+                    {{-- Prevention Dossiers --}}
+                    @can('view prevention-dossiers')
+                    <a href="{{ route('admin.prevention-dossiers.index') }}" data-tooltip="Prevention Dossiers" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.prevention-dossiers.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span x-show="!collapsed" class="truncate">Prevention Dossiers</span>
+                    </a>
+                    @endcan
+
+                    {{-- Reference data: collapsible submenu --}}
+                    <div x-data="{ refOpen: {{ request()->routeIs('admin.governorates.*', 'admin.delegations.*', 'admin.building-types.*', 'admin.building-activities.*', 'admin.document-types.*') ? 'true' : 'false' }} }" class="space-y-0.5">
+                        <button @click="refOpen = !refOpen; if(collapsed) collapsed = false" data-tooltip="{{ __('admin.ref_data') }}" class="sidebar-nav-link flex items-center justify-between w-full gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.governorates.*', 'admin.delegations.*', 'admin.building-types.*', 'admin.building-activities.*', 'admin.document-types.*') ? 'active' : '' }}">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                                </svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('admin.ref_data') }}</span>
+                            </div>
+                            <svg x-show="!collapsed" class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': refOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <div x-show="refOpen || collapsed" class="space-y-0.5 {{ app()->getLocale() === 'ar' ? 'pr-4' : 'pl-4' }}">
+                            <a href="{{ route('admin.governorates.index') }}" data-tooltip="{{ __('admin.governorates') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.governorates.*') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('admin.governorates') }}</span>
+                            </a>
+                            <a href="{{ route('admin.delegations.index') }}" data-tooltip="{{ __('admin.delegations') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.delegations.*') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('admin.delegations') }}</span>
+                            </a>
+                            <a href="{{ route('admin.building-types.index') }}" data-tooltip="{{ __('admin.building_types') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.building-types.*') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('admin.building_types') }}</span>
+                            </a>
+                            <a href="{{ route('admin.building-activities.index') }}" data-tooltip="{{ __('admin.building_activities') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.building-activities.*') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('admin.building_activities') }}</span>
+                            </a>
+                            <a href="{{ route('admin.document-types.index') }}" data-tooltip="{{ __('admin.document_types') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.document-types.*') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                <span x-show="!collapsed" class="truncate">{{ __('admin.document_types') }}</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 pb-1" x-show="!collapsed">
                         <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('admin.logs') }}</p>
                     </div>
 

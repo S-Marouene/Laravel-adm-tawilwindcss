@@ -89,4 +89,52 @@ return [
     'theme_option_soft' => 'ناعم',
     'theme_option_deep' => 'عميق',
     'theme_colors_reset' => 'الألوان الافتراضية',
+
+    // Reference data management
+    'ref_data' => 'البيانات المرجعية',
+    'ref_data_desc' => 'الولايات، المعتمديات، أنواع البنايات والوثائق المطلوبة',
+    'ref_created' => 'تم إنشاء السجل بنجاح.',
+    'ref_updated' => 'تم تحديث السجل بنجاح.',
+    'ref_deleted' => 'تم حذف السجل بنجاح.',
+    'confirm_delete' => 'هل تريد حذف هذا السجل؟',
+    'no_data' => 'لا توجد بيانات.',
+    'actions' => 'الإجراءات',
+    'yes' => 'نعم',
+    'no' => 'لا',
+
+    // Fields
+    'name_ar' => 'الاسم (عربي)',
+    'name_fr' => 'الاسم (فرنسي)',
+    'name_en' => 'الاسم (إنجليزي)',
+    'sort_order' => 'الترتيب',
+    'has_activities' => 'يحتوي على أنشطة',
+    'activities_count' => 'الأنشطة',
+    'delegations_count' => 'المعتمديات',
+    'conditional' => 'مشروط',
+    'governorate' => 'الولاية',
+    'building_type' => 'نوع البناية',
+
+    // Governorates
+    'governorates' => 'الولايات',
+    'governorates_desc' => 'إدارة الولايات وترجماتها',
+    'all_governorates' => 'جميع الولايات',
+    'select_governorate' => 'اختر الولاية',
+
+    // Delegations
+    'delegations' => 'المعتمديات',
+    'delegations_desc' => 'إدارة المعتمديات حسب الولاية',
+
+    // Building types
+    'building_types' => 'أنواع البنايات',
+    'building_types_desc' => 'إدارة أنواع البنايات المستخدمة في الملفات',
+    'all_types' => 'جميع الأنواع',
+    'select_type' => 'اختر النوع',
+
+    // Building activities
+    'building_activities' => 'الأنشطة',
+    'building_activities_desc' => 'إدارة الأنشطة حسب نوع البناية',
+
+    // Document types
+    'document_types' => 'أنواع الوثائق',
+    'document_types_desc' => 'إدارة الوثائق المطلوبة في الملفات',
 ];

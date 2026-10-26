@@ -138,107 +138,220 @@
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                    <!-- Service 1 -->
-                    <a href="{{ route('login') }}" class="group section-surface rounded-2xl p-6 transition-all duration-300 service-card hover:border-gov-200 dark:hover:border-gov-700">
-                        <div class="metric-icon w-14 h-14 bg-gov-50 dark:bg-gov-900/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+
+                    {{-- Service 1 - شهادة الوقاية --}}
+                    <a href="{{ route('prevention-requests.index') }}" class="group relative section-surface rounded-2xl p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-gray-200 dark:border-gray-700 block">
+                        <div class="metric-icon w-14 h-14 bg-gov-50 dark:bg-gov-900/30 rounded-2xl flex items-center justify-center mb-4">
                             <svg class="w-7 h-7 text-gov-600 dark:text-gov-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2">{{ __('services.prevention_certificate') }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.prevention_certificate.desc') }}</p>
+                        <span class="inline-flex items-center text-sm font-medium text-gov-600 dark:text-gov-400 group-hover:underline">
+                            {{ __('services.access_service') }} &rarr;
+                        </span>
+                    </a>
+
+                    {{-- Service 2 - التطوع في خدمة الحماية المدنية --}}
+                    <div class="group relative section-surface rounded-2xl p-6 transition-all duration-300 opacity-80 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
+                        <div class="absolute top-3 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }}">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                {{ __('services.under_construction') }}
+                            </span>
+                        </div>
+                        <div class="metric-icon w-14 h-14 bg-red-50 dark:bg-red-900/30 rounded-2xl flex items-center justify-center mb-4">
+                            <svg class="w-7 h-7 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2">{{ __('services.population') }}</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.population.desc') }}</p>
-                        <span class="inline-flex items-center text-sm font-medium text-gov-600 dark:text-gov-400 group-hover:gap-2 transition-all">
-                            {{ __('action.start') }}
-                            <svg class="w-4 h-4 ml-1 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
+                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2 pr-16">{{ __('services.volunteering') }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.volunteering.desc') }}</p>
+                        <span class="inline-flex items-center text-sm font-medium text-gray-400 dark:text-gray-500">
+                            {{ __('services.coming_soon') }}
                         </span>
-                    </a>
+                    </div>
 
-                    <!-- Service 2 -->
-                    <a href="{{ route('login') }}" class="group section-surface rounded-2xl p-6 transition-all duration-300 service-card hover:border-gov-200 dark:hover:border-gov-700">
-                        <div class="metric-icon w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    {{-- Service 3 - خدمات التكوين والرسكلة بمقابل --}}
+                    <div class="group relative section-surface rounded-2xl p-6 transition-all duration-300 opacity-80 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
+                        <div class="absolute top-3 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }}">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                {{ __('services.under_construction') }}
+                            </span>
+                        </div>
+                        <div class="metric-icon w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-4">
                             <svg class="w-7 h-7 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2">{{ __('services.identity') }}</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.identity.desc') }}</p>
-                        <span class="inline-flex items-center text-sm font-medium text-gov-600 dark:text-gov-400 group-hover:gap-2 transition-all">
-                            {{ __('action.start') }}
-                            <svg class="w-4 h-4 ml-1 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
+                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2 pr-16">{{ __('services.training') }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.training.desc') }}</p>
+                        <span class="inline-flex items-center text-sm font-medium text-gray-400 dark:text-gray-500">
+                            {{ __('services.coming_soon') }}
                         </span>
-                    </a>
+                    </div>
 
-                    <!-- Service 3 -->
-                    <a href="{{ route('login') }}" class="group section-surface rounded-2xl p-6 transition-all duration-300 service-card hover:border-gov-200 dark:hover:border-gov-700">
-                        <div class="metric-icon w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    {{-- Service 4 - الحضور الوقائي --}}
+                    <div class="group relative section-surface rounded-2xl p-6 transition-all duration-300 opacity-80 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
+                        <div class="absolute top-3 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }}">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                {{ __('services.under_construction') }}
+                            </span>
+                        </div>
+                        <div class="metric-icon w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-4">
                             <svg class="w-7 h-7 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2">{{ __('services.passport') }}</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.passport.desc') }}</p>
-                        <span class="inline-flex items-center text-sm font-medium text-gov-600 dark:text-gov-400 group-hover:gap-2 transition-all">
-                            {{ __('action.start') }}
-                            <svg class="w-4 h-4 ml-1 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
+                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2 pr-16">{{ __('services.preventive_presence') }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.preventive_presence.desc') }}</p>
+                        <span class="inline-flex items-center text-sm font-medium text-gray-400 dark:text-gray-500">
+                            {{ __('services.coming_soon') }}
                         </span>
-                    </a>
+                    </div>
 
-                    <!-- Service 4 -->
-                    <a href="{{ route('login') }}" class="group section-surface rounded-2xl p-6 transition-all duration-300 service-card hover:border-gov-200 dark:hover:border-gov-700">
-                        <div class="metric-icon w-14 h-14 bg-amber-50 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    {{-- Service 5 - المصادقة على مخطط التدخل الداخلي --}}
+                    <div class="group relative section-surface rounded-2xl p-6 transition-all duration-300 opacity-80 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
+                        <div class="absolute top-3 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }}">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                {{ __('services.under_construction') }}
+                            </span>
+                        </div>
+                        <div class="metric-icon w-14 h-14 bg-amber-50 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mb-4">
                             <svg class="w-7 h-7 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2">{{ __('services.tax') }}</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.tax.desc') }}</p>
-                        <span class="inline-flex items-center text-sm font-medium text-gov-600 dark:text-gov-400 group-hover:gap-2 transition-all">
-                            {{ __('action.start') }}
-                            <svg class="w-4 h-4 ml-1 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
+                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2 pr-16">{{ __('services.internal_intervention_plan') }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.internal_intervention_plan.desc') }}</p>
+                        <span class="inline-flex items-center text-sm font-medium text-gray-400 dark:text-gray-500">
+                            {{ __('services.coming_soon') }}
                         </span>
-                    </a>
+                    </div>
 
-                    <!-- Service 5 -->
-                    <a href="{{ route('login') }}" class="group section-surface rounded-2xl p-6 transition-all duration-300 service-card hover:border-gov-200 dark:hover:border-gov-700">
-                        <div class="metric-icon w-14 h-14 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    {{-- Service 6 - المصادقة على ملف السلامة - البنايات المعدة للاستقبال العموم --}}
+                    <div class="group relative section-surface rounded-2xl p-6 transition-all duration-300 opacity-80 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
+                        <div class="absolute top-3 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }}">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                {{ __('services.under_construction') }}
+                            </span>
+                        </div>
+                        <div class="metric-icon w-14 h-14 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mb-4">
+                            <svg class="w-7 h-7 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2 pr-16">{{ __('services.safety_file_public') }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.safety_file_public.desc') }}</p>
+                        <span class="inline-flex items-center text-sm font-medium text-gray-400 dark:text-gray-500">
+                            {{ __('services.coming_soon') }}
+                        </span>
+                    </div>
+
+                    {{-- Service 7 - المصادقة على ملف السلامة - المؤسسات الخطرة --}}
+                    <div class="group relative section-surface rounded-2xl p-6 transition-all duration-300 opacity-80 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
+                        <div class="absolute top-3 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }}">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                {{ __('services.under_construction') }}
+                            </span>
+                        </div>
+                        <div class="metric-icon w-14 h-14 bg-orange-50 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center mb-4">
+                            <svg class="w-7 h-7 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2 pr-16">{{ __('services.safety_file_hazardous') }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.safety_file_hazardous.desc') }}</p>
+                        <span class="inline-flex items-center text-sm font-medium text-gray-400 dark:text-gray-500">
+                            {{ __('services.coming_soon') }}
+                        </span>
+                    </div>
+
+                    {{-- Service 8 - الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء --}}
+                    <div class="group relative section-surface rounded-2xl p-6 transition-all duration-300 opacity-80 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
+                        <div class="absolute top-3 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }}">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                {{ __('services.under_construction') }}
+                            </span>
+                        </div>
+                        <div class="metric-icon w-14 h-14 bg-yellow-50 dark:bg-yellow-900/30 rounded-2xl flex items-center justify-center mb-4">
+                            <svg class="w-7 h-7 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2 pr-16">{{ __('services.works_notification') }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.works_notification.desc') }}</p>
+                        <span class="inline-flex items-center text-sm font-medium text-gray-400 dark:text-gray-500">
+                            {{ __('services.coming_soon') }}
+                        </span>
+                    </div>
+
+                    {{-- Service 9 - شهادة نجدة وإنقاذ --}}
+                    <div class="group relative section-surface rounded-2xl p-6 transition-all duration-300 opacity-80 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
+                        <div class="absolute top-3 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }}">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                {{ __('services.under_construction') }}
+                            </span>
+                        </div>
+                        <div class="metric-icon w-14 h-14 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-4">
                             <svg class="w-7 h-7 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2">{{ __('services.social') }}</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.social.desc') }}</p>
-                        <span class="inline-flex items-center text-sm font-medium text-gov-600 dark:text-gov-400 group-hover:gap-2 transition-all">
-                            {{ __('action.start') }}
-                            <svg class="w-4 h-4 ml-1 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
+                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2 pr-16">{{ __('services.rescue_certificate') }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.rescue_certificate.desc') }}</p>
+                        <span class="inline-flex items-center text-sm font-medium text-gray-400 dark:text-gray-500">
+                            {{ __('services.coming_soon') }}
                         </span>
-                    </a>
+                    </div>
 
-                    <!-- Service 6 -->
-                    <a href="{{ route('login') }}" class="group section-surface rounded-2xl p-6 transition-all duration-300 service-card hover:border-gov-200 dark:hover:border-gov-700">
-                        <div class="metric-icon w-14 h-14 bg-purple-50 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    {{-- Service 10 - التدخلات والعمليات والخدمات الخاصة بمقابل --}}
+                    <div class="group relative section-surface rounded-2xl p-6 transition-all duration-300 opacity-80 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
+                        <div class="absolute top-3 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }}">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                {{ __('services.under_construction') }}
+                            </span>
+                        </div>
+                        <div class="metric-icon w-14 h-14 bg-purple-50 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center mb-4">
                             <svg class="w-7 h-7 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2">{{ __('services.justice') }}</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.justice.desc') }}</p>
-                        <span class="inline-flex items-center text-sm font-medium text-gov-600 dark:text-gov-400 group-hover:gap-2 transition-all">
-                            {{ __('action.start') }}
-                            <svg class="w-4 h-4 ml-1 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
+                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2 pr-16">{{ __('services.special_interventions') }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.special_interventions.desc') }}</p>
+                        <span class="inline-flex items-center text-sm font-medium text-gray-400 dark:text-gray-500">
+                            {{ __('services.coming_soon') }}
                         </span>
-                    </a>
+                    </div>
+
                 </div>
             </div>
         </section>
@@ -314,9 +427,9 @@
                     <div>
                         <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">{{ __('services.title') }}</h4>
                         <ul class="space-y-2">
-                            <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors">{{ __('services.population') }}</a></li>
-                            <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors">{{ __('services.identity') }}</a></li>
-                            <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors">{{ __('services.tax') }}</a></li>
+                            <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors">{{ __('services.prevention_certificate') }}</a></li>
+                            <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors">{{ __('services.volunteering') }}</a></li>
+                            <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors">{{ __('services.training') }}</a></li>
                         </ul>
                     </div>
                     <div>

@@ -31,14 +31,42 @@ class RolePermissionSeeder extends Seeder
             'create permissions',
             'edit permissions',
             'delete permissions',
+            // Governorates
+            'view governorates',
+            'create governorates',
+            'edit governorates',
+            'delete governorates',
+            // Delegations
+            'view delegations',
+            'create delegations',
+            'edit delegations',
+            'delete delegations',
+            // Building types
+            'view building-types',
+            'create building-types',
+            'edit building-types',
+            'delete building-types',
+            // Building activities
+            'view building-activities',
+            'create building-activities',
+            'edit building-activities',
+            'delete building-activities',
+            // Document types
+            'view document-types',
+            'create document-types',
+            'edit document-types',
+            'delete document-types',
+            // Prevention dossiers
+            'view prevention-dossiers',
+            'manage prevention-dossiers',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission, 'guard_name' => 'web']);
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
         // Create admin role and assign all permissions
-        $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $adminRole->givePermissionTo(Permission::all());
 
         // Create or update the admin user

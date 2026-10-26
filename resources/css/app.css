@@ -1,5 +1,6 @@
 /* Government Services Design System - Tailwind v4 */
 @import "tailwindcss";
+@plugin "@tailwindcss/forms";
 
 /* Enable class-based dark mode (Tailwind v4) */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -33,6 +34,117 @@
     --color-sidebar-hover: rgba(255, 255, 255, 0.05);
     --color-sidebar-active: rgba(132, 90, 223, 0.15);
     --color-body: #F5F6FA;
+}
+
+/* ==============================
+   GLOBAL FORM FIELD STYLES
+   Override @tailwindcss/forms base with our design tokens
+   ============================== */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+    border-radius: 0.5rem;
+    border-width: 1px;
+    border-color: #D1D5DB; /* gray-300 */
+    background-color: #fff;
+    color: #111827; /* gray-900 */
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    width: 100%;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.04);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="search"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="datetime-local"]:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--color-gov-500);
+    box-shadow: 0 0 0 3px rgba(132, 90, 223, 0.15);
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="number"]::placeholder,
+input[type="tel"]::placeholder,
+input[type="search"]::placeholder,
+textarea::placeholder {
+    color: #9CA3AF; /* gray-400 */
+}
+
+/* Dark mode */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark input[type="tel"],
+.dark input[type="url"],
+.dark input[type="search"],
+.dark input[type="date"],
+.dark input[type="time"],
+.dark input[type="datetime-local"],
+.dark textarea,
+.dark select {
+    background-color: #111827; /* gray-900 */
+    border-color: #374151;     /* gray-700 */
+    color: #F9FAFB;            /* gray-50 */
+}
+
+.dark input[type="text"]:focus,
+.dark input[type="email"]:focus,
+.dark input[type="password"]:focus,
+.dark input[type="number"]:focus,
+.dark input[type="tel"]:focus,
+.dark input[type="url"]:focus,
+.dark input[type="search"]:focus,
+.dark input[type="date"]:focus,
+.dark input[type="time"]:focus,
+.dark input[type="datetime-local"]:focus,
+.dark textarea:focus,
+.dark select:focus {
+    border-color: var(--color-gov-400);
+    box-shadow: 0 0 0 3px rgba(132, 90, 223, 0.18);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+    color: #6B7280; /* gray-500 */
+}
+
+/* Error state */
+input.border-red-400,
+textarea.border-red-400,
+select.border-red-400 {
+    border-color: #F87171;
+}
+
+input.border-red-400:focus,
+textarea.border-red-400:focus {
+    border-color: #EF4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
 /* ==============================
