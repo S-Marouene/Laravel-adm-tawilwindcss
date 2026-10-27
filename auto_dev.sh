@@ -331,17 +331,40 @@ else
     || info "⚠ MySQL failed to start — try: sudo service mysql start"
 fi
 
-# ---------------------------------------------------------------- root password (from .env DB_PASSWORD — value never printed)
-# The DB password owns the MySQL root/admin role (dev runs Laravel as root user)
+# ---------------------------------------------------------------- MySQL admin access + root password (single source: DB_PASSWORD)
+# Admin auth strategy (in order):
+#   1) plain TCP with DB_PASSWORD (TCP is the only path regular users can use —
+#      the /var/run/mysqld socket dir is not traversable by normal users)
+#   2) socket auth via sudo (default on a FRESH install, root@localhost=auth_socket)
+#      → then ALIGN root to DB_PASSWORD automatically
+#   3) socket via sudo WITH the password (root@localhost native, password matches)
+# Anything else = hard stop with instructions.
 ESCAPED_PASS="$(printf '%s' "$DB_PASS" | sed "s/'/''/g")"
-if $SUDO mysql -u root -e 'SELECT 1;' >/dev/null 2>&1; then
-  log "Setting MySQL root password (value from .env → DB_PASSWORD)"
+if mysql -u root -p"$DB_PASS" -h 127.0.0.1 -P "$DB_PORT" -e 'SELECT 1;' >/dev/null 2>&1; then
+  ADMIN_MODE="plain"
+  ok "MySQL root accepts DB_PASSWORD from .env ✔"
+elif $SUDO mysql -u root -e 'SELECT 1;' >/dev/null 2>&1; then
+  log "Aligning MySQL root password with DB_PASSWORD (via socket auth)"
   $SUDO mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$ESCAPED_PASS'; FLUSH PRIVILEGES;"
-  ok "MySQL root password set (stored in .env → DB_PASSWORD)"
-elif mysql -u root -p"$DB_PASS" -e 'SELECT 1;' >/dev/null 2>&1; then
-  ok "MySQL root password from .env (DB_PASSWORD) already works"
+  ok "MySQL root password aligned with DB_PASSWORD (from .env) ✔"
+  ADMIN_MODE="plain"
+elif $SUDO mysql -u root -p"$DB_PASS" -e 'SELECT 1;' >/dev/null 2>&1; then
+  ok "MySQL root password matches DB_PASSWORD (socket check) ✔"
+  ADMIN_MODE="plain"
 else
-  ok "MySQL root password is another value — skipping web-DB root management only"
+  err "Cannot authenticate to MySQL as root — DB_PASSWORD from .env is wrong AND socket auth (sudo mysql) failed"
+  info "The MySQL root password on this machine is neither DB_PASSWORD nor the fresh-install default."
+  info "Fix (pick one):"
+  info "  A) you know the real root password → put it in .env:  DB_PASSWORD=\"<real password>\""
+  info "     then rerun: bash auto_dev.sh"
+  info "  B) reset root (dev machine only — wipes root password to DB_PASSWORD):"
+  info "       sudo service mysql stop"
+  info "       sudo mkdir -p /var/run/mysqld && sudo chown mysql:mysql /var/run/mysqld"
+  info "       sudo mysqld_safe --skip-grant-tables &   # wait ~5s"
+  info "       sudo mysql -e \"FLUSH PRIVILEGES; ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '<YOUR_DB_PASSWORD>'; FLUSH PRIVILEGES;\""
+  info "       sudo killall mysqld 2>/dev/null; sudo service mysql start"
+  info "     then rerun: bash auto_dev.sh"
+  exit 1
 fi
 
 # ---------------------------------------------------------------- create database (from .env)
