@@ -8,6 +8,7 @@
     $valPhone = old('phone',          $isEditing ? $dossier->phone          : '');
     $valGov   = old('code_structure', $isEditing ? $dossier->governorate_id : '');
     $valDelId = old('delegation_id',  $isEditing ? $dossier->delegation_id  : '');
+    $valAddress = old('building_address', $isEditing ? $dossier->building_address : '');
 @endphp
 
 <x-app-layout>
@@ -214,6 +215,18 @@
                             </div>
 
                         </div>{{-- /grid --}}
+
+                        {{-- Row 3: Building address — the site the future RDV (visit) takes place at --}}
+                        <div class="mt-5">
+                            <label for="building_address" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                {{ __('prevention_request.building_address') }} <span class="text-red-500 ms-0.5">*</span>
+                            </label>
+                            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ __('prevention_request.building_address_hint') }}</p>
+                            <input id="building_address" name="building_address" type="text" maxlength="500"
+                                value="{{ $valAddress }}" placeholder="{{ __('prevention_request.building_address_placeholder') }}" required
+                                class="mt-2 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('building_address') border-red-400 @enderror">
+                            @error('building_address')<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
+                        </div>
 
                         {{-- Footer --}}
                         <div class="mt-8 flex items-center justify-between gap-3 border-t border-gray-200 pt-5 dark:border-gray-700">

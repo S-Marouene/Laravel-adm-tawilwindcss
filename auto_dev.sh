@@ -4,6 +4,7 @@
 # Installs (skipping anything already present):
 #   composer, screen, nvm + Node.js 26, MySQL, ngrok, OpenCode CLI
 # Also makes sure .bashrc loads nvm so node/npm work in new shells.
+# Serves the Laravel app on 0.0.0.0:8000 and exposes it via ngrok (no code-server).
 #
 set -euo pipefail
 
@@ -21,7 +22,7 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 
-# ---------------------------------------------------------------- apt update
+# ---------------------------------------------------------------- apt update (only when needed)
 if command -v apt-get >/dev/null 2>&1; then
   # silence Cloud Shell's 5s apt-get warning — cover root AND the invoking user
   if [ -n "${SUDO_USER:-}" ]; then
@@ -31,8 +32,27 @@ if command -v apt-get >/dev/null 2>&1; then
   fi
   mkdir -p "$HOME/.cloudshell"
   touch "$HOME/.cloudshell/no-apt-get-warning"
-  log "Updating apt package list"
-  $SUDO apt-get update -y
+
+  # check whether any apt-managed component is still missing
+  APT_NEEDED=false
+  command -v screen >/dev/null 2>&1 || APT_NEEDED=true
+  dpkg -l mysql-server 2>/dev/null | grep -q '^ii' || APT_NEEDED=true
+  command -v ngrok >/dev/null 2>&1 || APT_NEEDED=true
+
+  APT_STAMP_DIR="$HOME/.cache/auto_dev"
+  APT_STAMP="$APT_STAMP_DIR/apt-update.stamp"
+
+  if ! $APT_NEEDED; then
+    ok "All apt packages already installed (skipping apt-get update)"
+  elif [ -f "$APT_STAMP" ] && ! find "$APT_STAMP" -mmin +1440 >/dev/null 2>&1; then
+    ok "apt package list updated recently (< 24h) — skipping apt-get update"
+  else
+    log "Updating apt package list"
+    $SUDO apt-get update -y
+    mkdir -p "$APT_STAMP_DIR"
+    touch "$APT_STAMP"
+    ok "apt update done (next update skipped for 24h unless something new is needed)"
+  fi
 fi
 
 # ---------------------------------------------------------------- composer
@@ -149,6 +169,27 @@ ok ".bashrc loads nvm automatically"
 # ================================================================ Laravel .env + MySQL setup
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
+
+# ---------------------------------------------------------------- auto-fix root ownership
+# Files created by past "sudo bash auto_dev.sh" / "sudo git" runs break git add,
+# artisan and storage writes. Always restore the invoking user as the owner.
+if [ -n "$(find "$PROJECT_DIR" -user 0 -print -quit 2>/dev/null)" ]; then
+  log "Found root-owned files in the project (caused by a past sudo run) — fixing ownership"
+  if [ "$(id -u)" -eq 0 ]; then
+    # script itself was run as root → give ownership back to the real user
+    if [ -n "${SUDO_USER:-}" ]; then
+      chown -R "$SUDO_USER:$(getent passwd "$SUDO_USER" | cut -d: -f3)" "$PROJECT_DIR"
+      ok "Ownership restored to $SUDO_USER"
+    else
+      info "⚠ Running as true root with no SUDO_USER — run 'bash auto_dev.sh' as your normal user instead"
+    fi
+  else
+    $SUDO chown -R "$(id -u):$(id -g)" "$PROJECT_DIR" 2>/dev/null || true
+    ok "Ownership restored to $(id -un)"
+  fi
+else
+  ok "Project ownership OK (no root-owned files)"
+fi
 
 # ---------------------------------------------------------------- default credentials
 DEFAULT_DB_NAME="laravel_admin"
@@ -309,10 +350,14 @@ if [ -f artisan ]; then
     ok "APP_KEY already set"
   fi
 
-  # ---------------------------------------------------------------- migrate + seed
-  log "Running migrations with seeders"
-  php artisan migrate --seed --force
-  ok "migrations + seeders done"
+  # ---------------------------------------------------------------- migrate + seed (only if pending)
+  if php artisan migrate:status --no-ansi 2>/dev/null | grep -q 'Pending'; then
+    log "Pending migrations found — running migrations with seeders"
+    php artisan migrate --seed --force
+    ok "migrations + seeders done"
+  else
+    ok "Database already migrated (skipping migrate + seed)"
+  fi
 
   # ---------------------------------------------------------------- storage link
   if [ ! -L public/storage ]; then
@@ -325,106 +370,41 @@ else
   info "No 'artisan' file in $(pwd) — skipping Laravel build steps"
 fi
 
-# ---------------------------------------------------------------- npm install + build
+# ---------------------------------------------------------------- npm install + build (only if missing)
 if [ -f package.json ]; then
-  log "Installing node dependencies"
-  npm install --no-audit --no-fund
-  ok "npm dependencies installed"
-
-  log "Building frontend assets"
-  if grep -q '"vite"' package.json && grep -q '"build"' package.json; then
-    npm run build
+  if [ -d node_modules ]; then
+    ok "node_modules already exists (skipping npm install)"
+  else
+    log "Installing node dependencies"
+    npm install --no-audit --no-fund
+    ok "npm dependencies installed"
   fi
-  ok "frontend build done"
+
+  if grep -q '"vite"' package.json && grep -q '"build"' package.json; then
+    # Vite/Laravel writes the build result into public/build — if present, skip
+    if [ -f public/build/manifest.json ]; then
+      ok "frontend build output already exists (skipping npm run build)"
+    else
+      log "Building frontend assets"
+      npm run build
+      ok "frontend build done"
+    fi
+  else
+    ok "No vite build script in package.json — skipping frontend build"
+  fi
 else
   info "No package.json — skipping npm steps"
 fi
 
-# ================================================================ VS Code server (code-server)
-# ---------------------------------------------------------------- install
-if command -v code-server >/dev/null 2>&1; then
-  ok "code-server already installed ($(code-server --version 2>/dev/null | head -n1))"
-else
-  log "Installing code-server"
-  curl -fsSL https://code-server.dev/install.sh | sh
-  ok "code-server installed"
-fi
-
-# ---------------------------------------------------------------- config: password + port 8080
-CODECONFIG_DIR="$HOME/.config/code-server"
-CODECONFIG="$CODECONFIG_DIR/config.yaml"
-mkdir -p "$CODECONFIG_DIR"
-VS_PASS='0npcVScode@198'
-
-if grep -q 'password: ' "$CODECONFIG" 2>/dev/null && grep -qE 'bind-addr:.+0\.0\.0\.0:8080' "$CODECONFIG" 2>/dev/null; then
-  ok "code-server already configured (port 8080 + password)"
-else
-  log "Writing code-server config ($CODECONFIG)"
-  cat > "$CODECONFIG" <<'EOF'
-bind-addr: 0.0.0.0:8080
-auth: password
-password: 0npcVScode@198
-cert: false
-EOF
-  ok "code-server configured: bind 0.0.0.0:8080, password: $VS_PASS"
-fi
-
-# ---------------------------------------------------------------- start in screen + self-heal on rerun
-# If the screen session exists but 8080 is dead (stale session), kill and restart
-if screen -ls 2>/dev/null | grep -q '[.]code-server' && ! curl -s -o /dev/null http://127.0.0.1:8080; then
-  log "Stale code-server screen session detected — restarting"
-  screen -S code-server -X quit 2>/dev/null || true
-  sleep 1
-fi
-
+# ---------------------------------------------------------------- cleanup legacy code-server sessions
+# If previous runs left code-server running, shut it down (script no longer uses it)
 if screen -ls 2>/dev/null | grep -q '[.]code-server'; then
-  ok "code-server already running in screen session 'code-server'"
-elif curl -s -o /dev/null http://127.0.0.1:8080; then
-  ok "vscode server already answering on port 8080"
-else
-  log "Starting code-server on port 8080 inside screen session 'code-server'"
-  screen -dmS code-server code-server
-  for _ in $(seq 1 10); do
-    curl -s -o /dev/null http://127.0.0.1:8080 && break
-    sleep 2
-  done
-  curl -s -o /dev/null http://127.0.0.1:8080 && ok "code-server started on port 8080" \
-    || info "⚠ code-server not answering on 8080 — check: sudo screen -r code-server"
+  log "Stopping legacy screen session 'code-server'"
+  screen -S code-server -X quit 2>/dev/null || true
 fi
+pkill -x code-server 2>/dev/null && ok "code-server process stopped" || true
 
-# ================================================================ ngrok → VS Code (port 8080)
-# ---------------------------------------------------------------- authtoken
-NGROK_TOKEN="1sECevPjlkXbgrfxvq1kMgyn9CI_2zJcqQL6K53ScHEZDWPet"
-
-if [ -f "$HOME/.config/ngrok/ngrok.yml" ] && grep -q "$NGROK_TOKEN" "$HOME/.config/ngrok/ngrok.yml" 2>/dev/null; then
-  ok "ngrok authtoken already configured"
-else
-  log "Configuring ngrok authtoken"
-  ngrok config add-authtoken "$NGROK_TOKEN"
-  ok "ngrok authtoken set"
-fi
-
-# ---------------------------------------------------------------- tunnel for code-server (port 8080) + self-heal
-# If the tunnel screen exists but is dead (no ngrok API), restart it
-if screen -ls 2>/dev/null | grep -q '[.]ngrok-vsc' && ! curl -s -o /dev/null http://127.0.0.1:4040; then
-  log "Stale ngrok screen session detected — restarting"
-  screen -S ngrok-vsc -X quit 2>/dev/null || true
-  sleep 1
-fi
-
-if curl -s -o /dev/null http://127.0.0.1:4040; then
-  ok "ngrok tunnel already running"
-else
-  log "Starting ngrok tunnel :8080 inside screen session 'ngrok-vsc'"
-  screen -dmS ngrok-vsc ngrok http 8080 --log stdout
-  # wait until the tunnel API answers (max ~30s)
-  for _ in $(seq 1 15); do
-    curl -s -o /dev/null http://127.0.0.1:4040 && break
-    sleep 2
-  done
-fi
-
-# ================================================================ Laravel app: serve + direct ngrok tunnel (:8000)
+# ================================================================ Laravel app: serve on 0.0.0.0
 # ---------------------------------------------------------------- start artisan serve in screen "app-serve" + self-heal
 if screen -ls 2>/dev/null | grep -q '[.]app-serve' && ! curl -s -o /dev/null http://127.0.0.1:8000; then
   log "Stale app-serve screen session detected — restarting"
@@ -445,8 +425,20 @@ else
     || info "⚠ app not answering on 8000 — check: sudo screen -r app-serve"
 fi
 
+# ================================================================ ngrok → Laravel app (:8000)
+# ---------------------------------------------------------------- authtoken
+NGROK_TOKEN="1sECevPjlkXbgrfxvq1kMgyn9CI_2zJcqQL6K53ScHEZDWPet"
+
+if [ -f "$HOME/.config/ngrok/ngrok.yml" ] && grep -q "$NGROK_TOKEN" "$HOME/.config/ngrok/ngrok.yml" 2>/dev/null; then
+  ok "ngrok authtoken already configured"
+else
+  log "Configuring ngrok authtoken"
+  ngrok config add-authtoken "$NGROK_TOKEN"
+  ok "ngrok authtoken set"
+fi
+
 # ---------------------------------------------------------------- direct ngrok tunnel for the app (:8000) + self-heal
-# The second ngrok process binds its own API port (allow up to 3 tunnels: 4040/4041/4042)
+# The ngrok process binds its own API port (allow up to 3 tunnels: 4040/4041/4042)
 if screen -ls 2>/dev/null | grep -q '[.]ngrok-app'; then
   ok "ngrok app tunnel already running in screen session 'ngrok-app'"
 else
@@ -460,7 +452,7 @@ else
   done
 fi
 
-# ---------------------------------------------------------------- find each tunnel URL from ngrok APIs (4040/4041/4042)
+# ---------------------------------------------------------------- find the tunnel URL from ngrok APIs (4040/4041/4042)
 get_tunnel_url_for() { # $1 = port
   local port="$1" api url
   for api in 4040 4041 4042; do
@@ -481,11 +473,10 @@ for t in data.get('tunnels', []):
   return 1
 }
 
-# ---------------------------------------------------------------- wait a bit for both tunnels to be established
+# ---------------------------------------------------------------- wait a bit for the tunnel to be established
 for _ in $(seq 1 15); do
-  VS_URL=$(get_tunnel_url_for 8080 || true)
   APP_URL_OUT=$(get_tunnel_url_for 8000 || true)
-  [ -n "$VS_URL" ] && [ -n "$APP_URL_OUT" ] && break
+  [ -n "$APP_URL_OUT" ] && break
   sleep 2
 done
 
@@ -497,7 +488,7 @@ if [ -n "$APP_URL_OUT" ] && ! grep -q "^APP_URL=\"$APP_URL_OUT\"$" .env 2>/dev/n
   ok "APP_URL synced with the app tunnel ✔"
 fi
 
-# ---------------------------------------------------------------- FINAL: the two public links
+# ---------------------------------------------------------------- FINAL: the public link
 echo ""
 echo -e "\033[1;32m════════════════════════════════════════════════════════\033[0m"
 if [ -n "$APP_URL_OUT" ]; then
@@ -505,15 +496,6 @@ if [ -n "$APP_URL_OUT" ]; then
   echo -e "\033[1;4;97;44m  $APP_URL_OUT  \033[0m"
 else
   echo -e "\033[1;31m  ⚠ App link not ready — check tunnel: sudo screen -r ngrok-app\033[0m"
-fi
-echo -e "\033[1;32m────────────────────────────────────────────────────────\033[0m"
-if [ -n "$VS_URL" ]; then
-  echo -e "\033[1;41m  YOUR VS CODE SERVER — open in browser:\033[0m"
-  echo -e "\033[1;4;97;44m  $VS_URL  \033[0m"
-  echo ""
-  echo -e "\033[1;33m  password: 0npcVScode@198\033[0m"
-else
-  echo -e "\033[1;31m  ⚠ VS Code link not ready — rerun: sudo bash auto_dev.sh\033[0m"
 fi
 echo -e "\033[1;32m════════════════════════════════════════════════════════\033[0m"
 echo ""

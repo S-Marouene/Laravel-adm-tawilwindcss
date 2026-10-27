@@ -18,7 +18,7 @@
         <option value="">All statuses</option>
         <option value="completed"          {{ request('status') === 'completed'          ? 'selected' : '' }}>Under Review</option>
         <option value="submitted"          {{ request('status') === 'submitted'          ? 'selected' : '' }}>Submitted to API</option>
-        <option value="under_consultation" {{ request('status') === 'under_consultation' ? 'selected' : '' }}>Under Consultation</option>
+        <option value="under_consultation" {{ request('status') === 'under_consultation' ? 'selected' : '' }}>Approved — Awaiting RDV</option>
         <option value="needs_correction"   {{ request('status') === 'needs_correction'   ? 'selected' : '' }}>Needs Correction</option>
         <option value="approved"           {{ request('status') === 'approved'           ? 'selected' : '' }}>Approved</option>
         <option value="cancelled"          {{ request('status') === 'cancelled'          ? 'selected' : '' }}>Cancelled</option>
@@ -53,7 +53,7 @@
                 @forelse ($dossiers as $dossier)
                     @php
                         $badgeConfig = match($dossier->status) {
-                            'under_consultation' => ['dot' => 'bg-purple-500',  'text' => 'Under Consultation', 'cls' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'],
+                            'under_consultation' => ['dot' => 'bg-purple-500',  'text' => 'Approved — Awaiting RDV', 'cls' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'],
                             'submitted'          => ['dot' => 'bg-teal-500',    'text' => 'Submitted',          'cls' => 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'],
                             'needs_correction'   => ['dot' => 'bg-amber-500',   'text' => 'Needs Correction',   'cls' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'],
                             'approved'           => ['dot' => 'bg-emerald-500', 'text' => 'Approved',           'cls' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],

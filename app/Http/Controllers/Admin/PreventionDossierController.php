@@ -50,7 +50,7 @@ class PreventionDossierController extends Controller
     {
         $this->authorize('view prevention-dossiers');
 
-        $preventionDossier->load(['user', 'governorate', 'delegation', 'buildingType', 'buildingActivity', 'reviewer', 'appointments.scheduler']);
+        $preventionDossier->load(['user', 'governorate', 'delegation', 'buildingType', 'buildingActivity', 'reviewer', 'appointments.scheduler', 'events.actor', 'events.dossier:id,building_address']);
 
         $documentTypes = DocumentType::orderBy('sort_order')->get();
         $uploadedDocs  = DossierDocument::where('prevention_dossier_id', $preventionDossier->id)
@@ -79,8 +79,10 @@ class PreventionDossierController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $preventionDossier->logEvent('advanced_to_consultation');
+
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', 'Dossier moved to consultation. The applicant has been notified to keep their phone available.');
+            ->with('success', 'Dossier approved — awaiting RDV. You can now schedule a visit (RDV) from the sidebar.');
     }
 
     // =========================================================================
@@ -106,6 +108,8 @@ class PreventionDossierController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $preventionDossier->logEvent('correction_requested', $validated['admin_note']);
+
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
             ->with('success', 'Correction requested. The applicant will see your note and can fix and resubmit their dossier.');
     }
@@ -128,6 +132,8 @@ class PreventionDossierController extends Controller
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
+
+        $preventionDossier->logEvent('approved');
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
             ->with('success', 'Dossier approved successfully.');
@@ -156,6 +162,8 @@ class PreventionDossierController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $preventionDossier->logEvent('cancelled', $validated['admin_note']);
+
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
             ->with('success', 'Dossier cancelled. The applicant has been notified.');
     }
@@ -171,16 +179,21 @@ class PreventionDossierController extends Controller
         $validated = $request->validate([
             'visit_date' => ['required', 'date', 'after_or_equal:today'],
             'visit_time' => ['required', 'date_format:H:i'],
-            'location'   => ['nullable', 'string', 'max:500'],
         ]);
 
+        // No location here: the visit takes place at the building whose
+        // address is stored on the dossier itself.
         DossierAppointment::create([
             'prevention_dossier_id' => $preventionDossier->id,
             'scheduled_by'          => auth()->id(),
             'visit_date'            => $validated['visit_date'],
             'visit_time'            => $validated['visit_time'],
-            'location'              => $validated['location'] ?? null,
             'status'                => 'pending',
+        ]);
+
+        $preventionDossier->logEvent('appointment_scheduled', null, [
+            'visit_date' => $validated['visit_date'],
+            'visit_time' => $validated['visit_time'],
         ]);
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
@@ -214,6 +227,15 @@ class PreventionDossierController extends Controller
             'note'   => $validated['note'] ?? null,
         ]);
 
+        $preventionDossier->logEvent(
+            $validated['status'] === 'passed' ? 'appointment_passed' : 'appointment_failed',
+            $validated['note'] ?? null,
+            [
+                'visit_date' => $appointment->visit_date,
+                'visit_time' => $appointment->visit_time,
+            ]
+        );
+
         $msg = $validated['status'] === 'passed'
             ? 'Visit marked as passed. The applicant has been notified.'
             : 'Visit marked as failed with notes. The applicant has been notified.';
@@ -238,7 +260,15 @@ class PreventionDossierController extends Controller
             return back()->withErrors(['status' => 'Only pending appointments can be deleted.']);
         }
 
+        // Capture details before deletion so the timeline keeps a record
+        $rdvDetails = [
+            'visit_date' => $appointment->visit_date,
+            'visit_time' => $appointment->visit_time,
+        ];
+
         $appointment->delete();
+
+        $preventionDossier->logEvent('appointment_deleted', null, $rdvDetails);
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
             ->with('success', 'Appointment removed.');

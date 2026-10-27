@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class PreventionRequestController extends Controller
@@ -34,7 +35,7 @@ class PreventionRequestController extends Controller
         // Submitted / completed / under_consultation / needs_correction / approved / cancelled dossiers
         $submitted = PreventionDossier::where('user_id', auth()->id())
             ->whereIn('status', ['completed', 'submitted', 'under_consultation', 'needs_correction', 'approved', 'cancelled'])
-            ->with(['governorate', 'delegation', 'buildingType', 'appointments'])
+            ->with(['governorate', 'delegation', 'buildingType', 'appointments', 'events'])
             ->latest()
             ->get();
 
@@ -84,19 +85,22 @@ class PreventionRequestController extends Controller
         }
 
         $validated = $request->validate([
-            'cin'            => ['required', 'string', 'max:20'],
-            'nom_prenom'     => ['required', 'string', 'max:255'],
-            'phone'          => ['required', 'string', 'max:20'],
-            'code_structure' => ['required', 'integer', 'between:1,24'],
-            'delegation_id'  => ['required', 'integer', 'exists:delegations,id'],
+            'cin'              => ['required', 'string', 'max:20'],
+            'nom_prenom'       => ['required', 'string', 'max:255'],
+            'phone'            => ['required', 'string', 'max:20'],
+            'code_structure'   => ['required', 'integer', 'between:1,24'],
+            'delegation_id'    => ['required', 'integer', 'exists:delegations,id'],
+            'building_address' => ['required', 'string', 'max:500'],
         ]);
 
+        // The building address is where the future RDV (site visit) takes place
         $dossier->update([
-            'cin'            => $validated['cin'],
-            'nom_prenom'     => $validated['nom_prenom'],
-            'phone'          => $validated['phone'],
-            'governorate_id' => $validated['code_structure'],
-            'delegation_id'  => $validated['delegation_id'],
+            'cin'              => $validated['cin'],
+            'nom_prenom'       => $validated['nom_prenom'],
+            'phone'            => $validated['phone'],
+            'governorate_id'   => $validated['code_structure'],
+            'delegation_id'    => $validated['delegation_id'],
+            'building_address' => $validated['building_address'],
         ]);
 
         return redirect()->route('prevention-requests.step2.show', $dossier);
@@ -109,22 +113,24 @@ class PreventionRequestController extends Controller
     public function storeStep1(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'cin'            => ['required', 'string', 'max:20'],
-            'nom_prenom'     => ['required', 'string', 'max:255'],
-            'phone'          => ['required', 'string', 'max:20'],
-            'code_structure' => ['required', 'integer', 'between:1,24'],
-            'delegation_id'  => ['required', 'integer', 'exists:delegations,id'],
+            'cin'              => ['required', 'string', 'max:20'],
+            'nom_prenom'       => ['required', 'string', 'max:255'],
+            'phone'            => ['required', 'string', 'max:20'],
+            'code_structure'   => ['required', 'integer', 'between:1,24'],
+            'delegation_id'    => ['required', 'integer', 'exists:delegations,id'],
+            'building_address' => ['required', 'string', 'max:500'],
         ]);
 
         $dossier = PreventionDossier::create([
-            'user_id'        => auth()->id(),
-            'status'         => 'draft',
-            'current_step'   => 1,
-            'cin'            => $validated['cin'],
-            'nom_prenom'     => $validated['nom_prenom'],
-            'phone'          => $validated['phone'],
-            'governorate_id' => $validated['code_structure'],
-            'delegation_id'  => $validated['delegation_id'],
+            'user_id'          => auth()->id(),
+            'status'           => 'draft',
+            'current_step'     => 1,
+            'cin'              => $validated['cin'],
+            'nom_prenom'       => $validated['nom_prenom'],
+            'phone'            => $validated['phone'],
+            'governorate_id'   => $validated['code_structure'],
+            'delegation_id'    => $validated['delegation_id'],
+            'building_address' => $validated['building_address'],
         ]);
 
         return redirect()->route('prevention-requests.step2.show', $dossier);
@@ -250,6 +256,8 @@ class PreventionRequestController extends Controller
             'status'       => 'completed',
         ]);
 
+        $dossier->logEvent('submitted');
+
         // Attempt to push to external API if configured
         if ($this->hasPreventionApiBaseUrl()) {
             $payload = $this->withAuthenticatedEmail([
@@ -269,8 +277,7 @@ class PreventionRequestController extends Controller
                     if ($apiRef) {
                         $dossier->update(['api_reference' => (string) $apiRef, 'status' => 'submitted']);
                     }
-                }
-            } catch (ConnectionException $e) {
+                }            } catch (ConnectionException $e) {
                 report($e);
             }
         }
@@ -287,6 +294,42 @@ class PreventionRequestController extends Controller
     public function store(Request $request): RedirectResponse
     {
         return redirect()->route('prevention-requests.create');
+    }
+
+    // =========================================================================
+    // Show — full dossier details for the applicant
+    // =========================================================================
+
+    public function show(PreventionDossier $dossier): View
+    {
+        if ($dossier->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $dossier->load([
+            'governorate', 'delegation', 'buildingType', 'buildingActivity',
+            'appointments', 'events',
+        ]);
+
+        $documentTypes = DocumentType::orderBy('sort_order')->get();
+        $documents = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->get()
+            ->keyBy('document_type_id');
+
+        return view('prevention-requests.show', compact('dossier', 'documentTypes', 'documents'));
+    }
+
+    // =========================================================================
+    // Download an uploaded document — only from your own dossier
+    // =========================================================================
+
+    public function downloadDocument(PreventionDossier $dossier, DossierDocument $document)
+    {
+        if ($dossier->user_id !== auth()->id() || $document->prevention_dossier_id !== $dossier->id) {
+            abort(403);
+        }
+
+        return Storage::disk('local')->download($document->file_path, $document->original_name);
     }
 
     // =========================================================================
@@ -311,6 +354,8 @@ class PreventionRequestController extends Controller
             'current_step' => 2,   // bring them back to step 3 (step 2 completed, step 3 open)
             'admin_note'   => null,
         ]);
+
+        $dossier->logEvent('resubmitted');
 
         return redirect()
             ->route('prevention-requests.step3.show', $dossier)

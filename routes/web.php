@@ -64,6 +64,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/prevention-requests/{id}/edit', [PreventionRequestController::class, 'edit'])->name('prevention-requests.edit');
     Route::put('/prevention-requests/{id}', [PreventionRequestController::class, 'update'])->name('prevention-requests.update');
     Route::delete('/prevention-requests/{id}', [PreventionRequestController::class, 'destroy'])->name('prevention-requests.destroy');
+
+    // Dossier details (placed last so {dossier} doesn't capture /create, /structures etc.)
+    Route::get('/prevention-requests/{dossier}', [PreventionRequestController::class, 'show'])->name('prevention-requests.show');
+    Route::get('/prevention-requests/{dossier}/documents/{document}/download', [PreventionRequestController::class, 'downloadDocument'])
+        ->name('prevention-requests.documents.download');
 });
 
 Route::middleware('auth')->group(function () {

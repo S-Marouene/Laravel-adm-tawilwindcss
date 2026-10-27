@@ -12,7 +12,6 @@ class DossierAppointment extends Model
         'scheduled_by',
         'visit_date',
         'visit_time',
-        'location',
         'status',
         'note',
     ];

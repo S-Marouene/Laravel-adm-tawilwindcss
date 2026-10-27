@@ -6,7 +6,7 @@
     $statusConfig = [
         'completed'          => ['label' => 'Under Review',       'dot' => 'bg-blue-500',    'badge' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'],
         'submitted'          => ['label' => 'Submitted',          'dot' => 'bg-teal-500',    'badge' => 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'],
-        'under_consultation' => ['label' => 'Under Consultation', 'dot' => 'bg-purple-500',  'badge' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'],
+        'under_consultation' => ['label' => 'Approved — Awaiting RDV', 'dot' => 'bg-purple-500',  'badge' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'],
         'needs_correction'   => ['label' => 'Needs Correction',   'dot' => 'bg-red-500',     'badge' => 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'],
         'approved'           => ['label' => 'Approved',           'dot' => 'bg-emerald-500', 'badge' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
         'cancelled'          => ['label' => 'Cancelled',          'dot' => 'bg-gray-400',    'badge' => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'],
@@ -191,7 +191,12 @@
             <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700 flex items-center justify-between">
                 <div>
                     <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">Site Visits (Rendez-vous)</h2>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ $preventionDossier->appointments->count() }} visit(s) scheduled</p>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        {{ $preventionDossier->appointments->count() }} visit(s) scheduled
+                        @if ($preventionDossier->building_address)
+                            · Visit at: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $preventionDossier->building_address }}</span>
+                        @endif
+                    </p>
                 </div>
             </div>
 
@@ -240,13 +245,6 @@
                                                 {{ $appt->visit_date->format('d M Y') }} at {{ substr($appt->visit_time, 0, 5) }}
                                             </span>
                                         </div>
-
-                                        @if ($appt->location)
-                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                                <svg class="h-3 w-3 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                                {{ $appt->location }}
-                                            </p>
-                                        @endif
 
                                         @if ($appt->scheduler)
                                             <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Scheduled by {{ $appt->scheduler->name }}</p>
@@ -322,9 +320,9 @@
     {{-- ─── Right sidebar: actions + timeline ─── --}}
     <div class="space-y-5">
 
-        {{-- Schedule Rendez-vous (only when approved) --}}
+        {{-- Schedule Rendez-vous (available once the dossier is approved via consultation) --}}
         @can('manage prevention-dossiers')
-        @if ($status === 'approved')
+        @if (in_array($status, ['under_consultation', 'approved']))
         <div class="rounded-2xl border border-emerald-200 bg-white shadow-sm dark:border-emerald-800/40 dark:bg-gray-800" x-data="{ open: {{ $preventionDossier->appointments->isEmpty() ? 'true' : 'false' }} }">
             <div class="border-b border-emerald-100 dark:border-emerald-800/30 px-5 py-4 flex items-center justify-between cursor-pointer" @click="open = !open">
                 <div class="flex items-center gap-2">
@@ -343,6 +341,14 @@
                 <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.store', $preventionDossier) }}">
                     @csrf
                     <div class="space-y-3">
+                        {{-- The visit happens at the building — address comes from the dossier --}}
+                        <div class="flex items-start gap-1.5 text-xs text-emerald-700 dark:text-emerald-300">
+                            <svg class="h-3.5 w-3.5 flex-none mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <span class="flex items-start gap-1">
+                                Visit takes place at the building:
+                                <strong class="font-semibold break-all">{{ $preventionDossier->building_address ?? '—' }}</strong>
+                            </span>
+                        </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Visit Date <span class="text-red-500">*</span></label>
                             <input type="date" name="visit_date" required
@@ -354,13 +360,6 @@
                             <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Visit Time <span class="text-red-500">*</span></label>
                             <input type="time" name="visit_time" required
                                 value="{{ old('visit_time') }}"
-                                class="w-full text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Location / Address</label>
-                            <input type="text" name="location" maxlength="500"
-                                value="{{ old('location') }}"
-                                placeholder="Building address or reference..."
                                 class="w-full text-sm">
                         </div>
                         <button type="submit"
@@ -388,7 +387,7 @@
                 {{-- Advance to Consultation --}}
                 @if (in_array($status, ['completed', 'submitted', 'needs_correction']))
                     <form method="POST" action="{{ route('admin.prevention-dossiers.advance', $preventionDossier) }}"
-                          onsubmit="return confirm('Advance to consultation? The applicant will see a notice to keep their phone available.')">
+                          onsubmit="return confirm('Advance to consultation? This validates the dossier as approved — the applicant is notified and you can then schedule an RDV.')">
                         @csrf
                         <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -486,49 +485,55 @@
         @endif
         @endcan
 
-        {{-- Timeline --}}
+        {{-- Timeline — full audit history (corrections, approvals, RDV, etc.) --}}
         <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-700">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Timeline</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Complete history of this dossier</p>
             </div>
             <div class="px-5 py-4">
-                {{-- Submitted --}}
-                <div class="flex items-start gap-3">
-                    <span class="mt-1 flex-none h-2 w-2 rounded-full bg-emerald-500"></span>
-                    <div>
-                        <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">Submitted by applicant</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $preventionDossier->created_at->format('d M Y, H:i') }}</p>
-                    </div>
-                </div>
-
-                @if ($preventionDossier->reviewed_at && $status !== 'completed')
-                    <div class="ms-[3px] my-1.5 w-0.5 h-5 bg-gray-200 dark:bg-gray-600"></div>
-                    @php
-                        $timelineDot = match($status) {
-                            'under_consultation' => 'bg-purple-500',
-                            'needs_correction'   => 'bg-amber-500',
-                            'approved'           => 'bg-emerald-500',
-                            'cancelled'          => 'bg-red-400',
-                            default              => 'bg-blue-500',
-                        };
-                        $timelineLabel = match($status) {
-                            'under_consultation' => 'Advanced to Consultation',
-                            'needs_correction'   => 'Correction Requested',
-                            'approved'           => 'Approved',
-                            'cancelled'          => 'Cancelled',
-                            default              => 'Status updated',
-                        };
-                    @endphp
+                {{-- Legacy fallback: dossiers created before the events table — show their origin from created_at --}}
+                @if ($preventionDossier->events->isEmpty())
                     <div class="flex items-start gap-3">
-                        <span class="mt-1 flex-none h-2 w-2 rounded-full {{ $timelineDot }}"></span>
+                        <span class="mt-1 flex-none h-2 w-2 rounded-full bg-teal-500"></span>
                         <div>
-                            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">{{ $timelineLabel }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">
-                                {{ $preventionDossier->reviewer?->name ?? 'Admin' }} · {{ $preventionDossier->reviewed_at->format('d M Y, H:i') }}
-                            </p>
+                            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">Submitted by applicant</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $preventionDossier->created_at->format('d M Y, H:i') }}</p>
                         </div>
                     </div>
                 @endif
+
+                {{-- All recorded events, in chronological order --}}
+                @foreach ($preventionDossier->events as $event)
+                    @if (! $loop->first)
+                        <div class="ms-[3px] my-1.5 w-0.5 h-5 bg-gray-200 dark:bg-gray-600"></div>
+                    @endif
+                    <div class="flex items-start gap-3">
+                        <span class="mt-1 flex-none h-2 w-2 rounded-full {{ $event->typeDot() }}"></span>
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">{{ $event->typeLabel() }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ $event->actor?->name ?? 'System' }} · {{ $event->created_at->format('d M Y, H:i') }}
+                            </p>
+
+                            {{-- RDV details (date / time / location) --}}
+                            @if ($event->detailsText())
+                                <p class="mt-1 text-xs inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                                    <svg class="h-3 w-3 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    {{ $event->detailsText() }}
+                                </p>
+                            @endif
+
+                            {{-- Note attached to the event (correction note, fail reason, cancellation reason...) --}}
+                            @if ($event->note)
+                                <div class="mt-1.5 rounded-lg border bg-gray-50 px-2.5 py-2 dark:bg-gray-700/30 {{ str_contains($event->type, 'failed') || str_contains($event->type, 'cancelled') ? 'border-red-200 dark:border-red-800/30' : 'border-gray-200 dark:border-gray-600' }}">
+                                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-0.5">Note</p>
+                                    <p class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line">{{ $event->note }}</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
 

@@ -11,6 +11,7 @@ class PreventionDossier extends Model
     protected $fillable = [
         'user_id', 'current_step', 'status',
         'cin', 'nom_prenom', 'phone', 'governorate_id', 'delegation_id',
+        'building_address',
         'building_type_id', 'building_activity_id', 'activity_other',
         'num_demande', 'api_reference',
         'admin_note', 'reviewed_by', 'reviewed_at',
@@ -65,6 +66,28 @@ class PreventionDossier extends Model
     public function appointments(): HasMany
     {
         return $this->hasMany(DossierAppointment::class, 'prevention_dossier_id')->orderBy('visit_date')->orderBy('visit_time');
+    }
+
+    /** Full audit log — chronological history of every action on this dossier */
+    public function events(): HasMany
+    {
+        return $this->hasMany(PreventionDossierEvent::class, 'prevention_dossier_id')
+            ->orderBy('created_at')
+            ->orderBy('id');
+    }
+
+    /**
+     * Record an event in the dossier audit log (timeline).
+     * The actor is the currently authenticated user (admin or applicant).
+     */
+    public function logEvent(string $type, ?string $note = null, array $data = []): PreventionDossierEvent
+    {
+        return $this->events()->create([
+            'user_id' => auth()->id(),
+            'type'    => $type,
+            'note'    => $note,
+            'data'    => $data ?: null,
+        ]);
     }
 
     // -----------------------------------------------------------------------
@@ -133,7 +156,7 @@ class PreventionDossier extends Model
             'draft'              => 'Draft',
             'completed'          => 'Under Review',
             'submitted'          => 'Submitted',
-            'under_consultation' => 'Under Consultation',
+            'under_consultation' => 'Approved — Awaiting RDV',
             'needs_correction'   => 'Needs Correction',
             'approved'           => 'Approved',
             'cancelled'          => 'Cancelled',

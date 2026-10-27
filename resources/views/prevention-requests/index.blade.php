@@ -181,9 +181,17 @@
                                             @endif
                                         </div>
 
-                                        {{-- Fix & Resubmit button --}}
-                                        @if ($status === 'needs_correction')
-                                            <div class="flex-none">
+                                        {{-- Fix & Resubmit / View details buttons --}}
+                                        <div class="flex-none flex items-center gap-2">
+                                            <a href="{{ route('prevention-requests.show', $dossier) }}"
+                                                class="inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gov-500/40">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                                {{ __('prevention_request.view_details') }}
+                                            </a>
+                                            @if ($status === 'needs_correction')
                                                 <form method="POST" action="{{ route('prevention-requests.resubmit', $dossier) }}">
                                                     @csrf
                                                     <button type="submit"
@@ -194,18 +202,74 @@
                                                         {{ __('prevention_request.fix_and_resubmit') }}
                                                     </button>
                                                 </form>
-                                            </div>
-                                        @endif
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
 
-                                {{-- Appointments / RDV (shown for approved dossiers) --}}
+                                {{-- Timeline — follow-up history (submissions, corrections, approval, RDV) --}}
+                                @if ($dossier->events->isNotEmpty())
+                                    <div class="border-t border-gray-100 dark:border-gray-700/50 mt-4 pt-4">
+                                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
+                                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                            {{ __('prevention_request.timeline_title') }}
+                                        </p>
+                                        <div>
+                                            @foreach ($dossier->events as $event)
+                                                @php
+                                                    $isFailedEvent = str_contains($event->type, 'failed') || str_contains($event->type, 'cancelled');
+                                                @endphp
+                                                @if (! $loop->first)
+                                                    <div class="ms-[3px] my-1.5 w-0.5 h-5 bg-gray-200 dark:bg-gray-600"></div>
+                                                @endif
+                                                <div class="flex items-start gap-3">
+                                                    <span class="mt-1 flex-none h-2 w-2 rounded-full {{ $event->typeDot() }}"></span>
+                                                    <div class="min-w-0 flex-1">
+                                                        <div class="flex items-center justify-between gap-2 flex-wrap">
+                                                            <p class="text-xs font-semibold {{ $isFailedEvent ? 'text-red-700 dark:text-red-300' : 'text-gray-800 dark:text-gray-100' }}">
+                                                                {{ __('prevention_request.timeline_' . $event->type) }}
+                                                            </p>
+                                                            <span class="text-[11px] text-gray-400 dark:text-gray-500">{{ $event->created_at->format('d/m/Y H:i') }}</span>
+                                                        </div>
+                                                        <p class="text-[11px] text-gray-400 dark:text-gray-500">
+                                                            {{ in_array($event->type, ['submitted', 'resubmitted']) ? __('prevention_request.timeline_actor_you') : __('prevention_request.timeline_actor_admin') }}
+                                                        </p>
+
+                                                        {{-- RDV details --}}
+                                                        @if (in_array($event->type, ['appointment_scheduled', 'appointment_passed', 'appointment_failed', 'appointment_deleted']) && is_array($event->data) && ! empty($event->data['visit_date']))
+                                                            <p class="mt-1 text-xs inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                                                                <svg class="h-3 w-3 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                                {{ __('prevention_request.timeline_visit_label') }} {{ \Illuminate\Support\Carbon::parse($event->data['visit_date'])->format('d/m/Y') }} {{ __('at') }} {{ substr((string) ($event->data['visit_time'] ?? ''), 0, 5) }}
+                                                            </p>
+                                                        @endif
+
+                                                        {{-- Note (correction request, fail reason, cancellation reason...) --}}
+                                                        @if ($event->note)
+                                                            <div class="mt-1.5 rounded-lg border px-2.5 py-2 {{ $event->type === 'correction_requested' ? 'border-amber-200 bg-amber-50 dark:border-amber-800/30 dark:bg-amber-900/10' : ($isFailedEvent ? 'border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10' : 'border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700/30') }}">
+                                                                <p class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">{{ __('prevention_request.timeline_note_label') }}</p>
+                                                                <p class="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-line">{{ $event->note }}</p>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- Appointments / RDV (shown once the dossier is approved via consultation) --}}
                                 @if ($dossier->appointments->isNotEmpty())
                                     <div class="border-t border-gray-100 dark:border-gray-700/50 mt-4 pt-4">
                                         <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
                                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                             {{ __('prevention_request.appointments_title') }}
                                         </p>
+                                        @if ($dossier->building_address)
+                                            <p class="mb-3 -mt-1 text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                                                <svg class="h-3.5 w-3.5 flex-none text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                                {{ __('prevention_request.rdv_building_label') }}: <span class="font-semibold">{{ $dossier->building_address }}</span>
+                                            </p>
+                                        @endif
                                         <div class="space-y-3">
                                             @foreach ($dossier->appointments as $i => $appt)
                                                 <div class="rounded-xl border px-4 py-3
@@ -237,12 +301,6 @@
                                                             </span>
                                                         @endif
                                                     </div>
-                                                    @if ($appt->location)
-                                                        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                                            <svg class="h-3 w-3 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                                            {{ $appt->location }}
-                                                        </p>
-                                                    @endif
                                                     @if ($appt->note)
                                                         <div class="mt-2 border-t {{ $appt->isFailed() ? 'border-red-200 dark:border-red-800/30' : 'border-gray-200 dark:border-gray-600' }} pt-2">
                                                             <p class="text-xs font-semibold {{ $appt->isFailed() ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400' }} mb-0.5">
