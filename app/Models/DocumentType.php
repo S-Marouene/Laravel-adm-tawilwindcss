@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DocumentType extends Model
 {
-    protected $fillable = ['name_ar', 'name_fr', 'name_en', 'is_conditional', 'sort_order'];
+    // Which service's checklist the document belongs to
+    public const SERVICE_PREVENTION = 'prevention';
+    public const SERVICE_PREVENTIVE_PRESENCE = 'preventive-presence';
+
+    protected $fillable = ['name_ar', 'name_fr', 'name_en', 'service_key', 'is_conditional', 'sort_order'];
 
     protected $casts = [
         'is_conditional' => 'boolean',
@@ -21,6 +25,11 @@ class DocumentType extends Model
         return $this->hasMany(DossierDocument::class);
     }
 
+    public function presenceDocuments(): HasMany
+    {
+        return $this->hasMany(PresenceDocument::class);
+    }
+
     /** Localized name for the current locale. */
     public function getNameAttribute(): string
     {
@@ -31,8 +40,14 @@ class DocumentType extends Model
         };
     }
 
-    /** All types as [id => name] for select dropdowns. */
-    public static function forSelect(): array
+    /** Scope types belonging to a given service checklist. */
+    public function scopeService($query, string $serviceKey)
+    {
+        return $query->where('service_key', $serviceKey);
+    }
+
+    /** All types of a service as [id => name] for select dropdowns. */
+    public static function forSelect(string $serviceKey = null): array
     {
         $col = match (app()->getLocale()) {
             'fr'    => 'name_fr',
@@ -40,8 +55,12 @@ class DocumentType extends Model
             default => 'name_ar',
         };
 
-        return static::orderBy('sort_order')
-            ->pluck($col, 'id')
+        $query = static::orderBy('sort_order');
+        if ($serviceKey !== null) {
+            $query->where('service_key', $serviceKey);
+        }
+
+        return $query->pluck($col, 'id')
             ->toArray();
     }
 }

@@ -59,6 +59,9 @@ class RolePermissionSeeder extends Seeder
             // Prevention dossiers
             'view prevention-dossiers',
             'manage prevention-dossiers',
+            // Preventive presence requests
+            'view preventive-presence',
+            'manage preventive-presence',
         ];
 
         foreach ($permissions as $permission) {

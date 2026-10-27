@@ -22,6 +22,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">#</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ __('admin.name_ar') }}</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ __('admin.name_fr') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ __('admin.service') }}</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ __('admin.conditional') }}</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ __('admin.actions') }}</th>
             </tr></thead>
@@ -31,6 +32,7 @@
                     <td class="px-6 py-4 text-sm text-gray-500">{{ $doc->sort_order }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">{{ $doc->name_ar }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">{{ $doc->name_fr }}</td>
+                    <td class="px-6 py-4 text-sm"><span class="admin-badge {{ $doc->service_key === \App\Models\DocumentType::SERVICE_PREVENTIVE_PRESENCE ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' : 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' }}">{{ (\App\Models\DocumentType::SERVICE_PREVENTIVE_PRESENCE === $doc->service_key ? __('admin.service_labels.preventive-presence') : __('admin.service_labels.prevention')) }}</span></td>
                     <td class="px-6 py-4 text-sm">@if($doc->is_conditional)<span class="admin-badge bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">{{ __('admin.yes') }}</span>@else<span class="text-gray-400">{{ __('admin.no') }}</span>@endif</td>
                     <td class="px-6 py-4 text-right text-sm font-medium">
                         <a href="{{ route('admin.document-types.edit', $doc) }}" class="admin-action-link mr-3">{{ __('action.edit') }}</a>
@@ -40,7 +42,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">{{ __('admin.no_data') }}</td></tr>
+                <tr><td colspan="6" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">{{ __('admin.no_data') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

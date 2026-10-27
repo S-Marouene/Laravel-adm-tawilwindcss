@@ -195,7 +195,7 @@ class PreventionRequestController extends Controller
 
         $dossier->load(['governorate', 'delegation', 'buildingType', 'buildingActivity']);
 
-        $documentTypes = DocumentType::orderBy('sort_order')->get();
+        $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)->orderBy('sort_order')->get();
 
         // Load any already-uploaded documents for this dossier
         $uploadedDocs = DossierDocument::where('prevention_dossier_id', $dossier->id)
@@ -219,7 +219,7 @@ class PreventionRequestController extends Controller
             abort(403);
         }
 
-        $documentTypes = DocumentType::orderBy('sort_order')->pluck('id');
+        $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)->orderBy('sort_order')->pluck('id');
         $rules = [];
         foreach ($documentTypes as $docTypeId) {
             $rules['documents.' . $docTypeId] = ['nullable', 'file', 'max:10240']; // 10MB max

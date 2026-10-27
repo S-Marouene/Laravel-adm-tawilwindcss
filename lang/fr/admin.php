@@ -60,6 +60,11 @@ return [
     'activities_count' => 'Activités',
     'delegations_count' => 'Délégations',
     'conditional' => 'Conditionnel',
+    'service' => 'Service',
+    'service_labels' => [
+        'prevention' => "Certificat de prévention",
+        'preventive-presence' => "Présence préventive",
+    ],
     'governorate' => 'Gouvernorat',
     'building_type' => 'Type de bâtiment',
 

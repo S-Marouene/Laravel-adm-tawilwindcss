@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             GovernorateSeeder::class,
             BuildingTypeSeeder::class,
             DocumentTypeSeeder::class,
+            PreventivePresenceDocumentTypeSeeder::class,
         ]);
     }
 }

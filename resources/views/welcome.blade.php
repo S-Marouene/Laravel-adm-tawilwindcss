@@ -198,27 +198,19 @@
                     </div>
 
                     {{-- Service 4 - الحضور الوقائي --}}
-                    <div class="group relative section-surface rounded-2xl p-6 transition-all duration-300 opacity-80 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
-                        <div class="absolute top-3 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }}">
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                                </svg>
-                                {{ __('services.under_construction') }}
-                            </span>
-                        </div>
+                    <a href="{{ route('preventive-presence.index') }}" class="group relative section-surface rounded-2xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
                         <div class="metric-icon w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-4">
                             <svg class="w-7 h-7 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2 pr-16">{{ __('services.preventive_presence') }}</h3>
+                        <h3 class="text-lg font-semibold text-gov-900 dark:text-gray-100 mb-2">{{ __('services.preventive_presence') }}</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ __('services.preventive_presence.desc') }}</p>
-                        <span class="inline-flex items-center text-sm font-medium text-gray-400 dark:text-gray-500">
-                            {{ __('services.coming_soon') }}
+                        <span class="inline-flex items-center text-sm font-medium text-gov-600 dark:text-gov-400 group-hover:underline">
+                            {{ __('services.access_service') }} &rarr;
                         </span>
-                    </div>
+                    </a>
 
                     {{-- Service 5 - المصادقة على مخطط التدخل الداخلي --}}
                     <div class="group relative section-surface rounded-2xl p-6 transition-all duration-300 opacity-80 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">

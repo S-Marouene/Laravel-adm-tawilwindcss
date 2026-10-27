@@ -31,6 +31,11 @@ return [
     'confirm_remove_image' => 'Are you sure you want to remove this image?',
     'none' => 'None',
     'no_password_set' => 'No password set',
+    'service' => 'Service',
+    'service_labels' => [
+        'prevention' => 'Prevention Certificate',
+        'preventive-presence' => 'Preventive Presence',
+    ],
 
     // Mail Test
     'mail_test' => 'Test Email Configuration',

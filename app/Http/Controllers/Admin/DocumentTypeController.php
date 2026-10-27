@@ -26,7 +26,7 @@ class DocumentTypeController extends Controller
     {
         $this->authorize('create document-types');
 
-        return view('admin.document-types.create');
+        return view('admin.document-types.create', ['serviceOptions' => $this->serviceOptions()]);
     }
 
     public function store(Request $request)
@@ -37,6 +37,7 @@ class DocumentTypeController extends Controller
             'name_ar'        => ['required', 'string', 'max:500'],
             'name_fr'        => ['required', 'string', 'max:500'],
             'name_en'        => ['required', 'string', 'max:500'],
+            'service_key'    => ['required', 'in:prevention,preventive-presence'],
             'is_conditional' => ['boolean'],
             'sort_order'     => ['nullable', 'integer', 'min:0'],
         ]);
@@ -50,7 +51,7 @@ class DocumentTypeController extends Controller
     {
         $this->authorize('edit document-types');
 
-        return view('admin.document-types.edit', compact('documentType'));
+        return view('admin.document-types.edit', ['documentType' => $documentType, 'serviceOptions' => $this->serviceOptions()]);
     }
 
     public function update(Request $request, DocumentType $documentType)
@@ -61,6 +62,7 @@ class DocumentTypeController extends Controller
             'name_ar'        => ['required', 'string', 'max:500'],
             'name_fr'        => ['required', 'string', 'max:500'],
             'name_en'        => ['required', 'string', 'max:500'],
+            'service_key'    => ['required', 'in:prevention,preventive-presence'],
             'is_conditional' => ['boolean'],
             'sort_order'     => ['nullable', 'integer', 'min:0'],
         ]);
@@ -77,5 +79,18 @@ class DocumentTypeController extends Controller
         $documentType->delete();
         return redirect()->route('admin.document-types.index')
             ->with('success', __('admin.ref_deleted'));
+    }
+
+    /** [key => localized label] options for the service select. */
+    private function serviceOptions(): array
+    {
+        $keys = [DocumentType::SERVICE_PREVENTION, DocumentType::SERVICE_PREVENTIVE_PRESENCE];
+        $labels = __('admin.service_labels');
+        $options = [];
+        foreach ($keys as $key) {
+            $options[$key] = $labels[$key] ?? $key;
+        }
+
+        return $options;
     }
 }

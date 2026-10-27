@@ -111,6 +111,11 @@ return [
     'activities_count' => 'الأنشطة',
     'delegations_count' => 'المعتمديات',
     'conditional' => 'مشروط',
+    'service' => 'الخدمة',
+    'service_labels' => [
+        'prevention' => 'شهادة الوقاية',
+        'preventive-presence' => 'الحضور الوقائي',
+    ],
     'governorate' => 'الولاية',
     'building_type' => 'نوع البناية',
 

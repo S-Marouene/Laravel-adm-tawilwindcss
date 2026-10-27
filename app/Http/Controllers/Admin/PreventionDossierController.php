@@ -52,7 +52,7 @@ class PreventionDossierController extends Controller
 
         $preventionDossier->load(['user', 'governorate', 'delegation', 'buildingType', 'buildingActivity', 'reviewer', 'appointments.scheduler', 'events.actor', 'events.dossier:id,building_address']);
 
-        $documentTypes = DocumentType::orderBy('sort_order')->get();
+        $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)->orderBy('sort_order')->get();
         $uploadedDocs  = DossierDocument::where('prevention_dossier_id', $preventionDossier->id)
             ->get()
             ->keyBy('document_type_id');

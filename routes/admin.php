@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\BuildingTypeController;
 use App\Http\Controllers\Admin\BuildingActivityController;
 use App\Http\Controllers\Admin\DocumentTypeController;
 use App\Http\Controllers\Admin\PreventionDossierController;
+use App\Http\Controllers\Admin\PreventivePresenceController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -71,6 +72,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::put('prevention-dossiers/{preventionDossier}/appointments/{appointment}',                 [PreventionDossierController::class, 'updateAppointment'])->name('prevention-dossiers.appointments.update');
     Route::delete('prevention-dossiers/{preventionDossier}/appointments/{appointment}',              [PreventionDossierController::class, 'deleteAppointment'])->name('prevention-dossiers.appointments.destroy');
     Route::resource('prevention-dossiers', PreventionDossierController::class)->only(['index', 'show']);
+
+    // Preventive Presence (الحضور الوقائي) workflow actions
+    Route::post('preventive-presence/{preventivePresence}/advance', [PreventivePresenceController::class, 'advance'])->name('preventive-presence.advance');
+    Route::post('preventive-presence/{preventivePresence}/correction', [PreventivePresenceController::class, 'requestCorrection'])->name('preventive-presence.correction');
+    Route::post('preventive-presence/{preventivePresence}/approve', [PreventivePresenceController::class, 'approve'])->name('preventive-presence.approve');
+    Route::post('preventive-presence/{preventivePresence}/payment', [PreventivePresenceController::class, 'recordPayment'])->name('preventive-presence.payment');
+    Route::post('preventive-presence/{preventivePresence}/serve', [PreventivePresenceController::class, 'markServed'])->name('preventive-presence.serve');
+    Route::post('preventive-presence/{preventivePresence}/cancel', [PreventivePresenceController::class, 'cancel'])->name('preventive-presence.cancel');
+    Route::resource('preventive-presence', PreventivePresenceController::class)
+        ->only(['index', 'show'])
+        ->parameters(['preventive-presence' => 'preventivePresence']);
 
     // Settings
     Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');

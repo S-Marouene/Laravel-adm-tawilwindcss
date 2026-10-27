@@ -19,6 +19,7 @@ class DocumentTypeSeeder extends Seeder
                 'name_ar'        => $doc['ar'],
                 'name_fr'        => $doc['fr'],
                 'name_en'        => $doc['en'],
+                'service_key'    => $doc['service'] ?? DocumentType::SERVICE_PREVENTION,
                 'is_conditional' => $doc['conditional'] ?? false,
                 'sort_order'     => $i + 1,
             ]);
@@ -69,6 +70,19 @@ class DocumentTypeSeeder extends Seeder
                 'fr' => "Copie de l'arrêté d'autorisation pour les bâtiments contenant des établissements dangereux, insalubres ou incommodes",
                 'en' => "Copy of the authorization decree for buildings containing hazardous, unhealthy or inconvenient establishments",
                 'conditional' => true,
+            ],
+            // Preventive presence service
+            [
+                'ar' => 'مطبوعة طلب القيام بخدمة',
+                'fr' => 'Formulaire de demande de prestation',
+                'en' => 'Service request form',
+                'service' => DocumentType::SERVICE_PREVENTIVE_PRESENCE,
+            ],
+            [
+                'ar' => 'نسخة من بطاقة التعريف الوطنية',
+                'fr' => "Copie de la carte d'identité nationale",
+                'en' => "Copy of the national identity card",
+                'service' => DocumentType::SERVICE_PREVENTIVE_PRESENCE,
             ],
         ];
     }

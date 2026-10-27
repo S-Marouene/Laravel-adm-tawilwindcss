@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PreventionRequestController;
+use App\Http\Controllers\PreventivePresenceController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\App;
@@ -69,6 +70,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/prevention-requests/{dossier}', [PreventionRequestController::class, 'show'])->name('prevention-requests.show');
     Route::get('/prevention-requests/{dossier}/documents/{document}/download', [PreventionRequestController::class, 'downloadDocument'])
         ->name('prevention-requests.documents.download');
+    Route::get('/preventive-presence', [PreventivePresenceController::class, 'index'])->name('preventive-presence.index');
+
+    // Multi-step create
+    Route::get('/preventive-presence/create', [PreventivePresenceController::class, 'create'])->name('preventive-presence.create');
+    Route::post('/preventive-presence/step1', [PreventivePresenceController::class, 'storeStep1'])->name('preventive-presence.step1.store');
+    Route::get('/preventive-presence/{presenceRequest}/step1/edit', [PreventivePresenceController::class, 'editStep1'])->name('preventive-presence.step1.edit');
+    Route::put('/preventive-presence/{presenceRequest}/step1', [PreventivePresenceController::class, 'updateStep1'])->name('preventive-presence.step1.update');
+    Route::get('/preventive-presence/{presenceRequest}/step2', [PreventivePresenceController::class, 'showStep2'])->name('preventive-presence.step2.show');
+    Route::post('/preventive-presence/{presenceRequest}/step2', [PreventivePresenceController::class, 'storeStep2'])->name('preventive-presence.step2.store');
+
+    // Resubmit after correction
+    Route::post('/preventive-presence/{presenceRequest}/resubmit', [PreventivePresenceController::class, 'resubmit'])->name('preventive-presence.resubmit');
+
+    // Delete a local draft
+    Route::delete('/preventive-presence/{presenceRequest}', [PreventivePresenceController::class, 'destroy'])->name('preventive-presence.destroy');
 });
 
 Route::middleware('auth')->group(function () {
