@@ -424,26 +424,96 @@ else
   done
 fi
 
-# ================================================================ FINAL: show the ngrok link for VS Code
-# Wait for the tunnel URL (max ~40s), then print it prominently
-NGROK_URL=""
-for _ in $(seq 1 20); do
-  NGROK_URL=$(curl -s http://127.0.0.1:4040/api/tunnels 2>/dev/null \
-    | grep -o '"public_url":"https://[a-z0-9.]*"' | grep -o 'https://[a-z0-9.]*' | tail -n1)
-  [ -n "$NGROK_URL" ] && break
+# ================================================================ Laravel app: serve + direct ngrok tunnel (:8000)
+# ---------------------------------------------------------------- start artisan serve in screen "app-serve" + self-heal
+if screen -ls 2>/dev/null | grep -q '[.]app-serve' && ! curl -s -o /dev/null http://127.0.0.1:8000; then
+  log "Stale app-serve screen session detected — restarting"
+  screen -S app-serve -X quit 2>/dev/null || true
+  sleep 1
+fi
+
+if curl -s -o /dev/null http://127.0.0.1:8000; then
+  ok "Laravel app already answering on port 8000"
+else
+  log "Starting 'php artisan serve' on port 8000 inside screen session 'app-serve'"
+  screen -dmS app-serve php artisan serve --host=0.0.0.0 --port=8000
+  for _ in $(seq 1 10); do
+    curl -s -o /dev/null http://127.0.0.1:8000 && break
+    sleep 2
+  done
+  curl -s -o /dev/null http://127.0.0.1:8000 && ok "Laravel app running on port 8000" \
+    || info "⚠ app not answering on 8000 — check: sudo screen -r app-serve"
+fi
+
+# ---------------------------------------------------------------- direct ngrok tunnel for the app (:8000) + self-heal
+# The second ngrok process binds its own API port (allow up to 3 tunnels: 4040/4041/4042)
+if screen -ls 2>/dev/null | grep -q '[.]ngrok-app'; then
+  ok "ngrok app tunnel already running in screen session 'ngrok-app'"
+else
+  log "Starting ngrok tunnel :8000 inside screen session 'ngrok-app'"
+  screen -dmS ngrok-app ngrok http 8000 --log stdout
+  for _ in $(seq 1 15); do
+    for api in 4040 4041 4042; do
+      curl -s "http://127.0.0.1:${api}/api/tunnels" 2>/dev/null | grep -q 'public_url' && break 2
+    done
+    sleep 2
+  done
+fi
+
+# ---------------------------------------------------------------- find each tunnel URL from ngrok APIs (4040/4041/4042)
+get_tunnel_url_for() { # $1 = port
+  local port="$1" api url
+  for api in 4040 4041 4042; do
+    url=$(curl -s "http://127.0.0.1:${api}/api/tunnels" 2>/dev/null \
+      | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for t in data.get('tunnels', []):
+    if str(t.get('config', {}).get('addr', '')).endswith(':${port}'):
+        print(t.get('public_url', ''), end='')
+        break
+")
+    [ -n "$url" ] && { printf '%s' "$url"; return 0; }
+  done
+  return 1
+}
+
+# ---------------------------------------------------------------- wait a bit for both tunnels to be established
+for _ in $(seq 1 15); do
+  VS_URL=$(get_tunnel_url_for 8080 || true)
+  APP_URL_OUT=$(get_tunnel_url_for 8000 || true)
+  [ -n "$VS_URL" ] && [ -n "$APP_URL_OUT" ] && break
   sleep 2
 done
 
-if [ -n "$NGROK_URL" ]; then
-  echo ""
-  echo -e "\033[1;32m════════════════════════════════════════════════════════\033[0m"
-  echo -e "\033[1;41m  YOUR VS CODE SERVER (open in browser):\033[0m"
-  echo -e "\033[1;4;97;44m  $NGROK_URL  \033[0m"
-  echo -e "\033[1;32m════════════════════════════════════════════════════════\033[0m"
-  echo ""
-else
-  echo ""
-  echo -e "\033[1;31m⚠ No ngrok URL yet — the tunnel is starting. Get it with:\033[0m"
-  echo -e "  \033[1;33mcurl -s http://127.0.0.1:4040/api/tunnels | grep -o 'https://[a-z0-9]*\\.ngrok-free.app'\033[0m"
-  echo ""
+# ---------------------------------------------------------------- keep .env APP_URL in sync with the app tunnel
+if [ -n "$APP_URL_OUT" ] && ! grep -q "^APP_URL=\"$APP_URL_OUT\"$" .env 2>/dev/null; then
+  log "Updating APP_URL in .env → $APP_URL_OUT"
+  sed -i "s|^APP_URL=.*|APP_URL=\"$APP_URL_OUT\"|" .env
+  command -v php >/dev/null 2>&1 && php artisan config:clear >/dev/null 2>&1 || true
+  ok "APP_URL synced with the app tunnel ✔"
 fi
+
+# ---------------------------------------------------------------- FINAL: the two public links
+echo ""
+echo -e "\033[1;32m════════════════════════════════════════════════════════\033[0m"
+if [ -n "$APP_URL_OUT" ]; then
+  echo -e "\033[1;41m  YOUR APP (Laravel) — open in browser:\033[0m"
+  echo -e "\033[1;4;97;44m  $APP_URL_OUT  \033[0m"
+else
+  echo -e "\033[1;31m  ⚠ App link not ready — check tunnel: sudo screen -r ngrok-app\033[0m"
+fi
+echo -e "\033[1;32m────────────────────────────────────────────────────────\033[0m"
+if [ -n "$VS_URL" ]; then
+  echo -e "\033[1;41m  YOUR VS CODE SERVER — open in browser:\033[0m"
+  echo -e "\033[1;4;97;44m  $VS_URL  \033[0m"
+  echo ""
+  echo -e "\033[1;33m  password: 0npcVScode@198\033[0m"
+else
+  echo -e "\033[1;31m  ⚠ VS Code link not ready — rerun: sudo bash auto_dev.sh\033[0m"
+fi
+echo -e "\033[1;32m════════════════════════════════════════════════════════\033[0m"
+echo ""

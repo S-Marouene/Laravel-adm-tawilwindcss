@@ -28,6 +28,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
 
+        // Trust proxy headers so HTTPS/preview-proxy URLs work (fixed paths for assets)
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(prepend: [
             \App\Http\Middleware\LocalizationMiddleware::class,
         ]);
