@@ -62,6 +62,12 @@ class RolePermissionSeeder extends Seeder
             // Preventive presence requests
             'view preventive-presence',
             'manage preventive-presence',
+            // Rescue & relief certificates (شهادة نجدة وإنقاذ)
+            'view rescue-certificates',
+            'manage rescue-certificates',
+            // Works notifications (الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء)
+            'view works-notifications',
+            'manage works-notifications',
         ];
 
         foreach ($permissions as $permission) {

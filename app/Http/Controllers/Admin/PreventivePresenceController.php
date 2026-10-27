@@ -50,7 +50,7 @@ class PreventivePresenceController extends Controller
     {
         $this->authorize('view preventive-presence');
 
-        $preventivePresence->load(['user', 'governorate', 'delegation', 'reviewer', 'documents.documentType']);
+        $preventivePresence->load(['user', 'governorate', 'delegation', 'reviewer', 'documents.documentType', 'events.actor']);
 
         $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTIVE_PRESENCE)
             ->orderBy('sort_order')
@@ -83,6 +83,8 @@ class PreventivePresenceController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $preventivePresence->logEvent('advanced_to_consultation');
+
         return redirect()->route('admin.preventive-presence.show', $preventivePresence)
             ->with('success', 'Request moved to processing. The applicant has been notified.');
     }
@@ -110,6 +112,9 @@ class PreventivePresenceController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $preventivePresence->logEvent('correction_requested', $validated['admin_note']);
+        $preventivePresence->refresh();
+
         return redirect()->route('admin.preventive-presence.show', $preventivePresence)
             ->with('success', 'Correction requested. The applicant will see your note and can fix and resubmit their request.');
     }
@@ -132,6 +137,8 @@ class PreventivePresenceController extends Controller
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
+
+        $preventivePresence->logEvent('approved');
 
         return redirect()->route('admin.preventive-presence.show', $preventivePresence)
             ->with('success', 'Request approved. Record the fee receipt, then mark the service as performed.');
@@ -160,6 +167,9 @@ class PreventivePresenceController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $preventivePresence->logEvent('cancelled', $validated['admin_note']);
+        $preventivePresence->refresh();
+
         return redirect()->route('admin.preventive-presence.show', $preventivePresence)
             ->with('success', 'Request cancelled. The applicant has been notified.');
     }
@@ -185,6 +195,11 @@ class PreventivePresenceController extends Controller
             'fee_amount'     => $validated['fee_amount'],
             'receipt_number' => $validated['receipt_number'],
             'paid_at'        => $preventivePresence->paid_at ?? now(),
+        ]);
+
+        $preventivePresence->logEvent('payment_recorded', null, [
+            'fee_amount'     => $validated['fee_amount'],
+            'receipt_number' => $validated['receipt_number'],
         ]);
 
         $msg = $preventivePresence->isServed()
@@ -227,6 +242,12 @@ class PreventivePresenceController extends Controller
             'served_at'      => now(),
             'reviewed_by'    => auth()->id(),
             'reviewed_at'    => now(),
+        ]);
+
+        $preventivePresence->logEvent('service_performed', $validated['service_note'], [
+            'service_date'   => $validated['service_date'],
+            'service_team'   => $validated['service_team'] ?? null,
+            'service_agents' => $validated['service_agents'] ?? null,
         ]);
 
         return redirect()->route('admin.preventive-presence.show', $preventivePresence)

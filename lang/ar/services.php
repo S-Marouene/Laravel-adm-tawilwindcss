@@ -6,6 +6,7 @@ return [
     'under_construction' => 'قيد الإنشاء',
     'coming_soon' => 'قريباً',
     'access_service' => 'الوصول إلى الخدمة',
+    'free' => 'مجاني',
 
     // Service 1
     'prevention_certificate' => 'شهادة الوقاية',

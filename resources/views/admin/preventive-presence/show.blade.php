@@ -512,74 +512,79 @@
         @endif
         @endcan
 
-        {{-- Timeline --}}
+        {{-- Timeline — full audit log (every event) --}}
         <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-700">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Timeline</h3>
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">History & Timeline</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $requestItem->events->count() }} recorded events</p>
             </div>
             <div class="px-5 py-4">
-                {{-- Submitted --}}
-                <div class="flex items-start gap-3">
-                    <span class="mt-1 flex-none h-2 w-2 rounded-full bg-emerald-500"></span>
-                    <div>
-                        <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">Submitted by applicant</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $requestItem->created_at->format('d M Y, H:i') }}</p>
-                    </div>
-                </div>
-
-                @if ($requestItem->reviewed_at && $status !== 'completed')
-                    <div class="ms-[3px] my-1.5 w-0.5 h-5 bg-gray-200 dark:bg-gray-600"></div>
+                @forelse ($requestItem->events as $event)
                     @php
-                        $timelineDot = match($status) {
-                            'under_consultation' => 'bg-purple-500',
-                            'needs_correction'   => 'bg-amber-500',
-                            'approved'           => 'bg-emerald-500',
-                            'served'             => 'bg-teal-500',
-                            'cancelled'          => 'bg-red-400',
-                            default              => 'bg-blue-500',
-                        };
-                        $timelineLabel = match($status) {
-                            'under_consultation' => 'Advanced to Processing',
-                            'needs_correction'   => 'Correction Requested',
-                            'approved'           => 'Approved',
-                            'served'             => 'Service Performed',
-                            'cancelled'          => 'Cancelled',
-                            default              => 'Status updated',
-                        };
+                        $isCorrection = $event->type === 'correction_requested';
+                        $isCancelled  = $event->type === 'cancelled';
+                        $isRejected   = $event->type === 'cancelled';
+                        $isApproved   = in_array($event->type, ['approved', 'advanced_to_consultation']);
                     @endphp
-                    <div class="flex items-start gap-3">
-                        <span class="mt-1 flex-none h-2 w-2 rounded-full {{ $timelineDot }}"></span>
-                        <div>
-                            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">{{ $timelineLabel }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">
-                                {{ $requestItem->reviewer?->name ?? 'Admin' }} · {{ $requestItem->reviewed_at->format('d M Y, H:i') }}
+
+                    @if (! $loop->first)
+                        <div class="ms-[3px] my-1.5 w-0.5 h-5 bg-gray-200 dark:bg-gray-600"></div>
+                    @endif
+
+                    <div class="flex items-start gap-3" @if ($isCorrection || $isRejected)
+                            x-data="{ open: false }" @endif>
+                        <span class="mt-1 flex-none h-2 w-2 rounded-full {{ $event->typeDot() }}"></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 flex-wrap">
+                                {{ $event->typeLabel() }}
+                                @if ($isApproved)
+                                    <span class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">Accepted</span>
+                                @endif
+                                @if ($isRejected)
+                                    <span class="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-red-700 dark:bg-red-900/40 dark:text-red-300">Rejected</span>
+                                @endif
+                                @if ($isCorrection)
+                                    <span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Needs correction</span>
+                                @endif
                             </p>
-                        </div>
-                    </div>
-                @endif
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ $event->actor?->name ?? 'System' }}
+                                · {{ $event->created_at->format('d M Y, H:i') }}
+                                ({{ $event->created_at->diffForHumans() }})
+                            </p>
 
-                {{-- Payment + service lines --}}
-                @if ($requestItem->paid_at)
-                    <div class="ms-[3px] my-1.5 w-0.5 h-5 bg-gray-200 dark:bg-gray-600"></div>
-                    <div class="flex items-start gap-3">
-                        <span class="mt-1 flex-none h-2 w-2 rounded-full bg-amber-500"></span>
-                        <div>
-                            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">Fee receipt recorded</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $requestItem->paid_at->format('d M Y') }} · {{ __('preventive_presence.receipt_number') }}: {{ $requestItem->receipt_number }}</p>
-                        </div>
-                    </div>
-                @endif
+                            {{-- Extra details (payment / service) --}}
+                            @if ($detailsText = $event->detailsText())
+                                <p class="mt-1 text-xs text-gray-600 dark:text-gray-300 font-medium">{{ $detailsText }}</p>
+                            @endif
 
-                @if ($requestItem->served_at)
-                    <div class="ms-[3px] my-1.5 w-0.5 h-5 bg-gray-200 dark:bg-gray-600"></div>
-                    <div class="flex items-start gap-3">
-                        <span class="mt-1 flex-none h-2 w-2 rounded-full bg-teal-500"></span>
-                        <div>
-                            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100">Service performed</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $requestItem->served_at->format('d M Y, H:i') }}</p>
+                            {{-- Correction note / rejection reason — expandable with full detail --}}
+                            @if ($event->note)
+                                @if ($isCorrection || $isCancelled)
+                                    <button type="button" @click="open = !open"
+                                        class="mt-1.5 inline-flex items-center gap-1.5 rounded-lg border text-xs font-semibold px-2.5 py-1.5 transition focus:outline-none {{ $isCorrection ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300 dark:hover:bg-amber-900/40' : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/40' }}">
+                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                                        </svg>
+                                        <span x-text="open ? 'Hide' : 'View'">{{ $isCorrection ? 'correction note' : 'reason' }}</span>
+                                    </button>
+                                    <div x-show="open" x-cloak
+                                        x-transition:enter="transition ease-out duration-150"
+                                        x-transition:enter-start="opacity-0 -translate-y-1"
+                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                        class="mt-2 rounded-lg px-3 py-2 text-xs {{ $isCorrection ? 'border border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700/50 dark:bg-amber-900/10 dark:text-amber-200' : 'border border-red-200 bg-red-50 text-red-800 dark:border-red-700/50 dark:bg-red-900/10 dark:text-red-200' }}">
+                                        <p class="font-semibold mb-1">{{ $isCorrection ? 'Note sent to applicant:' : 'Reason given to applicant:' }}</p>
+                                        <p class="whitespace-pre-line">{{ $event->note }}</p>
+                                    </div>
+                                @else
+                                    <p class="mt-1 text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line">{{ $event->note }}</p>
+                                @endif
+                            @endif
                         </div>
                     </div>
-                @endif
+                @empty
+                    <div class="py-2 text-center text-sm text-gray-400">No events recorded yet.</div>
+                @endforelse
             </div>
         </div>
 

@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\BuildingActivityController;
 use App\Http\Controllers\Admin\DocumentTypeController;
 use App\Http\Controllers\Admin\PreventionDossierController;
 use App\Http\Controllers\Admin\PreventivePresenceController;
+use App\Http\Controllers\Admin\RescueCertificateController as AdminRescueCertificateController;
+use App\Http\Controllers\Admin\WorksNotificationController as AdminWorksNotificationController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -87,6 +89,27 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::resource('preventive-presence', PreventivePresenceController::class)
         ->only(['index', 'show'])
         ->parameters(['preventive-presence' => 'preventivePresence']);
+
+    // Rescue & relief certificate (شهادة نجدة وإنقاذ) workflow actions — free procedure
+    Route::post('rescue-certificates/{rescueCertificate}/advance',     [AdminRescueCertificateController::class, 'advance'])->name('rescue-certificates.advance');
+    Route::post('rescue-certificates/{rescueCertificate}/correction',  [AdminRescueCertificateController::class, 'requestCorrection'])->name('rescue-certificates.correction');
+    Route::post('rescue-certificates/{rescueCertificate}/approve',     [AdminRescueCertificateController::class, 'approve'])->name('rescue-certificates.approve');
+    Route::post('rescue-certificates/{rescueCertificate}/cancel',      [AdminRescueCertificateController::class, 'cancel'])->name('rescue-certificates.cancel');
+    Route::post('rescue-certificates/{rescueCertificate}/deliver',     [AdminRescueCertificateController::class, 'deliver'])->name('rescue-certificates.deliver');
+    Route::get('rescue-certificates/{rescueCertificate}/documents/{doc}/download', [AdminRescueCertificateController::class, 'downloadDocument'])->name('rescue-certificates.documents.download');
+    Route::resource('rescue-certificates', AdminRescueCertificateController::class)
+        ->only(['index', 'show'])
+        ->parameters(['rescue-certificates' => 'rescueCertificate']);
+
+    // Works notification (الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء) workflow actions — free procedure
+    Route::post('works-notifications/{worksNotification}/advance',    [AdminWorksNotificationController::class, 'advance'])->name('works-notifications.advance');
+    Route::post('works-notifications/{worksNotification}/correction', [AdminWorksNotificationController::class, 'requestCorrection'])->name('works-notifications.correction');
+    Route::post('works-notifications/{worksNotification}/approve',    [AdminWorksNotificationController::class, 'approve'])->name('works-notifications.approve');
+    Route::post('works-notifications/{worksNotification}/cancel',     [AdminWorksNotificationController::class, 'cancel'])->name('works-notifications.cancel');
+    Route::get('works-notifications/{worksNotification}/documents/{doc}/download', [AdminWorksNotificationController::class, 'downloadDocument'])->name('works-notifications.documents.download');
+    Route::resource('works-notifications', AdminWorksNotificationController::class)
+        ->only(['index', 'show'])
+        ->parameters(['works-notifications' => 'worksNotification']);
 
     // Settings
     Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');

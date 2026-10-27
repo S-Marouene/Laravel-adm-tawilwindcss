@@ -1,0 +1,138 @@
+<?php
+
+return [
+    // Heads & navigation
+    'index_title' => 'شهادة نجدة وإنقاذ',
+    'index_subtitle' => 'اطلع على مطالبك أو عدّلها أو احذفها.',
+    'card_title' => 'شهادة نجدة وإنقاذ',
+    'card_description' => 'اطلب الشهادة الصادرة بعد تدخل وحدات الحماية المدنية لنجدة وإنقاذ الأشخاص وحماية الممتلكات إثر الحوادث والحرائق.',
+    'new_request' => 'مطلب جديد',
+    'my_requests' => 'طلباتي',
+    'create_title' => 'مطلب شهادة جديد',
+    'create_subtitle' => 'شهادة نجدة وإنقاذ',
+    'back' => 'رجوع',
+    'cancel' => 'إلغاء',
+    'continue' => 'متابعة',
+    'save_and_continue' => 'حفظ ومتابعة',
+    'submitting' => 'جارٍ الإرسال...',
+    'submit_dossier' => 'إيداع المطلب',
+    'search_placeholder' => 'بحث...',
+    'activity_no_results' => 'لا توجد نتائج',
+
+    // Steps
+    'step_one_title' => 'معطيات المتضرر وعملية النجدة والإنقاذ',
+    'step_two_title' => 'الوثائق المطلوبة',
+    'step_status' => 'المرحلة الحالية',
+    'step_heading' => 'المرحلة 1',
+    'step_description' => 'المعطيات المطلوبة',
+    'step2_heading' => 'المرحلة 2',
+    'step2_description' => 'قم برفع الوثائق المطلوبة',
+    'step_done' => 'مكتمل',
+    'step_editing' => 'قيد التعديل',
+    'step_draft' => 'مسودة',
+    'edit_step1' => 'تعديل البيانات',
+    'back_to_step2' => 'العودة إلى الوثائق',
+    'documents_info' => 'يجب رفع الوثائق المطلوبة. الصيغ المقبولة: PDF, JPG, PNG, DOC, DOCX. الحجم الأقصى: 10 ميغابايت.',
+    'conditional' => 'مشروط',
+    'upload_file' => 'رفع وثيقة',
+    'replace_file' => 'استبدال الوثيقة',
+    'remove_file' => 'إزالة',
+    'select_gov_del' => 'يرجى اختيار الولاية والمعتمدية',
+
+    // Applicant (victim) fields
+    'cin' => 'بطاقة تعريف المتضرر',
+    'cin_placeholder' => '12345678',
+    'nom_prenom' => 'اسم ولقب المتضرر',
+    'nom_prenom_placeholder' => 'الاسم واللقب الكاملان للمتضرر',
+    'phone' => 'رقم الهاتف',
+    'phone_placeholder' => '0X XXX XXX',
+    'phone_notification_hint' => 'ستُبلّغك الإدارة بمآل مطلبك عبر الهاتف.',
+
+    // Victim status
+    'victim_is_minor' => 'المتضرر إبن قاصر (دون 18 سنة)',
+    'victim_is_minor_hint' => 'يجب إرفاق نسخة من بطاقة التعريف الوطنية للأب أو الأم.',
+    'parent_name' => 'اسم ولقب الأب / الأم',
+    'parent_name_placeholder' => 'الاسم الكامل للوالد',
+    'parent_cin' => 'بطاقة تعريف الأب / الأم',
+    'spouse_case' => 'شهادة مطلبها الزوج',
+    'spouse_case_hint' => 'إرفاق نسخة من بطاقة التعريف الوطنية للزوجة منصوص عليها حرم أو مضمون زواج جديد ونسخة من بطاقة التعريف الوطنية للزوج.',
+    'victim_status' => 'صفة طالب الشهادة',
+    'victim_normal' => 'طالب الشهادة هو المتضرر نفسه',
+
+    // Location fields
+    'code_structure' => 'الولاية',
+    'code_structure_select' => 'اختر الولاية',
+    'delegation' => 'المعتمدية',
+    'delegation_select' => 'اختر المعتمدية',
+    'delegation_empty' => 'لا توجد معتمديات لهذه الولاية',
+
+    // Incident fields
+    'incident_section' => 'معطيات عملية النجدة والإنقاذ',
+    'incident_type' => 'نوع الحادث',
+    'incident_type_select' => 'اختر نوع الحادث',
+    'incident_address' => 'مكان الحادث',
+    'incident_address_placeholder' => 'العنوان التفصيلي للحادث...',
+    'incident_date' => 'تاريخ الحادث',
+    'incident_time' => 'التوقيت (اختياري)',
+    'incident_description' => 'وصف عملية النجدة والإنقاذ',
+    'incident_description_placeholder' => 'صف الحادث والأشخاص والممتلكات المعنية وتدخل وحدات الحماية المدنية...',
+    'notes' => 'ملاحظات إضافية (اختياري)',
+    'notes_placeholder' => 'أي تفاصيل إضافية حول الحادث أو التدخل...',
+
+    // Index sections
+    'drafts_title' => 'المسودات غير المكتملة',
+    'submitted_title' => 'المطالب المودعة',
+    'draft_step' => 'المرحلة :step',
+    'no_requests' => 'لا توجد مطالب.',
+    'delete_confirm' => 'هل تريد حذف هذا المطلب؟',
+    'create_error_title' => 'يرجى تصحيح المعطيات المدخلة.',
+    'submit_success' => 'تم إيداع مطلب شهادة النجدة والإنقاذ بنجاح. ستتحقق الإدارة من المعطيات بالرجوع لعملية النجدة والإنقاذ.',
+    'delete_success' => 'تم حذف المطلب بنجاح.',
+    'not_editable' => 'لا يمكن تعديل هذا المطلب في وضعيته الحالية.',
+    'resubmit_forbidden' => 'لا يمكن إعادة إيداع هذا المطلب في وضعيته الحالية.',
+    'delete_forbidden' => 'لا يمكن حذف المطالب المودعة.',
+    'resubmit_info' => 'تم فتح ملفك من جديد. يرجى مراجعة وثائقك وإعادة الإيداع.',
+    'fix_and_resubmit' => 'تصحيح وإعادة الإيداع',
+    'admin_note_label' => 'ملاحظة الإدارة:',
+    'event_label' => 'عملية النجدة والإنقاذ',
+
+    // Statuses
+    'status_under_review' => 'قيد المراجعة',
+    'status_completed' => 'قيد المراجعة',
+    'status_under_consultation' => 'جارٍ التأكد من معطيات عملية النجدة والإنقاذ',
+    'status_needs_correction' => 'يحتاج تصحيح',
+    'status_approved' => 'مقبول',
+    'status_served' => 'تم تسليم الشهادة',
+    'status_cancelled' => 'ملغى',
+
+    // Banners
+    'under_review_banner' => 'مطلبك قيد المراجعة. يرجى الإبقاء على هاتفك متاحاً لابلاغك بأي تحديث.',
+    'under_consultation_banner' => 'تتحقق الإدارة من معطياتك بالرجوع لمحضر عملية النجدة والإنقاذ. قد يتم الاتصال بك هاتفيًا.',
+    'needs_correction_banner' => 'يتطلب مطلبك تصحيحات. يرجى قراءة الملاحظة أدناه بعناية ثم تصحيح الملفات وإعادة الإيداع.',
+    'approved_banner' => 'تم قبول مطلبك. الإجراء مجاني — يرجى التوجه إلى الإدارة الجهوية للحماية المدنية لتسلّم شهادتك.',
+    'served_banner' => 'تم تسليم شهادة النجدة والإنقاذ الخاصة بك. وصل هذا المطلب إلى نهايته.',
+    'cancelled_banner' => 'تم إلغاء مطلبك. يرجى الاطلاع على السبب أدناه.',
+
+    // Free procedure (مجاني)
+    'fees_title' => 'المعاليم',
+    'fees_info' => 'هذا الإجراء الإداري مجاني تمامًا.',
+    'free' => 'مجاني',
+    'free_info' => 'هذا الإجراء مجاني — لا توجد أي معاليم يجب أداؤها.',
+    'approved_next_hint' => 'يرجى التوجه إلى الإدارة الجهوية للحماية المدنية لتسلّم شهادتك.',
+
+    // Certificate delivery (تسليم الشهادة)
+    'delivery_title' => 'تسليم الشهادة',
+    'delivery_subtitle' => 'تسليم الشهادة إلى طالبها',
+    'certificate_number' => 'رقم الشهادة',
+    'delivery_date' => 'تاريخ التسليم',
+    'delivery_note' => 'ملاحظات',
+    'delivery_status_done' => 'تم تسليم الشهادة',
+    'delivery_status_pending' => 'لم تُسلّم الشهادة بعد',
+    'delivery_hint_panel' => 'استعمل اللوحة على اليمين لتسجيل تسليم الشهادة عند حصول طالبها عليها.',
+    'delivery_deliver_btn' => 'تسليم الشهادة',
+    // Incident type labels
+    'incident_type_person_rescue' => 'نجدة وتنقذ الأشخاص',
+    'incident_type_fire' => 'حرائق',
+    'incident_type_property_protection' => 'حماية الممتلكات',
+    'incident_type_other' => 'أخرى',
+];

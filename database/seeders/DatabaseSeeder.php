@@ -31,6 +31,8 @@ class DatabaseSeeder extends Seeder
             BuildingTypeSeeder::class,
             DocumentTypeSeeder::class,
             PreventivePresenceDocumentTypeSeeder::class,
+            RescueDocumentTypeSeeder::class,
+            WorksDocumentTypeSeeder::class,
         ]);
     }
 }

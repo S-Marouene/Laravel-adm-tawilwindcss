@@ -1,0 +1,138 @@
+<?php
+
+return [
+    // Heads & navigation
+    'index_title' => 'Certificats de secours et de sauvetage',
+    'index_subtitle' => 'Consultez, modifiez ou supprimez vos demandes de certificat.',
+    'card_title' => 'Certificat de secours et de sauvetage',
+    'card_description' => "Demandez le certificat délivré après une intervention de secours et de sauvetage de la Protection Civile à la suite d'accidents et d'incendies.",
+    'new_request' => 'Nouvelle demande',
+    'my_requests' => 'Mes demandes',
+    'create_title' => 'Nouvelle demande de certificat',
+    'create_subtitle' => 'Certificat de secours et de sauvetage',
+    'back' => 'Retour',
+    'cancel' => 'Annuler',
+    'continue' => 'Continuer',
+    'save_and_continue' => 'Enregistrer et continuer',
+    'submitting' => 'Envoi en cours...',
+    'submit_dossier' => 'Déposer la demande',
+    'search_placeholder' => 'Rechercher...',
+    'activity_no_results' => 'Aucun résultat',
+
+    // Steps
+    'step_one_title' => "Victime & opération de secours",
+    'step_two_title' => 'Documents requis',
+    'step_status' => 'Étape en cours',
+    'step_heading' => 'Étape 1',
+    'step_description' => 'Données requises.',
+    'step2_heading' => 'Étape 2',
+    'step2_description' => 'Téléchargez les documents requis',
+    'step_done' => 'Complété',
+    'step_editing' => 'En cours de modification',
+    'step_draft' => 'Brouillon',
+    'edit_step1' => 'Modifier les informations',
+    'back_to_step2' => 'Retour aux documents',
+    'documents_info' => 'Les documents requis doivent être téléversés. Formats acceptés : PDF, JPG, PNG, DOC, DOCX. Taille max : 10 Mo.',
+    'conditional' => 'Conditionnel',
+    'upload_file' => 'Télécharger un document',
+    'replace_file' => 'Remplacer le document',
+    'remove_file' => 'Retirer',
+    'select_gov_del' => 'Veuillez sélectionner un gouvernorat et une délégation',
+
+    // Applicant (victim) fields
+    'cin' => "CIN de la victime",
+    'cin_placeholder' => '12345678',
+    'nom_prenom' => 'Nom et prénom de la victime',
+    'nom_prenom_placeholder' => 'Nom et prénom de la victime',
+    'phone' => 'Numéro de téléphone',
+    'phone_placeholder' => '0X XXX XXX',
+    'phone_notification_hint' => "L'administration vous informera de l'issue de votre demande par téléphone.",
+
+    // Victim status
+    'victim_is_minor' => 'La victime est mineure (moins de 18 ans)',
+    'victim_is_minor_hint' => "Une copie de la carte d'identité nationale du père ou de la mère est requise.",
+    'parent_name' => 'Nom et prénom du père / de la mère',
+    'parent_name_placeholder' => 'Nom complet du parent',
+    'parent_cin' => "CIN du père / de la mère",
+    'spouse_case' => "Certificat demandé par l'époux / l'épouse",
+    'spouse_case_hint' => "Joindre la CIN de l'épouse (muharram) ou l'attestation de nouveau mariage + une copie de la CIN de l'époux.",
+    'victim_status' => 'Qualité du requérant',
+    'victim_normal' => 'Le demandeur est la victime elle-même',
+
+    // Location fields
+    'code_structure' => 'Gouvernorat',
+    'code_structure_select' => 'Sélectionnez un gouvernorat',
+    'delegation' => 'Délégation',
+    'delegation_select' => 'Sélectionnez une délégation',
+    'delegation_empty' => 'Aucune délégation pour ce gouvernorat',
+
+    // Incident fields
+    'incident_section' => "Détails de l'opération de secours et de sauvetage",
+    'incident_type' => "Type d'accident",
+    'incident_type_select' => "Sélectionnez le type d'accident",
+    'incident_address' => "Lieu de l'accident",
+    'incident_address_placeholder' => "Adresse détaillée de l'accident...",
+    'incident_date' => "Date de l'accident",
+    'incident_time' => 'Horaire (optionnel)',
+    'incident_description' => "Description de l'intervention de secours et de sauvetage",
+    'incident_description_placeholder' => "Décrivez l'accident, les personnes/biens concernés et l'intervention des unités de la Protection Civile...",
+    'notes' => 'Observations supplémentaires (optionnel)',
+    'notes_placeholder' => "Tout détail complémentaire sur l'accident ou l'intervention...",
+
+    // Index sections
+    'drafts_title' => 'Brouillons incomplets',
+    'submitted_title' => 'Demandes soumises',
+    'draft_step' => 'Étape :step',
+    'no_requests' => 'Aucune demande trouvée.',
+    'delete_confirm' => 'Supprimer cette demande ?',
+    'create_error_title' => 'Veuillez corriger les informations saisies.',
+    'submit_success' => "Votre demande de certificat de secours et de sauvetage a été soumise avec succès. L'administration la vérifiera par rapport aux enregistrements de l'opération de secours.",
+    'delete_success' => 'Votre demande a été supprimée avec succès.',
+    'not_editable' => 'Cette demande ne peut pas être modifiée dans son état actuel.',
+    'resubmit_forbidden' => 'Cette demande ne peut pas être resoumise dans son état actuel.',
+    'delete_forbidden' => 'Les demandes soumises ne peuvent pas être supprimées.',
+    'resubmit_info' => 'Votre dossier a été rouvert. Veuillez réviser vos documents et resoumettre.',
+    'fix_and_resubmit' => 'Corriger et resoumettre',
+    'admin_note_label' => "Note de l'administration :",
+    'event_label' => 'Opération de secours',
+
+    // Statuses
+    'status_under_review' => "En cours d'examen",
+    'status_completed' => "En cours d'examen",
+    'status_under_consultation' => "Vérification de l'opération de secours",
+    'status_needs_correction' => 'Correction requise',
+    'status_approved' => 'Approuvée',
+    'status_served' => 'Certificat remis',
+    'status_cancelled' => 'Annulée',
+
+    // Banners
+    'under_review_banner' => "Votre demande est en cours d'examen. Veuillez garder votre téléphone disponible pour toute mise à jour.",
+    'under_consultation_banner' => "L'administration vérifie vos données par rapport aux enregistrements de l'opération de secours. Vous pouvez être contacté par téléphone.",
+    'needs_correction_banner' => "Votre demande nécessite des corrections. Veuillez lire attentivement la note ci-dessous, puis corriger vos fichiers et resoumettre.",
+    'approved_banner' => "Votre demande a été approuvée. La procédure est gratuite — veuillez vous présenter à la Direction Régionale de la Protection Civile pour retirer votre certificat.",
+    'served_banner' => "Votre certificat de secours et de sauvetage a été remis. Cette demande est désormais terminée.",
+    'cancelled_banner' => "Votre demande a été annulée. Veuillez consulter la raison ci-dessous.",
+
+    // Free procedure (gratuit)
+    'fees_title' => 'Frais',
+    'fees_info' => 'Cette procédure administrative est entièrement gratuite.',
+    'free' => 'Gratuit',
+    'free_info' => "Cette procédure est gratuite — aucun frais n'est dû.",
+    'approved_next_hint' => "Veuillez vous présenter à la Direction Régionale de la Protection Civile pour retirer votre certificat.",
+
+    // Certificate delivery (تسليم الشهادة)
+    'delivery_title' => 'Remise du certificat',
+    'delivery_subtitle' => "Remise du certificat au demandeur",
+    'certificate_number' => 'Numéro du certificat',
+    'delivery_date' => 'Date de remise',
+    'delivery_note' => 'Observations',
+    'delivery_status_done' => 'Certificat remis',
+    'delivery_status_pending' => 'Certificat pas encore remis',
+    'delivery_hint_panel' => 'Utilisez le panneau à droite pour enregistrer la remise du certificat au retrait par le demandeur.',
+    'delivery_deliver_btn' => 'Remettre le certificat',
+    // Incident type labels
+    'incident_type_person_rescue' => 'Sauvetage de personnes',
+    'incident_type_fire' => 'Incendie',
+    'incident_type_property_protection' => 'Protection des biens',
+    'incident_type_other' => 'Autre',
+];

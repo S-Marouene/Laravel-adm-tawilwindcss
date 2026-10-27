@@ -10,6 +10,8 @@ class DocumentType extends Model
     // Which service's checklist the document belongs to
     public const SERVICE_PREVENTION = 'prevention';
     public const SERVICE_PREVENTIVE_PRESENCE = 'preventive-presence';
+    public const SERVICE_RESCUE_CERTIFICATE = 'rescue-certificate';
+    public const SERVICE_WORKS_NOTIFICATION = 'works-notification';
 
     protected $fillable = ['name_ar', 'name_fr', 'name_en', 'service_key', 'is_conditional', 'sort_order'];
 

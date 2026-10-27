@@ -6,6 +6,7 @@ return [
     'under_construction' => 'En cours de développement',
     'coming_soon' => 'Bientôt disponible',
     'access_service' => 'Accéder au service',
+    'free' => 'Gratuit',
 
     // Service 1
     'prevention_certificate' => 'Certificat de prévention',

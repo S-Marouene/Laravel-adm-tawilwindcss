@@ -6,6 +6,7 @@ return [
     'under_construction' => 'Under development',
     'coming_soon' => 'Coming soon',
     'access_service' => 'Access service',
+    'free' => 'Free',
 
     // Service 1
     'prevention_certificate' => 'Prevention Certificate',

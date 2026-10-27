@@ -185,6 +185,16 @@
                     </a>
                     @endcan
 
+                    {{-- Rescue & Relief Certificates --}}
+                    @can('view rescue-certificates')
+                    <a href="{{ route('admin.rescue-certificates.index') }}" data-tooltip="Rescue Certificates" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.rescue-certificates.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1h-1m1 1h1M4 20h16a1 1 0 001-1V9a1 1 0 00-1-1h-4.586l-2.707-2.707A1 1 0 0012.414 5H4a1 1 0 00-1 1v13a1 1 0 001 1z"/>
+                        </svg>
+                        <span x-show="!collapsed" class="truncate">Rescue Certificates</span>
+                    </a>
+                    @endcan
+
                     {{-- Preventive Presence --}}
                     @can('view preventive-presence')
                     <a href="{{ route('admin.preventive-presence.index') }}" data-tooltip="Preventive Presence" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.preventive-presence.*') ? 'active' : '' }}">

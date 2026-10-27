@@ -193,6 +193,8 @@ class PreventivePresenceController extends Controller
             'status'       => 'completed',
         ]);
 
+        $presenceRequest->logEvent('submitted');
+
         return redirect()
             ->route('preventive-presence.index')
             ->with('success', __('preventive_presence.submit_success'));
@@ -215,11 +217,15 @@ class PreventivePresenceController extends Controller
         }
 
         // Re-open to step 2 so user can upload corrected documents
+        $previousNote = $presenceRequest->admin_note;
+
         $presenceRequest->update([
             'status'       => 'draft',
             'current_step' => 2,
             'admin_note'   => null,
         ]);
+
+        $presenceRequest->logEvent('resubmitted', $previousNote ? 'In response to: ' . $previousNote : null);
 
         return redirect()
             ->route('preventive-presence.step2.show', $presenceRequest)

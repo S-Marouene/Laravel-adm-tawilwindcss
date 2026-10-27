@@ -67,6 +67,28 @@ class PreventivePresenceRequest extends Model
         return $this->hasMany(PresenceDocument::class, 'preventive_presence_request_id');
     }
 
+    /** Full audit log — chronological history of every action on this request */
+    public function events(): HasMany
+    {
+        return $this->hasMany(PreventivePresenceEvent::class, 'preventive_presence_request_id')
+            ->orderBy('created_at')
+            ->orderBy('id');
+    }
+
+    /**
+     * Record an event in the request audit log (timeline).
+     * The actor is the currently authenticated user (admin or applicant).
+     */
+    public function logEvent(string $type, ?string $note = null, array $data = []): PreventivePresenceEvent
+    {
+        return $this->events()->create([
+            'user_id' => auth()->id(),
+            'type'    => $type,
+            'note'    => $note,
+            'data'    => $data ?: null,
+        ]);
+    }
+
     // -----------------------------------------------------------------------
     // Status helpers
     // -----------------------------------------------------------------------

@@ -1,0 +1,138 @@
+<?php
+
+return [
+    // Heads & navigation
+    'index_title' => 'Rescue & relief certificates',
+    'index_subtitle' => 'View, edit or delete your certificate requests.',
+    'card_title' => 'Rescue & relief certificate',
+    'card_description' => 'Request the certificate issued after a rescue & relief intervention of the Civil Protection following accidents and fires.',
+    'new_request' => 'New request',
+    'my_requests' => 'My requests',
+    'create_title' => 'New certificate request',
+    'create_subtitle' => 'Rescue & relief certificate',
+    'back' => 'Back',
+    'cancel' => 'Cancel',
+    'continue' => 'Continue',
+    'save_and_continue' => 'Save and continue',
+    'submitting' => 'Submitting...',
+    'submit_dossier' => 'Submit request',
+    'search_placeholder' => 'Search...',
+    'activity_no_results' => 'No results',
+
+    // Steps
+    'step_one_title' => 'Victim & rescue operation information',
+    'step_two_title' => 'Required documents',
+    'step_status' => 'Current step',
+    'step_heading' => 'Step 1',
+    'step_description' => 'Required data.',
+    'step2_heading' => 'Step 2',
+    'step2_description' => 'Upload the required documents',
+    'step_done' => 'Completed',
+    'step_editing' => 'Editing',
+    'step_draft' => 'Draft',
+    'edit_step1' => 'Edit information',
+    'back_to_step2' => 'Back to documents',
+    'documents_info' => 'The required documents must be uploaded. Accepted formats: PDF, JPG, PNG, DOC, DOCX. Max size: 10 MB.',
+    'conditional' => 'Conditional',
+    'upload_file' => 'Upload document',
+    'replace_file' => 'Replace document',
+    'remove_file' => 'Remove',
+    'select_gov_del' => 'Please select a governorate and a delegation',
+
+    // Applicant (victim) fields
+    'cin' => "Victim's CIN",
+    'cin_placeholder' => '12345678',
+    'nom_prenom' => "Victim's full name",
+    'nom_prenom_placeholder' => 'First and last name of the victim',
+    'phone' => 'Phone number',
+    'phone_placeholder' => '0X XXX XXX',
+    'phone_notification_hint' => 'The administration will notify you of the outcome of your request by phone.',
+
+    // Victim status
+    'victim_is_minor' => 'The victim is a minor (under 18)',
+    'victim_is_minor_hint' => "A copy of the father's or mother's national ID card is required.",
+    'parent_name' => "Father's / mother's full name",
+    'parent_name_placeholder' => 'Full name of the parent',
+    'parent_cin' => "Father's / mother's CIN",
+    'spouse_case' => 'Certificate requested by the spouse',
+    'spouse_case_hint' => "Attach the wife's ID card (muharram) or the new marriage certificate + a copy of the husband's ID card.",
+    'victim_status' => 'Applicant status',
+    'victim_normal' => 'The requester is the victim himself',
+
+    // Location fields
+    'code_structure' => 'Governorate',
+    'code_structure_select' => 'Select a governorate',
+    'delegation' => 'Delegation',
+    'delegation_select' => 'Select a delegation',
+    'delegation_empty' => 'No delegations for this governorate',
+
+    // Incident fields
+    'incident_section' => 'Rescue & relief operation details',
+    'incident_type' => 'Type of accident',
+    'incident_type_select' => 'Select the type of accident',
+    'incident_address' => 'Accident location',
+    'incident_address_placeholder' => 'Detailed address of the accident...',
+    'incident_date' => 'Date of the accident',
+    'incident_time' => 'Time (optional)',
+    'incident_description' => 'Description of the rescue & relief intervention',
+    'incident_description_placeholder' => 'Describe the accident, the persons/properties involved and the intervention of the Civil Protection units...',
+    'notes' => 'Additional notes (optional)',
+    'notes_placeholder' => 'Any additional details about the accident or the intervention...',
+
+    // Index sections
+    'drafts_title' => 'Incomplete drafts',
+    'submitted_title' => 'Submitted requests',
+    'draft_step' => 'Step :step',
+    'no_requests' => 'No requests found.',
+    'delete_confirm' => 'Delete this request?',
+    'create_error_title' => 'Please correct the entered data.',
+    'submit_success' => 'Your rescue & relief certificate request has been submitted successfully. The administration will verify it against the records of the rescue operation.',
+    'delete_success' => 'Request deleted successfully.',
+    'not_editable' => 'This request cannot be edited in its current status.',
+    'resubmit_forbidden' => 'This request cannot be resubmitted in its current status.',
+    'delete_forbidden' => 'Submitted requests cannot be deleted.',
+    'resubmit_info' => 'Your file has been re-opened. Please review your documents and resubmit.',
+    'fix_and_resubmit' => 'Fix & resubmit',
+    'admin_note_label' => 'Administration note:',
+    'event_label' => 'Rescue operation',
+
+    // Statuses
+    'status_under_review' => 'Under Review',
+    'status_completed' => 'Under Review',
+    'status_under_consultation' => 'Verifying rescue operation',
+    'status_needs_correction' => 'Needs Correction',
+    'status_approved' => 'Approved',
+    'status_served' => 'Certificate Delivered',
+    'status_cancelled' => 'Cancelled',
+
+    // Banners
+    'under_review_banner' => 'Your request is being reviewed. Please keep your phone available for any updates.',
+    'under_consultation_banner' => 'The administration is verifying your data against the records of the rescue operation. You may be contacted by phone.',
+    'needs_correction_banner' => 'Your request requires corrections. Please read the note below carefully, then fix your files and resubmit.',
+    'approved_banner' => 'Your request has been approved. The procedure is free — please go to the Regional Directorate of Civil Protection to collect your certificate.',
+    'served_banner' => 'Your rescue & relief certificate has been delivered. This request is now complete.',
+    'cancelled_banner' => 'Your request has been cancelled. Please see the reason below.',
+
+    // Free procedure (مجاني)
+    'fees_title' => 'Fees',
+    'fees_info' => 'This administrative procedure is completely free.',
+    'free' => 'Free',
+    'free_info' => 'This procedure is free of charge — no fees are due.',
+    'approved_next_hint' => 'Please go to the Regional Directorate of Civil Protection to collect your certificate.',
+
+    // Certificate delivery (تسليم الشهادة)
+    'delivery_title' => 'Certificate delivery',
+    'delivery_subtitle' => 'Delivering the certificate to the applicant',
+    'certificate_number' => 'Certificate number',
+    'delivery_date' => 'Delivery date',
+    'delivery_note' => 'Notes',
+    'delivery_status_done' => 'Certificate delivered',
+    'delivery_status_pending' => 'Certificate not yet delivered',
+    'delivery_hint_panel' => 'Use the panel on the right to record the delivery of the certificate once the applicant collects it.',
+    'delivery_deliver_btn' => 'Deliver the certificate',
+    // Incident type labels
+    'incident_type_person_rescue' => 'Rescue of persons',
+    'incident_type_fire' => 'Fire',
+    'incident_type_property_protection' => 'Property protection',
+    'incident_type_other' => 'Other',
+];

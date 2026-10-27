@@ -3,6 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PreventionRequestController;
 use App\Http\Controllers\PreventivePresenceController;
+use App\Http\Controllers\RescueCertificateController;
+use App\Http\Controllers\WorksNotificationController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\App;
@@ -85,6 +87,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Delete a local draft
     Route::delete('/preventive-presence/{presenceRequest}', [PreventivePresenceController::class, 'destroy'])->name('preventive-presence.destroy');
+
+    // ── Rescue & relief certificate (شهادة نجدة وإنقاذ) ──
+    Route::get('/rescue-certificates', [RescueCertificateController::class, 'index'])->name('rescue-certificates.index');
+    Route::get('/rescue-certificates/create', [RescueCertificateController::class, 'create'])->name('rescue-certificates.create');
+    Route::post('/rescue-certificates/step1', [RescueCertificateController::class, 'storeStep1'])->name('rescue-certificates.step1.store');
+    Route::get('/rescue-certificates/{rescueCertificate}/step1/edit', [RescueCertificateController::class, 'editStep1'])->name('rescue-certificates.step1.edit');
+    Route::put('/rescue-certificates/{rescueCertificate}/step1', [RescueCertificateController::class, 'updateStep1'])->name('rescue-certificates.step1.update');
+    Route::get('/rescue-certificates/{rescueCertificate}/step2', [RescueCertificateController::class, 'showStep2'])->name('rescue-certificates.step2.show');
+    Route::post('/rescue-certificates/{rescueCertificate}/step2', [RescueCertificateController::class, 'storeStep2'])->name('rescue-certificates.step2.store');
+    Route::post('/rescue-certificates/{rescueCertificate}/resubmit', [RescueCertificateController::class, 'resubmit'])->name('rescue-certificates.resubmit');
+    Route::get('/rescue-certificates/documents/{rescueDocument}/download', [RescueCertificateController::class, 'downloadDocument'])->name('rescue-certificates.documents.download');
+    Route::delete('/rescue-certificates/{rescueCertificate}', [RescueCertificateController::class, 'destroy'])->name('rescue-certificates.destroy');
+
+    // ── Works notification (الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء) ──
+    Route::get('/works-notifications', [WorksNotificationController::class, 'index'])->name('works-notifications.index');
+    Route::get('/works-notifications/create', [WorksNotificationController::class, 'create'])->name('works-notifications.create');
+    Route::post('/works-notifications/step1', [WorksNotificationController::class, 'storeStep1'])->name('works-notifications.step1.store');
+    Route::get('/works-notifications/{worksNotification}/step1/edit', [WorksNotificationController::class, 'editStep1'])->name('works-notifications.step1.edit');
+    Route::put('/works-notifications/{worksNotification}/step1', [WorksNotificationController::class, 'updateStep1'])->name('works-notifications.step1.update');
+    Route::get('/works-notifications/{worksNotification}/step2', [WorksNotificationController::class, 'showStep2'])->name('works-notifications.step2.show');
+    Route::post('/works-notifications/{worksNotification}/step2', [WorksNotificationController::class, 'storeStep2'])->name('works-notifications.step2.store');
+    Route::post('/works-notifications/{worksNotification}/resubmit', [WorksNotificationController::class, 'resubmit'])->name('works-notifications.resubmit');
+    Route::delete('/works-notifications/{worksNotification}', [WorksNotificationController::class, 'destroy'])->name('works-notifications.destroy');
 });
 
 Route::middleware('auth')->group(function () {
