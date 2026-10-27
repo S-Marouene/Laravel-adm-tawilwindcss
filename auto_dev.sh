@@ -426,8 +426,15 @@ if [ -f artisan ]; then
   fi
 
   # ---------------------------------------------------------------- migrate (only if pending)
-  if php artisan migrate:status --no-ansi 2>/dev/null | grep -q 'Pending'; then
-    log "Pending migrations found — running migrations with seeders"
+  # NB: when the `migrations` table does not exist yet (fresh/empty database),
+  # `migrate:status` fails with "Migration table not found" and shows NO
+  # 'Pending' rows — so a 'Pending' grep alone would wrongly report the DB as
+  # already migrated. Treat that error (or artisan crash, e.g. missing vendor/)
+  # as "needs migrating" too.
+  MIGRATE_STATUS="$(php artisan migrate:status --no-ansi 2>&1 || true)"
+  if grep -q 'Migration table not found' <<<"$MIGRATE_STATUS" \
+     || grep -q 'Pending' <<<"$MIGRATE_STATUS"; then
+    log "Pending migrations (or empty schema) — running migrations with seeders"
     php artisan migrate --seed --force
     ok "migrations + seeders done"
   else
