@@ -86,6 +86,19 @@ if $PORT_OK; then
   ok "ports 8000 and 4040 are free ✔"
 fi
 
+# ---------------------------------------------------------------- uninstall the 'link' command (env is stopped)
+LINK_BIN=/usr/local/bin/link
+if [ -x "$LINK_BIN" ] && grep -q 'link.sh' "$LINK_BIN" 2>/dev/null; then
+  # verify it is OUR wrapper (never delete the coreutils /usr/bin/link)
+  $SUDO rm -f "$LINK_BIN" && ok "'link' command removed from PATH"
+elif [ -f "$HOME/.bashrc" ] && grep -q "# BEGIN dev-link" "$HOME/.bashrc" 2>/dev/null; then
+  # legacy install in .bashrc — purge it too
+  sed -i '/^# BEGIN dev-link/,/^# END dev-link/d' "$HOME/.bashrc"
+  ok "'link' legacy block removed from .bashrc"
+else
+  ok "'link' command not installed (nothing to remove)"
+fi
+
 # ---------------------------------------------------------------- optionally stop MySQL
 if $STOP_DB; then
   log "Stopping MySQL service"

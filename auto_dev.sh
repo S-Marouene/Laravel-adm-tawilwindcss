@@ -22,6 +22,37 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 
+# ---------------------------------------------------------------- project dir (before anything else)
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_DIR"
+
+# ---------------------------------------------------------------- fail fast: .env + required credentials
+# Everything secret/needed lives in .env — abort HERE if it's missing or incomplete,
+# before touching apt/MySQL/ngrok at all.
+err() { printf '\033[1;31m✗ %s\033[0m\n' "$*"; }
+
+if [ ! -f .env ]; then
+  err "No .env found in $PROJECT_DIR — the script cannot run without it"
+  info "Initialise it, then rerun:"
+  info "  cd \"$PROJECT_DIR\""
+  info "  cp .env.example .env"
+  info "  nano .env    # fill NGROK_AUTHTOKEN and DB_PASSWORD"
+  exit 1
+fi
+
+REQUIRED_MISSING=""
+for key in NGROK_AUTHTOKEN DB_PASSWORD; do
+  val="$(sed -n "s/^${key}=//p" .env | head -n1 | tr -d '"')"
+  if [ -z "$val" ]; then REQUIRED_MISSING="$REQUIRED_MISSING ${key}"; fi
+done
+if [ -n "$REQUIRED_MISSING" ]; then
+  err "Empty/missing variables in .env:$REQUIRED_MISSING"
+  info "Edit \"$PROJECT_DIR/.env\" and set them, then rerun: bash auto_dev.sh"
+  info "(copy from .env.example for the dev defaults if you need starting values)"
+  exit 1
+fi
+ok ".env ready — required variables are all set"
+
 # ---------------------------------------------------------------- apt update (only when needed)
 if command -v apt-get >/dev/null 2>&1; then
   # silence Cloud Shell's 5s apt-get warning — cover root AND the invoking user
@@ -167,8 +198,7 @@ fi
 ok ".bashrc loads nvm automatically"
 
 # ================================================================ Laravel .env + MySQL setup
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$PROJECT_DIR"
+# (PROJECT_DIR and cd already handled at the very top of the script)
 
 # ---------------------------------------------------------------- auto-fix root ownership
 # Files created by past "sudo bash auto_dev.sh" / "sudo git" runs break git add,
@@ -191,10 +221,72 @@ else
   ok "Project ownership OK (no root-owned files)"
 fi
 
-# ---------------------------------------------------------------- default credentials
-DEFAULT_DB_NAME="laravel_admin"
-DEFAULT_DB_USER="root"
-DEFAULT_DB_PASS='0npcDATABASE@97'
+# ---------------------------------------------------------------- .env (created early — ALL secrets live here)
+if [ -f .env ]; then
+  ok ".env already exists (leaving it untouched)"
+else
+  if [ -f .env.example ]; then
+    log "Creating .env from .env.example"
+    cp .env.example .env
+    ok ".env created from .env.example"
+  else
+    log "No .env.example found — creating a minimal .env"
+    cat > .env <<'EOF'
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://localhost
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=
+DB_USERNAME=root
+DB_PASSWORD=
+
+# --- credentials for the dev scripts (never committed: .env is gitignored) ---
+NGROK_AUTHTOKEN=
+EOF
+    ok "Minimal .env created"
+  fi
+fi
+
+# ---------------------------------------------------------------- env helpers
+get_env_var() { # get_env_var KEY DEFAULT -> prints value from .env or default
+  local val
+  val=$(sed -n "s/^$1=//p" .env | head -n1 | tr -d '"')
+  [ -n "$val" ] && printf '%s' "$val" || printf '%s' "$2"
+}
+set_env_var() {
+  local key="$1" value="$2"
+  if grep -q "^${key}=.*$" .env 2>/dev/null; then
+    sed -i "s|^${key}=.*|${key}=\"${value}\"|" .env
+  else
+    printf '%s="%s"\n' "$key" "$value" >> .env
+  fi
+}
+
+# ---------------------------------------------------------------- credentials — read from .env, NOTHING secret stays in this script
+DEFAULT_DB_PASS="ONPC198++"   # dev default from .env.example (NOT a secret-managed value)
+DB_NAME=$(get_env_var DB_DATABASE "laravel_admin")
+DB_USER=$(get_env_var DB_USERNAME "root")
+NGROK_TOKEN=$(get_env_var NGROK_AUTHTOKEN "")
+DB_HOST=$(get_env_var DB_HOST 127.0.0.1)
+DB_PORT=$(get_env_var DB_PORT 3306)
+
+# Single source of truth: DB_PASSWORD is BOTH the Laravel credentials and the
+# MySQL root/admin password (dev setups run Laravel as root — no extra variable)
+DB_PASS=$(get_env_var DB_PASSWORD "${DEFAULT_DB_PASS}")
+
+# sync ONLY when the current .env entry is missing or empty
+for pair in DB_HOST:"$DB_HOST" DB_PORT:"$DB_PORT" DB_DATABASE:"$DB_NAME" DB_USERNAME:"$DB_USER" DB_PASSWORD:"$DB_PASS"; do
+  key="${pair%%:*}"
+  if ! grep -q "^${key}=[^[:space:]]" .env 2>/dev/null; then
+    set_env_var "$key" "${pair#*:}"
+  fi
+done
+ok "Using .env: DB_DATABASE=$DB_NAME · DB_USERNAME=$DB_USER · DB_HOST=$DB_HOST · DB_PORT=$DB_PORT"
 
 # ---------------------------------------------------------------- service up (works without systemd, e.g. Cloud Shell)
 # Port to test — read early from .env so the check matches the real config
@@ -239,76 +331,21 @@ else
     || info "⚠ MySQL failed to start — try: sudo service mysql start"
 fi
 
-# ---------------------------------------------------------------- root password (admin access)
-# Ensure root keeps a known password so the script can administer MySQL later.
-ESCAPED_PASS="$(printf '%s' "$DEFAULT_DB_PASS" | sed "s/'/''/g")"
+# ---------------------------------------------------------------- root password (from .env DB_PASSWORD — value never printed)
+# The DB password owns the MySQL root/admin role (dev runs Laravel as root user)
+ESCAPED_PASS="$(printf '%s' "$DB_PASS" | sed "s/'/''/g")"
 if $SUDO mysql -u root -e 'SELECT 1;' >/dev/null 2>&1; then
-  log "Setting MySQL root password"
+  log "Setting MySQL root password (value from .env → DB_PASSWORD)"
   $SUDO mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$ESCAPED_PASS'; FLUSH PRIVILEGES;"
-  ok "MySQL root password set to $DEFAULT_DB_PASS"
-elif mysql -u root -p"$DEFAULT_DB_PASS" -e 'SELECT 1;' >/dev/null 2>&1; then
-  ok "MySQL root password already set and works"
+  ok "MySQL root password set (stored in .env → DB_PASSWORD)"
+elif mysql -u root -p"$DB_PASS" -e 'SELECT 1;' >/dev/null 2>&1; then
+  ok "MySQL root password from .env (DB_PASSWORD) already works"
 else
-  ok "MySQL root password already set to a custom value (skipping)"
+  ok "MySQL root password is another value — skipping web-DB root management only"
 fi
-
-# ---------------------------------------------------------------- .env handling
-if [ -f .env ]; then
-  ok ".env already exists (leaving it untouched)"
-else
-  if [ -f .env.example ]; then
-    log "Creating .env from .env.example"
-    cp .env.example .env
-    ok ".env created from .env.example"
-  else
-    log "No .env.example found — creating a minimal .env"
-    cat > .env <<'EOF'
-APP_NAME=Laravel
-APP_ENV=local
-APP_KEY=
-APP_DEBUG=true
-APP_URL=http://localhost
-
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-EOF
-    ok "Minimal .env created"
-  fi
-fi
-
-# ---------------------------------------------------------------- read DB vars from .env (fall back to defaults)
-get_env_var() { # get_env_var KEY DEFAULT  -> prints value from .env or default
-  local val
-  val=$(sed -n "s/^$1=//p" .env | head -n1 | tr -d '"')
-  [ -n "$val" ] && printf '%s' "$val" || printf '%s' "$2"
-}
-DB_NAME=$(get_env_var DB_DATABASE "$DEFAULT_DB_NAME")
-DB_USER=$(get_env_var DB_USERNAME "$DEFAULT_DB_USER")
-DB_PASS=$(get_env_var DB_PASSWORD "$DEFAULT_DB_PASS")
-DB_HOST=$(get_env_var DB_HOST 127.0.0.1)
-DB_PORT=$(get_env_var DB_PORT 3306)
-
-# If any DB var was missing or EMPTY in .env, write the value back in
-set_env_var() {
-  local key="$1" value="$2"
-  if grep -q "^${key}=.*$" .env 2>/dev/null; then
-    sed -i "s|^${key}=.*|${key}=\"${value}\"|" .env
-  else
-    printf '%s="%s"\n' "$key" "$value" >> .env
-  fi
-}
-# sync ONLY when the current .env entry is missing or empty
-for pair in DB_HOST:"$DB_HOST" DB_PORT:"$DB_PORT" DB_DATABASE:"$DB_NAME" DB_USERNAME:"$DB_USER" DB_PASSWORD:"$DB_PASS"; do
-  key="${pair%%:*}"
-  if ! grep -q "^${key}=[^[:space:]]" .env 2>/dev/null; then
-    set_env_var "$key" "${pair#*:}"
-  fi
-done
-ok "Using credentials from .env: DB_DATABASE=$DB_NAME, DB_USERNAME=$DB_USER, DB_HOST=$DB_HOST, DB_PORT=$DB_PORT"
 
 # ---------------------------------------------------------------- create database (from .env)
-MYSQL="mysql -u root -p$DEFAULT_DB_PASS -h 127.0.0.1 -P $DB_PORT"
+MYSQL="mysql -u root -p$DB_PASS -h 127.0.0.1 -P $DB_PORT"
 DB_EXISTS=$($MYSQL -N -e "SHOW DATABASES LIKE '$DB_NAME';" 2>/dev/null | grep -x "$DB_NAME" || true)
 if [ -n "$DB_EXISTS" ]; then
   ok "Database '$DB_NAME' already exists"
@@ -479,15 +516,18 @@ else
 fi
 
 # ================================================================ ngrok → Laravel app (:8000)
-# ---------------------------------------------------------------- authtoken
-NGROK_TOKEN="1sECevPjlkXbgrfxvq1kMgyn9CI_2zJcqQL6K53ScHEZDWPet"
-
-if [ -f "$HOME/.config/ngrok/ngrok.yml" ] && grep -q "$NGROK_TOKEN" "$HOME/.config/ngrok/ngrok.yml" 2>/dev/null; then
-  ok "ngrok authtoken already configured"
+# ---------------------------------------------------------------- authtoken (from .env — NGROK_AUTHTOKEN)
+NGROK_TOKEN="$(get_env_var NGROK_AUTHTOKEN "")"
+if [ -n "$NGROK_TOKEN" ]; then
+  if [ -f "$HOME/.config/ngrok/ngrok.yml" ] && grep -q "$NGROK_TOKEN" "$HOME/.config/ngrok/ngrok.yml" 2>/dev/null; then
+    ok "ngrok authtoken already configured"
+  else
+    log "Configuring ngrok authtoken (value from .env)"
+    ngrok config add-authtoken "$NGROK_TOKEN"
+    ok "ngrok authtoken set"
+  fi
 else
-  log "Configuring ngrok authtoken"
-  ngrok config add-authtoken "$NGROK_TOKEN"
-  ok "ngrok authtoken set"
+  info "⚠ NGROK_AUTHTOKEN not set in .env — starting an anonymous tunnel (limited); add it in .env for your real link"
 fi
 
 # ---------------------------------------------------------------- direct ngrok tunnel for the app (:8000) + self-heal
@@ -539,6 +579,27 @@ if [ -n "$APP_URL_OUT" ] && ! grep -q "^APP_URL=\"$APP_URL_OUT\"$" .env 2>/dev/n
   sed -i "s|^APP_URL=.*|APP_URL=\"$APP_URL_OUT\"|" .env
   command -v php >/dev/null 2>&1 && php artisan config:clear >/dev/null 2>&1 || true
   ok "APP_URL synced with the app tunnel ✔"
+fi
+
+# ---------------------------------------------------------------- install the 'link' command (works in the CURRENT shell too)
+# An executable in /usr/local/bin shadows coreutils' /usr/bin/link (PATH order
+# 6 < 8) and — unlike a .bashrc function — is found INSTANTLY by the current
+# shell as well: no 'source ~/.bashrc' needed.
+LINK_BIN=/usr/local/bin/link
+if [ -x "$LINK_BIN" ] && grep -q 'link.sh' "$LINK_BIN" 2>/dev/null; then
+  ok "'link' command available in PATH (works in the current shell and new ones)"
+else
+  $SUDO tee "$LINK_BIN" >/dev/null <<WRAP
+#!/usr/bin/env bash
+# installed by auto_dev.sh — prints the live ngrok URL of the Laravel dev app
+exec bash "$PROJECT_DIR/link.sh" "\$@"
+WRAP
+  $SUDO chmod +x "$LINK_BIN" 2>/dev/null || true
+  # purge the older .bashrc-managed block (superseded by this PATH wrapper)
+  sed -i '/^# BEGIN dev-link/,/^# END dev-link/d' "$HOME/.bashrc" 2>/dev/null || true
+  ok "'link' installed in PATH — works in THIS terminal immediately and in any new one"
+  info "if typing 'link' in an OLD terminal shows the coreutils 'link: missing operand'"
+  info "instead, clear that shell's cached command path once:  hash -r"
 fi
 
 # ---------------------------------------------------------------- FINAL: the public link
