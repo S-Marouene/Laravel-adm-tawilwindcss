@@ -30,8 +30,8 @@ if command -v apt-get >/dev/null 2>&1; then
     mkdir -p "$SUDO_HOME/.cloudshell"
     touch "$SUDO_HOME/.cloudshell/no-apt-get-warning"
   fi
-  mkdir -p "$HOME/.cloudshell"
-  touch "$HOME/.cloudshell/no-apt-get-warning"
+  mkdir -p "$HOME/.cloudshell" 2>/dev/null || true
+  touch "$HOME/.cloudshell/no-apt-get-warning" 2>/dev/null || true
 
   # check whether any apt-managed component is still missing
   APT_NEEDED=false
@@ -103,7 +103,7 @@ fi
 # ---------------------------------------------------------------- mysql
 # On Cloud Shell the client may exist without the real server — check the server properly
 MYSQL_SERVER_OK=false
-dpkg -l mysql-server 2>/dev/null | grep -q '^ii' && MYSQL_SERVER_OK=true
+if dpkg -l mysql-server 2>/dev/null | grep -q '^ii'; then MYSQL_SERVER_OK=true; fi
 
 if $MYSQL_SERVER_OK && getent passwd mysql >/dev/null 2>&1 && [ -d /var/lib/mysql ]; then
   ok "MySQL server already installed ($(mysql --version))"
@@ -197,31 +197,46 @@ DEFAULT_DB_USER="root"
 DEFAULT_DB_PASS='0npcDATABASE@97'
 
 # ---------------------------------------------------------------- service up (works without systemd, e.g. Cloud Shell)
-if pgrep -x mysqld >/dev/null 2>&1; then
+# Port to test — read early from .env so the check matches the real config
+MYSQL_PORT=3306
+if [ -f .env ]; then
+  MYSQL_PORT=$(sed -n 's/^DB_PORT=//p' .env | head -n1 | tr -d '"')
+fi
+[ -n "$MYSQL_PORT" ] || MYSQL_PORT=3306
+
+# Real readiness test: a TCP connect to 127.0.0.1:$MYSQL_PORT is the most
+# reliable signal (pgrep can miss root's mysqld under Cloud Shell /proc rules)
+mysql_is_up() {
+  if (exec 3<>"/dev/tcp/127.0.0.1/${MYSQL_PORT}") 2>/dev/null; then
+    return 0
+  fi
+  pgrep -x mysqld >/dev/null 2>&1
+}
+
+if mysql_is_up; then
   ok "MySQL already running"
 else
-  log "Starting MySQL service"
-  service mysql start 2>/dev/null \
-    || $SUDO service mysql start 2>/dev/null \
-    || ($SUDO mkdir -p /var/run/mysqld && $SUDO chown mysql:mysql /var/run/mysqld && $SUDO mysqld_safe --skip-grant-tables=0 &) \
-    || true
+  log "Starting MySQL service (sudo needed — MySQL runs as its own system user)"
+  # start directly WITH sudo: the non-privileged 'service mysql start' hangs
+  # forever instead of failing fast, so it must never be attempted first
+  $SUDO service mysql start 2>/dev/null || true
   # wait for it to accept connections (max ~30s)
   for _ in $(seq 1 15); do
-    if pgrep -x mysqld >/dev/null 2>&1; then break; fi
+    mysql_is_up && break
     sleep 2
   done
   # if still not up but the datadir was never initialized, initialize it and retry
-  if ! pgrep -x mysqld >/dev/null 2>&1 && [ -d /var/lib/mysql ] && [ ! -f /var/lib/mysql/mysql/ibd ]; then
+  if ! mysql_is_up && [ -d /var/lib/mysql ] && [ ! -f /var/lib/mysql/mysql/ibd ]; then
     log "Initializing MySQL data directory"
     $SUDO mysqld --initialize-insecure --user=mysql 2>/dev/null || true
     $SUDO mysqld_safe & sleep 5
     for _ in $(seq 1 10); do
-      if pgrep -x mysqld >/dev/null 2>&1; then break; fi
+      mysql_is_up && break
       sleep 2
     done
   fi
-  pgrep -x mysqld >/dev/null 2>&1 && ok "MySQL service started" \
-    || info "⚠ MySQL failed to start — try: service mysql start"
+  mysql_is_up && ok "MySQL service started" \
+    || info "⚠ MySQL failed to start — try: sudo service mysql start"
 fi
 
 # ---------------------------------------------------------------- root password (admin access)
@@ -350,13 +365,51 @@ if [ -f artisan ]; then
     ok "APP_KEY already set"
   fi
 
-  # ---------------------------------------------------------------- migrate + seed (only if pending)
+  # ---------------------------------------------------------------- migrate (only if pending)
   if php artisan migrate:status --no-ansi 2>/dev/null | grep -q 'Pending'; then
     log "Pending migrations found — running migrations with seeders"
     php artisan migrate --seed --force
     ok "migrations + seeders done"
   else
-    ok "Database already migrated (skipping migrate + seed)"
+    ok "Database already migrated (skipping migrate)"
+  fi
+
+  # ---------------------------------------------------------------- seed only NEW seeder classes
+  # Registry (~/.cache/auto_dev/seeders-ran.list) records every seeder class
+  # already executed, with a hash of its file — so only genuinely NEW seeder
+  # files get seeded on a later run.
+  SEEDER_REG_DIR="$HOME/.cache/auto_dev"
+  SEEDER_REG="$SEEDER_REG_DIR/seeders-ran.list"
+  mkdir -p "$SEEDER_REG_DIR" 2>/dev/null || true
+  touch "$SEEDER_REG" 2>/dev/null || true
+
+  if [ -d database/seeders ]; then
+    RAN_ANY=false
+    # evaluated ONCE before the loop: an empty registry means "first run after
+    # enabling this feature" — we assume the existing DB is already seeded and
+    # just register all current seeders, instead of re-seeding everything
+    if [ -s "$SEEDER_REG" ]; then REG_IN_USE=true; else REG_IN_USE=false; fi
+    for seeder in database/seeders/*.php; do
+      seeder_name="$(basename "$seeder" .php)"
+      if [ "$seeder_name" = "DatabaseSeeder" ]; then continue; fi   # parent seeder — re-running it would seed everything twice
+      file_hash="$(sha256sum "$seeder" | cut -d' ' -f1)"
+      known_hashes="$(grep -E "^${seeder_name}:" "$SEEDER_REG" 2>/dev/null || true)"
+      known_hash="${known_hashes##*:}"
+      if [ -z "$known_hash" ]; then
+        if $REG_IN_USE; then
+          # registry in use → a class we never ran before = NEW seeder
+          log "New seeder detected: $seeder_name"
+          php artisan db:seed --class="$seeder_name" --force
+          RAN_ANY=true
+        fi
+        printf '%s:%s\n' "$seeder_name" "$file_hash" >> "$SEEDER_REG"
+      elif [ "$known_hash" != "$file_hash" ]; then
+        info "⚠ seeder '$seeder_name' exists but was modified — NOT re-run automatically (risk of duplicated data)"
+        info "  re-run manually if wanted: php artisan db:seed --class=$seeder_name --force"
+        printf '%s:%s\n' "$seeder_name" "$file_hash" >> "$SEEDER_REG"
+      fi
+    done
+    $RAN_ANY && ok "new seeders executed ✔" || ok "no new seeders"
   fi
 
   # ---------------------------------------------------------------- storage link
@@ -476,7 +529,7 @@ for t in data.get('tunnels', []):
 # ---------------------------------------------------------------- wait a bit for the tunnel to be established
 for _ in $(seq 1 15); do
   APP_URL_OUT=$(get_tunnel_url_for 8000 || true)
-  [ -n "$APP_URL_OUT" ] && break
+  if [ -n "$APP_URL_OUT" ]; then break; fi
   sleep 2
 done
 
