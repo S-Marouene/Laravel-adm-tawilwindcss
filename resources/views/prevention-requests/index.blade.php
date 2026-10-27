@@ -214,7 +214,8 @@
                                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                             {{ __('prevention_request.timeline_title') }}
                                         </p>
-                                        <div>
+                                        {{-- Timeline — admin style (dots + connector dashes) --}}
+                                        <div class="mt-3 px-2">
                                             @foreach ($dossier->events as $event)
                                                 @php
                                                     $isFailedEvent = str_contains($event->type, 'failed') || str_contains($event->type, 'cancelled');
@@ -224,15 +225,13 @@
                                                 @endif
                                                 <div class="flex items-start gap-3">
                                                     <span class="mt-1 flex-none h-2 w-2 rounded-full {{ $event->typeDot() }}"></span>
-                                                    <div class="min-w-0 flex-1">
-                                                        <div class="flex items-center justify-between gap-2 flex-wrap">
-                                                            <p class="text-xs font-semibold {{ $isFailedEvent ? 'text-red-700 dark:text-red-300' : 'text-gray-800 dark:text-gray-100' }}">
-                                                                {{ __('prevention_request.timeline_' . $event->type) }}
-                                                            </p>
-                                                            <span class="text-[11px] text-gray-400 dark:text-gray-500">{{ $event->created_at->format('d/m/Y H:i') }}</span>
-                                                        </div>
+                                                    <div class="min-w-0">
+                                                        <p class="text-xs font-semibold {{ $isFailedEvent ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-gray-100' }}">
+                                                            {{ __('prevention_request.timeline_' . $event->type) }}
+                                                        </p>
                                                         <p class="text-[11px] text-gray-400 dark:text-gray-500">
                                                             {{ in_array($event->type, ['submitted', 'resubmitted']) ? __('prevention_request.timeline_actor_you') : __('prevention_request.timeline_actor_admin') }}
+                                                            · {{ $event->created_at->format('d/m/Y H:i') }}
                                                         </p>
 
                                                         {{-- RDV details --}}
@@ -243,9 +242,17 @@
                                                             </p>
                                                         @endif
 
+                                                        {{-- Certificate details --}}
+                                                        @if (in_array($event->type, ['certificate_issued', 'certificate_collected', 'certificate_deleted']) && is_array($event->data) && ! empty($event->data['reference']))
+                                                            <p class="mt-1 text-xs inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+                                                                <svg class="h-3 w-3 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M7 3h10a2 2 0 012 2v16l-7-3-7 3V5a2 2 0 012-2z"/></svg>
+                                                                {{ __('prevention_request.timeline_certificate_label') }} {{ $event->data['reference'] }}
+                                                            </p>
+                                                        @endif
+
                                                         {{-- Note (correction request, fail reason, cancellation reason...) --}}
                                                         @if ($event->note)
-                                                            <div class="mt-1.5 rounded-lg border px-2.5 py-2 {{ $event->type === 'correction_requested' ? 'border-amber-200 bg-amber-50 dark:border-amber-800/30 dark:bg-amber-900/10' : ($isFailedEvent ? 'border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10' : 'border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700/30') }}">
+                                                            <div class="mt-1.5 rounded-lg border bg-gray-50 px-2.5 py-2 dark:bg-gray-700/30 {{ $isFailedEvent ? 'border-red-200 dark:border-red-800/30' : 'border-gray-200 dark:border-gray-600' }}">
                                                                 <p class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">{{ __('prevention_request.timeline_note_label') }}</p>
                                                                 <p class="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-line">{{ $event->note }}</p>
                                                             </div>
@@ -254,6 +261,22 @@
                                                 </div>
                                             @endforeach
                                         </div>
+                                    </div>
+                                @endif
+
+                                {{-- Certificate ready banner (mini) --}}
+                                @if ($dossier->certificate)
+                                    <div class="mt-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 dark:border-emerald-800/30 dark:bg-emerald-900/10">
+                                        <svg class="h-4 w-4 mt-0.5 flex-none text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <p class="text-xs {{ $dossier->certificate->isCollected() ? 'text-teal-800 dark:text-teal-200' : 'text-emerald-800 dark:text-emerald-200' }}">
+                                            {{ $dossier->certificate->isCollected()
+                                                ? __('prevention_request.certificate_status_collected')
+                                                : __('prevention_request.certificate_index_badge', ['delegation' => $dossier->certificate->delegation?->name ?? $dossier->certificate->governorate?->name ?? '—']) }}
+                                            —
+                                            <a href="{{ route('prevention-requests.show', $dossier) }}" class="font-semibold underline hover:no-underline">{{ __('prevention_request.view_details') }}</a>
+                                        </p>
                                     </div>
                                 @endif
 

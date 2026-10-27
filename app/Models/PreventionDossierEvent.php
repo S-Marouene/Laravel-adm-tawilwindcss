@@ -20,6 +20,7 @@ class PreventionDossierEvent extends Model
     // submitted | resubmitted | advanced_to_consultation | correction_requested
     // approved | cancelled | appointment_scheduled | appointment_passed
     // appointment_failed | appointment_deleted
+    // certificate_issued | certificate_collected | certificate_deleted
 
     // -----------------------------------------------------------------------
     // Relations
@@ -39,6 +40,22 @@ class PreventionDossierEvent extends Model
     // Display helpers
     // -----------------------------------------------------------------------
 
+    /** Icon (SVG path) shown in the timeline badge for this event type */
+    public function iconPath(): string
+    {
+        return match ($this->type) {
+            'submitted', 'resubmitted'  => 'M12 19l9 2-9-18-9 18 9-2zm0 0v-8',
+            'advanced_to_consultation'  => 'M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z',
+            'correction_requested'      => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+            'approved', 'certificate_issued' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+            'cancelled', 'certificate_deleted', 'appointment_deleted' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
+            'appointment_scheduled'     => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+            'appointment_passed', 'certificate_collected' => 'M5 13l4 4L19 7',
+            'appointment_failed'        => 'M6 18L18 6M6 6l12 12',
+            default                     => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+        };
+    }
+
     /** Human-readable label for the timeline */
     public function typeLabel(): string
     {
@@ -53,6 +70,9 @@ class PreventionDossierEvent extends Model
             'appointment_passed'        => 'Visit marked as passed',
             'appointment_failed'        => 'Visit marked as failed',
             'appointment_deleted'       => 'RDV removed',
+            'certificate_issued'        => 'Prevention certificate issued',
+            'certificate_collected'     => 'Certificate collected by applicant',
+            'certificate_deleted'       => 'Prevention certificate deleted',
             default                     => ucfirst(str_replace('_', ' ', $this->type)),
         };
     }
@@ -70,6 +90,9 @@ class PreventionDossierEvent extends Model
             'appointment_passed'         => 'bg-emerald-500',
             'appointment_failed'         => 'bg-red-500',
             'appointment_deleted'        => 'bg-gray-400',
+            'certificate_issued'         => 'bg-emerald-500',
+            'certificate_collected'      => 'bg-teal-500',
+            'certificate_deleted'        => 'bg-gray-400',
             default                      => 'bg-gray-400',
         };
     }
@@ -79,8 +102,21 @@ class PreventionDossierEvent extends Model
     {
         $data = $this->data;
 
-        if (! is_array($data) || empty($data['visit_date'])) {
+        if (! is_array($data) || (empty($data['visit_date']) && empty($data['reference']))) {
             return null;
+        }
+
+        // Certificate events: show reference + pickup governorate / delegation
+        if (! empty($data['reference'])) {
+            $text = 'Certificate: ' . $data['reference'];
+
+            if (! empty($data['delegation'])) {
+                $text .= ' · Delegation: ' . $data['delegation'];
+            } elseif (! empty($data['governorate'])) {
+                $text .= ' · Governorate: ' . $data['governorate'];
+            }
+
+            return $text;
         }
 
         $text = 'Visit: ' . Carbon::parse($data['visit_date'])->format('d M Y')

@@ -35,7 +35,7 @@ class PreventionRequestController extends Controller
         // Submitted / completed / under_consultation / needs_correction / approved / cancelled dossiers
         $submitted = PreventionDossier::where('user_id', auth()->id())
             ->whereIn('status', ['completed', 'submitted', 'under_consultation', 'needs_correction', 'approved', 'cancelled'])
-            ->with(['governorate', 'delegation', 'buildingType', 'appointments', 'events'])
+            ->with(['governorate', 'delegation', 'buildingType', 'appointments', 'events', 'certificate.governorate', 'certificate.delegation'])
             ->latest()
             ->get();
 
@@ -308,7 +308,7 @@ class PreventionRequestController extends Controller
 
         $dossier->load([
             'governorate', 'delegation', 'buildingType', 'buildingActivity',
-            'appointments', 'events',
+            'appointments', 'events', 'certificate.governorate', 'certificate.delegation',
         ]);
 
         $documentTypes = DocumentType::orderBy('sort_order')->get();

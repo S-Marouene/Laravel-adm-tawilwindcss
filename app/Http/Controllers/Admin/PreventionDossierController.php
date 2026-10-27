@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\DossierAppointment;
 use App\Models\DossierDocument;
 use App\Models\DocumentType;
+use App\Models\Governorate;
+use App\Models\PreventionCertificate;
 use App\Models\PreventionDossier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -50,14 +52,17 @@ class PreventionDossierController extends Controller
     {
         $this->authorize('view prevention-dossiers');
 
-        $preventionDossier->load(['user', 'governorate', 'delegation', 'buildingType', 'buildingActivity', 'reviewer', 'appointments.scheduler', 'events.actor', 'events.dossier:id,building_address']);
+        $preventionDossier->load(['user', 'governorate', 'delegation', 'buildingType', 'buildingActivity', 'reviewer', 'appointments.scheduler', 'certificate.governorate', 'certificate.delegation', 'events.actor', 'events.dossier:id,building_address']);
 
         $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)->orderBy('sort_order')->get();
         $uploadedDocs  = DossierDocument::where('prevention_dossier_id', $preventionDossier->id)
             ->get()
             ->keyBy('document_type_id');
 
-        return view('admin.prevention-dossiers.show', compact('preventionDossier', 'documentTypes', 'uploadedDocs'));
+        // Delegations grouped by governorate — used by the "issue certificate" form
+        $governorates = Governorate::with('delegations')->orderBy('id')->get();
+
+        return view('admin.prevention-dossiers.show', compact('preventionDossier', 'documentTypes', 'uploadedDocs', 'governorates'));
     }
 
     // =========================================================================
@@ -272,5 +277,134 @@ class PreventionDossierController extends Controller
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
             ->with('success', 'Appointment removed.');
+    }
+
+    // =========================================================================
+    // Certificate — issue (affect) the prevention certificate
+    // Only allowed after at least one visit (RDV) was marked as passed
+    // =========================================================================
+
+    public function issueCertificate(Request $request, PreventionDossier $preventionDossier): RedirectResponse
+    {
+        $this->authorize('manage prevention-dossiers');
+
+        if ($preventionDossier->isCancelled()) {
+            return back()->withErrors(['status' => 'Cannot issue a certificate for a cancelled dossier.']);
+        }
+
+        if (! $preventionDossier->hasPassedAppointment()) {
+            return back()->withErrors(['status' => 'A certificate can only be issued after a visit (RDV) was marked as passed.']);
+        }
+
+        if ($preventionDossier->certificate) {
+            return back()->withErrors(['status' => 'This dossier already has a certificate.']);
+        }
+
+        $validated = $request->validate([
+            'governorate_id' => ['required', 'integer', 'exists:governorates,id'],
+            'delegation_id'  => ['nullable', 'integer', 'exists:delegations,id'],
+            'valid_until'    => ['nullable', 'date', 'after_or_equal:today'],
+            'note'           => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $governorate = \App\Models\Governorate::find($validated['governorate_id']);
+        $delegation  = $validated['delegation_id'] ? \App\Models\Delegation::find($validated['delegation_id']) : null;
+
+        // If a delegation is selected, it must belong to the selected governorate
+        if ($delegation && (int) $delegation->governorate_id !== (int) $governorate->id) {
+            return back()->withErrors(['delegation_id' => 'The selected delegation does not belong to the selected governorate.']);
+        }
+
+        $certificate = PreventionCertificate::create([
+            'prevention_dossier_id' => $preventionDossier->id,
+            'reference'             => PreventionCertificate::makeReference($preventionDossier),
+            'issued_by'             => auth()->id(),
+            'issued_at'             => now()->toDateString(),
+            'valid_until'           => $validated['valid_until'] ?? null,
+            'governorate_id'        => $validated['governorate_id'],
+            'delegation_id'         => $validated['delegation_id'] ?? null,
+            'status'                => 'ready',
+            'note'                  => $validated['note'] ?? null,
+        ]);
+
+        $preventionDossier->logEvent('certificate_issued', $validated['note'] ?? null, [
+            'reference'   => $certificate->reference,
+            'governorate' => $governorate->name_fr ?? $governorate->name_ar,
+            'delegation'  => $delegation?->name_fr ?? $delegation?->name_ar,
+        ]);
+
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
+            ->with('success', "Certificate {$certificate->reference} issued. The applicant can now collect it at the selected delegation.");
+    }
+
+    // =========================================================================
+    // Certificate — update state (ready ↔ collected)
+    // =========================================================================
+
+    public function updateCertificate(Request $request, PreventionDossier $preventionDossier): RedirectResponse
+    {
+        $this->authorize('manage prevention-dossiers');
+
+        $validated = $request->validate([
+            'action' => ['required', 'in:collected,ready'],
+        ]);
+
+        $certificate = $preventionDossier->certificate;
+
+        if (! $certificate) {
+            return back()->withErrors(['status' => 'This dossier has no certificate to update.']);
+        }
+
+        $certificate->update([
+            'status'       => $validated['action'],
+            'collected_at' => $validated['action'] === 'collected' ? now() : null,
+        ]);
+
+        if ($validated['action'] === 'collected') {
+            $preventionDossier->logEvent('certificate_collected', null, [
+                'reference'   => $certificate->reference,
+                'governorate' => $certificate->governorate?->name_fr ?? $certificate->governorate?->name_ar,
+                'delegation'  => $certificate->delegation?->name_fr ?? $certificate->delegation?->name_ar,
+            ]);
+        }
+
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
+            ->with('success', $validated['action'] === 'collected'
+                ? 'Certificate marked as collected.'
+                : 'Certificate marked as ready for pickup.');
+    }
+
+    // =========================================================================
+    // Certificate — revoke (delete) — not possible once collected
+    // =========================================================================
+
+    public function revokeCertificate(PreventionDossier $preventionDossier): RedirectResponse
+    {
+        $this->authorize('manage prevention-dossiers');
+
+        $certificate = $preventionDossier->certificate;
+
+        if (! $certificate) {
+            return back()->withErrors(['status' => 'This dossier has no certificate.']);
+        }
+
+        if ($certificate->isCollected()) {
+            return back()->withErrors(['status' => 'A collected certificate cannot be deleted.']);
+        }
+
+        $reference   = $certificate->reference;
+        $delegation  = $certificate->delegation?->name_fr ?? $certificate->delegation?->name_ar;
+        $governorate = $certificate->governorate?->name_fr ?? $certificate->governorate?->name_ar;
+
+        $certificate->delete();
+
+        $preventionDossier->logEvent('certificate_deleted', null, [
+            'reference'   => $reference,
+            'governorate' => $governorate,
+            'delegation'  => $delegation,
+        ]);
+
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
+            ->with('success', 'Certificate ' . $reference . ' revoked. You can issue a new one at any time.');
     }
 }

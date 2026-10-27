@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PreventionDossier extends Model
 {
@@ -66,6 +67,18 @@ class PreventionDossier extends Model
     public function appointments(): HasMany
     {
         return $this->hasMany(DossierAppointment::class, 'prevention_dossier_id')->orderBy('visit_date')->orderBy('visit_time');
+    }
+
+    /** The prevention certificate issued after a passed RDV (one per dossier) */
+    public function certificate(): HasOne
+    {
+        return $this->hasOne(PreventionCertificate::class, 'prevention_dossier_id');
+    }
+
+    /** True once at least one visit (RDV) was marked as passed */
+    public function hasPassedAppointment(): bool
+    {
+        return $this->appointments->contains(fn (DossierAppointment $appt) => $appt->isPassed());
     }
 
     /** Full audit log — chronological history of every action on this dossier */
