@@ -93,6 +93,7 @@ return [
     'status_approved' => 'Approved',
     'status_served' => 'Service Performed',
     'status_cancelled' => 'Cancelled',
+    'status_draft' => 'Draft',
 
     // Banners
     'under_review_banner' => 'Your request is being reviewed. Please check your email or phone for any updates.',

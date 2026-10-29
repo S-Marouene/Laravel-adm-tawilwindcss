@@ -93,6 +93,7 @@ return [
     'status_approved' => 'مقبول',
     'status_served' => 'تم إسداء الخدمة',
     'status_cancelled' => 'ملغى',
+    'status_draft' => 'مسودة',
 
     // Banners
     'under_review_banner' => 'مطلبك قيد المراجعة. يرجى متابعة بريدك الإلكتروني أو هاتفك للاطلاع على أي تحديثات.',

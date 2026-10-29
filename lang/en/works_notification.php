@@ -99,6 +99,7 @@ return [
     'status_needs_correction' => 'Needs Correction',
     'status_approved' => 'Approved — Civil Protection informed',
     'status_cancelled' => 'Cancelled',
+    'status_draft' => 'Draft',
 
     // Banners
     'under_review_banner' => 'Your notification is being reviewed. Please keep your phone available for any updates.',

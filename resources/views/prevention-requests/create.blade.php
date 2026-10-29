@@ -43,13 +43,17 @@
             {{-- Carte à onglets — votre dossier + détails officiels de la démarche --}}
             <x-onpc.service-details-tabs :drafts="$drafts" />
 
-            {{-- Barre de progression horizontale (gabarit design/nouvelle.html) --}}
-            <x-onpc.dossier-stepper :steps="$wizardSteps" />
-
             {{-- ===========================================================
-                 FORMULAIRE — pleine largeur
+                 FORMULAIRE COMPLET (stepper + bandeau + formulaire)
+                 Masqué par défaut : visible uniquement si l'utilisateur clique
+                 sur « Créer un nouveau dossier », reprend un brouillon, ou après
+                 une erreur de validation (afin de ne rien perdre).
                  =========================================================== --}}
-            <section class="space-y-6">
+            @php $showForm = $isEditing || $errors->any() || !empty(old()); @endphp
+            <section id="prevention-form-section" class="space-y-6 @unless($showForm) hidden @endunless">
+
+                {{-- Barre de progression horizontale (gabarit design/nouvelle.html) --}}
+                <x-onpc.dossier-stepper :steps="$wizardSteps" />
 
                     {{-- Bandeau de statut de l'étape (filet rouge ONPC) --}}
                     <div class="bg-surface-container-lowest p-5 rounded border border-surface-dim border-l-4 border-l-primary flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -253,6 +257,18 @@
 
     <script>
     (function () {
+        /* ── Révélation du formulaire (bouton « Créer un nouveau dossier ») ── */
+        var formSection = document.getElementById('prevention-form-section');
+        Array.prototype.slice.call(document.querySelectorAll('[data-start-new-dossier]')).forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (!formSection) return;
+                formSection.classList.remove('hidden');
+                formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                var firstField = document.getElementById('cin');
+                if (firstField) firstField.focus({ preventScroll: true });
+            });
+        });
+
         /* ── Data ────────────────────────────────────────────────────────── */
         var gouvernorats   = @json($gouvernorats);   // { id: "name", ... }
         var delegationsMap = @json($delegations);    // { govId: [{id,name}, ...] }

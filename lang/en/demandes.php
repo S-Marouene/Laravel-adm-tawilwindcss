@@ -14,6 +14,8 @@ return [
     'action_required' => 'This request requires your action',
 
     'view_details' => 'View details',
+    'complete_process' => 'Complete the process',
+    'delete' => 'Delete',
 
     'empty_title'       => 'No requests yet',
     'empty_subtitle'    => 'Submit your first request from the services page.',

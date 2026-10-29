@@ -104,6 +104,7 @@ return [
     'status_approved' => 'Approved',
     'status_served' => 'Certificate Delivered',
     'status_cancelled' => 'Cancelled',
+    'status_draft' => 'Draft',
 
     // Banners
     'under_review_banner' => 'Your request is being reviewed. Please keep your phone available for any updates.',

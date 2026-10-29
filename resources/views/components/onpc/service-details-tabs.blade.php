@@ -65,9 +65,8 @@
     {{-- 1. Votre dossier — reprise / suppression du brouillon --}}
     <div role="tabpanel" aria-labelledby="svcTab-dossier" id="svcPanel-dossier" tabindex="0"
          class="svc-panel p-4 sm:p-5 focus:outline-none">
-        <p class="text-body-sm text-secondary mb-3">{{ __('prevention_request.draft_banner_desc') }}</p>
-
         @if (isset($drafts) && $drafts->isNotEmpty())
+            <p class="text-body-sm text-secondary mb-3">{{ __('prevention_request.draft_banner_desc') }}</p>
             <div class="rounded border border-amber-200 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-900/10 divide-y divide-amber-100 dark:divide-amber-800/20">
                 @foreach ($drafts as $draft)
                     @php
@@ -109,17 +108,26 @@
                     </div>
                 @endforeach
             </div>
-        @else
-            {{-- État vide --}}
-            <div class="flex items-start gap-4 rounded border border-surface-dim bg-surface-container-low p-5 dark:border-gray-700 dark:bg-gray-900/40">
-                <span class="w-10 h-10 shrink-0 rounded flex items-center justify-center bg-surface-container">
-                    <span class="material-symbols-outlined text-xl text-outline" aria-hidden="true">folder_off</span>
-                </span>
-                <div>
-                    <p class="text-body-md font-bold text-on-surface dark:text-gray-100">{{ __('service_details.empty_draft_title') }}</p>
-                    <p class="text-body-sm text-secondary mt-1 leading-relaxed">{{ __('service_details.empty_draft_desc') }}</p>
-                </div>
+            <div class="pt-3 text-center">
+                <button type="button" data-start-new-dossier
+                        class="inline-flex items-center justify-center gap-1.5 rounded border border-primary/30 bg-primary/5 px-4 py-2 text-body-sm font-semibold text-primary transition hover:bg-primary/10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                    <span class="material-symbols-outlined text-[18px]" aria-hidden="true">note_add</span>
+                    {{ __('service_details.create_new_draft') }}
+                </button>
             </div>
+        @else
+            {{-- État vide : aucun brouillon — carte cliquable rouge « créer un nouveau dossier » + note --}}
+            <button type="button" data-start-new-dossier aria-label="{{ __('service_details.empty_draft_aria') }}"
+                    class="group flex w-full items-start gap-4 rounded border border-red-300 bg-red-50 p-5 text-start transition hover:border-red-500 hover:bg-red-100 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-900/50 dark:bg-red-950/20 dark:hover:border-red-700 dark:hover:bg-red-950/40">
+                <span class="w-10 h-10 shrink-0 rounded flex items-center justify-center bg-red-100 transition dark:bg-red-900/30">
+                    <span class="material-symbols-outlined filled text-xl text-red-600 transition group-hover:scale-110" aria-hidden="true">add</span>
+                </span>
+                <div class="min-w-0 flex-1">
+                    <p class="text-body-md font-bold text-red-700 transition dark:text-red-300">{{ __('service_details.empty_draft_title') }}</p>
+                    <p class="text-body-sm text-red-700/80 mt-1 leading-relaxed dark:text-red-200/80">{{ __('service_details.draft_saved_note') }}</p>
+                </div>
+                <span class="material-symbols-outlined flex-none text-red-500 transition group-hover:translate-x-1 {{ app()->getLocale() === 'ar' ? 'rotate-180' : '' }}" aria-hidden="true">chevron_right</span>
+            </button>
         @endif
     </div>
 

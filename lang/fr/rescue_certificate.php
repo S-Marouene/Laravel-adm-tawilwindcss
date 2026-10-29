@@ -104,6 +104,7 @@ return [
     'status_approved' => 'Approuvée',
     'status_served' => 'Certificat remis',
     'status_cancelled' => 'Annulée',
+    'status_draft' => 'Brouillon',
 
     // Banners
     'under_review_banner' => "Votre demande est en cours d'examen. Veuillez garder votre téléphone disponible pour toute mise à jour.",

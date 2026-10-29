@@ -93,6 +93,7 @@ return [
     'status_approved' => 'Approuvée',
     'status_served' => 'Prestation exécutée',
     'status_cancelled' => 'Annulée',
+    'status_draft' => 'Brouillon',
 
     // Banners
     'under_review_banner' => "Votre demande est en cours d'examen. Veuillez surveiller votre e-mail ou votre téléphone pour toute mise à jour.",

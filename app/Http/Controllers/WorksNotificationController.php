@@ -230,6 +230,13 @@ class WorksNotificationController extends Controller
 
         $worksNotification->delete();
 
+        // Optional local override (e.g. delete from /mes-demandes)
+        $redirect = $request->input('redirect');
+        if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+            return redirect($redirect)
+                ->with('success', __('works_notification.delete_success'));
+        }
+
         return redirect()->route('works-notifications.index')
             ->with('success', __('works_notification.delete_success'));
     }

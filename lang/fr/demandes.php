@@ -14,6 +14,8 @@ return [
     'action_required' => 'Une action est requise sur cette demande',
 
     'view_details' => 'Voir les détails',
+    'complete_process' => 'Compléter la démarche',
+    'delete' => 'Supprimer',
 
     'empty_title'      => 'Aucune demande pour le moment',
     'empty_subtitle'   => 'Déposez votre première demande à partir de la page des services.',

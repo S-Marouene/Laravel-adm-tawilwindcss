@@ -205,10 +205,12 @@ class PreventionRequestController extends Controller
 
         $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)->orderBy('sort_order')->get();
 
-        // Load any already-uploaded documents for this dossier
+        // Load any already-uploaded documents for this dossier, grouped by document type
+        // (several files may be attached to the same type)
         $uploadedDocs = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->orderBy('created_at')
             ->get()
-            ->keyBy('document_type_id');
+            ->groupBy('document_type_id');
 
         return view('prevention-requests.create-step3', [
             'dossier'       => $dossier,
@@ -228,9 +230,12 @@ class PreventionRequestController extends Controller
         }
 
         $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)->orderBy('sort_order')->pluck('id');
+
         $rules = [];
         foreach ($documentTypes as $docTypeId) {
-            $rules['documents.' . $docTypeId] = ['nullable', 'file', 'max:10240']; // 10MB max
+            // One or more files per document type (input array + multiple attribute)
+            $rules['documents.' . $docTypeId]       = ['nullable', 'array', 'max:10'];
+            $rules['documents.' . $docTypeId . '.*'] = ['file', 'max:10240']; // 10MB max
         }
 
         $validated = $request->validate($rules);
@@ -238,23 +243,24 @@ class PreventionRequestController extends Controller
         $uploadDir = "prevention-documents/{$dossier->id}";
 
         foreach ($documentTypes as $docTypeId) {
-            $file = $request->file("documents.{$docTypeId}");
-            if ($file && $file->isValid()) {
+            $files = $request->file("documents.{$docTypeId}");
+            if (! $files) continue;
+            $files = is_array($files) ? $files : [$files];
+
+            foreach ($files as $file) {
+                if (! $file || ! $file->isValid()) continue;
+
                 $path = $file->store($uploadDir, 'local');
 
-                DossierDocument::updateOrCreate(
-                    [
-                        'prevention_dossier_id' => $dossier->id,
-                        'document_type_id'       => $docTypeId,
-                    ],
-                    [
-                        'file_path'    => $path,
-                        'original_name' => $file->getClientOriginalName(),
-                        'mime_type'    => $file->getMimeType(),
-                        'size'         => $file->getSize(),
-                        'status'       => 'uploaded',
-                    ]
-                );
+                DossierDocument::create([
+                    'prevention_dossier_id' => $dossier->id,
+                    'document_type_id'      => $docTypeId,
+                    'file_path'             => $path,
+                    'original_name'         => $file->getClientOriginalName(),
+                    'mime_type'             => $file->getMimeType(),
+                    'size'                  => $file->getSize(),
+                    'status'                => 'uploaded',
+                ]);
             }
         }
 
@@ -338,6 +344,31 @@ class PreventionRequestController extends Controller
         }
 
         return Storage::disk('local')->download($document->file_path, $document->original_name);
+    }
+
+    // =========================================================================
+    // Delete an uploaded document (remove a file from the draft dossier)
+    // =========================================================================
+
+    public function deleteDocument(Request $request, PreventionDossier $dossier, DossierDocument $document): RedirectResponse
+    {
+        if ($dossier->user_id !== auth()->id() || $document->prevention_dossier_id !== $dossier->id) {
+            abort(403);
+        }
+
+        // Do not allow removing documents once the dossier has left the applicant's hands
+        if (! in_array($dossier->status, ['draft', 'completed', 'needs_correction'])) {
+            return redirect()
+                ->route('prevention-requests.step3.show', $dossier)
+                ->withErrors(['status' => __('prevention_request.delete_forbidden')]);
+        }
+
+        Storage::disk('local')->delete($document->file_path);
+        $document->delete();
+
+        return redirect()
+            ->route('prevention-requests.step3.show', $dossier)
+            ->with('success', __('prevention_request.document_deleted'));
     }
 
     // =========================================================================
@@ -441,6 +472,13 @@ class PreventionRequestController extends Controller
             // Delete triggered from the wizard's draft banner → stay in the wizard
             if ($request->input('back') === 'wizard') {
                 return redirect()->route('prevention-requests.create')
+                    ->with('success', __('prevention_request.delete_success'));
+            }
+
+            // Optional local override (e.g. delete from /mes-demandes)
+            $redirect = $request->input('redirect');
+            if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+                return redirect($redirect)
                     ->with('success', __('prevention_request.delete_success'));
             }
 

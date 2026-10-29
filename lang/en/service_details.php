@@ -17,8 +17,11 @@ return [
     'tab_more'       => "Additional info",
 
     // ── Tab 1: current file ──
-    'empty_draft_title' => "No draft in progress",
-    'empty_draft_desc'  => "Complete the form below to start your request. Your progress is kept as a draft.",
+    'empty_draft_title' => "Create a new request",
+    'empty_draft_desc'  => "No draft in progress. Click here to fill in your request details — if you start the process without submitting your request yet, your progress is kept as a draft.",
+    'empty_draft_aria'  => "Create a new request — click to open the request form",
+    'create_new_draft'  => "Create a new request",
+    'draft_saved_note'  => "If you start the process without submitting your request yet, your progress is kept as a draft.",
 
     // ── Tab 2: the procedure ──
     'legal_name_label'    => "Official legal title",

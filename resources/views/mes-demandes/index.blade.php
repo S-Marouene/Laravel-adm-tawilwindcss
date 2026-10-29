@@ -7,6 +7,7 @@
         // Normalisation sérialisable pour le filtre Alpine
         $iconMap  = ['prevention' => 'fire_extinguisher', 'presence' => 'event_available', 'rescue' => 'ecg_heart', 'works' => 'construction'];
         $badgeMap = [
+            'draft'              => ['progress',  'text-red-700 bg-red-50 border-red-200'],
             'needs_correction'   => ['action',    'text-error bg-[#FFE8E4] border-error/30'],
             'under_consultation' => ['progress',  'text-primary bg-primary/10 border-primary/20'],
             'approved'           => ['done',      'text-emerald-800 bg-emerald-50 border-emerald-300'],
@@ -25,6 +26,8 @@
                 'badgeClass'     => $badgeClass,
                 'bucket'         => $bucket,
                 'requiresAction' => $item['status'] === 'needs_correction',
+                'destroyUrl'     => $item['destroy_url'],
+                'confirmText'    => $item['destroy_url'] ? __($item['lang'] . '.delete_confirm') : '',
             ]);
         })->values();
 
@@ -32,7 +35,7 @@
             'total'    => $items->count(),
             'action'   => $items->where('status', 'needs_correction')->count(),
             'done'     => $items->whereIn('status', ['approved', 'served'])->count(),
-            'prog'     => $items->whereNotIn('status', ['needs_correction', 'approved', 'served', 'cancelled', 'draft'])->count(),
+            'prog'     => $items->whereNotIn('status', ['needs_correction', 'approved', 'served', 'cancelled'])->count(),
         ];
     @endphp
 
@@ -172,7 +175,7 @@
                 <div class="space-y-4" role="list">
                     <template x-for="item in filteredItems" :key="item.id" role="listitem">
                         <article class="bg-surface-container-lowest border rounded-lg p-5 md:p-6 shadow-sm transition-all hover:shadow-md"
-                                 :class="item.requiresAction ? 'border-primary-container/50' : 'border-surface-dim'">
+                                 :class="item.status === 'draft' ? 'border-red-200 bg-red-50/70' : (item.requiresAction ? 'border-primary-container/50' : 'border-surface-dim')">
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-surface-dim">
                                 <div class="flex items-start gap-3 min-w-0">
                                     <div class="w-10 h-10 rounded-lg bg-primary/10 border border-outline-variant flex items-center justify-center text-primary shrink-0">
@@ -199,11 +202,25 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2 self-end md:self-auto shrink-0">
-                                    <a class="bg-surface-container hover:bg-surface-dim text-on-surface text-xs font-bold px-3 py-1.5 rounded border border-surface-dim flex items-center gap-1 transition-colors"
-                                       x-bind:href="item.url">
-                                        <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
-                                        <span>{{ __('demandes.view_details') }}</span>
+                                    <a class="text-xs font-bold px-3 py-1.5 rounded border flex items-center gap-1 transition-colors"
+                                       x-bind:href="item.url"
+                                       x-bind:class="item.status === 'draft'
+                                            ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100'
+                                            : 'bg-surface-container hover:bg-surface-dim text-on-surface border-surface-dim'">
+                                        <span class="material-symbols-outlined text-[16px]" aria-hidden="true"
+                                              x-text="item.status === 'draft' ? 'edit_note' : 'visibility'"></span>
+                                        <span x-text="item.status === 'draft' ? '{{ __('demandes.complete_process') }}' : '{{ __('demandes.view_details') }}'"></span>
                                     </a>
+                                    <form x-show="item.destroyUrl" method="POST" x-bind:action="item.destroyUrl"
+                                          @submit.prevent="if (confirm(item.confirmText)) $el.submit();">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="inline-flex items-center gap-1 rounded border border-red-200 bg-red-50 px-2 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-100"
+                                                title="{{ __('demandes.delete') }}">
+                                            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span>
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </article>

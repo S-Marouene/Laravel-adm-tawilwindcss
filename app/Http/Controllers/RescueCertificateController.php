@@ -260,6 +260,13 @@ class RescueCertificateController extends Controller
 
         $rescueCertificate->delete();
 
+        // Optional local override (e.g. delete from /mes-demandes)
+        $redirect = $request->input('redirect');
+        if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+            return redirect($redirect)
+                ->with('success', __('rescue_certificate.delete_success'));
+        }
+
         return redirect()->route('rescue-certificates.index')
             ->with('success', __('rescue_certificate.delete_success'));
     }

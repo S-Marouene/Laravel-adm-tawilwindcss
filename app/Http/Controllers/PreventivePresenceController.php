@@ -249,6 +249,13 @@ class PreventivePresenceController extends Controller
 
         $presenceRequest->delete();
 
+        // Optional local override (e.g. delete from /mes-demandes)
+        $redirect = $request->input('redirect');
+        if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+            return redirect($redirect)
+                ->with('success', __('preventive_presence.delete_success'));
+        }
+
         return redirect()->route('preventive-presence.index')
             ->with('success', __('preventive_presence.delete_success'));
     }

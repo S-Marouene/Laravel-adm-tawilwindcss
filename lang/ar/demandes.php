@@ -14,6 +14,8 @@ return [
     'action_required' => 'يتطلب هذا الطلب إجراء منك',
 
     'view_details' => 'عرض التفاصيل',
+    'complete_process' => 'استكمال الإجراء',
+    'delete' => 'حذف',
 
     'empty_title'       => 'لا توجد طلبات حتى الآن',
     'empty_subtitle'    => 'قدّم طلبك الأول من صفحة الخدمات.',

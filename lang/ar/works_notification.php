@@ -99,6 +99,7 @@ return [
     'status_needs_correction' => 'إضافة وثائق',
     'status_approved' => 'موافقة — تم الإعلام بالأشغال',
     'status_cancelled' => 'ملغاة',
+    'status_draft' => 'مسودة',
 
     // الأشرطة
     'under_review_banner' => 'إعلامك قيد الدراسة. يرجى إبقاء هاتفك متاحًا.',

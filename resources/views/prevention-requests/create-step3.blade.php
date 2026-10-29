@@ -100,16 +100,17 @@
                             <ol id="doc-list" class="space-y-3">
                                 @foreach ($documentTypes as $doc)
                                     @php
-                                        $uploaded = $uploadedDocs->get($doc->id);
+                                        $uploadedFiles = $uploadedDocs->get($doc->id) ?? collect();
+                                        $hasUploaded   = $uploadedFiles->isNotEmpty();
                                     @endphp
                                     <li
-                                        class="doc-card rounded border p-4 transition dark:border-gray-700 {{ $uploaded ? 'border-emerald-300 bg-emerald-50/30 dark:border-emerald-800/40 dark:bg-emerald-900/10' : 'border-surface-dim' }}"
+                                        class="doc-card rounded border p-4 transition dark:border-gray-700 {{ $hasUploaded ? 'border-emerald-300 bg-emerald-50/30 dark:border-emerald-800/40 dark:bg-emerald-900/10' : 'border-surface-dim' }}"
                                         data-doc-id="{{ $doc->id }}"
                                     >
                                         <div class="flex items-start gap-3">
                                             {{-- Icône de statut --}}
-                                            <span class="status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full {{ $uploaded ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500' }}">
-                                                @if ($uploaded)
+                                            <span class="status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full {{ $hasUploaded ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500' }}">
+                                                @if ($hasUploaded)
                                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                                 @else
                                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
@@ -130,12 +131,27 @@
                                                     @endif
                                                 </div>
 
-                                                {{-- Fichier déjà enregistré (côté serveur) --}}
-                                                @if ($uploaded)
-                                                    <div class="mt-2 flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
-                                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
-                                                        <span class="truncate">{{ $uploaded->original_name }}</span>
-                                                        <span class="flex-none text-outline">({{ number_format($uploaded->size / 1024, 0) }} KB)</span>
+                                                {{-- Fichiers déjà enregistrés (côté serveur) — un ou plusieurs, avec suppression individuelle --}}
+                                                @if ($hasUploaded)
+                                                    <div class="mt-2 space-y-1.5">
+                                                        @foreach ($uploadedFiles as $uploaded)
+                                                            <div class="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
+                                                                <svg class="h-3.5 w-3.5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
+                                                                <span class="truncate">{{ $uploaded->original_name }}</span>
+                                                                <span class="flex-none text-outline">({{ number_format($uploaded->size / 1024, 0) }} KB)</span>
+                                                                <form method="POST" action="{{ route('prevention-requests.documents.delete', [$dossier, $uploaded]) }}"
+                                                                      onsubmit="return confirm('{{ __('prevention_request.document_delete_confirm') }}')" class="ms-auto flex-none">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button type="submit"
+                                                                            class="inline-flex items-center gap-1 rounded p-1 font-semibold text-red-500 transition hover:bg-red-50 cursor-pointer dark:hover:bg-red-900/20"
+                                                                            title="{{ __('prevention_request.delete') }}">
+                                                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                                        <span class="text-[11px]">{{ __('prevention_request.remove_file') }}</span>
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        @endforeach
                                                     </div>
                                                 @endif
 
@@ -156,16 +172,17 @@
                                                     </div>
                                                 </div>
 
-                                                {{-- Bouton d'envoi --}}
+                                                {{-- Bouton d'envoi — ajout cumulatif, jamais de remplacement --}}
                                                 <div class="mt-3 upload-area">
                                                     <label class="inline-flex cursor-pointer items-center gap-2 rounded border border-surface-dim bg-surface-container-lowest px-3 py-2 text-xs font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                                         <span class="material-symbols-outlined text-[15px] text-primary" aria-hidden="true">upload_file</span>
-                                                        <span class="upload-label">{{ $uploaded ? __('prevention_request.replace_file') : __('prevention_request.upload_file') }}</span>
+                                                        <span class="upload-label">{{ $hasUploaded ? __('prevention_request.add_file') : __('prevention_request.upload_file') }}</span>
                                                         <input
                                                             type="file"
-                                                            name="documents[{{ $doc->id }}]"
+                                                            name="documents[{{ $doc->id }}][]"
                                                             class="sr-only file-input"
                                                             accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                                            multiple
                                                         >
                                                     </label>
                                                 </div>
@@ -229,9 +246,11 @@
 
         fileInputs.forEach(function (input) {
             input.addEventListener('change', function () {
-                var file = this.files[0];
+                var files = Array.prototype.slice.call(this.files);
                 var card = this.closest('.doc-card');
-                if (!card || !file) return;
+                if (!card || !files.length) return;
+
+                var file = files[0];
 
                 // ── Update card to "loaded" state ──
                 card.classList.remove('border-surface-dim');
@@ -251,8 +270,11 @@
                 var previewName = card.querySelector('.preview-name');
                 var previewSize = card.querySelector('.preview-size');
 
-                previewName.textContent = file.name;
-                previewSize.textContent = formatSize(file.size);
+                // ── Name : premier fichier (+ affichage du nombre si plusieurs sélectionnés) ──
+                previewName.textContent = files.length > 1
+                    ? file.name + '  +' + (files.length - 1)
+                    : file.name;
+                previewSize.textContent = formatSize(files.reduce(function (sum, f) { return sum + f.size; }, 0));
 
                 // ── Show image thumbnail or file icon ──
                 var isImage = file.type.startsWith('image/');
@@ -278,9 +300,9 @@
                     }
                 }
 
-                // ── Update upload label to "replace" ──
+                // ── Label : toujours « ajouter » (ajout cumulatif, jamais de remplacement) ──
                 var uploadLabel = card.querySelector('.upload-label');
-                uploadLabel.textContent = '{{ __('prevention_request.replace_file') }}';
+                uploadLabel.textContent = '{{ __('prevention_request.add_file') }}';
 
                 updateProgress();
             });

@@ -99,6 +99,7 @@ return [
     'status_needs_correction' => 'Corrections requises',
     'status_approved' => 'Approuvé — Protection Civile informée',
     'status_cancelled' => 'Annulée',
+    'status_draft' => 'Brouillon',
 
     // Bandeaux
     'under_review_banner' => 'Votre évaluation est en cours d\'examen. Veuillez garder votre téléphone disponible.',

@@ -17,8 +17,11 @@ return [
     'tab_more'       => "Infos complémentaires",
 
     // ── Onglet 1 : dossier en cours ──
-    'empty_draft_title' => "Aucun brouillon en cours",
-    'empty_draft_desc'  => "Complétez le formulaire ci-dessous pour démarrer votre demande. Votre progression reste enregistrée comme brouillon.",
+    'empty_draft_title' => "Créer un nouveau dossier",
+    'empty_draft_desc'  => "Aucun brouillon en cours. Cliquez ici pour compléter les informations de votre démarche — si vous démarrez le processus sans encore soumettre votre demande, votre progression restera enregistrée comme brouillon.",
+    'empty_draft_aria'  => "Créer un nouveau dossier — cliquez pour ouvrir le formulaire de demande",
+    'create_new_draft'  => "Créer un nouveau dossier",
+    'draft_saved_note'  => "Si vous démarrez la démarche sans encore soumettre votre demande, votre progression restera enregistrée comme brouillon.",
 
     // ── Onglet 2 : la démarche ──
     'legal_name_label'    => "Intitulé légal officiel",

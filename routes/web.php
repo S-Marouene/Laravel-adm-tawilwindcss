@@ -91,6 +91,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/prevention-requests/{dossier}', [PreventionRequestController::class, 'show'])->name('prevention-requests.show');
     Route::get('/prevention-requests/{dossier}/documents/{document}/download', [PreventionRequestController::class, 'downloadDocument'])
         ->name('prevention-requests.documents.download');
+    Route::delete('/prevention-requests/{dossier}/documents/{document}', [PreventionRequestController::class, 'deleteDocument'])
+        ->name('prevention-requests.documents.delete');
     Route::get('/preventive-presence', [PreventivePresenceController::class, 'index'])->name('preventive-presence.index');
 
     // Multi-step create

@@ -104,6 +104,7 @@ return [
     'status_approved' => 'مقبول',
     'status_served' => 'تم تسليم الشهادة',
     'status_cancelled' => 'ملغى',
+    'status_draft' => 'مسودة',
 
     // Banners
     'under_review_banner' => 'مطلبك قيد المراجعة. يرجى الإبقاء على هاتفك متاحاً لابلاغك بأي تحديث.',

@@ -11,11 +11,11 @@ use Illuminate\Http\Request;
 class MesDemandesController extends Controller
 {
     /**
-     * Unified list of every request the user has submitted,
+     * Unified list of every request the user has,
      * across all services (prevention dossier, preventive presence,
      * rescue & relief certificate, works notification).
-     * Only submitted requests are shown — local drafts stay
-     * visible on each individual service page.
+     * Submitted requests are shown first — local drafts are also
+     * listed (amber "Brouillon" badge) with a direct resume link.
      */
     public function index()
     {
@@ -44,6 +44,34 @@ class MesDemandesController extends Controller
                     ])),
                     status:    $dossier->status,
                     createdAt: $dossier->created_at,
+                ));
+            });
+
+        // ── Prevention dossiers — drafts (incomplete) ──
+        PreventionDossier::where('user_id', $user->id)
+            ->where('status', 'draft')
+            ->with(['governorate', 'delegation'])
+            ->latest()
+            ->get()
+            ->each(function ($dossier) use ($items) {
+                $resumeUrl = $dossier->current_step >= 2
+                    ? route('prevention-requests.step3.show', $dossier)
+                    : route('prevention-requests.step2.show', $dossier);
+                $items->push($this->makeItem(
+                    kind:  'prevention',
+                    lang:  'prevention_request',
+                    label: __('services.prevention_certificate'),
+                    url:   $resumeUrl,
+                    title: $dossier->num_demande
+                        ? __('demandes.title_prevention', ['ref' => $dossier->num_demande])
+                        : __('demandes.title_generic'),
+                    meta: array_values(array_filter([
+                        $dossier->building_address,
+                        $this->place($dossier),
+                    ])),
+                    status:    'draft',
+                    createdAt: $dossier->created_at,
+                    destroyUrl: route('prevention-requests.destroy', $dossier) . '?redirect=/mes-demandes',
                 ));
             });
 
@@ -78,6 +106,41 @@ class MesDemandesController extends Controller
                 ));
             });
 
+        // ── Preventive presence — drafts (incomplete) ──
+        PreventivePresenceRequest::where('user_id', $user->id)
+            ->where('status', 'draft')
+            ->with(['governorate', 'delegation'])
+            ->latest()
+            ->get()
+            ->each(function ($presenceRequest) use ($items) {
+                $resumeUrl = $presenceRequest->current_step >= 2
+                    ? route('preventive-presence.step2.show', $presenceRequest)
+                    : route('preventive-presence.step1.edit', $presenceRequest);
+                $items->push($this->makeItem(
+                    kind:  'presence',
+                    lang:  'preventive_presence',
+                    label: __('services.preventive_presence'),
+                    url:   $resumeUrl,
+                    title: $presenceRequest->event_title
+                        ?: $presenceRequest->nom_prenom
+                        ?: __('demandes.title_generic'),
+                    meta: array_values(array_filter([
+                        $presenceRequest->event_title ? $presenceRequest->event_address : null,
+                        $presenceRequest->event_date
+                            ? __('preventive_presence.event_label') . ' : ' .
+                              $presenceRequest->event_date->format('d/m/Y') .
+                              ($presenceRequest->event_end_date
+                                ? ' → ' . $presenceRequest->event_end_date->format('d/m/Y')
+                                : '')
+                            : null,
+                        $this->place($presenceRequest),
+                    ])),
+                    status:    'draft',
+                    createdAt: $presenceRequest->created_at,
+                    destroyUrl: route('preventive-presence.destroy', $presenceRequest) . '?redirect=/mes-demandes',
+                ));
+            });
+
         // ── Rescue & relief certificates (certificat de secours et sauvetage) ──
         RescueCertificate::where('user_id', $user->id)
             ->whereNotIn('status', ['draft'])
@@ -105,6 +168,37 @@ class MesDemandesController extends Controller
                 ));
             });
 
+        // ── Rescue & relief certificates — drafts (incomplete) ──
+        RescueCertificate::where('user_id', $user->id)
+            ->where('status', 'draft')
+            ->with(['governorate', 'delegation'])
+            ->latest()
+            ->get()
+            ->each(function ($rescueCertificate) use ($items) {
+                $resumeUrl = $rescueCertificate->current_step >= 2
+                    ? route('rescue-certificates.step2.show', $rescueCertificate)
+                    : route('rescue-certificates.step1.edit', $rescueCertificate);
+                $items->push($this->makeItem(
+                    kind:  'rescue',
+                    lang:  'rescue_certificate',
+                    label: __('services.rescue_certificate'),
+                    url:   $resumeUrl,
+                    title: $rescueCertificate->certificate_number
+                        ? __('demandes.title_rescue', ['ref' => $rescueCertificate->certificate_number])
+                        : __('demandes.title_generic'),
+                    meta: array_values(array_filter([
+                        $rescueCertificate->incident_address,
+                        $rescueCertificate->incident_date
+                            ? __('demandes.incident_on', ['date' => $rescueCertificate->incident_date->format('d/m/Y')])
+                            : null,
+                        $this->place($rescueCertificate),
+                    ])),
+                    status:    'draft',
+                    createdAt: $rescueCertificate->created_at,
+                    destroyUrl: route('rescue-certificates.destroy', $rescueCertificate) . '?redirect=/mes-demandes',
+                ));
+            });
+
         // ── Works notifications (notification de travaux) ──
         WorksNotification::where('user_id', $user->id)
             ->whereNotIn('status', ['draft'])
@@ -128,6 +222,36 @@ class MesDemandesController extends Controller
                     ])),
                     status:    $worksNotification->status,
                     createdAt: $worksNotification->created_at,
+                ));
+            });
+
+        // ── Works notifications — drafts (incomplete) ──
+        WorksNotification::where('user_id', $user->id)
+            ->where('status', 'draft')
+            ->with(['governorate', 'delegation'])
+            ->latest()
+            ->get()
+            ->each(function ($worksNotification) use ($items) {
+                $resumeUrl = $worksNotification->current_step >= 2
+                    ? route('works-notifications.step2.show', $worksNotification)
+                    : route('works-notifications.step1.edit', $worksNotification);
+                $items->push($this->makeItem(
+                    kind:  'works',
+                    lang:  'works_notification',
+                    label: __('services.works_notification'),
+                    url:   $resumeUrl,
+                    title: $worksNotification->property_address
+                        ?: $worksNotification->owner_name
+                        ?: __('demandes.title_generic'),
+                    meta: array_values(array_filter([
+                        $worksNotification->works_start_date
+                            ? __('demandes.works_on', ['date' => $worksNotification->works_start_date->format('d/m/Y')])
+                            : null,
+                        $this->place($worksNotification),
+                    ])),
+                    status:    'draft',
+                    createdAt: $worksNotification->created_at,
+                    destroyUrl: route('works-notifications.destroy', $worksNotification) . '?redirect=/mes-demandes',
                 ));
             });
 
@@ -161,9 +285,11 @@ class MesDemandesController extends Controller
         array $meta,
         string $status,
         $createdAt,
+        string $destroyUrl = '',
     ): array {
         return [
             'kind'         => $kind,
+            'lang'         => $lang,
             'label'        => $label,
             'url'          => $url,
             'title'        => $title,
@@ -171,6 +297,7 @@ class MesDemandesController extends Controller
             'status'       => $status,
             'status_label' => __($lang . '.status_' . str_replace('-', '_', $status)),
             'created_at'   => $createdAt,
+            'destroy_url'  => $destroyUrl ?: null,
         ];
     }
 }
