@@ -62,23 +62,23 @@
     --color-on-error: #ffffff;
     --color-on-error-container: #93000a;
 
-    /* --- Surfaces & textes --- */
-    --color-background: #faf8ff;
-    --color-surface: #faf8ff;
-    --color-surface-dim: #d2d9f4;
-    --color-surface-bright: #faf8ff;
-    --color-surface-container-lowest: #ffffff;
-    --color-surface-container-low: #f2f3ff;
-    --color-surface-container: #eaedff;
-    --color-surface-container-high: #e2e7ff;
-    --color-surface-container-highest: #dae2fd;
-    --color-surface-variant: #dae2fd;
-    --color-on-surface: #131b2e;
-    --color-on-surface-variant: #5c403f;
-    --color-outline: #906f6e;
-    --color-outline-variant: #e5bdbb;
+    /* --- Surfaces & textes — neutre froid SANS teinte violette --- */
+    --color-background: #F7F8FA;
+    --color-surface: #F7F8FA;
+    --color-surface-dim: #D6D8DE;
+    --color-surface-bright: #F7F8FA;
+    --color-surface-container-lowest: #FFFFFF;
+    --color-surface-container-low: #F2F3F6;
+    --color-surface-container: #EAECF1;
+    --color-surface-container-high: #E1E4EA;
+    --color-surface-container-highest: #D9DCE3;
+    --color-surface-variant: #D9DCE3;
+    --color-on-surface: #131B2E;
+    --color-on-surface-variant: #5C403F;
+    --color-outline: #8A8D96;
+    --color-outline-variant: #DDE0E6;
     --color-inverse-surface: #283044;
-    --color-inverse-on-surface: #eef0ff;
+    --color-inverse-on-surface: #F2F3F6;
     --color-inverse-primary: #ffb3b1;
 
     /* --- succès (complément, utilisé par les modules existants) --- */
@@ -88,7 +88,7 @@
     --color-sidebar: #283044;
     --color-sidebar-hover: rgba(255, 255, 255, 0.06);
     --color-sidebar-active: rgba(200, 16, 46, 0.30);
-    --color-body: #faf8ff;
+    --color-body: #F7F8FA;
 
     /* ================= TYPOGRAPHIE ONPC ================= */
     --font-sans: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -189,10 +189,10 @@
     --color-accent-500: #9a5200;
     --color-accent-600: color-mix(in srgb, #773e00 82%, black);
 
-    /* surfaces — ancien "sand" */
-    --color-sand-50: #f2f3ff;
-    --color-sand-100: #eaedff;
-    --color-sand-200: #d2d9f4;
+    /* surfaces — ancien "sand" (neutre, sans teinte violette) */
+    --color-sand-50: #F2F3F6;
+    --color-sand-100: #EAECF1;
+    --color-sand-200: #D6D8DE;
 }
 
 /* =====================================================================
@@ -213,14 +213,14 @@
     --color-surface-container-highest: #37436a;
     --color-surface-variant: #37436a;
     --color-surface-dim: #0c1424;
-    --color-on-surface: #eef0ff;
+    --color-on-surface: #F2F3F6;
     --color-on-surface-variant: #c7cfe8;
     --color-secondary-container: #31405e;
     --color-on-secondary-container: #d4dcf2;
     --color-outline: #8b93b2;
     --color-outline-variant: #3b4670;
     --color-primary-fixed: #932946;
-    --color-inverse-surface: #eef0ff;
+    --color-inverse-surface: #F2F3F6;
     --color-inverse-on-surface: #283044;
     --color-inverse-primary: #9e001f;
     --color-sand-50: #212b49;

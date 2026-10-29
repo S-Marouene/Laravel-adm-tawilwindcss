@@ -62,6 +62,7 @@ class PreventionRequestController extends Controller
             'gouvernorats' => $this->gouvernorats(),
             'delegations'  => $this->delegations(),
             'drafts'       => $drafts,
+            'hasDocuments' => false,
         ]);
     }
 
@@ -69,16 +70,29 @@ class PreventionRequestController extends Controller
     // Step 1 — Edit existing draft (go back from Step 2)
     // =========================================================================
 
-    public function editStep1(PreventionDossier $dossier): View|RedirectResponse
+    public function editStep1(Request $request, PreventionDossier $dossier): View|RedirectResponse
     {
         if ($dossier->user_id !== auth()->id()) {
             abort(403);
         }
 
+        // Drafts banner (same data as create()) — exclude the dossier being edited
+        $drafts = PreventionDossier::where('user_id', auth()->id())
+            ->where('status', 'draft')
+            ->where('id', '!=', $dossier->id)
+            ->with(['governorate', 'delegation', 'buildingType'])
+            ->latest()
+            ->get();
+
+        $dossier->loadCount('documents');
+
         return view('prevention-requests.create', [
             'gouvernorats' => $this->gouvernorats(),
             'delegations'  => $this->delegations(),
+            'drafts'       => $drafts,
             'dossier'      => $dossier,   // pre-fills the form & unlocks "editing" mode
+            'returnTo'     => $request->query('return'), // step the user came from
+            'hasDocuments' => $dossier->documents_count > 0,
         ]);
     }
 
@@ -111,7 +125,12 @@ class PreventionRequestController extends Controller
             'building_address' => $validated['building_address'],
         ]);
 
-        return redirect()->route('prevention-requests.step2.show', $dossier);
+        // Return the user to the step they came from (default: step 2 in editing mode)
+        if ($request->input('return_to') === 'step3') {
+            return redirect()->route('prevention-requests.step3.show', $dossier);
+        }
+
+        return redirect()->route('prevention-requests.step2.show', ['dossier' => $dossier, 'editing' => 1]);
     }
 
     // =========================================================================
@@ -148,7 +167,7 @@ class PreventionRequestController extends Controller
     // Step 2 — Show form
     // =========================================================================
 
-    public function showStep2(PreventionDossier $dossier): View|RedirectResponse
+    public function showStep2(Request $request, PreventionDossier $dossier): View|RedirectResponse
     {
         // Make sure this dossier belongs to the authenticated user
         if ($dossier->user_id !== auth()->id()) {
@@ -156,11 +175,20 @@ class PreventionRequestController extends Controller
         }
 
         $dossier->load(['governorate', 'delegation', 'buildingType', 'buildingActivity']);
+        $dossier->loadCount('documents');
+
+        // « قيد التعديل » : révision explicite (?editing=1 après « Modifier l'étape 1 »)
+        // ou dossier déjà traité (statut au-delà du draft / étape 3 atteinte)
+        $isEditing = $request->query('editing') === '1'
+            || $dossier->status !== 'draft'
+            || $dossier->current_step > 2;
 
         return view('prevention-requests.create-step2', [
             'dossier'       => $dossier,
             'buildingTypes' => BuildingType::forSelect(),
             'activitiesMap' => BuildingType::activitiesMap(),
+            'isEditing'     => $isEditing,
+            'hasDocuments'  => $dossier->documents_count > 0,
         ]);
     }
 
@@ -203,7 +231,21 @@ class PreventionRequestController extends Controller
 
         $dossier->load(['governorate', 'delegation', 'buildingType', 'buildingActivity']);
 
-        $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)->orderBy('sort_order')->get();
+        // ── Verrou de flux : impossible d'atteindre l'étape 3 sans les données de l'étape 2 ──
+        if (! $dossier->building_type_id) {
+            return redirect()
+                ->route('prevention-requests.step2.show', $dossier)
+                ->withErrors(['complete_step2' => __('prevention_request.complete_step2_first')]);
+        }
+
+        // Checklist du service, filtrée selon le type de bâtiment du dossier :
+        // chaque formulaire peut ne concerner que certaines catégories de bâtiment.
+        $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)
+            ->with('buildingTypes')
+            ->orderBy('sort_order')
+            ->get()
+            ->filter(fn (DocumentType $t) => $t->appliesToBuildingType($dossier->building_type_id))
+            ->values();
 
         // Load any already-uploaded documents for this dossier, grouped by document type
         // (several files may be attached to the same type)
@@ -229,21 +271,26 @@ class PreventionRequestController extends Controller
             abort(403);
         }
 
-        $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)->orderBy('sort_order')->pluck('id');
+        $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)
+            ->with('buildingTypes')
+            ->orderBy('sort_order')
+            ->get()
+            ->filter(fn (DocumentType $t) => $t->appliesToBuildingType($dossier->building_type_id))
+            ->values();
 
         $rules = [];
-        foreach ($documentTypes as $docTypeId) {
+        foreach ($documentTypes as $docType) {
             // One or more files per document type (input array + multiple attribute)
-            $rules['documents.' . $docTypeId]       = ['nullable', 'array', 'max:10'];
-            $rules['documents.' . $docTypeId . '.*'] = ['file', 'max:10240']; // 10MB max
+            $rules['documents.' . $docType->id]       = ['nullable', 'array', 'max:10'];
+            $rules['documents.' . $docType->id . '.*'] = ['file', 'max:10240']; // 10MB max
         }
 
         $validated = $request->validate($rules);
 
         $uploadDir = "prevention-documents/{$dossier->id}";
 
-        foreach ($documentTypes as $docTypeId) {
-            $files = $request->file("documents.{$docTypeId}");
+        foreach ($documentTypes as $docType) {
+            $files = $request->file("documents.{$docType->id}");
             if (! $files) continue;
             $files = is_array($files) ? $files : [$files];
 
@@ -254,7 +301,7 @@ class PreventionRequestController extends Controller
 
                 DossierDocument::create([
                     'prevention_dossier_id' => $dossier->id,
-                    'document_type_id'      => $docTypeId,
+                    'document_type_id'      => $docType->id,
                     'file_path'             => $path,
                     'original_name'         => $file->getClientOriginalName(),
                     'mime_type'             => $file->getMimeType(),
@@ -297,7 +344,7 @@ class PreventionRequestController extends Controller
         }
 
         return redirect()
-            ->route('prevention-requests.index')
+            ->route('mes-demandes')
             ->with('success', __('prevention_request.submit_success'));
     }
 
@@ -344,6 +391,23 @@ class PreventionRequestController extends Controller
         }
 
         return Storage::disk('local')->download($document->file_path, $document->original_name);
+    }
+
+    // =========================================================================
+    // Download the official form/template attached to a document type
+    // (the applicant fills it, scans it and uploads it back)
+    // =========================================================================
+
+    public function downloadTemplate(DocumentType $documentType)
+    {
+        if (! $documentType->template_path) {
+            abort(404);
+        }
+
+        return Storage::disk('local')->download(
+            $documentType->template_path,
+            $documentType->template_name ?: ($documentType->name . '.' . $documentType->templateExtension())
+        );
     }
 
     // =========================================================================

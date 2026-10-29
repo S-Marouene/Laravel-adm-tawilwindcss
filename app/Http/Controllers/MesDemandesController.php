@@ -26,7 +26,8 @@ class MesDemandesController extends Controller
         // ── Prevention dossiers (certificat de prévention) ──
         PreventionDossier::where('user_id', $user->id)
             ->whereNotIn('status', ['draft'])
-            ->with(['governorate', 'delegation'])
+            ->with(['governorate', 'delegation', 'buildingType', 'buildingActivity'])
+            ->withCount('documents')
             ->latest()
             ->get()
             ->each(function ($dossier) use ($items) {
@@ -38,10 +39,8 @@ class MesDemandesController extends Controller
                     title: $dossier->num_demande
                         ? __('demandes.title_prevention', ['ref' => $dossier->num_demande])
                         : __('demandes.title_generic'),
-                    meta: array_values(array_filter([
-                        $dossier->building_address,
-                        $this->place($dossier),
-                    ])),
+                    meta: [],
+                    details: $this->dossierDetails($dossier),
                     status:    $dossier->status,
                     createdAt: $dossier->created_at,
                 ));
@@ -50,7 +49,8 @@ class MesDemandesController extends Controller
         // ── Prevention dossiers — drafts (incomplete) ──
         PreventionDossier::where('user_id', $user->id)
             ->where('status', 'draft')
-            ->with(['governorate', 'delegation'])
+            ->with(['governorate', 'delegation', 'buildingType', 'buildingActivity'])
+            ->withCount('documents')
             ->latest()
             ->get()
             ->each(function ($dossier) use ($items) {
@@ -65,10 +65,8 @@ class MesDemandesController extends Controller
                     title: $dossier->num_demande
                         ? __('demandes.title_prevention', ['ref' => $dossier->num_demande])
                         : __('demandes.title_generic'),
-                    meta: array_values(array_filter([
-                        $dossier->building_address,
-                        $this->place($dossier),
-                    ])),
+                    meta: [],
+                    details: $this->dossierDetails($dossier),
                     status:    'draft',
                     createdAt: $dossier->created_at,
                     destroyUrl: route('prevention-requests.destroy', $dossier) . '?redirect=/mes-demandes',
@@ -286,6 +284,7 @@ class MesDemandesController extends Controller
         string $status,
         $createdAt,
         string $destroyUrl = '',
+        array $details = [],
     ): array {
         return [
             'kind'         => $kind,
@@ -294,10 +293,40 @@ class MesDemandesController extends Controller
             'url'          => $url,
             'title'        => $title,
             'meta'         => $meta,
+            'details'      => $details,
             'status'       => $status,
             'status_label' => __($lang . '.status_' . str_replace('-', '_', $status)),
             'created_at'   => $createdAt,
             'destroy_url'  => $destroyUrl ?: null,
         ];
+    }
+
+    /**
+     * Détails riches d'un dossier de prévention, affichés ligne par ligne
+     * (icône + libellé) sur la fiche « Mes demandes ».
+     */
+    private function dossierDetails(PreventionDossier $dossier): array
+    {
+        $identityParts = array_filter([
+            $dossier->nom_prenom,
+            $dossier->cin ? __('demandes.cin', ['cin' => $dossier->cin]) : null,
+        ]);
+
+        return array_values(array_filter([
+            $dossier->buildingType
+                ? ['icon' => 'apartment', 'text' => trim(__('demandes.building_type') . ' : ' . $dossier->buildingType->name
+                    . ($dossier->buildingActivity ? ' · ' . $dossier->buildingActivity->name : ''))]
+                : null,
+            $dossier->building_address
+                ? ['icon' => 'location_on', 'text' => $dossier->building_address]
+                : null,
+            $this->place($dossier)
+                ? ['icon' => 'map', 'text' => $this->place($dossier)]
+                : null,
+            $identityParts
+                ? ['icon' => 'badge', 'text' => implode(' · ', $identityParts)]
+                : null,
+            ['icon' => 'description', 'text' => __('demandes.documents_count', ['n' => $dossier->documents_count ?? 0])],
+        ]));
     }
 }

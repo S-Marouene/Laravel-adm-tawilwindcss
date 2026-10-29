@@ -13,6 +13,10 @@ return [
     'works_on'        => 'Works from :date',
     'action_required' => 'This request requires your action',
 
+    'building_type'   => 'Building type',
+    'cin'             => 'ID : :cin',
+    'documents_count' => 'Documents uploaded: :n',
+
     'view_details' => 'View details',
     'complete_process' => 'Complete the process',
     'delete' => 'Delete',

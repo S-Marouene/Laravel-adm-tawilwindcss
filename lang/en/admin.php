@@ -36,6 +36,18 @@ return [
         'prevention' => 'Prevention Certificate',
         'preventive-presence' => 'Preventive Presence',
     ],
+    'services' => 'Applicable services (multi-select)',
+    'document_name' => 'Document name',
+    'building_types_short' => 'Building types',
+    'form_template_short' => 'Form',
+    'building_scope_none' => 'No building type checked → hidden from users.',
+
+    // Document types — downloadable form & building-type scope
+    'form_template' => 'Downloadable form',
+    'form_template_hint' => 'PDF, DOC, DOCX, JPG or PNG — max 10 MB. Users get a "Download form" button on Step 3.',
+    'form_template_remove' => 'Delete the form',
+    'building_types' => 'Applicable building types',
+    'building_types_all_hint' => 'The document is only shown to the user for the building types checked above.',
 
     // Mail Test
     'mail_test' => 'Test Email Configuration',

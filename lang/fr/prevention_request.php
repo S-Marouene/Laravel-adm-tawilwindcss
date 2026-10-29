@@ -20,7 +20,12 @@ return [
     'step3_heading' => 'Étape 3',
     'step3_description' => 'Téléchargez les documents requis',
     'documents_info' => 'Tous les documents sont requis sauf ceux marqués comme conditionnels. Formats acceptés : PDF, JPG, PNG, DOC, DOCX. Taille max : 10 Mo.',
+
+    'complete_step2_first' => 'Veuillez compléter le type de bâtiment et son activité (Étape 2) avant d\'accéder aux documents.',
+    'documents_count' => ':count fichier(s) téléversé(s)',
     'conditional' => 'Conditionnel',
+    'download_form' => 'Télécharger le formulaire',
+    'download_form_hint' => 'Formulaire officiel : téléchargez-le, remplissez-le, puis téléversez-le après numérisation.',
     'upload_file' => 'Télécharger un document',
     'add_file' => 'Ajouter un fichier',
     'replace_file' => 'Remplacer le document',

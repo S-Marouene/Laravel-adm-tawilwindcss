@@ -1,5 +1,11 @@
 @php
     $totalSteps = 3;
+    $isEditing    = $isEditing ?? false;
+    $hasDocuments = $hasDocuments ?? false;
+
+    // Saved selection (validation errors take priority via old())
+    $selectedTypeId = old('building_type_id', $dossier->building_type_id);
+
     $step1Lines = [
         $dossier->nom_prenom,
         $dossier->cin,
@@ -15,12 +21,16 @@
             'editLabel' => __('prevention_request.edit_step1'),
         ],
         [
-            'state' => 'active',
-            'title' => __('prevention_request.step_two_title'),
+            'state'   => 'active',
+            'title'   => __('prevention_request.step_two_title'),
+            'editing' => $isEditing,
         ],
         [
-            'state' => 'upcoming',
-            'title' => __('prevention_request.step_three_title'),
+            'state'     => $hasDocuments ? 'done' : 'upcoming',
+            'title'     => __('prevention_request.step_three_title'),
+            'data'      => $hasDocuments ? [__('prevention_request.documents_count', ['count' => $dossier->documents_count])] : [],
+            'editUrl'   => $hasDocuments ? route('prevention-requests.step3.show', $dossier) : null,
+            'editLabel' => __('prevention_request.step_three_title'),
         ],
     ];
 @endphp
@@ -43,6 +53,7 @@
                         <div>
                             <span class="text-label-caps text-primary uppercase tracking-wider">
                                 {{ __('prevention_request.step_of', ['step' => 2, 'total' => $totalSteps]) }}
+                                @if ($isEditing) · {{ __('prevention_request.step_editing') }} @endif
                             </span>
                             <h2 class="text-headline-sm text-on-surface mt-0.5">{{ __('prevention_request.step2_heading') }} — {{ __('prevention_request.step_two_title') }}</h2>
                         </div>
@@ -96,7 +107,7 @@
                                                 name="building_type_id"
                                                 value="{{ $typeId }}"
                                                 class="sr-only"
-                                                {{ old('building_type_id') == $typeId ? 'checked' : '' }}
+                                                {{ old('building_type_id', $dossier->building_type_id) == $typeId ? 'checked' : '' }}
                                                 required
                                             >
                                             <span class="type-icon material-symbols-outlined filled text-2xl text-outline" aria-hidden="true">apartment</span>
@@ -170,7 +181,7 @@
                                         name="activity_other"
                                         type="text"
                                         maxlength="255"
-                                        value="{{ old('activity_other') }}"
+                                        value="{{ old('activity_other', $dossier->activity_other) }}"
                                         placeholder="{{ __('prevention_request.activity_other_placeholder') }}"
                                         class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('activity_other') border-red-400 @enderror"
                                     >
@@ -212,9 +223,9 @@
         var selectLabel    = @json(__('prevention_request.activity_select'));
         var searchLabel    = @json(__('prevention_request.search_placeholder'));
         var noResults      = @json(__('prevention_request.activity_no_results'));
-        var oldActivityId  = @json(old('building_activity_id', ''));
-        var oldTypeId      = @json(old('building_type_id', ''));
-
+        var oldActivityId  = @json((string) old('building_activity_id', $dossier->building_activity_id ?? ''));
+        var oldTypeId      = @json((string) old('building_type_id', $selectedTypeId));
+        var oldOtherSaved  = @json((string) old('activity_other', $dossier->activity_other ?? ''));
         /* ── DOM refs ───────────────────────────────────────────────────── */
         var typeCards      = document.querySelectorAll('.type-card');
         var actSection     = document.getElementById('activity-section');
@@ -384,9 +395,8 @@
         if (oldTypeId) {
             selectTypeCard(oldTypeId);  // visually selects the card AND calls loadType
 
-            // Check if "other" was selected — old('activity_other') would have text
-            var oldOther = @json(old('activity_other', ''));
-            if (oldOther) {
+            // Check if "other" was selected — old('activity_other') or saved dossier text
+            if (oldOtherSaved) {
                 // Simulate selecting "Other" from the dropdown
                 actHidden.value = '';
                 actTriggerLbl.textContent = otherLabel;

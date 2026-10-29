@@ -13,6 +13,10 @@ return [
     'works_on'        => 'الأشغال بتاريخ :date',
     'action_required' => 'يتطلب هذا الطلب إجراء منك',
 
+    'building_type'   => 'نوع البناية',
+    'cin'             => 'ب.ت.و : :cin',
+    'documents_count' => 'الوثائق المرفوعة: :n',
+
     'view_details' => 'عرض التفاصيل',
     'complete_process' => 'استكمال الإجراء',
     'delete' => 'حذف',

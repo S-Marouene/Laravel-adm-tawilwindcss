@@ -15,14 +15,14 @@
             'state'     => 'done',
             'title'     => __('prevention_request.step_one_title'),
             'data'      => $step1Lines,
-            'editUrl'   => route('prevention-requests.step1.edit', $dossier),
+            'editUrl'   => route('prevention-requests.step1.edit', ['dossier' => $dossier, 'return' => 'step3']),
             'editLabel' => __('prevention_request.edit_step1'),
         ],
         [
             'state'     => 'done',
             'title'     => __('prevention_request.step_two_title'),
             'data'      => $step2Lines,
-            'editUrl'   => route('prevention-requests.step2.show', $dossier),
+            'editUrl'   => route('prevention-requests.step2.show', ['dossier' => $dossier, 'editing' => 1]),
             'editLabel' => __('prevention_request.edit_step2'),
         ],
         [
@@ -55,7 +55,7 @@
                             </span>
                             <h2 class="text-headline-sm text-on-surface mt-0.5">{{ __('prevention_request.step3_heading') }} — {{ __('prevention_request.step_three_title') }}</h2>
                         </div>
-                        <span id="docs-progress" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 text-body-sm font-semibold border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900">
+                        <span id="docs-progress" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-gov-50 text-gov-800 text-body-sm font-semibold border border-gov-300 dark:bg-gov-900/30 dark:text-gov-300 dark:border-gov-800">
                             <span class="material-symbols-outlined filled text-[15px]" aria-hidden="true">task_alt</span>
                             <span id="docs-progress-count">{{ $uploadedCount }}/{{ $documentTypes->count() }}</span>
                         </span>
@@ -104,12 +104,13 @@
                                         $hasUploaded   = $uploadedFiles->isNotEmpty();
                                     @endphp
                                     <li
-                                        class="doc-card rounded border p-4 transition dark:border-gray-700 {{ $hasUploaded ? 'border-emerald-300 bg-emerald-50/30 dark:border-emerald-800/40 dark:bg-emerald-900/10' : 'border-surface-dim' }}"
+                                        class="doc-card rounded border p-4 transition dark:border-gray-700 {{ $hasUploaded ? 'border-gov-300 bg-gov-50/30 dark:border-gov-800/40 dark:bg-gov-900/10' : 'border-surface-dim' }}"
                                         data-doc-id="{{ $doc->id }}"
+                                        data-has-server="{{ $hasUploaded ? '1' : '0' }}"
                                     >
                                         <div class="flex items-start gap-3">
                                             {{-- Icône de statut --}}
-                                            <span class="status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full {{ $hasUploaded ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500' }}">
+                                            <span class="status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full {{ $hasUploaded ? 'bg-gov-100 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300' : 'bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500' }}">
                                                 @if ($hasUploaded)
                                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                                 @else
@@ -129,25 +130,37 @@
                                                             {{ __('prevention_request.conditional') }}
                                                         </span>
                                                     @endif
+                                                    @if ($doc->template_path)
+                                                        <a href="{{ route('prevention-requests.document-template.download', $doc) }}"
+                                                           class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-primary bg-primary/10 rounded border border-primary/25 transition hover:bg-primary/15 cursor-pointer dark:bg-primary/15 dark:border-primary/40"
+                                                           title="{{ __('prevention_request.download_form_hint') }}">
+                                                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">download</span>
+                                                            {{ __('prevention_request.download_form') }}
+                                                            <span class="text-primary/60">({{ $doc->templateExtension() }})</span>
+                                                        </a>
+                                                    @endif
                                                 </div>
 
                                                 {{-- Fichiers déjà enregistrés (côté serveur) — un ou plusieurs, avec suppression individuelle --}}
                                                 @if ($hasUploaded)
                                                     <div class="mt-2 space-y-1.5">
                                                         @foreach ($uploadedFiles as $uploaded)
-                                                            <div class="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
-                                                                <svg class="h-3.5 w-3.5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
-                                                                <span class="truncate">{{ $uploaded->original_name }}</span>
-                                                                <span class="flex-none text-outline">({{ number_format($uploaded->size / 1024, 0) }} KB)</span>
+                                                            <div class="flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-container-lowest p-2.5 dark:border-gray-700 dark:bg-gray-800/60">
+                                                                <span class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-gov-50 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300">
+                                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
+                                                                </span>
+                                                                <div class="min-w-0 flex-1">
+                                                                    <p class="truncate text-xs font-semibold text-on-surface dark:text-gray-100">{{ $uploaded->original_name }}</p>
+                                                                    <p class="text-[11px] text-outline">{{ number_format($uploaded->size / 1024, 0) }} KB</p>
+                                                                </div>
                                                                 <form method="POST" action="{{ route('prevention-requests.documents.delete', [$dossier, $uploaded]) }}"
-                                                                      onsubmit="return confirm('{{ __('prevention_request.document_delete_confirm') }}')" class="ms-auto flex-none">
+                                                                      onsubmit="return confirm('{{ __('prevention_request.document_delete_confirm') }}')" class="flex-none">
                                                                     @csrf
                                                                     @method('DELETE')
                                                                     <button type="submit"
-                                                                            class="inline-flex items-center gap-1 rounded p-1 font-semibold text-red-500 transition hover:bg-red-50 cursor-pointer dark:hover:bg-red-900/20"
-                                                                            title="{{ __('prevention_request.delete') }}">
-                                                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                                                        <span class="text-[11px]">{{ __('prevention_request.remove_file') }}</span>
+                                                                            class="flex h-8 w-8 items-center justify-center rounded-lg text-outline transition hover:bg-red-50 hover:text-red-600 cursor-pointer dark:hover:bg-red-900/20"
+                                                                            title="{{ __('prevention_request.remove_file') }}">
+                                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                                     </button>
                                                                 </form>
                                                             </div>
@@ -155,22 +168,8 @@
                                                     </div>
                                                 @endif
 
-                                                {{-- Zone d'aperçu (remplie par le JS à la sélection) --}}
-                                                <div class="preview-area mt-3 hidden">
-                                                    <div class="flex items-center gap-3 rounded border border-emerald-200 bg-emerald-50 p-2.5 dark:border-emerald-800/40 dark:bg-emerald-900/10">
-                                                        <div class="preview-thumb flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded bg-surface-container-lowest dark:bg-gray-800">
-                                                            <img class="preview-img hidden h-full w-full object-cover" alt="">
-                                                            <svg class="preview-icon h-7 w-7 text-outline hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                                                        </div>
-                                                        <div class="min-w-0 flex-1">
-                                                            <p class="preview-name truncate text-xs font-semibold text-on-surface dark:text-gray-100"></p>
-                                                            <p class="preview-size text-[11px] text-outline"></p>
-                                                        </div>
-                                                        <button type="button" class="remove-file flex-none rounded p-1 text-outline transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 cursor-pointer" title="{{ __('prevention_request.remove_file') }}">
-                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                        </button>
-                                                    </div>
-                                                </div>
+                                                {{-- Zone d'aperçu — une ligne par fichier sélectionné (remplie par le JS) --}}
+                                                <div class="preview-list mt-3 hidden space-y-1.5"></div>
 
                                                 {{-- Bouton d'envoi — ajout cumulatif, jamais de remplacement --}}
                                                 <div class="mt-3 upload-area">
@@ -199,7 +198,7 @@
                                 {{ __('prevention_request.required_note') }}
                             </div>
                             <div class="flex flex-col-reverse sm:flex-row items-center gap-3">
-                                <a href="{{ route('prevention-requests.step2.show', $dossier) }}"
+                                <a href="{{ route('prevention-requests.step2.show', ['dossier' => $dossier, 'editing' => 1]) }}"
                                    class="inline-flex items-center gap-2 rounded border border-surface-dim bg-surface-container-lowest px-4 py-2.5 text-body-sm font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                     <svg class="h-4 w-4 {{ app()->getLocale() === 'ar' ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -231,15 +230,19 @@
         var progressCount = document.getElementById('docs-progress-count');
         var totalDocs = document.querySelectorAll('.doc-card').length;
 
+        var LABEL_UPLOAD = '{{ __('prevention_request.upload_file') }}';
+        var LABEL_ADD    = '{{ __('prevention_request.add_file') }}';
+        var LABEL_REMOVE = '{{ __('prevention_request.remove_file') }}';
+
         /* ── Live counter of uploaded documents (step banner) ── */
         function updateProgress() {
             if (!progressCount) return;
             var done = 0;
             document.querySelectorAll('.doc-card').forEach(function (card) {
-                if (card.querySelector('.file-input').value ||
-                    card.querySelector('.status-icon').classList.contains('bg-emerald-100')) {
-                    done++;
-                }
+                var input = card.querySelector('.file-input');
+                var staged = input && input.files ? input.files.length : 0;
+                var hasServer = card.dataset.hasServer === '1';
+                if (staged > 0 || hasServer) done++;
             });
             progressCount.textContent = done + '/' + totalDocs;
         }
@@ -250,88 +253,139 @@
                 var card = this.closest('.doc-card');
                 if (!card || !files.length) return;
 
-                var file = files[0];
+                // ── Ajout cumulatif : un nouveau fichier s'ajoute, il ne remplace jamais ──
+                stagedFiles(input).push.apply(stagedFiles(input), files);
+                syncInputFiles(input);
 
-                // ── Update card to "loaded" state ──
-                card.classList.remove('border-surface-dim');
-                card.classList.add('border-emerald-300', 'bg-emerald-50/30', 'dark:border-emerald-800/40', 'dark:bg-emerald-900/10');
-
-                // ── Update status icon to checkmark ──
-                var statusIcon = card.querySelector('.status-icon');
-                statusIcon.className = 'status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400';
-                statusIcon.innerHTML = '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>';
-
-                // ── Show preview area ──
-                var previewArea = card.querySelector('.preview-area');
-                previewArea.classList.remove('hidden');
-
-                var previewImg  = card.querySelector('.preview-img');
-                var previewIcon = card.querySelector('.preview-icon');
-                var previewName = card.querySelector('.preview-name');
-                var previewSize = card.querySelector('.preview-size');
-
-                // ── Name : premier fichier (+ affichage du nombre si plusieurs sélectionnés) ──
-                previewName.textContent = files.length > 1
-                    ? file.name + '  +' + (files.length - 1)
-                    : file.name;
-                previewSize.textContent = formatSize(files.reduce(function (sum, f) { return sum + f.size; }, 0));
-
-                // ── Show image thumbnail or file icon ──
-                var isImage = file.type.startsWith('image/');
-                if (isImage) {
-                    previewImg.classList.remove('hidden');
-                    previewIcon.classList.add('hidden');
-                    var reader = new FileReader();
-                    reader.onload = function (e) {
-                        previewImg.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    previewImg.classList.add('hidden');
-                    previewIcon.classList.remove('hidden');
-                    // Color the icon by file type
-                    var ext = (file.name.split('.').pop() || '').toLowerCase();
-                    if (ext === 'pdf') {
-                        previewIcon.classList.add('text-red-500');
-                    } else if (ext === 'doc' || ext === 'docx') {
-                        previewIcon.classList.add('text-blue-500');
-                    } else {
-                        previewIcon.classList.add('text-outline');
-                    }
-                }
-
-                // ── Label : toujours « ajouter » (ajout cumulatif, jamais de remplacement) ──
-                var uploadLabel = card.querySelector('.upload-label');
-                uploadLabel.textContent = '{{ __('prevention_request.add_file') }}';
-
-                updateProgress();
+                // ── Une ligne d'aperçu par fichier ──
+                renderPreviewList(card);
+                refreshCardState(card);
             });
         });
+
+        /* ── Fichiers mis en attente par input : chaque sélection S'AJOUTE à la liste ── */
+        function stagedFiles(input) {
+            if (!input._staged) input._staged = [];
+            return input._staged;
+        }
+
+        /* ── Réinjecte les fichiers accumulés dans l'input (sinon le navigateur les remplace) ── */
+        function syncInputFiles(input) {
+            var dt = new DataTransfer();
+            stagedFiles(input).forEach(function (f) { dt.items.add(f); });
+            input.files = dt.files;
+        }
+
+        /* ── État visuel de la carte : icône ✓, bordure verte, label « ajouter » ── */
+        function refreshCardState(card) {
+            var input = card.querySelector('.file-input');
+            var hasServer = card.dataset.hasServer === '1';
+            var stagedCount = stagedFiles(input).length;
+            var statusIcon = card.querySelector('.status-icon');
+            var uploadLabel = card.querySelector('.upload-label');
+            var previewList = card.querySelector('.preview-list');
+
+            if (previewList) previewList.classList.toggle('hidden', stagedCount === 0);
+
+            if (stagedCount === 0 && !hasServer) {
+                // Aucun fichier → état neutre
+                card.classList.add('border-surface-dim');
+                card.classList.remove('border-gov-300', 'bg-gov-50/30', 'dark:border-gov-800/40', 'dark:bg-gov-900/10');
+                statusIcon.className = 'status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500';
+                statusIcon.innerHTML = '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>';
+            } else {
+                // Fichiers présents (locaux ou déjà enregistrés) → état validé
+                card.classList.remove('border-surface-dim');
+                card.classList.add('border-gov-300', 'bg-gov-50/30', 'dark:border-gov-800/40', 'dark:bg-gov-900/10');
+                statusIcon.className = 'status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-gov-100 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300';
+                statusIcon.innerHTML = '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>';
+            }
+
+            if (uploadLabel) {
+                uploadLabel.textContent = (stagedCount > 0 || hasServer) ? LABEL_ADD : LABEL_UPLOAD;
+            }
+
+            updateProgress();
+        }
+
+        /* ── Aperçu : une rangée par fichier, avec suppression individuelle ── */
+        function renderPreviewList(card) {
+            var input = card.querySelector('.file-input');
+            var list = stagedFiles(input);
+            var container = card.querySelector('.preview-list');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            list.forEach(function (file, idx) {
+                var row = document.createElement('div');
+                row.className = 'flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-container-lowest p-2.5 dark:border-gray-700 dark:bg-gray-800/60';
+
+                row.innerHTML =
+                    '<div class="staged-thumb flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-lg bg-gov-50 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300">' +
+                        '<img class="hidden h-full w-full object-cover" alt="">' +
+                        '<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">' +
+                            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>' +
+                        '</svg>' +
+                    '</div>' +
+                    '<div class="min-w-0 flex-1">' +
+                        '<p class="truncate text-xs font-semibold text-on-surface dark:text-gray-100"></p>' +
+                        '<p class="text-[11px] text-outline"></p>' +
+                    '</div>' +
+                    '<span class="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-gov-100 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300">' +
+                        '<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>' +
+                    '</span>';
+
+                // Nom + taille (textContent = pas d'injection possible via le nom du fichier)
+                var nameEl = row.querySelectorAll('p')[0];
+                var sizeEl = row.querySelectorAll('p')[1];
+                nameEl.textContent = file.name;
+                sizeEl.textContent = formatSize(file.size);
+
+                // Miniature : image réelle ou badge « document » neutre
+                var badge = row.querySelector('.staged-thumb');
+                var img = badge.querySelector('img');
+                var svg = badge.querySelector('svg');
+                if (file.type && file.type.indexOf('image/') === 0) {
+                    img.classList.remove('hidden');
+                    var reader = new FileReader();
+                    reader.onload = function (e) { img.src = e.target.result; };
+                    reader.readAsDataURL(file);
+                } else {
+                    img.classList.add('hidden');
+                }
+
+                // Bouton « supprimer ce fichier » — discret, rouge seulement au survol
+                var rm = document.createElement('button');
+                rm.type = 'button';
+                rm.className = 'remove-file flex h-8 w-8 flex-none items-center justify-center rounded-lg text-outline transition hover:bg-red-50 hover:text-red-600 cursor-pointer dark:hover:bg-red-900/20';
+                rm.title = LABEL_REMOVE;
+                rm.dataset.idx = String(idx);
+                rm.innerHTML = '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
+                row.appendChild(rm);
+
+                container.appendChild(row);
+            });
+        }
 
         /* ── Remove button (event delegation: survives re-renders) ── */
         var docList = document.getElementById('doc-list');
         if (docList) {
             docList.addEventListener('click', function (e) {
                 var btnRemove = e.target.closest('.remove-file');
-                if (!btnRemove) return;
+                if (!btnRemove || btnRemove.dataset.idx === undefined) return;
+
                 var card = btnRemove.closest('.doc-card');
                 if (!card) return;
 
                 var input = card.querySelector('.file-input');
-                if (input) input.value = '';
 
-                card.querySelector('.preview-area').classList.add('hidden');
-                card.classList.add('border-surface-dim');
-                card.classList.remove('border-emerald-300', 'bg-emerald-50/30', 'dark:border-emerald-800/40', 'dark:bg-emerald-900/10');
+                // Retire uniquement CE fichier de la liste
+                stagedFiles(input).splice(Number(btnRemove.dataset.idx), 1);
+                syncInputFiles(input);
 
-                var statusIcon = card.querySelector('.status-icon');
-                statusIcon.className = 'status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500';
-                statusIcon.innerHTML = '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>';
-
-                var uploadLabel = card.querySelector('.upload-label');
-                if (uploadLabel) uploadLabel.textContent = '{{ __('prevention_request.upload_file') }}';
-
-                updateProgress();
+                renderPreviewList(card);
+                refreshCardState(card);
             });
         }
 

@@ -64,6 +64,12 @@ class PreventionDossier extends Model
         return $this->belongsTo(BuildingActivity::class, 'building_activity_id');
     }
 
+    /** Every file attached to the dossier (step 3) */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(DossierDocument::class, 'prevention_dossier_id');
+    }
+
     public function appointments(): HasMany
     {
         return $this->hasMany(DossierAppointment::class, 'prevention_dossier_id')->orderBy('visit_date')->orderBy('visit_time');

@@ -199,6 +199,17 @@
                                                 <span class="material-symbols-outlined text-[14px] rtl:rotate-180" aria-hidden="true">arrow_forward</span>
                                             </a>
                                         </div>
+                                        {{-- Détails enrichis du dossier (icône + libellé, ligne par ligne) --}}
+                                        <template x-if="item.details && item.details.length">
+                                            <div class="mt-3 pt-3 border-t border-dashed border-surface-dim grid gap-1.5">
+                                                <template x-for="(detail, di) in item.details" :key="item.id + '-d-' + di">
+                                                    <div class="flex items-center gap-2 text-xs text-secondary min-w-0">
+                                                        <span class="material-symbols-outlined text-[16px] text-outline shrink-0" aria-hidden="true" x-text="detail.icon"></span>
+                                                        <span class="truncate" x-text="detail.text"></span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2 self-end md:self-auto shrink-0">
@@ -254,8 +265,9 @@
                 return this.items.filter((item) => {
                     if (this.kind !== 'all' && item.kind !== this.kind) return false;
                     if (this.status !== 'all' && item.bucket !== this.status) return false;
-                    if (q) {
-                        const haystack = [item.title, item.label, item.meta.join(' '), item.date].join(' ').toLowerCase();
+                if (q) {
+                        const haystack = [item.title, item.label, item.meta.join(' '),
+                            (item.details || []).map((d) => d.text).join(' '), item.date].join(' ').toLowerCase();
                         if (!haystack.includes(q)) return false;
                     }
                     return true;

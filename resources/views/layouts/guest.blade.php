@@ -26,7 +26,6 @@
         @endif
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        @include('partials.theme-styles')
 
         <script>
             (function() {

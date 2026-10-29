@@ -2,6 +2,7 @@
     $totalSteps = 3;
 
     $isEditing  = isset($dossier);
+    $returnTo   = $returnTo ?? null; // step the user came from (edit flow)
     $formAction = $isEditing
         ? route('prevention-requests.step1.update', $dossier)
         : route('prevention-requests.step1.store');
@@ -26,11 +27,11 @@
                             $dossier->buildingType?->name,
                             $dossier->buildingActivity?->name ?: $dossier->activity_other,
                         ]) : [],
-            'editUrl' => $isEditing ? route('prevention-requests.step2.show', $dossier) : null,
+            'editUrl' => $isEditing ? route('prevention-requests.step2.show', ['dossier' => $dossier, 'editing' => 1]) : null,
             'editLabel' => __('prevention_request.step_two_title'),
         ],
         [
-            'state' => ($isEditing && $dossier->current_step >= 2) ? 'done' : 'upcoming',
+            'state' => ($isEditing && ($hasDocuments ?? false)) ? 'done' : 'upcoming',
             'title' => __('prevention_request.step_three_title'),
         ],
     ];
@@ -40,8 +41,11 @@
     <div class="py-8 sm:py-10">
         <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-6">
 
-            {{-- Carte à onglets — votre dossier + détails officiels de la démarche --}}
-            <x-onpc.service-details-tabs :drafts="$drafts" />
+            {{-- Carte à onglets — votre dossier + détails officiels de la démarche
+                 (masquée pendant l'édition d'un dossier existant) --}}
+            @unless ($isEditing)
+                <x-onpc.service-details-tabs :drafts="$drafts" />
+            @endunless
 
             {{-- ===========================================================
                  FORMULAIRE COMPLET (stepper + bandeau + formulaire)
@@ -73,7 +77,13 @@
                     <form method="POST" action="{{ $formAction }}" id="prevention-create-form"
                           class="bg-surface-container-lowest rounded border border-surface-dim shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         @csrf
-                        @if ($isEditing) @method('PUT') @endif
+                        @if ($isEditing)
+                            @method('PUT')
+                            {{-- Returns to the step where the user came from after saving --}}
+                            @if (in_array($returnTo, ['step2', 'step3']))
+                                <input type="hidden" name="return_to" value="{{ $returnTo }}">
+                            @endif
+                        @endif
 
                         {{-- ⚠️ Erreurs de validation (résumé en tête, WCAG) --}}
                         <div class="p-6 pb-0">
@@ -237,7 +247,7 @@
 
                         {{-- Pied de formulaire --}}
                         <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-surface-dim px-6 py-5 dark:border-gray-700">
-                            <a href="{{ $isEditing ? route('prevention-requests.step2.show', $dossier) : url('/') }}"
+                            <a href="{{ $isEditing ? route('prevention-requests.step2.show', ['dossier' => $dossier, 'editing' => 1]) : url('/') }}"
                                class="inline-flex items-center justify-center rounded border border-surface-dim bg-surface-container-lowest px-4 py-2.5 text-body-sm font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                 {{ __('prevention_request.cancel') }}
                             </a>

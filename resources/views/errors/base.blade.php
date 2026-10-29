@@ -16,7 +16,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @include('partials.theme-styles')
 </head>
 <body class="font-sans antialiased bg-background text-on-surface min-h-screen flex flex-col selection:bg-primary selection:text-on-primary">
     @include('partials.super-band')

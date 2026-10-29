@@ -18,6 +18,7 @@ class WorksDocumentTypeSeeder extends Seeder
                     'name_en' => $doc['en'],
                     'is_conditional' => $doc['conditional'] ?? false,
                     'sort_order' => $i + 1,
+                    'services' => [DocumentType::SERVICE_WORKS_NOTIFICATION],
                 ],
             );
         }

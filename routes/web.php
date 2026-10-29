@@ -82,6 +82,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Structures JSON endpoint (kept for edit form)
     Route::get('/prevention-requests/structures', [PreventionRequestController::class, 'structures'])->name('prevention-requests.structures');
 
+    // Official form/template attached to a document type (download → fill → rescan → upload)
+    Route::get('/prevention-requests/document-template/{documentType}', [PreventionRequestController::class, 'downloadTemplate'])
+        ->name('prevention-requests.document-template.download');
+
     // Edit / Update / Delete
     Route::get('/prevention-requests/{id}/edit', [PreventionRequestController::class, 'edit'])->name('prevention-requests.edit');
     Route::put('/prevention-requests/{id}', [PreventionRequestController::class, 'update'])->name('prevention-requests.update');

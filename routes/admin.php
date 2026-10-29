@@ -63,6 +63,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::resource('building-types', BuildingTypeController::class)->except(['show']);
     Route::resource('building-activities', BuildingActivityController::class)->except(['show']);
     Route::resource('document-types', DocumentTypeController::class)->except(['show']);
+    Route::get('document-types/{documentType}/template', [DocumentTypeController::class, 'downloadTemplate'])->name('document-types.template.download');
 
     // Prevention Dossiers
     Route::post('prevention-dossiers/{preventionDossier}/advance',    [PreventionDossierController::class, 'advanceToConsultation'])->name('prevention-dossiers.advance');

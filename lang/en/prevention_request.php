@@ -15,7 +15,12 @@ return [
     'step3_heading' => 'Step 3',
     'step3_description' => 'Upload the required documents',
     'documents_info' => 'All documents are required except those marked as conditional. Accepted formats: PDF, JPG, PNG, DOC, DOCX. Max size: 10 MB.',
+
+    'complete_step2_first' => 'Please complete the building type and its activity (Step 2) before uploading documents.',
+    'documents_count' => ':count file(s) uploaded',
     'conditional' => 'Conditional',
+    'download_form' => 'Download form',
+    'download_form_hint' => 'This is an official form: download it, fill it in, then upload it back after scanning.',
     'upload_file' => 'Upload a document',
     'add_file' => 'Add a file',
     'replace_file' => 'Replace document',

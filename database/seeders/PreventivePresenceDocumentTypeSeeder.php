@@ -17,6 +17,7 @@ class PreventivePresenceDocumentTypeSeeder extends Seeder
                     'name_fr' => $doc['fr'],
                     'name_en' => $doc['en'],
                     'sort_order' => $i + 1,
+                    'services' => [DocumentType::SERVICE_PREVENTIVE_PRESENCE],
                 ],
             );
         }

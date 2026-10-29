@@ -13,6 +13,10 @@ return [
     'works_on'      => 'Travaux du :date',
     'action_required' => 'Une action est requise sur cette demande',
 
+    'building_type'    => 'Type de bâtiment',
+    'cin'              => 'CIN : :cin',
+    'documents_count'  => 'Documents transmis : :n',
+
     'view_details' => 'Voir les détails',
     'complete_process' => 'Compléter la démarche',
     'delete' => 'Supprimer',
