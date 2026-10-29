@@ -60,7 +60,7 @@
 
         <div class="min-h-screen flex flex-col">
             @include('layouts.navigation')
-            <div class="h-[2px] bg-gradient-to-r from-primary via-primary-container/70 to-transparent" aria-hidden="true"></div>
+            <div class="h-[2px] bg-gradient-to-r from-primary via-primary-container/70 to-transparent no-print" aria-hidden="true"></div>
 
             <!-- Page Heading -->
             @isset($header)
