@@ -187,10 +187,11 @@ class RescueCertificateController extends Controller
             }
         }
 
-        // Mark request as completed (submitted for review)
+        // Mark request as completed (submitted for review) + assign reference (SEC26-0001)
         $rescueCertificate->update([
             'current_step' => 2,
             'status'       => 'completed',
+            'reference'    => $rescueCertificate->reference ?: \App\Support\Reference::make('rescue', $rescueCertificate),
         ]);
 
         $rescueCertificate->logEvent('submitted');

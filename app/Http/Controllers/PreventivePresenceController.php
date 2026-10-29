@@ -187,10 +187,11 @@ class PreventivePresenceController extends Controller
             }
         }
 
-        // Mark request as completed (submitted for review)
+        // Mark request as completed (submitted for review) + assign reference (PRS26-0001)
         $presenceRequest->update([
             'current_step' => 2,
             'status'       => 'completed',
+            'reference'    => $presenceRequest->reference ?: \App\Support\Reference::make('presence', $presenceRequest),
         ]);
 
         $presenceRequest->logEvent('submitted');

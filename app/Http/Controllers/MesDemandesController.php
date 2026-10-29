@@ -36,9 +36,7 @@ class MesDemandesController extends Controller
                     lang:  'prevention_request',
                     label: __('services.prevention_certificate'),
                     url:   route('prevention-requests.show', $dossier),
-                    title: $dossier->num_demande
-                        ? __('demandes.title_prevention', ['ref' => $dossier->num_demande])
-                        : __('demandes.title_generic'),
+                    title: __('demandes.title_prevention', ['ref' => $this->requestReference($dossier, 'prevention', $dossier->num_demande)]),
                     meta: [],
                     details: $this->dossierDetails($dossier),
                     status:    $dossier->status,
@@ -62,9 +60,7 @@ class MesDemandesController extends Controller
                     lang:  'prevention_request',
                     label: __('services.prevention_certificate'),
                     url:   $resumeUrl,
-                    title: $dossier->num_demande
-                        ? __('demandes.title_prevention', ['ref' => $dossier->num_demande])
-                        : __('demandes.title_generic'),
+                    title: __('demandes.title_prevention', ['ref' => $this->requestReference($dossier, 'prevention', $dossier->num_demande)]),
                     meta: [],
                     details: $this->dossierDetails($dossier),
                     status:    'draft',
@@ -87,18 +83,9 @@ class MesDemandesController extends Controller
                     url:   route('preventive-presence.index'),
                     title: $presenceRequest->event_title
                         ?: $presenceRequest->nom_prenom
-                        ?: __('demandes.title_generic'),
-                    meta: array_values(array_filter([
-                        $presenceRequest->event_title ? $presenceRequest->event_address : null,
-                        $presenceRequest->event_date
-                            ? __('preventive_presence.event_label') . ' : ' .
-                              $presenceRequest->event_date->format('d/m/Y') .
-                              ($presenceRequest->event_end_date
-                                ? ' → ' . $presenceRequest->event_end_date->format('d/m/Y')
-                                : '')
-                            : null,
-                        $this->place($presenceRequest),
-                    ])),
+                        ?: __('demandes.title_presence', ['ref' => $this->requestReference($presenceRequest, 'presence')]),
+                    meta: $this->presenceSummary($presenceRequest),
+                    details: $this->presenceDetails($presenceRequest),
                     status:    $presenceRequest->status,
                     createdAt: $presenceRequest->created_at,
                 ));
@@ -121,18 +108,9 @@ class MesDemandesController extends Controller
                     url:   $resumeUrl,
                     title: $presenceRequest->event_title
                         ?: $presenceRequest->nom_prenom
-                        ?: __('demandes.title_generic'),
-                    meta: array_values(array_filter([
-                        $presenceRequest->event_title ? $presenceRequest->event_address : null,
-                        $presenceRequest->event_date
-                            ? __('preventive_presence.event_label') . ' : ' .
-                              $presenceRequest->event_date->format('d/m/Y') .
-                              ($presenceRequest->event_end_date
-                                ? ' → ' . $presenceRequest->event_end_date->format('d/m/Y')
-                                : '')
-                            : null,
-                        $this->place($presenceRequest),
-                    ])),
+                        ?: __('demandes.title_presence', ['ref' => $this->requestReference($presenceRequest, 'presence')]),
+                    meta: $this->presenceSummary($presenceRequest),
+                    details: $this->presenceDetails($presenceRequest),
                     status:    'draft',
                     createdAt: $presenceRequest->created_at,
                     destroyUrl: route('preventive-presence.destroy', $presenceRequest) . '?redirect=/mes-demandes',
@@ -151,16 +129,9 @@ class MesDemandesController extends Controller
                     lang:  'rescue_certificate',
                     label: __('services.rescue_certificate'),
                     url:   route('rescue-certificates.index'),
-                    title: $rescueCertificate->certificate_number
-                        ? __('demandes.title_rescue', ['ref' => $rescueCertificate->certificate_number])
-                        : __('demandes.title_generic'),
-                    meta: array_values(array_filter([
-                        $rescueCertificate->incident_address,
-                        $rescueCertificate->incident_date
-                            ? __('demandes.incident_on', ['date' => $rescueCertificate->incident_date->format('d/m/Y')])
-                            : null,
-                        $this->place($rescueCertificate),
-                    ])),
+                    title: __('demandes.title_rescue', ['ref' => $this->requestReference($rescueCertificate, 'rescue', $rescueCertificate->certificate_number)]),
+                    meta: $this->rescueSummary($rescueCertificate),
+                    details: $this->rescueDetails($rescueCertificate),
                     status:    $rescueCertificate->status,
                     createdAt: $rescueCertificate->created_at,
                 ));
@@ -181,16 +152,9 @@ class MesDemandesController extends Controller
                     lang:  'rescue_certificate',
                     label: __('services.rescue_certificate'),
                     url:   $resumeUrl,
-                    title: $rescueCertificate->certificate_number
-                        ? __('demandes.title_rescue', ['ref' => $rescueCertificate->certificate_number])
-                        : __('demandes.title_generic'),
-                    meta: array_values(array_filter([
-                        $rescueCertificate->incident_address,
-                        $rescueCertificate->incident_date
-                            ? __('demandes.incident_on', ['date' => $rescueCertificate->incident_date->format('d/m/Y')])
-                            : null,
-                        $this->place($rescueCertificate),
-                    ])),
+                    title: __('demandes.title_rescue', ['ref' => $this->requestReference($rescueCertificate, 'rescue', $rescueCertificate->certificate_number)]),
+                    meta: $this->rescueSummary($rescueCertificate),
+                    details: $this->rescueDetails($rescueCertificate),
                     status:    'draft',
                     createdAt: $rescueCertificate->created_at,
                     destroyUrl: route('rescue-certificates.destroy', $rescueCertificate) . '?redirect=/mes-demandes',
@@ -211,13 +175,9 @@ class MesDemandesController extends Controller
                     url:   route('works-notifications.index'),
                     title: $worksNotification->property_address
                         ?: $worksNotification->owner_name
-                        ?: __('demandes.title_generic'),
-                    meta: array_values(array_filter([
-                        $worksNotification->works_start_date
-                            ? __('demandes.works_on', ['date' => $worksNotification->works_start_date->format('d/m/Y')])
-                            : null,
-                        $this->place($worksNotification),
-                    ])),
+                        ?: __('demandes.title_works', ['ref' => $this->requestReference($worksNotification, 'works')]),
+                    meta: $this->worksSummary($worksNotification),
+                    details: $this->worksDetails($worksNotification),
                     status:    $worksNotification->status,
                     createdAt: $worksNotification->created_at,
                 ));
@@ -240,13 +200,9 @@ class MesDemandesController extends Controller
                     url:   $resumeUrl,
                     title: $worksNotification->property_address
                         ?: $worksNotification->owner_name
-                        ?: __('demandes.title_generic'),
-                    meta: array_values(array_filter([
-                        $worksNotification->works_start_date
-                            ? __('demandes.works_on', ['date' => $worksNotification->works_start_date->format('d/m/Y')])
-                            : null,
-                        $this->place($worksNotification),
-                    ])),
+                        ?: __('demandes.title_works', ['ref' => $this->requestReference($worksNotification, 'works')]),
+                    meta: $this->worksSummary($worksNotification),
+                    details: $this->worksDetails($worksNotification),
                     status:    'draft',
                     createdAt: $worksNotification->created_at,
                     destroyUrl: route('works-notifications.destroy', $worksNotification) . '?redirect=/mes-demandes',
@@ -302,8 +258,31 @@ class MesDemandesController extends Controller
     }
 
     /**
-     * Détails riches d'un dossier de prévention, affichés ligne par ligne
-     * (icône + libellé) sur la fiche « Mes demandes ».
+     * Référence affichée : numéro officiel (num_demande, certificate_number…)
+     * > référence générée en base (colonne reference) > emplacement provisoire
+     * « PRV26-#### » pour les brouillons (numéro attribué à la soumission).
+     */
+    private function requestReference($model, string $service, ?string $official = null): string
+    {
+        return $official ?: ($model->reference ?: \App\Support\Reference::provisional($service));
+    }
+
+    /**
+     * Ligne « Référence » du panneau de détails. Les brouillons indiquent
+     * explicitement que le numéro sera attribué à la soumission.
+     */
+    private function referenceDetailText($model, string $service, ?string $official = null): array
+    {
+        if ($official || $model->reference) {
+            return ['icon' => 'tag', 'text' => __('demandes.reference') . ' : ' . $this->requestReference($model, $service, $official)];
+        }
+
+        return ['icon' => 'tag', 'text' => __('demandes.reference_provisional') . ' : ' . \App\Support\Reference::provisional($service)];
+    }
+
+    /**
+     * Détails riches d'un dossier de prévention, affichés dans le panneau
+     * dépliable (icône + libellé) de la fiche « Mes demandes ».
      */
     private function dossierDetails(PreventionDossier $dossier): array
     {
@@ -313,6 +292,7 @@ class MesDemandesController extends Controller
         ]);
 
         return array_values(array_filter([
+            $this->referenceDetailText($dossier, 'prevention', $dossier->num_demande),
             $dossier->buildingType
                 ? ['icon' => 'apartment', 'text' => trim(__('demandes.building_type') . ' : ' . $dossier->buildingType->name
                     . ($dossier->buildingActivity ? ' · ' . $dossier->buildingActivity->name : ''))]
@@ -326,7 +306,134 @@ class MesDemandesController extends Controller
             $identityParts
                 ? ['icon' => 'badge', 'text' => implode(' · ', $identityParts)]
                 : null,
+            $dossier->phone
+                ? ['icon' => 'call', 'text' => $dossier->phone]
+                : null,
             ['icon' => 'description', 'text' => __('demandes.documents_count', ['n' => $dossier->documents_count ?? 0])],
+        ]));
+    }
+
+    /**
+     * Ligne de synthèse courte d'une demande de présence préventive.
+     */
+    private function presenceSummary(PreventivePresenceRequest $presenceRequest): array
+    {
+        return array_values(array_filter([
+            $presenceRequest->event_date
+                ? __('preventive_presence.event_label') . ' : ' .
+                  $presenceRequest->event_date->format('d/m/Y') .
+                  ($presenceRequest->event_end_date
+                    ? ' → ' . $presenceRequest->event_end_date->format('d/m/Y')
+                    : '')
+                : null,
+            $this->place($presenceRequest),
+        ]));
+    }
+
+    /**
+     * Détails complets d'une demande de présence préventive (panneau dépliable).
+     */
+    private function presenceDetails(PreventivePresenceRequest $presenceRequest): array
+    {
+        $identityParts = array_filter([
+            $presenceRequest->nom_prenom,
+            $presenceRequest->cin ? __('demandes.cin', ['cin' => $presenceRequest->cin]) : null,
+        ]);
+
+        return array_values(array_filter([
+            $this->referenceDetailText($presenceRequest, 'presence'),
+            $presenceRequest->event_title
+                ? ['icon' => 'badge', 'text' => implode(' · ', $identityParts)]
+                : null,
+            $presenceRequest->event_address
+                ? ['icon' => 'location_on', 'text' => $presenceRequest->event_address]
+                : null,
+            $this->place($presenceRequest)
+                ? ['icon' => 'map', 'text' => $this->place($presenceRequest)]
+                : null,
+            $presenceRequest->phone
+                ? ['icon' => 'call', 'text' => $presenceRequest->phone]
+                : null,
+        ]));
+    }
+
+    /**
+     * Ligne de synthèse courte d'un certificat de secours et sauvetage.
+     */
+    private function rescueSummary(RescueCertificate $rescueCertificate): array
+    {
+        return array_values(array_filter([
+            $rescueCertificate->incident_date
+                ? __('demandes.incident_on', ['date' => $rescueCertificate->incident_date->format('d/m/Y')])
+                : null,
+            $this->place($rescueCertificate),
+        ]));
+    }
+
+    /**
+     * Détails complets d'un certificat de secours et sauvetage (panneau dépliable).
+     */
+    private function rescueDetails(RescueCertificate $rescueCertificate): array
+    {
+        $identityParts = array_filter([
+            $rescueCertificate->nom_prenom,
+            $rescueCertificate->cin ? __('demandes.cin', ['cin' => $rescueCertificate->cin]) : null,
+        ]);
+
+        return array_values(array_filter([
+            $this->referenceDetailText($rescueCertificate, 'rescue', $rescueCertificate->certificate_number),
+            $rescueCertificate->incident_address
+                ? ['icon' => 'location_on', 'text' => $rescueCertificate->incident_address]
+                : null,
+            $this->place($rescueCertificate)
+                ? ['icon' => 'map', 'text' => $this->place($rescueCertificate)]
+                : null,
+            $identityParts
+                ? ['icon' => 'badge', 'text' => implode(' · ', $identityParts)]
+                : null,
+            $rescueCertificate->phone
+                ? ['icon' => 'call', 'text' => $rescueCertificate->phone]
+                : null,
+        ]));
+    }
+
+    /**
+     * Ligne de synthèse courte d'une notification de travaux.
+     */
+    private function worksSummary(WorksNotification $worksNotification): array
+    {
+        return array_values(array_filter([
+            $worksNotification->works_start_date
+                ? __('demandes.works_on', ['date' => $worksNotification->works_start_date->format('d/m/Y')])
+                : null,
+            $this->place($worksNotification),
+        ]));
+    }
+
+    /**
+     * Détails complets d'une notification de travaux (panneau dépliable).
+     */
+    private function worksDetails(WorksNotification $worksNotification): array
+    {
+        $ownerParts = array_filter([
+            $worksNotification->owner_name,
+            $worksNotification->owner_cin ? __('demandes.cin', ['cin' => $worksNotification->owner_cin]) : null,
+        ]);
+
+        return array_values(array_filter([
+            $this->referenceDetailText($worksNotification, 'works'),
+            $worksNotification->property_address
+                ? ['icon' => 'location_on', 'text' => $worksNotification->property_address]
+                : null,
+            $this->place($worksNotification)
+                ? ['icon' => 'map', 'text' => $this->place($worksNotification)]
+                : null,
+            $ownerParts
+                ? ['icon' => 'badge', 'text' => implode(' · ', $ownerParts)]
+                : null,
+            $worksNotification->phone
+                ? ['icon' => 'call', 'text' => $worksNotification->phone]
+                : null,
         ]));
     }
 }

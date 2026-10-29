@@ -174,6 +174,7 @@ class WorksNotificationController extends Controller
         $worksNotification->update([
             'current_step' => 2,
             'status'       => 'completed',
+            'reference'    => $worksNotification->reference ?: \App\Support\Reference::make('works', $worksNotification),
         ]);
 
         $worksNotification->logEvent('submitted');

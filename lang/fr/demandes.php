@@ -6,7 +6,12 @@ return [
 
     'title_prevention' => 'Dossier de prévention #:ref',
     'title_rescue'     => 'Certificat de secours #:ref',
+    'title_presence'   => 'Demande de présence #:ref',
+    'title_works'      => 'Notification de travaux #:ref',
     'title_generic'    => 'Demande déposée',
+
+    'reference' => 'Référence',
+    'reference_provisional' => 'Référence provisoire',
 
     'submitted_on'  => 'Déposée le :date',
     'incident_on'   => 'Incident le :date',
@@ -20,6 +25,9 @@ return [
     'view_details' => 'Voir les détails',
     'complete_process' => 'Compléter la démarche',
     'delete' => 'Supprimer',
+
+    'details'      => 'Détails',
+    'hide_details' => 'Masquer les détails',
 
     'empty_title'      => 'Aucune demande pour le moment',
     'empty_subtitle'   => 'Déposez votre première demande à partir de la page des services.',

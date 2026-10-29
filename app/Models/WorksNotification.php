@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class WorksNotification extends Model
 {
     protected $fillable = [
-        'user_id', 'current_step', 'status',
+        'user_id', 'current_step', 'status', 'reference',
         'owner_type', 'owner_name', 'owner_cin', 'company_name', 'jort_reference', 'phone',
         'governorate_id', 'delegation_id', 'property_address',
         'works_type', 'works_start_date', 'works_description', 'notes',

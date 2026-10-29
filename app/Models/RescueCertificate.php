@@ -15,6 +15,7 @@ class RescueCertificate extends Model
         'governorate_id', 'delegation_id', 'incident_address',
         'incident_type', 'incident_date', 'incident_time', 'incident_description', 'notes',
         'certificate_number', 'delivery_date', 'delivery_note', 'delivered_at',
+        'reference',
         'admin_note', 'reviewed_by', 'reviewed_at',
     ];
 

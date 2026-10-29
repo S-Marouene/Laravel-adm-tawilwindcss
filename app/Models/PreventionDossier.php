@@ -14,7 +14,7 @@ class PreventionDossier extends Model
         'cin', 'nom_prenom', 'phone', 'governorate_id', 'delegation_id',
         'building_address',
         'building_type_id', 'building_activity_id', 'activity_other',
-        'num_demande', 'api_reference',
+        'num_demande', 'api_reference', 'reference',
         'admin_note', 'reviewed_by', 'reviewed_at',
     ];
 

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PreventivePresenceRequest extends Model
 {
     protected $fillable = [
-        'user_id', 'current_step', 'status',
+        'user_id', 'current_step', 'status', 'reference',
         'cin', 'nom_prenom', 'phone',
         'governorate_id', 'delegation_id', 'event_address',
         'event_title', 'event_date', 'event_end_date', 'event_time',

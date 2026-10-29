@@ -28,6 +28,8 @@
                 'requiresAction' => $item['status'] === 'needs_correction',
                 'destroyUrl'     => $item['destroy_url'],
                 'confirmText'    => $item['destroy_url'] ? __($item['lang'] . '.delete_confirm') : '',
+                'summary'        => implode(' · ', $item['meta']),
+                'open'           => false,
             ]);
         })->values();
 
@@ -171,17 +173,22 @@
                     </div>
                 </div>
 
-                {{-- Liste des demandes — fiches façon design/demades.html, filtrées en direct --}}
+                {{-- Liste des demandes — fiches compactes : synthèse visible, détails dépliables --}}
                 <div class="space-y-4" role="list">
                     <template x-for="item in filteredItems" :key="item.id" role="listitem">
-                        <article class="bg-surface-container-lowest border rounded-lg p-5 md:p-6 shadow-sm transition-all hover:shadow-md"
-                                 :class="item.status === 'draft' ? 'border-red-200 bg-red-50/70' : (item.requiresAction ? 'border-primary-container/50' : 'border-surface-dim')">
-                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-surface-dim">
-                                <div class="flex items-start gap-3 min-w-0">
-                                    <div class="w-10 h-10 rounded-lg bg-primary/10 border border-outline-variant flex items-center justify-center text-primary shrink-0">
+                        <article class="group bg-surface-container-lowest border rounded-lg shadow-sm transition-all hover:shadow-md hover:border-outline-variant/70"
+                                 :class="item.status === 'draft'
+                                     ? 'border-red-200 bg-red-50/60'
+                                     : (item.requiresAction ? 'border-primary-container/50' : 'border-surface-dim')"
+                                 :data-open="item.open">
+
+                            {{-- ── Ligne principale (toujours compacte) ── --}}
+                            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 p-5 md:p-6">
+                                <div class="flex items-start gap-3.5 min-w-0">
+                                    <div class="w-11 h-11 rounded-lg bg-primary/10 border border-outline-variant flex items-center justify-center text-primary shrink-0">
                                         <span class="material-symbols-outlined text-[22px]" aria-hidden="true" x-text="item.icon"></span>
                                     </div>
-                                    <div class="min-w-0">
+                                    <div class="min-w-0 flex-1">
                                         <div class="flex items-center gap-2 flex-wrap">
                                             <span class="bg-surface-container border border-surface-dim text-label-caps font-label-caps px-2 py-0.5 rounded text-secondary" x-text="item.label"></span>
                                             <span class="text-xs text-secondary flex items-center gap-1">
@@ -189,30 +196,37 @@
                                                 <span x-text="item.date"></span>
                                             </span>
                                         </div>
-                                        <h2 class="text-headline-sm font-headline-sm text-on-surface mt-1 truncate" x-text="item.title"></h2>
-                                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-secondary">
-                                            <span class="text-label-caps font-label-caps px-2 py-0.5 rounded border font-bold"
+                                        <div class="flex items-start justify-between gap-3 mt-1.5">
+                                            <h2 class="text-headline-sm font-headline-sm text-on-surface truncate" x-text="item.title"></h2>
+                                            <span class="text-label-caps font-label-caps px-2 py-0.5 rounded border font-bold shrink-0"
                                                   :class="item.badgeClass" x-show="item.badge" x-text="item.badge"></span>
-                                            <span x-show="item.meta.length" x-text="item.meta.join(' · ')"></span>
+                                        </div>
+                                        {{-- Synthèse courte (1 ligne, tronquée) : date clé + lieu --}}
+                                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-secondary min-w-0">
+                                            <span x-show="item.summary" class="truncate max-w-full flex items-center gap-1.5">
+                                                <span class="material-symbols-outlined text-[14px] text-outline shrink-0" aria-hidden="true">info</span>
+                                                <span class="truncate" x-text="item.summary"></span>
+                                            </span>
                                             <a href="#" x-show="item.requiresAction" x-bind:href="item.url" class="inline-flex items-center gap-1 text-xs font-bold text-error hover:underline">
                                                 {{ app()->getLocale() === 'ar' ? 'التصرف الآن' : 'Action requise' }}
                                                 <span class="material-symbols-outlined text-[14px] rtl:rotate-180" aria-hidden="true">arrow_forward</span>
                                             </a>
                                         </div>
-                                        {{-- Détails enrichis du dossier (icône + libellé, ligne par ligne) --}}
-                                        <template x-if="item.details && item.details.length">
-                                            <div class="mt-3 pt-3 border-t border-dashed border-surface-dim grid gap-1.5">
-                                                <template x-for="(detail, di) in item.details" :key="item.id + '-d-' + di">
-                                                    <div class="flex items-center gap-2 text-xs text-secondary min-w-0">
-                                                        <span class="material-symbols-outlined text-[16px] text-outline shrink-0" aria-hidden="true" x-text="detail.icon"></span>
-                                                        <span class="truncate" x-text="detail.text"></span>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </template>
                                     </div>
                                 </div>
+
                                 <div class="flex items-center gap-2 self-end md:self-auto shrink-0">
+                                    @php $detailsToggleLabel = app()->getLocale() === 'ar' ? 'التفاصيل' : 'Détails'; @endphp
+                                    <button type="button"
+                                            x-show="(item.details || []).length"
+                                            @click="item.open = !item.open"
+                                            class="text-xs font-bold px-2.5 py-1.5 rounded border border-surface-dim bg-surface-container text-secondary hover:text-primary hover:border-primary/40 transition-colors flex items-center gap-1"
+                                            :aria-expanded="item.open"
+                                            :title="item.open ? '{{ __('demandes.hide_details') }}' : '{{ __('demandes.details') }}'">
+                                        <span x-text="item.open ? '{{ __('demandes.hide_details') }}' : '{{ __('demandes.details') }}'"></span>
+                                        <span class="material-symbols-outlined text-[16px] transition-transform duration-200"
+                                              :class="item.open ? 'rotate-180' : ''" aria-hidden="true">keyboard_arrow_down</span>
+                                    </button>
                                     <a class="text-xs font-bold px-3 py-1.5 rounded border flex items-center gap-1 transition-colors"
                                        x-bind:href="item.url"
                                        x-bind:class="item.status === 'draft'
@@ -234,6 +248,22 @@
                                     </form>
                                 </div>
                             </div>
+
+                            {{-- ── Panneau des détails : minimaliste (pas d'arrière-plan), ouverture/fermeture animée en hauteur ── --}}
+                            <div x-collapse="item.open" x-cloak>
+                                <div class="px-5 md:px-6 pb-5 min-w-0">
+                                    <div class="border-t border-dashed border-surface-dim pt-3">
+                                        <div class="grid sm:grid-cols-2 gap-x-8 gap-y-2">
+                                            <template x-for="(detail, di) in item.details" :key="item.id + '-d-' + di">
+                                                <div class="flex items-start gap-2 text-xs text-secondary min-w-0">
+                                                    <span class="material-symbols-outlined text-[15px] text-outline/70 mt-0.5 shrink-0" aria-hidden="true" x-text="detail.icon"></span>
+                                                    <span class="min-w-0 break-words" x-text="detail.text"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </article>
                     </template>
 
@@ -253,6 +283,43 @@
 </x-app-layout>
 
 <script>
+    // ── Directive x-collapse : ouverture/fermeture animée en hauteur (sans plugin) ──
+    // Reproduit le comportement d'Alpine Collapse : height 0px ⇄ auto, fluide.
+    document.addEventListener('alpine:init', () => {
+        Alpine.directive('collapse', (el, { expression }, { effect, evaluateLater }) => {
+            const isOpen = evaluateLater(expression);
+            let last = null;
+
+            el.style.overflow = 'hidden';
+
+            effect(() => isOpen((open) => {
+                if (open === last) return;
+
+                const animate = (from, to, duration) => {
+                    el.style.height = from;
+                    el.getBoundingClientRect(); // force reflow
+                    el.style.transition = 'height ' + duration + 'ms cubic-bezier(0.4, 0, 0.2, 1)';
+                    el.style.height = to;
+                    el.addEventListener('transitionend', () => {
+                        el.style.transition = '';
+                        el.style.height = to === '0px' ? '0px' : 'auto';
+                    }, { once: true });
+                };
+
+                if (last === null && !open) {
+                    // État initial : fermé, aucune animation (pas de clignotement)
+                    el.style.height = '0px';
+                } else if (open) {
+                    animate('0px', el.scrollHeight + 'px', 300);
+                } else {
+                    animate(el.scrollHeight + 'px', '0px', 200);
+                }
+
+                last = open;
+            }));
+        });
+    });
+
     // Filtre client (Alpine) : données réelles injectées par Blade.
     function mesDemandesFilter(items) {
         return {

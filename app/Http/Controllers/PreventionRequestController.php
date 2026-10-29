@@ -311,10 +311,11 @@ class PreventionRequestController extends Controller
             }
         }
 
-        // Mark dossier as completed
+        // Mark dossier as completed + assign the citizen-facing reference (PRV26-0001)
         $dossier->update([
             'current_step' => 3,
             'status'       => 'completed',
+            'reference'    => $dossier->reference ?: \App\Support\Reference::make('prevention', $dossier),
         ]);
 
         $dossier->logEvent('submitted');
@@ -372,10 +373,20 @@ class PreventionRequestController extends Controller
             'appointments', 'events', 'certificate.governorate', 'certificate.delegation',
         ]);
 
-        $documentTypes = DocumentType::orderBy('sort_order')->get();
-        $documents = DossierDocument::where('prevention_dossier_id', $dossier->id)
+        // Checklist du service PRÉVENTION, filtrée strictement selon le type de
+        // bâtiment du dossier (comme à l'étape 3 : seuls les formulaires concernés).
+        $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)
+            ->with('buildingTypes')
+            ->orderBy('sort_order')
             ->get()
-            ->keyBy('document_type_id');
+            ->filter(fn (DocumentType $t) => $t->appliesToBuildingType($dossier->building_type_id))
+            ->values();
+
+        // Documents réellement transmis, groupés par type (plusieurs fichiers possibles).
+        $documents = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy('document_type_id');
 
         return view('prevention-requests.show', compact('dossier', 'documentTypes', 'documents'));
     }

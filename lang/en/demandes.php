@@ -6,7 +6,12 @@ return [
 
     'title_prevention' => 'Prevention dossier #:ref',
     'title_rescue'     => 'Rescue certificate #:ref',
+    'title_presence'   => 'Presence request #:ref',
+    'title_works'      => 'Works notification #:ref',
     'title_generic'    => 'Submitted request',
+
+    'reference' => 'Reference',
+    'reference_provisional' => 'Provisional reference',
 
     'submitted_on'    => 'Submitted on :date',
     'incident_on'     => 'Incident on :date',
@@ -20,6 +25,9 @@ return [
     'view_details' => 'View details',
     'complete_process' => 'Complete the process',
     'delete' => 'Delete',
+
+    'details'      => 'Details',
+    'hide_details' => 'Hide details',
 
     'empty_title'       => 'No requests yet',
     'empty_subtitle'    => 'Submit your first request from the services page.',
