@@ -51,9 +51,17 @@ class PreventionRequestController extends Controller
 
     public function create(): View
     {
+        // Incomplete drafts of the current user — shown as a "continue" banner
+        $drafts = PreventionDossier::where('user_id', auth()->id())
+            ->where('status', 'draft')
+            ->with(['governorate', 'delegation', 'buildingType'])
+            ->latest()
+            ->get();
+
         return view('prevention-requests.create', [
             'gouvernorats' => $this->gouvernorats(),
             'delegations'  => $this->delegations(),
+            'drafts'       => $drafts,
         ]);
     }
 
@@ -424,11 +432,18 @@ class PreventionRequestController extends Controller
             ->with('success', __('prevention_request.update_success'));
     }
 
-    public function destroy(int $id): RedirectResponse
+    public function destroy(Request $request, int $id): RedirectResponse
     {
         // Allow deleting local drafts
         if (is_numeric($id) && $draft = PreventionDossier::where('id', $id)->where('user_id', auth()->id())->first()) {
             $draft->delete();
+
+            // Delete triggered from the wizard's draft banner → stay in the wizard
+            if ($request->input('back') === 'wizard') {
+                return redirect()->route('prevention-requests.create')
+                    ->with('success', __('prevention_request.delete_success'));
+            }
+
             return redirect()->route('prevention-requests.index')
                 ->with('success', __('prevention_request.delete_success'));
         }
