@@ -2,8 +2,8 @@
     <x-slot name="header">
         <div class="flex items-center justify-between gap-4">
             <div>
-                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ __('works_notification.index_title') }}</h2>
-                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('works_notification.index_subtitle') }}</p>
+                <h2 class="text-xl font-bold text-on-surface dark:text-gray-100">{{ __('works_notification.index_title') }}</h2>
+                <p class="mt-0.5 text-sm text-secondary dark:text-gray-400">{{ __('works_notification.index_subtitle') }}</p>
             </div>
             <a href="{{ route('works-notifications.create') }}" class="ui-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -55,7 +55,7 @@
             {{-- ── Submitted / Processed requests ── --}}
             @if ($submitted->isNotEmpty())
                 <section class="mb-8">
-                    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-secondary dark:text-gray-400">
                         {{ __('works_notification.submitted_title') }}
                     </h3>
                     <div class="space-y-4">
@@ -67,9 +67,9 @@
                                 {{ $status === 'needs_correction' ? 'border-red-200 dark:border-red-800/50'       : '' }}
                                 {{ $status === 'under_consultation' ? 'border-purple-200 dark:border-purple-800/40' : '' }}
                                 {{ $status === 'approved'  ? 'border-emerald-200 dark:border-emerald-800/40'       : '' }}
-                                {{ $status === 'cancelled' ? 'border-gray-300 dark:border-gray-600'               : '' }}
-                                {{ $status === 'completed' ? 'border-gray-200 dark:border-gray-700'               : '' }}
-                                bg-white shadow-sm dark:bg-gray-800">
+                                {{ $status === 'cancelled' ? 'border-surface-dim dark:border-gray-600'               : '' }}
+                                {{ $status === 'completed' ? 'border-surface-dim dark:border-gray-700'               : '' }}
+                                bg-surface-container-lowest shadow-sm dark:bg-gray-800">
 
                                 {{-- Status banner --}}
                                 @if ($status === 'needs_correction')
@@ -101,11 +101,11 @@
                                         </p>
                                     </div>
                                 @elseif ($status === 'cancelled')
-                                    <div class="flex items-start gap-3 border-b border-gray-200 bg-gray-50 px-5 py-3 dark:border-gray-700 dark:bg-gray-700/30">
-                                        <svg class="h-5 w-5 flex-none text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="flex items-start gap-3 border-b border-surface-dim bg-surface-container px-5 py-3 dark:border-gray-700 dark:bg-gray-700/30">
+                                        <svg class="h-5 w-5 flex-none text-outline mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        <p class="text-sm text-gray-600 dark:text-gray-300 font-semibold">
+                                        <p class="text-sm text-secondary dark:text-gray-300 font-semibold">
                                             {{ __('works_notification.cancelled_banner') }}
                                         </p>
                                     </div>
@@ -126,7 +126,7 @@
                                     <div class="flex items-start justify-between gap-4">
                                         <div class="min-w-0 flex-1">
                                             <div class="flex items-center gap-2 flex-wrap">
-                                                <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                                <p class="text-sm font-semibold text-on-surface dark:text-gray-100">
                                                     {{ $worksNotification->owner_name ?: $worksNotification->company_name }}
                                                 </p>
                                                 {{-- Status badge --}}
@@ -135,7 +135,7 @@
                                                         'needs_correction'   => 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
                                                         'under_consultation' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
                                                         'approved'           => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-                                                        'cancelled'          => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
+                                                        'cancelled'          => 'bg-surface-container text-secondary dark:bg-gray-700 dark:text-gray-400',
                                                         default              => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
                                                     };
                                                     $dotClass = match($status) {
@@ -153,13 +153,13 @@
                                             </div>
 
                                             {{-- Request meta --}}
-                                            <div class="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-500 dark:text-gray-400 sm:grid-cols-3">
-                                                <span><span class="font-medium text-gray-700 dark:text-gray-300">{{ __('works_notification.owner_cin') }}:</span> {{ $worksNotification->owner_cin }}</span>
+                                            <div class="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-secondary dark:text-gray-400 sm:grid-cols-3">
+                                                <span><span class="font-medium text-on-surface dark:text-gray-300">{{ __('works_notification.owner_cin') }}:</span> {{ $worksNotification->owner_cin }}</span>
                                                 @if ($worksNotification->phone)
-                                                    <span><span class="font-medium text-gray-700 dark:text-gray-300">{{ __('works_notification.phone') }}:</span> {{ $worksNotification->phone }}</span>
+                                                    <span><span class="font-medium text-on-surface dark:text-gray-300">{{ __('works_notification.phone') }}:</span> {{ $worksNotification->phone }}</span>
                                                 @endif
                                                 @if ($worksNotification->works_type)
-                                                    <span class="truncate"><span class="font-medium text-gray-700 dark:text-gray-300">{{ __('works_notification.works_type') }}:</span> {{ $worksNotification->works_type }}</span>
+                                                    <span class="truncate"><span class="font-medium text-on-surface dark:text-gray-300">{{ __('works_notification.works_type') }}:</span> {{ $worksNotification->works_type }}</span>
                                                 @endif
                                                 @if ($worksNotification->works_start_date)
                                                     <span>{{ $worksNotification->works_start_date->format('d/m/Y') }}</span>
@@ -175,11 +175,11 @@
 
                                             {{-- Admin note (shown for needs_correction and cancelled) --}}
                                             @if ($worksNotification->admin_note && in_array($status, ['needs_correction', 'cancelled']))
-                                                <div class="mt-3 rounded-xl border {{ $status === 'needs_correction' ? 'border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10' : 'border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700/30' }} px-4 py-3">
-                                                    <p class="text-xs font-semibold {{ $status === 'needs_correction' ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-400' }} mb-1">
+                                                <div class="mt-3 rounded-xl border {{ $status === 'needs_correction' ? 'border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10' : 'border-surface-dim bg-surface-container dark:border-gray-600 dark:bg-gray-700/30' }} px-4 py-3">
+                                                    <p class="text-xs font-semibold {{ $status === 'needs_correction' ? 'text-red-700 dark:text-red-300' : 'text-secondary dark:text-gray-400' }} mb-1">
                                                         {{ __('works_notification.admin_note_label') }}
                                                     </p>
-                                                    <p class="text-sm {{ $status === 'needs_correction' ? 'text-red-800 dark:text-red-200' : 'text-gray-700 dark:text-gray-300' }} whitespace-pre-line">{{ $worksNotification->admin_note }}</p>
+                                                    <p class="text-sm {{ $status === 'needs_correction' ? 'text-red-800 dark:text-red-200' : 'text-on-surface dark:text-gray-300' }} whitespace-pre-line">{{ $worksNotification->admin_note }}</p>
                                                 </div>
                                             @endif
                                         </div>
@@ -233,8 +233,8 @@
                         @foreach ($drafts as $draft)
                             <div class="flex items-center justify-between gap-4 px-6 py-4">
                                 <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{{ $draft->owner_name ?: $draft->company_name }}</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    <p class="text-sm font-semibold text-on-surface dark:text-gray-100 truncate">{{ $draft->owner_name ?: $draft->company_name }}</p>
+                                    <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">
                                         {{ $draft->owner_cin }}
                                         @if($draft->phone) &bull; {{ $draft->phone }} @endif
                                         &bull; {{ $draft->governorate?->name }} &bull; {{ $draft->delegation?->name }}
@@ -262,12 +262,12 @@
 
             {{-- Empty state --}}
             @if ($drafts->isEmpty() && $submitted->isEmpty())
-                <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
                     <div class="flex flex-col items-center justify-center px-6 py-16 text-center">
                         <svg class="h-12 w-12 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
                         </svg>
-                        <p class="mt-4 text-sm font-medium text-gray-500 dark:text-gray-400">{{ __('works_notification.no_requests') }}</p>
+                        <p class="mt-4 text-sm font-medium text-secondary dark:text-gray-400">{{ __('works_notification.no_requests') }}</p>
                         <a href="{{ route('works-notifications.create') }}" class="mt-4 ui-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-sm">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             {{ __('works_notification.new_request') }}

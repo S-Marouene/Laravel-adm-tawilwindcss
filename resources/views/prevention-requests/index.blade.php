@@ -2,8 +2,8 @@
     <x-slot name="header">
         <div class="flex items-center justify-between gap-4">
             <div>
-                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ __('prevention_request.index_title') }}</h2>
-                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('prevention_request.index_subtitle') }}</p>
+                <h2 class="text-xl font-bold text-on-surface dark:text-gray-100">{{ __('prevention_request.index_title') }}</h2>
+                <p class="mt-0.5 text-sm text-secondary dark:text-gray-400">{{ __('prevention_request.index_subtitle') }}</p>
             </div>
             <a href="{{ route('prevention-requests.create') }}" class="ui-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -55,7 +55,7 @@
             {{-- ── Submitted / Processed dossiers ── --}}
             @if ($submitted->isNotEmpty())
                 <section class="mb-8">
-                    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-secondary dark:text-gray-400">
                         {{ __('prevention_request.submitted_title') }}
                     </h3>
                     <div class="space-y-4">
@@ -67,9 +67,9 @@
                                 {{ $status === 'needs_correction' ? 'border-red-200 dark:border-red-800/50'       : '' }}
                                 {{ $status === 'under_consultation' ? 'border-purple-200 dark:border-purple-800/40' : '' }}
                                 {{ $status === 'approved'  ? 'border-emerald-200 dark:border-emerald-800/40'       : '' }}
-                                {{ $status === 'cancelled' ? 'border-gray-300 dark:border-gray-600'               : '' }}
-                                {{ in_array($status, ['completed','submitted']) ? 'border-gray-200 dark:border-gray-700' : '' }}
-                                bg-white shadow-sm dark:bg-gray-800">
+                                {{ $status === 'cancelled' ? 'border-surface-dim dark:border-gray-600'               : '' }}
+                                {{ in_array($status, ['completed','submitted']) ? 'border-surface-dim dark:border-gray-700' : '' }}
+                                bg-surface-container-lowest shadow-sm dark:bg-gray-800">
 
                                 {{-- Status banner --}}
                                 @if ($status === 'needs_correction')
@@ -101,11 +101,11 @@
                                         </p>
                                     </div>
                                 @elseif ($status === 'cancelled')
-                                    <div class="flex items-start gap-3 border-b border-gray-200 bg-gray-50 px-5 py-3 dark:border-gray-700 dark:bg-gray-700/30">
-                                        <svg class="h-5 w-5 flex-none text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="flex items-start gap-3 border-b border-surface-dim bg-surface-container px-5 py-3 dark:border-gray-700 dark:bg-gray-700/30">
+                                        <svg class="h-5 w-5 flex-none text-outline mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        <p class="text-sm text-gray-600 dark:text-gray-300 font-semibold">
+                                        <p class="text-sm text-secondary dark:text-gray-300 font-semibold">
                                             {{ __('prevention_request.cancelled_banner') }}
                                         </p>
                                     </div>
@@ -126,14 +126,14 @@
                                     <div class="flex items-start justify-between gap-4">
                                         <div class="min-w-0 flex-1">
                                             <div class="flex items-center gap-2 flex-wrap">
-                                                <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $dossier->nom_prenom }}</p>
+                                                <p class="text-sm font-semibold text-on-surface dark:text-gray-100">{{ $dossier->nom_prenom }}</p>
                                                 {{-- Status badge --}}
                                                 @php
                                                     $badgeClass = match($status) {
                                                         'needs_correction'   => 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
                                                         'under_consultation' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
                                                         'approved'           => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-                                                        'cancelled'          => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
+                                                        'cancelled'          => 'bg-surface-container text-secondary dark:bg-gray-700 dark:text-gray-400',
                                                         'submitted'          => 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
                                                         default              => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
                                                     };
@@ -153,10 +153,10 @@
                                             </div>
 
                                             {{-- Dossier meta --}}
-                                            <div class="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-500 dark:text-gray-400 sm:grid-cols-3">
-                                                <span><span class="font-medium text-gray-700 dark:text-gray-300">CIN:</span> {{ $dossier->cin }}</span>
+                                            <div class="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-secondary dark:text-gray-400 sm:grid-cols-3">
+                                                <span><span class="font-medium text-on-surface dark:text-gray-300">CIN:</span> {{ $dossier->cin }}</span>
                                                 @if ($dossier->phone)
-                                                    <span><span class="font-medium text-gray-700 dark:text-gray-300">{{ __('prevention_request.phone') }}:</span> {{ $dossier->phone }}</span>
+                                                    <span><span class="font-medium text-on-surface dark:text-gray-300">{{ __('prevention_request.phone') }}:</span> {{ $dossier->phone }}</span>
                                                 @endif
                                                 @if ($dossier->governorate)
                                                     <span>{{ $dossier->governorate->name }}</span>
@@ -172,11 +172,11 @@
 
                                             {{-- Admin note (shown for needs_correction and cancelled) --}}
                                             @if ($dossier->admin_note && in_array($status, ['needs_correction', 'cancelled']))
-                                                <div class="mt-3 rounded-xl border {{ $status === 'needs_correction' ? 'border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10' : 'border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700/30' }} px-4 py-3">
-                                                    <p class="text-xs font-semibold {{ $status === 'needs_correction' ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-400' }} mb-1">
+                                                <div class="mt-3 rounded-xl border {{ $status === 'needs_correction' ? 'border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10' : 'border-surface-dim bg-surface-container dark:border-gray-600 dark:bg-gray-700/30' }} px-4 py-3">
+                                                    <p class="text-xs font-semibold {{ $status === 'needs_correction' ? 'text-red-700 dark:text-red-300' : 'text-secondary dark:text-gray-400' }} mb-1">
                                                         {{ __('prevention_request.admin_note_label') }}
                                                     </p>
-                                                    <p class="text-sm {{ $status === 'needs_correction' ? 'text-red-800 dark:text-red-200' : 'text-gray-700 dark:text-gray-300' }} whitespace-pre-line">{{ $dossier->admin_note }}</p>
+                                                    <p class="text-sm {{ $status === 'needs_correction' ? 'text-red-800 dark:text-red-200' : 'text-on-surface dark:text-gray-300' }} whitespace-pre-line">{{ $dossier->admin_note }}</p>
                                                 </div>
                                             @endif
                                         </div>
@@ -184,7 +184,7 @@
                                         {{-- Fix & Resubmit / View details buttons --}}
                                         <div class="flex-none flex items-center gap-2">
                                             <a href="{{ route('prevention-requests.show', $dossier) }}"
-                                                class="inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gov-500/40">
+                                                class="inline-flex items-center gap-2 rounded-lg border border-surface-dim dark:border-gray-600 bg-surface-container-lowest dark:bg-gray-800 px-4 py-2 text-sm font-semibold text-on-surface dark:text-gray-200 transition hover:bg-surface-container dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gov-500/40">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -209,8 +209,8 @@
 
                                 {{-- Timeline — follow-up history (submissions, corrections, approval, RDV) --}}
                                 @if ($dossier->events->isNotEmpty())
-                                    <div class="border-t border-gray-100 dark:border-gray-700/50 mt-4 pt-4">
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
+                                    <div class="border-t border-surface-container-high dark:border-gray-700/50 mt-4 pt-4">
+                                        <p class="text-xs font-semibold uppercase tracking-wide text-secondary dark:text-gray-400 mb-3 flex items-center gap-1.5">
                                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                             {{ __('prevention_request.timeline_title') }}
                                         </p>
@@ -226,10 +226,10 @@
                                                 <div class="flex items-start gap-3">
                                                     <span class="mt-1 flex-none h-2 w-2 rounded-full {{ $event->typeDot() }}"></span>
                                                     <div class="min-w-0">
-                                                        <p class="text-xs font-semibold {{ $isFailedEvent ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-gray-100' }}">
+                                                        <p class="text-xs font-semibold {{ $isFailedEvent ? 'text-red-700 dark:text-red-300' : 'text-on-surface dark:text-gray-100' }}">
                                                             {{ __('prevention_request.timeline_' . $event->type) }}
                                                         </p>
-                                                        <p class="text-[11px] text-gray-400 dark:text-gray-500">
+                                                        <p class="text-[11px] text-outline dark:text-gray-500">
                                                             {{ in_array($event->type, ['submitted', 'resubmitted']) ? __('prevention_request.timeline_actor_you') : __('prevention_request.timeline_actor_admin') }}
                                                             · {{ $event->created_at->format('d/m/Y H:i') }}
                                                         </p>
@@ -252,9 +252,9 @@
 
                                                         {{-- Note (correction request, fail reason, cancellation reason...) --}}
                                                         @if ($event->note)
-                                                            <div class="mt-1.5 rounded-lg border bg-gray-50 px-2.5 py-2 dark:bg-gray-700/30 {{ $isFailedEvent ? 'border-red-200 dark:border-red-800/30' : 'border-gray-200 dark:border-gray-600' }}">
-                                                                <p class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-0.5">{{ __('prevention_request.timeline_note_label') }}</p>
-                                                                <p class="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-line">{{ $event->note }}</p>
+                                                            <div class="mt-1.5 rounded-lg border bg-surface-container px-2.5 py-2 dark:bg-gray-700/30 {{ $isFailedEvent ? 'border-red-200 dark:border-red-800/30' : 'border-surface-dim dark:border-gray-600' }}">
+                                                                <p class="text-[11px] font-semibold text-secondary dark:text-gray-400 mb-0.5">{{ __('prevention_request.timeline_note_label') }}</p>
+                                                                <p class="text-xs text-on-surface dark:text-gray-300 whitespace-pre-line">{{ $event->note }}</p>
                                                             </div>
                                                         @endif
                                                     </div>
@@ -282,14 +282,14 @@
 
                                 {{-- Appointments / RDV (shown once the dossier is approved via consultation) --}}
                                 @if ($dossier->appointments->isNotEmpty())
-                                    <div class="border-t border-gray-100 dark:border-gray-700/50 mt-4 pt-4">
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
+                                    <div class="border-t border-surface-container-high dark:border-gray-700/50 mt-4 pt-4">
+                                        <p class="text-xs font-semibold uppercase tracking-wide text-secondary dark:text-gray-400 mb-3 flex items-center gap-1.5">
                                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                             {{ __('prevention_request.appointments_title') }}
                                         </p>
                                         @if ($dossier->building_address)
-                                            <p class="mb-3 -mt-1 text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                                                <svg class="h-3.5 w-3.5 flex-none text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            <p class="mb-3 -mt-1 text-xs text-secondary dark:text-gray-300 flex items-center gap-1">
+                                                <svg class="h-3.5 w-3.5 flex-none text-outline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                                 {{ __('prevention_request.rdv_building_label') }}: <span class="font-semibold">{{ $dossier->building_address }}</span>
                                             </p>
                                         @endif
@@ -301,9 +301,9 @@
                                                     {{ $appt->isPending() ? 'border-blue-200 bg-blue-50 dark:border-blue-800/30 dark:bg-blue-900/10' : '' }}">
                                                     <div class="flex items-center justify-between gap-2 flex-wrap">
                                                         <span class="text-xs font-semibold
-                                                            {{ $appt->isPassed() ? 'text-gray-700 dark:text-gray-200' : '' }}
-                                                            {{ $appt->isFailed() ? 'text-gray-700 dark:text-gray-200' : '' }}
-                                                            {{ $appt->isPending() ? 'text-gray-700 dark:text-gray-200' : '' }}">
+                                                            {{ $appt->isPassed() ? 'text-on-surface dark:text-gray-200' : '' }}
+                                                            {{ $appt->isFailed() ? 'text-on-surface dark:text-gray-200' : '' }}
+                                                            {{ $appt->isPending() ? 'text-on-surface dark:text-gray-200' : '' }}">
                                                             {{ __('prevention_request.appointment_visit_number', ['num' => $i + 1]) }}
                                                             — {{ $appt->visit_date->format('d M Y') }} {{ __('at') }} {{ substr($appt->visit_time, 0, 5) }}
                                                         </span>
@@ -325,11 +325,11 @@
                                                         @endif
                                                     </div>
                                                     @if ($appt->note)
-                                                        <div class="mt-2 border-t {{ $appt->isFailed() ? 'border-red-200 dark:border-red-800/30' : 'border-gray-200 dark:border-gray-600' }} pt-2">
-                                                            <p class="text-xs font-semibold {{ $appt->isFailed() ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400' }} mb-0.5">
+                                                        <div class="mt-2 border-t {{ $appt->isFailed() ? 'border-red-200 dark:border-red-800/30' : 'border-surface-dim dark:border-gray-600' }} pt-2">
+                                                            <p class="text-xs font-semibold {{ $appt->isFailed() ? 'text-red-600 dark:text-red-400' : 'text-secondary dark:text-gray-400' }} mb-0.5">
                                                                 {{ __('prevention_request.appointment_note_label') }}
                                                             </p>
-                                                            <p class="text-xs {{ $appt->isFailed() ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-300' }} whitespace-pre-line">{{ $appt->note }}</p>
+                                                            <p class="text-xs {{ $appt->isFailed() ? 'text-red-700 dark:text-red-300' : 'text-secondary dark:text-gray-300' }} whitespace-pre-line">{{ $appt->note }}</p>
                                                         </div>
                                                     @endif
                                                 </div>
@@ -358,8 +358,8 @@
                         @foreach ($drafts as $draft)
                             <div class="flex items-center justify-between gap-4 px-6 py-4">
                                 <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{{ $draft->nom_prenom }}</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    <p class="text-sm font-semibold text-on-surface dark:text-gray-100 truncate">{{ $draft->nom_prenom }}</p>
+                                    <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">
                                         {{ $draft->cin }}
                                         @if($draft->phone) &bull; {{ $draft->phone }} @endif
                                         &bull; {{ $draft->governorate?->name }} &bull; {{ $draft->delegation?->name }}
@@ -393,12 +393,12 @@
 
             {{-- Empty state --}}
             @if ($drafts->isEmpty() && $submitted->isEmpty())
-                <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
                     <div class="flex flex-col items-center justify-center px-6 py-16 text-center">
                         <svg class="h-12 w-12 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
                         </svg>
-                        <p class="mt-4 text-sm font-medium text-gray-500 dark:text-gray-400">{{ __('prevention_request.no_requests') }}</p>
+                        <p class="mt-4 text-sm font-medium text-secondary dark:text-gray-400">{{ __('prevention_request.no_requests') }}</p>
                         <a href="{{ route('prevention-requests.create') }}" class="mt-4 ui-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-sm">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             {{ __('prevention_request.new_request') }}

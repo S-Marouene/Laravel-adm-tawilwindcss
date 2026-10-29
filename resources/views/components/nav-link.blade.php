@@ -2,8 +2,8 @@
 
 @php
 $classes = ($active ?? false)
-            ? 'ui-nav-link is-active inline-flex cursor-pointer items-center px-3 py-2 rounded-xl text-sm font-semibold leading-5 text-gov-700 dark:text-gov-200 bg-gov-50 dark:bg-gov-900/35 border border-gov-200/80 dark:border-gov-700/70 shadow-sm focus:outline-none focus:ring-2 focus:ring-gov-500/30 transition-all duration-200 ease-in-out'
-            : 'ui-nav-link inline-flex cursor-pointer items-center px-3 py-2 rounded-xl text-sm font-medium leading-5 text-gray-500 dark:text-gray-400 hover:text-gov-700 dark:hover:text-gov-300 hover:bg-sand-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-gov-500/30 transition-all duration-200 ease-in-out';
+            ? 'inline-flex cursor-pointer items-center border-b-2 border-primary text-primary font-bold pb-2 pt-1 text-body-md leading-5 focus:outline-none transition-colors duration-150'
+            : 'inline-flex cursor-pointer items-center text-on-surface font-medium leading-5 text-body-md hover:text-primary transition-colors duration-150 pb-2 pt-1';
 @endphp
 
 <a {{ $attributes->merge(['class' => $classes]) }}>

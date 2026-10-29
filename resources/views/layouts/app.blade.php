@@ -4,28 +4,28 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <meta name="theme-color" content="#1E40AF">
+        <meta name="theme-color" content="#9e001f">
         <meta name="description" content="{{ __('app.description') }}">
 
         <!-- Favicon -->
         @php
+            // Fallback locaux : emblème ONPC fourni dans design/ (logo.ico + logo.png)
             $favicon = setting('app_favicon') ? Storage::url(setting('app_favicon')) . '?v=' . date('Ymd') : '/favicon.ico';
-            $icon192 = setting('app_icon') ? Storage::url(setting('app_icon')) . '?v=' . date('Ymd') : '/favicon.ico';
         @endphp
         <link rel="icon" type="image/x-icon" href="{{ $favicon }}">
-        <link rel="apple-touch-icon" href="{{ $icon192 }}">
-        <link rel="icon" type="image/png" sizes="192x192" href="{{ $icon192 }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
+        <link rel="icon" type="image/png" sizes="64x64" href="/images/favicon-64.png">
+        <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="192x192" href="/images/logo-192.png">
+        <link rel="icon" type="image/png" sizes="512x512" href="/images/logo-512.png">
 
         <title>@yield('title', setting('app_name', __('app.name'))) - {{ setting('app_name', config('app.name', __('app.name'))) }}</title>
 
-        <!-- Fonts: Inter for French, Noto Sans Arabic for Arabic -->
+        <!-- Fonts: Public Sans (Janna LT arabe auto-hébergée via app.css) -->
         @if(app()->getLocale() === 'ar')
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-        @else
-            <link rel="preconnect" href="https://fonts.bunny.net">
-            <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700,800&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
         @endif
 
         <!-- Scripts -->
@@ -53,28 +53,31 @@
             })();
         </script>
     </head>
-    <body class="font-sans antialiased bg-sand-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <body class="font-sans antialiased bg-background text-on-surface min-h-screen flex flex-col selection:bg-primary selection:text-on-primary">
         <!-- Skip Link for Accessibility -->
         <a href="#main-content" class="skip-link no-print">
-            {{ app()->getLocale() === 'fr' ? 'Aller au contenu principal' : 'الانتقال إلى المحتوى الرئيسي' }}
+            {{ app()->getLocale() === 'ar' ? 'الانتقال إلى المحتوى الرئيسي' : 'Aller au contenu principal' }}
         </a>
 
-        <div class="min-h-screen">
+        <div class="min-h-screen flex flex-col">
             @include('layouts.navigation')
+            <div class="h-[2px] bg-primary" aria-hidden="true"></div>
 
             <!-- Page Heading -->
             @isset($header)
-                <header class="bg-white/85 dark:bg-gray-800/85 border-b border-sand-200/80 dark:border-gray-700/80 shadow-sm backdrop-blur-xl">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <header class="bg-surface-container-low border-b border-surface-dim">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
                         {{ $header }}
                     </div>
                 </header>
             @endisset
 
             <!-- Page Content -->
-            <main id="main-content">
+            <main id="main-content" class="flex-1">
                 {{ $slot }}
             </main>
+
+            @include('partials.footer')
         </div>
     </body>
 </html>

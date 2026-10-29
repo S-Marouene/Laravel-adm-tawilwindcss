@@ -9,19 +9,19 @@
         'needs_correction'   => ['label' => 'Needs Correction',   'dot' => 'bg-red-500',     'badge' => 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'],
         'approved'           => ['label' => 'Approved',           'dot' => 'bg-emerald-500', 'badge' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
         'served'             => ['label' => 'Service Performed',  'dot' => 'bg-teal-500',    'badge' => 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'],
-        'cancelled'          => ['label' => 'Cancelled',          'dot' => 'bg-gray-400',    'badge' => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'],
+        'cancelled'          => ['label' => 'Cancelled',          'dot' => 'bg-gray-400',    'badge' => 'bg-surface-container text-secondary dark:bg-gray-700 dark:text-gray-400'],
     ];
-    $sc = $statusConfig[$status] ?? ['label' => ucfirst($status), 'dot' => 'bg-gray-400', 'badge' => 'bg-gray-100 text-gray-600'];
+    $sc = $statusConfig[$status] ?? ['label' => ucfirst($status), 'dot' => 'bg-gray-400', 'badge' => 'bg-surface-container text-secondary'];
 @endphp
 
 @section('content')
 <div class="mb-6 flex items-center justify-between gap-4">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ __('preventive_presence.card_title') }} — Request #{{ $requestItem->id }}</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __('preventive_presence.event_label') }}: {{ $requestItem->event_title }} — {{ $requestItem->created_at->format('d M Y') }}</p>
+        <h1 class="text-2xl font-bold text-on-surface dark:text-gray-100">{{ __('preventive_presence.card_title') }} — Request #{{ $requestItem->id }}</h1>
+        <p class="text-sm text-secondary dark:text-gray-400 mt-1">{{ __('preventive_presence.event_label') }}: {{ $requestItem->event_title }} — {{ $requestItem->created_at->format('d M Y') }}</p>
     </div>
     <a href="{{ route('admin.preventive-presence.index') }}"
-       class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+       class="inline-flex items-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-2 text-sm font-medium text-on-surface transition hover:bg-surface-container dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         Back to list
     </a>
@@ -45,15 +45,15 @@
     <div class="space-y-6">
 
         {{-- Current status card --}}
-        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-gray-100 dark:border-gray-700/60">
+        <div class="overflow-hidden rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-surface-container-high dark:border-gray-700/60">
                 <div class="flex items-center gap-3">
                     <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold {{ $sc['badge'] }}">
                         <span class="h-2 w-2 rounded-full {{ $sc['dot'] }}"></span>
                         {{ $sc['label'] }}
                     </span>
                     @if ($requestItem->reviewed_at)
-                        <span class="text-xs text-gray-400 dark:text-gray-500">
+                        <span class="text-xs text-outline dark:text-gray-500">
                             by {{ $requestItem->reviewer?->name ?? 'Admin' }} · {{ $requestItem->reviewed_at->format('d M Y, H:i') }}
                         </span>
                     @endif
@@ -62,11 +62,11 @@
 
             {{-- Admin note display (needs_correction / cancelled) --}}
             @if ($requestItem->admin_note)
-                <div class="px-6 py-4 {{ $status === 'needs_correction' ? 'bg-red-50 dark:bg-red-900/10' : ($status === 'cancelled' ? 'bg-gray-50 dark:bg-gray-700/20' : '') }}">
-                    <p class="text-xs font-semibold uppercase tracking-wide {{ $status === 'needs_correction' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400' }} mb-2">
+                <div class="px-6 py-4 {{ $status === 'needs_correction' ? 'bg-red-50 dark:bg-red-900/10' : ($status === 'cancelled' ? 'bg-surface-container dark:bg-gray-700/20' : '') }}">
+                    <p class="text-xs font-semibold uppercase tracking-wide {{ $status === 'needs_correction' ? 'text-red-600 dark:text-red-400' : 'text-secondary dark:text-gray-400' }} mb-2">
                         Admin Note (visible to applicant)
                     </p>
-                    <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-line">{{ $requestItem->admin_note }}</p>
+                    <p class="text-sm text-on-surface dark:text-gray-200 whitespace-pre-line">{{ $requestItem->admin_note }}</p>
                 </div>
             @endif
 
@@ -85,84 +85,84 @@
         </div>
 
         {{-- Applicant info --}}
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-                <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">Applicant Information</h2>
+        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="border-b border-surface-dim px-6 py-4 dark:border-gray-700">
+                <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">Applicant Information</h2>
             </div>
             <div class="grid gap-4 px-6 py-5 sm:grid-cols-2">
                 <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">Full Name</p>
-                    <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $requestItem->nom_prenom }}</p>
+                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Full Name</p>
+                    <p class="mt-1 text-sm font-semibold text-on-surface dark:text-gray-100">{{ $requestItem->nom_prenom }}</p>
                 </div>
                 <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">CIN</p>
-                    <p class="mt-1 text-sm font-mono text-gray-900 dark:text-gray-100">{{ $requestItem->cin }}</p>
+                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">CIN</p>
+                    <p class="mt-1 text-sm font-mono text-on-surface dark:text-gray-100">{{ $requestItem->cin }}</p>
                 </div>
                 <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">Phone</p>
-                    <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $requestItem->phone ?? '—' }}</p>
+                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Phone</p>
+                    <p class="mt-1 text-sm font-semibold text-on-surface dark:text-gray-100">{{ $requestItem->phone ?? '—' }}</p>
                 </div>
                 <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">Account Email</p>
-                    <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $requestItem->user?->email }}</p>
+                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Account Email</p>
+                    <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $requestItem->user?->email }}</p>
                 </div>
                 <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">Governorate</p>
-                    <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $requestItem->governorate?->name_fr ?? $requestItem->governorate?->name_ar ?? '—' }}</p>
+                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Governorate</p>
+                    <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $requestItem->governorate?->name_fr ?? $requestItem->governorate?->name_ar ?? '—' }}</p>
                 </div>
                 <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">Delegation</p>
-                    <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $requestItem->delegation?->name_fr ?? $requestItem->delegation?->name_ar ?? '—' }}</p>
+                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Delegation</p>
+                    <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $requestItem->delegation?->name_fr ?? $requestItem->delegation?->name_ar ?? '—' }}</p>
                 </div>
             </div>
         </div>
 
         {{-- Event info --}}
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-                <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ __('preventive_presence.event_section') }}</h2>
+        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="border-b border-surface-dim px-6 py-4 dark:border-gray-700">
+                <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">{{ __('preventive_presence.event_section') }}</h2>
             </div>
             <div class="grid gap-4 px-6 py-5 sm:grid-cols-2">
                 <div class="sm:col-span-2">
-                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.event_title') }}</p>
-                    <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $requestItem->event_title ?? '—' }}</p>
+                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.event_title') }}</p>
+                    <p class="mt-1 text-sm font-semibold text-on-surface dark:text-gray-100">{{ $requestItem->event_title ?? '—' }}</p>
                 </div>
                 <div class="sm:col-span-2">
-                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.event_address') }}</p>
-                    <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $requestItem->event_address ?? '—' }}</p>
+                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.event_address') }}</p>
+                    <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $requestItem->event_address ?? '—' }}</p>
                 </div>
                 <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.event_date') }}</p>
-                    <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.event_date') }}</p>
+                    <p class="mt-1 text-sm font-semibold text-on-surface dark:text-gray-100">
                         @if ($requestItem->event_date)
                             {{ $requestItem->event_date->format('d/m/Y') }}@if($requestItem->event_end_date) &rarr; {{ $requestItem->event_end_date->format('d/m/Y') }}@endif
                         @else
                             —
                         @endif
                         @if ($requestItem->event_time)
-                            <span class="text-gray-500">· {{ $requestItem->event_time->format('H:i') }}</span>
+                            <span class="text-secondary">· {{ $requestItem->event_time->format('H:i') }}</span>
                         @endif
                     </p>
                 </div>
                 <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.expected_attendance') }}</p>
-                    <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $requestItem->expected_attendance ?? '—' }}</p>
+                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.expected_attendance') }}</p>
+                    <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $requestItem->expected_attendance ?? '—' }}</p>
                 </div>
                 @if ($requestItem->notes)
                     <div class="sm:col-span-2">
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.notes') }}</p>
-                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line">{{ $requestItem->notes }}</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.notes') }}</p>
+                        <p class="mt-1 text-sm text-on-surface dark:text-gray-100 whitespace-pre-line">{{ $requestItem->notes }}</p>
                     </div>
                 @endif
             </div>
         </div>
 
         {{-- Payment --}}
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700 flex items-center justify-between">
+        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="border-b border-surface-dim px-6 py-4 dark:border-gray-700 flex items-center justify-between">
                 <div>
-                    <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ __('preventive_presence.payment_title') }}</h2>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ __('preventive_presence.payment_fee_info') }}</p>
+                    <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">{{ __('preventive_presence.payment_title') }}</h2>
+                    <p class="mt-0.5 text-xs text-secondary dark:text-gray-400">{{ __('preventive_presence.payment_fee_info') }}</p>
                 </div>
                 @if ($requestItem->isPaid())
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
@@ -179,20 +179,20 @@
             @if ($requestItem->isPaid())
                 <div class="grid gap-4 px-6 py-5 sm:grid-cols-3">
                     <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.fee_amount') }}</p>
-                        <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{{ number_format((float) $requestItem->fee_amount, 3) }} DT</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.fee_amount') }}</p>
+                        <p class="mt-1 text-sm font-semibold text-on-surface dark:text-gray-100">{{ number_format((float) $requestItem->fee_amount, 3) }} DT</p>
                     </div>
                     <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.receipt_number') }}</p>
-                        <p class="mt-1 text-sm font-mono text-gray-900 dark:text-gray-100">{{ $requestItem->receipt_number }}</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.receipt_number') }}</p>
+                        <p class="mt-1 text-sm font-mono text-on-surface dark:text-gray-100">{{ $requestItem->receipt_number }}</p>
                     </div>
                     <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.paid_at') }}</p>
-                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $requestItem->paid_at?->format('d M Y') }}</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.paid_at') }}</p>
+                        <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $requestItem->paid_at?->format('d M Y') }}</p>
                     </div>
                 </div>
             @elseif (in_array($status, ['completed', 'under_consultation', 'needs_correction', 'cancelled']))
-                <div class="px-6 py-4 text-sm text-gray-400 dark:text-gray-500">
+                <div class="px-6 py-4 text-sm text-outline dark:text-gray-500">
                     Fee payment becomes applicable once the request is approved.
                 </div>
             @endif
@@ -200,11 +200,11 @@
 
         {{-- Service performed (إسداء الخدمة) --}}
         @if (in_array($status, ['approved', 'served']) || $requestItem->service_date)
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700 flex items-center justify-between">
+        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="border-b border-surface-dim px-6 py-4 dark:border-gray-700 flex items-center justify-between">
                 <div>
-                    <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ __('preventive_presence.service_title') }}</h2>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ __('preventive_presence.index_title') }}</p>
+                    <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">{{ __('preventive_presence.service_title') }}</h2>
+                    <p class="mt-0.5 text-xs text-secondary dark:text-gray-400">{{ __('preventive_presence.index_title') }}</p>
                 </div>
                 @if ($requestItem->isServed())
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
@@ -212,7 +212,7 @@
                         {{ __('preventive_presence.service_status_done') }}
                     </span>
                 @else
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-surface-container px-2.5 py-1 text-xs font-semibold text-secondary dark:bg-gray-700 dark:text-gray-400">
                         <span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
                         {{ __('preventive_presence.service_status_pending') }}
                     </span>
@@ -221,26 +221,26 @@
             @if ($requestItem->service_date || $requestItem->service_team || $requestItem->service_agents || $requestItem->service_note)
                 <div class="grid gap-4 px-6 py-5 sm:grid-cols-3">
                     <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.service_date') }}</p>
-                        <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $requestItem->service_date?->format('d/m/Y') ?? '—' }}</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.service_date') }}</p>
+                        <p class="mt-1 text-sm font-semibold text-on-surface dark:text-gray-100">{{ $requestItem->service_date?->format('d/m/Y') ?? '—' }}</p>
                     </div>
                     <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.service_team') }}</p>
-                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $requestItem->service_team ?? '—' }}</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.service_team') }}</p>
+                        <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $requestItem->service_team ?? '—' }}</p>
                     </div>
                     <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.service_agents') }}</p>
-                        <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $requestItem->service_agents ?? '—' }}</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.service_agents') }}</p>
+                        <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $requestItem->service_agents ?? '—' }}</p>
                     </div>
                     @if ($requestItem->service_note)
                         <div class="sm:col-span-3">
-                            <p class="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ __('preventive_presence.service_note') }}</p>
-                            <p class="mt-1 text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line">{{ $requestItem->service_note }}</p>
+                            <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('preventive_presence.service_note') }}</p>
+                            <p class="mt-1 text-sm text-on-surface dark:text-gray-100 whitespace-pre-line">{{ $requestItem->service_note }}</p>
                         </div>
                     @endif
                 </div>
             @else
-                <div class="px-6 py-4 text-sm text-gray-400 dark:text-gray-500">
+                <div class="px-6 py-4 text-sm text-outline dark:text-gray-500">
                     Use the panel on the right to record the service once it has been performed.
                 </div>
             @endif
@@ -248,17 +248,17 @@
         @endif
 
         {{-- Documents --}}
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-                <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">Uploaded Documents</h2>
-                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ $uploadedDocs->count() }} / {{ $documentTypes->count() }} uploaded</p>
+        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="border-b border-surface-dim px-6 py-4 dark:border-gray-700">
+                <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">Uploaded Documents</h2>
+                <p class="mt-0.5 text-xs text-secondary dark:text-gray-400">{{ $uploadedDocs->count() }} / {{ $documentTypes->count() }} uploaded</p>
             </div>
             <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
                 @forelse ($documentTypes as $docType)
                     @php $doc = $uploadedDocs->get($docType->id); @endphp
                     <div class="flex items-center justify-between gap-4 px-6 py-3">
                         <div class="flex items-center gap-3">
-                            <span class="flex h-8 w-8 flex-none items-center justify-center rounded-full {{ $doc ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500' }}">
+                            <span class="flex h-8 w-8 flex-none items-center justify-center rounded-full {{ $doc ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500' }}">
                                 @if ($doc)
                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                 @else
@@ -266,9 +266,9 @@
                                 @endif
                             </span>
                             <div>
-                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $docType->name }}</p>
+                                <p class="text-sm font-medium text-on-surface dark:text-gray-100">{{ $docType->name }}</p>
                                 @if ($doc)
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $doc->original_name }} ({{ number_format($doc->size / 1024, 0) }} KB) — {{ $doc->updated_at->format('d M Y') }}</p>
+                                    <p class="text-xs text-secondary dark:text-gray-400">{{ $doc->original_name }} ({{ number_format($doc->size / 1024, 0) }} KB) — {{ $doc->updated_at->format('d M Y') }}</p>
                                 @else
                                     <p class="text-xs text-red-400 dark:text-red-500">Not uploaded</p>
                                 @endif
@@ -279,7 +279,7 @@
                         @endif
                     </div>
                 @empty
-                    <div class="px-6 py-6 text-center text-sm text-gray-400">No document types configured.</div>
+                    <div class="px-6 py-6 text-center text-sm text-outline">No document types configured.</div>
                 @endforelse
             </div>
         </div>
@@ -292,7 +292,7 @@
         {{-- Record payment + perform the service (only when approved) --}}
         @can('manage preventive-presence')
         @if ($status === 'approved')
-        <div class="rounded-2xl border border-amber-200 bg-white shadow-sm dark:border-amber-800/40 dark:bg-gray-800" x-data="{ open: {{ $requestItem->isPaid() ? 'false' : 'true' }} }">
+        <div class="rounded-2xl border border-amber-200 bg-surface-container-lowest shadow-sm dark:border-amber-800/40 dark:bg-gray-800" x-data="{ open: {{ $requestItem->isPaid() ? 'false' : 'true' }} }">
             <div class="border-b border-amber-100 dark:border-amber-800/30 px-5 py-4 flex items-center justify-between cursor-pointer" @click="open = !open">
                 <div class="flex items-center gap-2">
                     <svg class="h-4 w-4 text-amber-600 dark:text-amber-400 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -311,14 +311,14 @@
                     @csrf
                     <div class="space-y-3">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{{ __('preventive_presence.fee_amount') }} <span class="text-red-500">*</span></label>
+                            <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">{{ __('preventive_presence.fee_amount') }} <span class="text-red-500">*</span></label>
                             <input type="number" name="fee_amount" step="0.001" min="0" required
                                 value="{{ old('fee_amount', $requestItem->fee_amount) }}"
                                 placeholder="{{ __('preventive_presence.fee_amount_placeholder') }}"
                                 class="w-full text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{{ __('preventive_presence.receipt_number') }} <span class="text-red-500">*</span></label>
+                            <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">{{ __('preventive_presence.receipt_number') }} <span class="text-red-500">*</span></label>
                             <input type="text" name="receipt_number" maxlength="50" required
                                 value="{{ old('receipt_number', $requestItem->receipt_number) }}"
                                 placeholder="{{ __('preventive_presence.receipt_number_placeholder') }}"
@@ -335,7 +335,7 @@
         </div>
 
         {{-- Serve the service --}}
-        <div class="rounded-2xl border border-teal-200 bg-white shadow-sm dark:border-teal-800/40 dark:bg-gray-800" x-data="{ open: {{ $requestItem->service_date ? 'false' : 'true' }} }">
+        <div class="rounded-2xl border border-teal-200 bg-surface-container-lowest shadow-sm dark:border-teal-800/40 dark:bg-gray-800" x-data="{ open: {{ $requestItem->service_date ? 'false' : 'true' }} }">
             <div class="border-b border-teal-100 dark:border-teal-800/30 px-5 py-4 flex items-center justify-between cursor-pointer" @click="open = !open">
                 <div class="flex items-center gap-2">
                     <svg class="h-4 w-4 text-teal-600 dark:text-teal-400 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,26 +360,26 @@
                         @csrf
                         <div class="space-y-3">
                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{{ __('preventive_presence.service_date') }} <span class="text-red-500">*</span></label>
+                                <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">{{ __('preventive_presence.service_date') }} <span class="text-red-500">*</span></label>
                                 <input type="date" name="service_date" required
                                     value="{{ old('service_date', $requestItem->event_date?->format('Y-m-d')) }}"
                                     class="w-full text-sm">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{{ __('preventive_presence.service_team') }}</label>
+                                <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">{{ __('preventive_presence.service_team') }}</label>
                                 <input type="text" name="service_team" maxlength="255"
                                     value="{{ old('service_team') }}"
                                     placeholder="Assigned unit / commander..."
                                     class="w-full text-sm">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{{ __('preventive_presence.service_agents') }}</label>
+                                <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">{{ __('preventive_presence.service_agents') }}</label>
                                 <input type="number" name="service_agents" min="1" max="999"
                                     value="{{ old('service_agents') }}"
                                     class="w-full text-sm">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{{ __('preventive_presence.service_note') }}</label>
+                                <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">{{ __('preventive_presence.service_note') }}</label>
                                 <textarea name="service_note" rows="3" maxlength="2000"></textarea>
                             </div>
                             <button type="submit"
@@ -398,10 +398,10 @@
         {{-- Actions --}}
         @can('manage preventive-presence')
         @if ($requestItem->isActionable())
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-700">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Actions</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Move this request to the next step</p>
+        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="border-b border-surface-dim px-5 py-4 dark:border-gray-700">
+                <h3 class="text-sm font-semibold text-on-surface dark:text-gray-100">Actions</h3>
+                <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">Move this request to the next step</p>
             </div>
             <div class="px-5 py-4 space-y-3">
 
@@ -447,10 +447,10 @@
                          class="mt-3">
                         <form method="POST" action="{{ route('admin.preventive-presence.correction', $requestItem) }}">
                             @csrf
-                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Note to applicant <span class="text-red-500">*</span></label>
+                            <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1.5">Note to applicant <span class="text-red-500">*</span></label>
                             <textarea name="admin_note" rows="5" required maxlength="2000"
                                 placeholder="Describe what needs to be fixed (e.g. missing document, wrong file, incorrect data)...">{{ old('admin_note') }}</textarea>
-                            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">This note will be shown to the applicant with a "Fix & Resubmit" button.</p>
+                            <p class="mt-1 text-xs text-outline dark:text-gray-500">This note will be shown to the applicant with a "Fix & Resubmit" button.</p>
                             <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500/40">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                                 Send Correction Request
@@ -478,7 +478,7 @@
                         <form method="POST" action="{{ route('admin.preventive-presence.cancel', $requestItem) }}"
                               onsubmit="return confirm('Cancel this request? The applicant will be notified.')">
                             @csrf
-                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Cancellation reason <span class="text-red-500">*</span></label>
+                            <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1.5">Cancellation reason <span class="text-red-500">*</span></label>
                             <textarea name="admin_note" rows="4" required maxlength="2000"
                                 placeholder="Explain why this request is being cancelled...">{{ old('admin_note') }}</textarea>
                             <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/40">
@@ -504,19 +504,19 @@
                 <p class="text-xs text-teal-600 dark:text-teal-400 mt-1">This request has been fully completed.</p>
             </div>
         @elseif ($status === 'cancelled')
-            <div class="rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-700/20 px-5 py-4 text-center">
-                <svg class="h-8 w-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">Request Cancelled</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">This request has been closed.</p>
+            <div class="rounded-2xl border border-surface-dim bg-surface-container dark:border-gray-700 dark:bg-gray-700/20 px-5 py-4 text-center">
+                <svg class="h-8 w-8 text-outline mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-sm font-semibold text-on-surface dark:text-gray-300">Request Cancelled</p>
+                <p class="text-xs text-secondary dark:text-gray-400 mt-1">This request has been closed.</p>
             </div>
         @endif
         @endcan
 
         {{-- Timeline — full audit log (every event) --}}
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-700">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">History & Timeline</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $requestItem->events->count() }} recorded events</p>
+        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="border-b border-surface-dim px-5 py-4 dark:border-gray-700">
+                <h3 class="text-sm font-semibold text-on-surface dark:text-gray-100">History & Timeline</h3>
+                <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">{{ $requestItem->events->count() }} recorded events</p>
             </div>
             <div class="px-5 py-4">
                 @forelse ($requestItem->events as $event)
@@ -535,7 +535,7 @@
                             x-data="{ open: false }" @endif>
                         <span class="mt-1 flex-none h-2 w-2 rounded-full {{ $event->typeDot() }}"></span>
                         <div class="min-w-0 flex-1">
-                            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 flex-wrap">
+                            <p class="text-xs font-semibold text-on-surface dark:text-gray-100 flex items-center gap-2 flex-wrap">
                                 {{ $event->typeLabel() }}
                                 @if ($isApproved)
                                     <span class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">Accepted</span>
@@ -547,7 +547,7 @@
                                     <span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Needs correction</span>
                                 @endif
                             </p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                            <p class="text-xs text-secondary dark:text-gray-400">
                                 {{ $event->actor?->name ?? 'System' }}
                                 · {{ $event->created_at->format('d M Y, H:i') }}
                                 ({{ $event->created_at->diffForHumans() }})
@@ -555,7 +555,7 @@
 
                             {{-- Extra details (payment / service) --}}
                             @if ($detailsText = $event->detailsText())
-                                <p class="mt-1 text-xs text-gray-600 dark:text-gray-300 font-medium">{{ $detailsText }}</p>
+                                <p class="mt-1 text-xs text-secondary dark:text-gray-300 font-medium">{{ $detailsText }}</p>
                             @endif
 
                             {{-- Correction note / rejection reason — expandable with full detail --}}
@@ -577,36 +577,36 @@
                                         <p class="whitespace-pre-line">{{ $event->note }}</p>
                                     </div>
                                 @else
-                                    <p class="mt-1 text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line">{{ $event->note }}</p>
+                                    <p class="mt-1 text-xs text-secondary dark:text-gray-300 whitespace-pre-line">{{ $event->note }}</p>
                                 @endif
                             @endif
                         </div>
                     </div>
                 @empty
-                    <div class="py-2 text-center text-sm text-gray-400">No events recorded yet.</div>
+                    <div class="py-2 text-center text-sm text-outline">No events recorded yet.</div>
                 @endforelse
             </div>
         </div>
 
         {{-- Quick info --}}
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 px-5 py-4">
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Quick Info</h3>
+        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800 px-5 py-4">
+            <h3 class="text-sm font-semibold text-on-surface dark:text-gray-100 mb-3">Quick Info</h3>
             <dl class="space-y-2 text-xs">
                 <div class="flex justify-between">
-                    <dt class="text-gray-500 dark:text-gray-400">Request ID</dt>
-                    <dd class="font-mono font-semibold text-gray-900 dark:text-gray-100">#{{ $requestItem->id }}</dd>
+                    <dt class="text-secondary dark:text-gray-400">Request ID</dt>
+                    <dd class="font-mono font-semibold text-on-surface dark:text-gray-100">#{{ $requestItem->id }}</dd>
                 </div>
                 <div class="flex justify-between">
-                    <dt class="text-gray-500 dark:text-gray-400">Step reached</dt>
-                    <dd class="font-semibold text-gray-900 dark:text-gray-100">Step {{ $requestItem->current_step }}</dd>
+                    <dt class="text-secondary dark:text-gray-400">Step reached</dt>
+                    <dd class="font-semibold text-on-surface dark:text-gray-100">Step {{ $requestItem->current_step }}</dd>
                 </div>
                 <div class="flex justify-between">
-                    <dt class="text-gray-500 dark:text-gray-400">Docs uploaded</dt>
-                    <dd class="font-semibold text-gray-900 dark:text-gray-100">{{ $uploadedDocs->count() }} / {{ $documentTypes->count() }}</dd>
+                    <dt class="text-secondary dark:text-gray-400">Docs uploaded</dt>
+                    <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $uploadedDocs->count() }} / {{ $documentTypes->count() }}</dd>
                 </div>
                 <div class="flex justify-between">
-                    <dt class="text-gray-500 dark:text-gray-400">Submitted</dt>
-                    <dd class="text-gray-700 dark:text-gray-300">{{ $requestItem->created_at->diffForHumans() }}</dd>
+                    <dt class="text-secondary dark:text-gray-400">Submitted</dt>
+                    <dd class="text-on-surface dark:text-gray-300">{{ $requestItem->created_at->diffForHumans() }}</dd>
                 </div>
             </dl>
         </div>

@@ -21,16 +21,16 @@
     <x-slot name="header">
         <div class="flex items-center justify-between gap-4">
             <div>
-                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ __('preventive_presence.create_title') }}</h2>
-                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('preventive_presence.create_subtitle') }}</p>
+                <h2 class="text-xl font-bold text-on-surface dark:text-gray-100">{{ __('preventive_presence.create_title') }}</h2>
+                <p class="mt-0.5 text-sm text-secondary dark:text-gray-400">{{ __('preventive_presence.create_subtitle') }}</p>
             </div>
             @if ($isEditing)
-                <a href="{{ route('preventive-presence.step2.show', $presenceRequest) }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                <a href="{{ route('preventive-presence.step2.show', $presenceRequest) }}" class="inline-flex items-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-2 text-sm font-medium text-on-surface transition hover:bg-surface-container dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                     <svg class="h-4 w-4 {{ app()->getLocale() === 'ar' ? '' : 'rotate-180' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     {{ __('preventive_presence.back_to_step2') }}
                 </a>
             @else
-                <a href="{{ route('preventive-presence.index') }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                <a href="{{ route('preventive-presence.index') }}" class="inline-flex items-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-2 text-sm font-medium text-on-surface transition hover:bg-surface-container dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                     <svg class="h-4 w-4 {{ app()->getLocale() === 'ar' ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     {{ __('preventive_presence.back') }}
                 </a>
@@ -43,12 +43,12 @@
             <div class="grid gap-6 lg:grid-cols-[280px,1fr]">
 
                 {{-- Step sidebar --}}
-                <aside class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 h-fit">
+                <aside class="rounded-2xl border border-surface-dim bg-surface-container-lowest p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 h-fit">
                     <ol class="space-y-0">
                         <li class="flex items-start gap-3">
                             <span class="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-gov-600 text-sm font-bold text-white ring-4 ring-gov-100 dark:ring-gov-900/40">1</span>
                             <div class="min-w-0 pt-1">
-                                <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ __('preventive_presence.step_one_title') }}</p>
+                                <p class="text-sm font-semibold text-on-surface dark:text-gray-100">{{ __('preventive_presence.step_one_title') }}</p>
                                 <p class="mt-1 text-xs text-gov-600 dark:text-gov-400 font-medium">
                                     {{ $isEditing ? __('preventive_presence.step_editing') : __('preventive_presence.step_status') }}
                                 </p>
@@ -62,20 +62,20 @@
                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                 </a>
                             @else
-                                <span class="flex h-9 w-9 flex-none items-center justify-center rounded-full border-2 border-gray-300 text-sm font-bold text-gray-400 dark:border-gray-600 dark:text-gray-500">2</span>
+                                <span class="flex h-9 w-9 flex-none items-center justify-center rounded-full border-2 border-surface-dim text-sm font-bold text-outline dark:border-gray-600 dark:text-gray-500">2</span>
                             @endif
                             <div class="min-w-0 flex-1 pt-1">
-                                <p class="text-sm font-semibold {{ $isEditing ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">{{ __('preventive_presence.step_two_title') }}</p>
+                                <p class="text-sm font-semibold {{ $isEditing ? 'text-on-surface dark:text-gray-100' : 'text-secondary dark:text-gray-400' }}">{{ __('preventive_presence.step_two_title') }}</p>
                             </div>
                         </li>
                     </ol>
                 </aside>
 
                 {{-- Form card --}}
-                <section class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                    <div class="border-b border-gray-200 px-6 py-5 dark:border-gray-700">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ __('preventive_presence.step_heading') }}</h3>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('preventive_presence.step_description') }}</p>
+                <section class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div class="border-b border-surface-dim px-6 py-5 dark:border-gray-700">
+                        <h3 class="text-lg font-bold text-on-surface dark:text-gray-100">{{ __('preventive_presence.step_heading') }}</h3>
+                        <p class="mt-1 text-sm text-secondary dark:text-gray-400">{{ __('preventive_presence.step_description') }}</p>
                     </div>
 
                     <form method="POST" action="{{ $formAction }}" class="px-6 py-6" id="presence-create-form">
@@ -94,52 +94,52 @@
                         {{-- Row 1: CIN + Nom --}}
                         <div class="grid gap-5 sm:grid-cols-2">
                             <div>
-                                <label for="cin" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                <label for="cin" class="block text-sm font-semibold text-on-surface dark:text-gray-200">
                                     {{ __('preventive_presence.cin') }} <span class="text-red-500 ms-0.5">*</span>
                                 </label>
                                 <input id="cin" name="cin" type="text" inputmode="numeric" maxlength="20"
                                     value="{{ $valCin }}" placeholder="{{ __('preventive_presence.cin_placeholder') }}" required
-                                    class="mt-2 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('cin') border-red-400 @enderror">
+                                    class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('cin') border-red-400 @enderror">
                                 @error('cin')<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                             </div>
                             <div>
-                                <label for="nom_prenom" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                <label for="nom_prenom" class="block text-sm font-semibold text-on-surface dark:text-gray-200">
                                     {{ __('preventive_presence.nom_prenom') }} <span class="text-red-500 ms-0.5">*</span>
                                 </label>
                                 <input id="nom_prenom" name="nom_prenom" type="text" maxlength="255"
                                     value="{{ $valNom }}" placeholder="{{ __('preventive_presence.nom_prenom_placeholder') }}" required
-                                    class="mt-2 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('nom_prenom') border-red-400 @enderror">
+                                    class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('nom_prenom') border-red-400 @enderror">
                                 @error('nom_prenom')<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                             </div>
                         </div>
 
                         {{-- Row 1b: Phone --}}
                         <div class="mt-5">
-                            <label for="phone" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            <label for="phone" class="block text-sm font-semibold text-on-surface dark:text-gray-200">
                                 {{ __('preventive_presence.phone') }} <span class="text-red-500 ms-0.5">*</span>
                             </label>
                             <input id="phone" name="phone" type="tel" maxlength="20"
                                 value="{{ $valPhone }}" placeholder="{{ __('preventive_presence.phone_placeholder') }}" required
-                                class="mt-2 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('phone') border-red-400 @enderror">
+                                class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('phone') border-red-400 @enderror">
                             @error('phone')<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                         </div>
 
-                        <div class="my-6 border-t border-dashed border-gray-200 dark:border-gray-700"></div>
+                        <div class="my-6 border-t border-dashed border-surface-dim dark:border-gray-700"></div>
 
                         {{-- Section: Event details --}}
-                        <h4 class="mb-4 text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <h4 class="mb-4 text-sm font-bold text-on-surface dark:text-gray-100 flex items-center gap-2">
                             <svg class="h-4 w-4 text-gov-600 dark:text-gov-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                             {{ __('preventive_presence.event_section') }}
                         </h4>
 
                         {{-- Event title --}}
                         <div>
-                            <label for="event_title" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            <label for="event_title" class="block text-sm font-semibold text-on-surface dark:text-gray-200">
                                 {{ __('preventive_presence.event_title') }} <span class="text-red-500 ms-0.5">*</span>
                             </label>
                             <input id="event_title" name="event_title" type="text" maxlength="300"
                                 value="{{ $valEvTitle }}" placeholder="{{ __('preventive_presence.event_title_placeholder') }}" required
-                                class="mt-2 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('event_title') border-red-400 @enderror">
+                                class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('event_title') border-red-400 @enderror">
                             @error('event_title')<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                         </div>
 
@@ -148,28 +148,28 @@
 
                             {{-- ── Gouvernorat searchable dropdown ── --}}
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                                <label class="block text-sm font-semibold text-on-surface dark:text-gray-200 mb-2">
                                     {{ __('preventive_presence.code_structure') }} <span class="text-red-500 ms-0.5">*</span>
                                 </label>
                                 {{-- Hidden real input --}}
                                 <input type="hidden" name="governorate_id" id="gov-hidden" value="{{ $valGov }}">
                                 <div class="relative" id="gov-wrap">
                                     <button type="button" id="gov-trigger"
-                                        class="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-gov-500 focus:outline-none focus:ring-1 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 @error('governorate_id') border-red-400 @enderror"
+                                        class="flex w-full items-center justify-between rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-2.5 text-sm shadow-sm focus:border-gov-500 focus:outline-none focus:ring-1 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 @error('governorate_id') border-red-400 @enderror"
                                         aria-haspopup="listbox" aria-expanded="false">
-                                        <span id="gov-trigger-label" class="truncate text-gray-400 dark:text-gray-500">{{ __('preventive_presence.code_structure_select') }}</span>
-                                        <svg class="h-4 w-4 flex-none text-gray-400 transition-transform" id="gov-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <span id="gov-trigger-label" class="truncate text-outline dark:text-gray-500">{{ __('preventive_presence.code_structure_select') }}</span>
+                                        <svg class="h-4 w-4 flex-none text-outline transition-transform" id="gov-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                         </svg>
                                     </button>
-                                    <div id="gov-panel" class="absolute z-50 mt-1 hidden w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800" role="listbox">
-                                        <div class="border-b border-gray-100 px-3 py-2 dark:border-gray-700">
+                                    <div id="gov-panel" class="absolute z-50 mt-1 hidden w-full overflow-hidden rounded-xl border border-surface-dim bg-surface-container-lowest shadow-lg dark:border-gray-700 dark:bg-gray-800" role="listbox">
+                                        <div class="border-b border-surface-container-high px-3 py-2 dark:border-gray-700">
                                             <div class="relative">
-                                                <svg class="absolute start-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg class="absolute start-2.5 top-2.5 h-3.5 w-3.5 text-outline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                                 </svg>
                                                 <input type="text" id="gov-search" autocomplete="off"
-                                                    class="block w-full rounded-md border-0 bg-gray-50 py-1.5 ps-8 pe-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-1 focus:ring-gov-400 dark:bg-gray-700 dark:text-gray-200"
+                                                    class="block w-full rounded-md border-0 bg-surface-container py-1.5 ps-8 pe-3 text-sm text-on-surface placeholder:text-outline focus:ring-1 focus:ring-gov-400 dark:bg-gray-700 dark:text-gray-200"
                                                     placeholder="{{ __('preventive_presence.search_placeholder') }}">
                                             </div>
                                         </div>
@@ -181,27 +181,27 @@
 
                             {{-- ── Délégation searchable dropdown ── --}}
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                                <label class="block text-sm font-semibold text-on-surface dark:text-gray-200 mb-2">
                                     {{ __('preventive_presence.delegation') }} <span class="text-red-500 ms-0.5">*</span>
                                 </label>
                                 <input type="hidden" name="delegation_id" id="del-hidden" value="{{ $valDelId }}">
                                 <div class="relative" id="del-wrap">
                                     <button type="button" id="del-trigger" disabled
-                                        class="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-gov-500 focus:outline-none focus:ring-1 focus:ring-gov-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900 @error('delegation_id') border-red-400 @enderror"
+                                        class="flex w-full items-center justify-between rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-2.5 text-sm shadow-sm focus:border-gov-500 focus:outline-none focus:ring-1 focus:ring-gov-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900 @error('delegation_id') border-red-400 @enderror"
                                         aria-haspopup="listbox" aria-expanded="false">
-                                        <span id="del-trigger-label" class="truncate text-gray-400 dark:text-gray-500">{{ __('preventive_presence.delegation_select') }}</span>
-                                        <svg class="h-4 w-4 flex-none text-gray-400 transition-transform" id="del-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <span id="del-trigger-label" class="truncate text-outline dark:text-gray-500">{{ __('preventive_presence.delegation_select') }}</span>
+                                        <svg class="h-4 w-4 flex-none text-outline transition-transform" id="del-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                         </svg>
                                     </button>
-                                    <div id="del-panel" class="absolute z-40 mt-1 hidden w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800" role="listbox">
-                                        <div class="border-b border-gray-100 px-3 py-2 dark:border-gray-700">
+                                    <div id="del-panel" class="absolute z-40 mt-1 hidden w-full overflow-hidden rounded-xl border border-surface-dim bg-surface-container-lowest shadow-lg dark:border-gray-700 dark:bg-gray-800" role="listbox">
+                                        <div class="border-b border-surface-container-high px-3 py-2 dark:border-gray-700">
                                             <div class="relative">
-                                                <svg class="absolute start-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg class="absolute start-2.5 top-2.5 h-3.5 w-3.5 text-outline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                                 </svg>
                                                 <input type="text" id="del-search" autocomplete="off"
-                                                    class="block w-full rounded-md border-0 bg-gray-50 py-1.5 ps-8 pe-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-1 focus:ring-gov-400 dark:bg-gray-700 dark:text-gray-200"
+                                                    class="block w-full rounded-md border-0 bg-surface-container py-1.5 ps-8 pe-3 text-sm text-on-surface placeholder:text-outline focus:ring-1 focus:ring-gov-400 dark:bg-gray-700 dark:text-gray-200"
                                                     placeholder="{{ __('preventive_presence.search_placeholder') }}">
                                             </div>
                                         </div>
@@ -215,73 +215,73 @@
 
                         {{-- Event address --}}
                         <div class="mt-5">
-                            <label for="event_address" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            <label for="event_address" class="block text-sm font-semibold text-on-surface dark:text-gray-200">
                                 {{ __('preventive_presence.event_address') }} <span class="text-red-500 ms-0.5">*</span>
                             </label>
                             <input id="event_address" name="event_address" type="text" maxlength="500"
                                 value="{{ $valEvAddr }}" placeholder="{{ __('preventive_presence.event_address_placeholder') }}" required
-                                class="mt-2 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('event_address') border-red-400 @enderror">
+                                class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('event_address') border-red-400 @enderror">
                             @error('event_address')<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                         </div>
 
                         {{-- Row: date + end date + time + attendance --}}
                         <div class="mt-5 grid gap-5 sm:grid-cols-2">
                             <div>
-                                <label for="event_date" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                <label for="event_date" class="block text-sm font-semibold text-on-surface dark:text-gray-200">
                                     {{ __('preventive_presence.event_date') }} <span class="text-red-500 ms-0.5">*</span>
                                 </label>
                                 <input id="event_date" name="event_date" type="date"
                                     value="{{ $valEvDate }}" required
-                                    class="mt-2 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('event_date') border-red-400 @enderror">
+                                    class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('event_date') border-red-400 @enderror">
                                 @error('event_date')<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                             </div>
                             <div>
-                                <label for="event_end_date" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                <label for="event_end_date" class="block text-sm font-semibold text-on-surface dark:text-gray-200">
                                     {{ __('preventive_presence.event_end_date') }}
                                 </label>
                                 <input id="event_end_date" name="event_end_date" type="date"
                                     value="{{ $valEvEnd }}"
-                                    class="mt-2 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('event_end_date') border-red-400 @enderror">
-                                <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ __('preventive_presence.event_end_date_hint') }}</p>
+                                    class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('event_end_date') border-red-400 @enderror">
+                                <p class="mt-1 text-xs text-outline dark:text-gray-500">{{ __('preventive_presence.event_end_date_hint') }}</p>
                                 @error('event_end_date')<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                             </div>
                             <div>
-                                <label for="event_time" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                <label for="event_time" class="block text-sm font-semibold text-on-surface dark:text-gray-200">
                                     {{ __('preventive_presence.event_time') }}
                                 </label>
                                 <input id="event_time" name="event_time" type="time"
                                     value="{{ $valEvTime }}"
-                                    class="mt-2 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('event_time') border-red-400 @enderror">
+                                    class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('event_time') border-red-400 @enderror">
                                 @error('event_time')<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                             </div>
                             <div>
-                                <label for="expected_attendance" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                <label for="expected_attendance" class="block text-sm font-semibold text-on-surface dark:text-gray-200">
                                     {{ __('preventive_presence.expected_attendance') }}
                                 </label>
                                 <input id="expected_attendance" name="expected_attendance" type="number" min="0" inputmode="numeric"
                                     value="{{ $valAttend }}"
-                                    class="mt-2 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('expected_attendance') border-red-400 @enderror">
+                                    class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('expected_attendance') border-red-400 @enderror">
                                 @error('expected_attendance')<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                             </div>
                         </div>
 
                         {{-- Notes --}}
                         <div class="mt-5">
-                            <label for="notes" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            <label for="notes" class="block text-sm font-semibold text-on-surface dark:text-gray-200">
                                 {{ __('preventive_presence.notes') }}
                             </label>
                             <textarea id="notes" name="notes" rows="3" maxlength="3000"
                                 placeholder="{{ __('preventive_presence.notes_placeholder') }}"
-                                class="mt-2 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('notes') border-red-400 @enderror">{{ $valNotes }}</textarea>
+                                class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('notes') border-red-400 @enderror">{{ $valNotes }}</textarea>
                             @error('notes')<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                         </div>
 
                         {{-- Footer --}}
-                        <div class="mt-8 flex items-center justify-between gap-3 border-t border-gray-200 pt-5 dark:border-gray-700">
+                        <div class="mt-8 flex items-center justify-between gap-3 border-t border-surface-dim pt-5 dark:border-gray-700">
                             @if ($isEditing)
-                                <a href="{{ route('preventive-presence.step2.show', $presenceRequest) }}" class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">{{ __('preventive_presence.cancel') }}</a>
+                                <a href="{{ route('preventive-presence.step2.show', $presenceRequest) }}" class="inline-flex items-center justify-center rounded-lg border border-surface-dim bg-surface-container-lowest px-4 py-2 text-sm font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">{{ __('preventive_presence.cancel') }}</a>
                             @else
-                                <a href="{{ route('preventive-presence.index') }}" class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">{{ __('preventive_presence.cancel') }}</a>
+                                <a href="{{ route('preventive-presence.index') }}" class="inline-flex items-center justify-center rounded-lg border border-surface-dim bg-surface-container-lowest px-4 py-2 text-sm font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">{{ __('preventive_presence.cancel') }}</a>
                             @endif
                             <button type="submit" id="create-submit-btn"
                                 class="ui-btn-primary inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-gray-900"
@@ -349,7 +349,7 @@
             ul.innerHTML = '';
             if (!items.length) {
                 var li = document.createElement('li');
-                li.className = 'px-4 py-2 text-gray-400 text-sm italic';
+                li.className = 'px-4 py-2 text-outline text-sm italic';
                 li.textContent = noResults;
                 ul.appendChild(li);
                 return;
@@ -361,7 +361,7 @@
                 li.className = 'flex cursor-pointer items-center gap-2 px-4 py-2 text-sm transition ' +
                     (isSel
                         ? 'bg-gov-50 font-semibold text-gov-700 dark:bg-gov-900/30 dark:text-gov-300'
-                        : 'text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700');
+                        : 'text-on-surface hover:bg-surface-container dark:text-gray-200 dark:hover:bg-gray-700');
                 li.innerHTML = isSel
                     ? '<svg class="h-3.5 w-3.5 flex-none text-gov-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>' + item.name + '</span>'
                     : '<span class="h-3.5 w-3.5 flex-none"></span><span>' + item.name + '</span>';
@@ -399,14 +399,14 @@
         function selectGov(item) {
             govHidden.value  = item.id;
             govTrigLbl.textContent = item.name;
-            govTrigLbl.classList.remove('text-gray-400', 'dark:text-gray-500');
-            govTrigLbl.classList.add('text-gray-900', 'dark:text-gray-100');
+            govTrigLbl.classList.remove('text-outline', 'dark:text-gray-500');
+            govTrigLbl.classList.add('text-on-surface', 'dark:text-gray-100');
             closeDropdown(govPanel, govChevron, function(v){ govOpen = v; });
             // Reset delegation
             delHidden.value = '';
             delTrigLbl.textContent = delSelectLbl;
-            delTrigLbl.classList.add('text-gray-400', 'dark:text-gray-500');
-            delTrigLbl.classList.remove('text-gray-900', 'dark:text-gray-100');
+            delTrigLbl.classList.add('text-outline', 'dark:text-gray-500');
+            delTrigLbl.classList.remove('text-on-surface', 'dark:text-gray-100');
             delTrigger.disabled = false;
             loadDelegations(item.id, '');
         }
@@ -434,8 +434,8 @@
         function selectDel(item) {
             delHidden.value = item.id;
             delTrigLbl.textContent = item.name;
-            delTrigLbl.classList.remove('text-gray-400', 'dark:text-gray-500');
-            delTrigLbl.classList.add('text-gray-900', 'dark:text-gray-100');
+            delTrigLbl.classList.remove('text-outline', 'dark:text-gray-500');
+            delTrigLbl.classList.add('text-on-surface', 'dark:text-gray-100');
             closeDropdown(delPanel, delChevron, function(v){ delOpen = v; });
         }
 
@@ -462,8 +462,8 @@
             if (govItem) {
                 govHidden.value = govItem.id;
                 govTrigLbl.textContent = govItem.name;
-                govTrigLbl.classList.remove('text-gray-400', 'dark:text-gray-500');
-                govTrigLbl.classList.add('text-gray-900', 'dark:text-gray-100');
+                govTrigLbl.classList.remove('text-outline', 'dark:text-gray-500');
+                govTrigLbl.classList.add('text-on-surface', 'dark:text-gray-100');
                 delTrigger.disabled = false;
                 loadDelegations(govItem.id, initDelId);
                 // Also restore the delegation label
@@ -472,8 +472,8 @@
                     if (delItem) {
                         delHidden.value = delItem.id;
                         delTrigLbl.textContent = delItem.name;
-                        delTrigLbl.classList.remove('text-gray-400', 'dark:text-gray-500');
-                        delTrigLbl.classList.add('text-gray-900', 'dark:text-gray-100');
+                        delTrigLbl.classList.remove('text-outline', 'dark:text-gray-500');
+                        delTrigLbl.classList.add('text-on-surface', 'dark:text-gray-100');
                     }
                 }
             }

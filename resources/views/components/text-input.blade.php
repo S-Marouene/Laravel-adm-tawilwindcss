@@ -8,21 +8,21 @@
     @endif
 
     <input @disabled($disabled) {{ $attributes->merge([
-        'class' => 'block w-full px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500
-                    bg-white/95 dark:bg-gray-900/55
-                    border border-gray-300/90 dark:border-gray-600/90
-                    rounded-xl shadow-sm
-                    hover:border-gov-300 dark:hover:border-gov-700
-                    focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 dark:focus:border-gov-400 focus:shadow-[0_0_0_4px_rgba(132,90,223,0.08)]
+        'class' => 'block w-full px-3.5 py-2.5 text-body-md text-on-surface placeholder:text-secondary/70
+                    bg-surface-container-lowest
+                    border border-surface-dim
+                    rounded
+                    hover:border-surface-container-highest
+                    focus:ring-0 focus:border-primary dark:focus:border-primary
                     focus:outline-none
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                    transition-all duration-200 ease-in-out
+                    disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-surface-container
+                    transition-colors duration-150 ease-in-out
                     ' . ($leadingIcon ? 'ltr:pl-10 rtl:pr-10' : '')
                     . ' ' . ($trailingIcon ? 'ltr:pr-10 rtl:pl-10' : '')]) }}>
 
     @if($trailingIcon && $attributes->get('type') === 'password')
         <button type="button" @click="show = !show"
-            class="absolute inset-y-0 ltr:right-0 rtl:left-0 ltr:pr-3 rtl:pl-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            class="absolute inset-y-0 ltr:right-0 rtl:left-0 ltr:pr-3 rtl:pl-3 flex items-center text-outline hover:text-secondary dark:hover:text-gray-300 transition-colors">
             <svg x-show="!show" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -32,7 +32,7 @@
             </svg>
         </button>
     @elseif($trailingIcon)
-        <div class="absolute inset-y-0 ltr:right-0 rtl:left-0 ltr:pr-3 rtl:pl-3 flex items-center pointer-events-none text-gray-400">
+        <div class="absolute inset-y-0 ltr:right-0 rtl:left-0 ltr:pr-3 rtl:pl-3 flex items-center pointer-events-none text-outline">
             {!! $trailingIcon !!}
         </div>
     @endif

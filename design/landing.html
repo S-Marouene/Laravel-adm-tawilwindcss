@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" dir="ltr" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Office National de la Protection Civile - الديوان الوطني للحماية المدنية</title>
+<!-- Material Symbols & Typography -->
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&amp;family=Amiri:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS Engine -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface-variant": "#5c403f",
+            "inverse-on-surface": "#eef0ff",
+            "on-error": "#ffffff",
+            "on-secondary-container": "#5d6571",
+            "error": "#ba1a1a",
+            "tertiary": "#773e00",
+            "surface-dim": "#d2d9f4",
+            "on-secondary": "#ffffff",
+            "surface-variant": "#dae2fd",
+            "surface-bright": "#faf8ff",
+            "outline": "#906f6e",
+            "inverse-primary": "#ffb3b1",
+            "secondary-container": "#dbe3f1",
+            "on-error-container": "#93000a",
+            "surface-container": "#eaedff",
+            "surface-container-highest": "#dae2fd",
+            "surface-tint": "#bf0229",
+            "primary-fixed": "#ffdad8",
+            "on-surface": "#131b2e",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "surface-container-lowest": "#ffffff",
+            "surface": "#faf8ff",
+            "on-background": "#131b2e",
+            "primary-fixed-dim": "#ffb3b1",
+            "on-secondary-fixed": "#141c26",
+            "surface-container-high": "#e2e7ff",
+            "background": "#faf8ff",
+            "secondary": "#575f6b",
+            "on-tertiary": "#ffffff",
+            "on-secondary-fixed-variant": "#3f4752",
+            "on-primary-container": "#ffdad8",
+            "on-tertiary-fixed": "#2f1500",
+            "primary": "#9e001f",
+            "inverse-surface": "#283044",
+            "on-primary-fixed-variant": "#92001c",
+            "surface-container-low": "#f2f3ff",
+            "secondary-fixed-dim": "#bfc7d5",
+            "tertiary-fixed": "#ffdcc3",
+            "outline-variant": "#e5bdbb",
+            "tertiary-fixed-dim": "#ffb77d",
+            "error-container": "#ffdad6",
+            "on-tertiary-container": "#ffdcc3",
+            "on-primary-fixed": "#410007",
+            "secondary-fixed": "#dbe3f1",
+            "primary-container": "#c8102e",
+            "tertiary-container": "#9a5200",
+            "on-primary": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2.5rem",
+            "gutter": "1.5rem",
+            "margin": "2rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "margin-mobile": "1rem",
+            "gutter-mobile": "0.75rem"
+          },
+          "fontFamily": {
+            "headline-lg-mobile": ["Public Sans"],
+            "headline-lg": ["Public Sans"],
+            "display-hero-mobile": ["Public Sans"],
+            "headline-md": ["Public Sans"],
+            "body-sm": ["Public Sans"],
+            "body-lg": ["Public Sans"],
+            "emergency-hotline": ["Public Sans"],
+            "display-hero": ["Public Sans"],
+            "title-section": ["Public Sans"],
+            "label-caps": ["Public Sans"],
+            "body-md": ["Public Sans"],
+            "headline-sm": ["Public Sans"]
+          },
+          "fontSize": {
+            "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "0em", "fontWeight": "700" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "display-hero-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "800" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "emergency-hotline": ["28px", { "lineHeight": "28px", "letterSpacing": "0.02em", "fontWeight": "900" }],
+            "display-hero": ["44px", { "lineHeight": "52px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+            "title-section": ["15px", { "lineHeight": "20px", "letterSpacing": "0.08em", "fontWeight": "800" }],
+            "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "700" }],
+            "body-md": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "700" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    @keyframes pulse-intense {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(200, 16, 46, 0.7); }
+      50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(200, 16, 46, 0); }
+    }
+    .pulse-emergency {
+      animation: pulse-intense 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary">
+<!-- TOP UTILITY BAR (Bilingual & Emergency Hotline) -->
+<header class="w-full bg-inverse-surface text-inverse-on-surface border-b border-surface-dim">
+<div class="max-w-7xl mx-auto px-margin py-1.5 flex flex-wrap items-center justify-between gap-4 text-body-sm font-body-sm">
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5 font-medium text-surface-variant">
+<span class="material-symbols-outlined text-base">calendar_today</span>
+<span>jeudi, 29 octobre 2026</span>
+</span>
+<span class="hidden md:inline-block w-px h-3.5 bg-secondary"></span>
+<div class="hidden sm:flex items-center gap-2 text-surface-variant">
+<span class="material-symbols-outlined text-base">location_on</span>
+<span>Tunis, République Tunisienne</span>
+</div>
+</div>
+<div class="flex items-center gap-5">
+<!-- Emergency Hotline Callout Pill -->
+<a class="pulse-emergency bg-primary-container text-on-primary px-3.5 py-1 rounded flex items-center gap-2 font-headline-sm text-headline-sm shadow-md transition-colors hover:bg-primary" href="tel:198">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">emergency</span>
+<span class="font-bold">Urgence 198</span>
+</a>
+<!-- Lang Switcher -->
+<div class="flex items-center gap-1 bg-surface-container/10 px-2 py-0.5 rounded text-surface-variant hover:text-on-primary">
+<span class="material-symbols-outlined text-base">language</span>
+<span class="font-bold text-on-primary text-xs">FR</span>
+<span>/</span>
+<button class="hover:underline font-bold text-xs" style="font-family: 'Amiri', serif;">العربية</button>
+</div>
+<!-- Social Icons -->
+<div class="hidden lg:flex items-center gap-3 text-surface-variant">
+<a aria-label="Facebook" class="hover:text-primary-fixed transition-colors" href="#">
+<span class="material-symbols-outlined text-base">public</span>
+</a>
+<a aria-label="YouTube" class="hover:text-primary-fixed transition-colors" href="#">
+<span class="material-symbols-outlined text-base">smart_display</span>
+</a>
+<a aria-label="Accessibilité" class="hover:text-primary-fixed transition-colors" href="#">
+<span class="material-symbols-outlined text-base">settings_accessibility</span>
+</a>
+</div>
+<!-- Auth Button -->
+<a class="flex items-center gap-1.5 text-on-primary hover:text-primary-fixed font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-base">account_circle</span>
+<span class="hidden sm:inline">Connexion</span>
+</a>
+</div>
+</div>
+</header>
+<!-- OFFICIAL IDENTITY & EMBLEM LOGO BANNER -->
+<div class="bg-surface-container-lowest border-b border-surface-dim">
+<div class="max-w-7xl mx-auto px-margin py-space-md flex flex-col md:flex-row items-center justify-between gap-6">
+<!-- Left Flag / Crest Motif -->
+<div class="flex items-center gap-5 w-full md:w-auto justify-center md:justify-start">
+<!-- Official Tunisian Emblem Badge Iconography -->
+<div class="w-16 h-16 rounded-full bg-primary-container p-1 shadow-inner flex items-center justify-center relative flex-shrink-0">
+<div class="w-full h-full rounded-full border-2 border-white flex flex-col items-center justify-center text-white">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">shield</span>
+<span class="text-[9px] font-black uppercase tracking-wider">ONPC</span>
+</div>
+</div>
+<div class="text-center md:text-left">
+<h2 class="text-2xl font-bold tracking-tight text-on-surface" style="font-family: 'Amiri', serif; line-height: 1.2;">
+            الديوان الوطني للحماية المدنية
+          </h2>
+<h1 class="text-headline-md font-headline-md text-primary tracking-tight uppercase">
+            Office National de la Protection Civile
+          </h1>
+<p class="text-label-caps font-label-caps text-secondary uppercase tracking-widest mt-0.5">
+            République Tunisienne • Ministère de l'Intérieur
+          </p>
+</div>
+</div>
+<!-- Institutional Quick Search Input -->
+<div class="w-full md:w-80 flex-shrink-0">
+<form class="relative flex items-center">
+<input class="w-full h-11 pl-4 pr-11 bg-surface-container-low border border-surface-dim rounded text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Recherche de démarches, alertes..." type="search"/>
+<button aria-label="Lancer la recherche" class="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-secondary hover:text-primary transition-colors" type="submit">
+<span class="material-symbols-outlined text-xl">search</span>
+</button>
+</form>
+</div>
+</div>
+</div>
+<!-- STICKY TOP NAVBAR (Shared Component Mapping) -->
+<nav class="sticky top-0 z-40 bg-surface-container-lowest border-b border-surface-dim shadow-sm">
+<div class="w-full max-w-7xl mx-auto px-margin flex items-center justify-between overflow-x-auto">
+<ul class="flex items-center gap-1 sm:gap-2 text-body-md font-body-md whitespace-nowrap py-2">
+<li>
+<a class="border-b-2 border-primary text-primary font-bold pb-1 px-3 py-1.5 inline-block transition-colors duration-150" href="#">
+            Accueil
+          </a>
+</li>
+<li>
+<a class="text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container px-3 py-1.5 rounded transition-colors duration-150 flex items-center gap-1" href="#">
+            À Propos
+            <span class="material-symbols-outlined text-sm">expand_more</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container px-3 py-1.5 rounded transition-colors duration-150 flex items-center gap-1" href="#">
+            Services à distance
+            <span class="material-symbols-outlined text-sm">expand_more</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container px-3 py-1.5 rounded transition-colors duration-150" href="#">
+            Interventions
+          </a>
+</li>
+<li>
+<a class="text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container px-3 py-1.5 rounded transition-colors duration-150 flex items-center gap-1" href="#">
+            Activités &amp; Actualités
+            <span class="material-symbols-outlined text-sm">expand_more</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container px-3 py-1.5 rounded transition-colors duration-150" href="#">
+            Statistiques
+          </a>
+</li>
+<li>
+<a class="text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container px-3 py-1.5 rounded transition-colors duration-150" href="#">
+            École PC
+          </a>
+</li>
+<li>
+<a class="text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container px-3 py-1.5 rounded transition-colors duration-150" href="#">
+            Contact
+          </a>
+</li>
+</ul>
+<!-- Quick Emergency Shortcut on Right -->
+<div class="hidden lg:flex items-center gap-2 pl-4">
+<a class="text-label-caps font-label-caps uppercase bg-primary text-on-primary px-3 py-1.5 rounded font-bold tracking-wider hover:bg-on-primary-fixed-variant transition-colors flex items-center gap-1" href="tel:198">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">phone_in_talk</span>
+          198 Secours
+        </a>
+</div>
+</div>
+</nav>
+<!-- BREAKING NEWS TICKER (High-Contrast Crimson Ticker Bar) -->
+<section aria-label="Fil d'actualité d'urgence" class="bg-primary-container text-on-primary overflow-hidden shadow-sm">
+<div class="max-w-7xl mx-auto px-margin py-2 flex items-center gap-3">
+<div class="flex items-center gap-2 bg-on-primary-fixed-variant text-on-primary px-3 py-1 rounded text-label-caps font-label-caps uppercase flex-shrink-0 tracking-wider">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">campaign</span>
+<span>Dernières actualités</span>
+</div>
+<div class="overflow-hidden relative w-full whitespace-nowrap text-body-sm font-body-sm font-medium">
+<div class="inline-flex items-center gap-8 animate-[marquee_25s_linear_infinite]">
+<span class="inline-flex items-center gap-2 hover:underline cursor-pointer">
+<span class="text-yellow-300 font-bold">Jendouba :</span> L'oued Medjerda capable d'absorber le flux, aucun risque majeur pour les habitations riveraines.
+          </span>
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-white/60"></span>
+<span class="inline-flex items-center gap-2 hover:underline cursor-pointer">
+<span class="text-yellow-300 font-bold">Barrage de Mellègue :</span> Travaux techniques de régulation des vannes et déversement contrôlé sans incident.
+          </span>
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-white/60"></span>
+<span class="inline-flex items-center gap-2 hover:underline cursor-pointer">
+<span class="text-yellow-300 font-bold">Avis Météorologique :</span> Vigilance vents forts et averses orageuses sur le littoral Nord et Centre.
+          </span>
+</div>
+</div>
+</div>
+</section>
+<!-- MAIN BODY CANVAS (12-Column Responsive Layout) -->
+<main class="max-w-7xl mx-auto px-margin py-space-lg space-y-space-xl">
+<!-- HERO SECTION: High-Priority Briefing & Fast Emergency Services Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-stretch">
+<!-- Primary Feature Story (8 Columns) -->
+<div class="lg:col-span-8 bg-surface-container-lowest border border-surface-dim rounded overflow-hidden flex flex-col justify-between shadow-sm">
+<div class="relative group h-96 overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="An expansive panoramic view of the swollen Medjerda River in northwestern Tunisia, showing muddy flood water passing through cultivated agricultural valleys under a dynamic morning sky. Civil protection disaster response equipment and official observation posts stand vigilant in the foreground. The lighting is crisp and authentic, shot in a realistic governmental photojournalism style with sovereign crimson and neutral earth tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqe6dH4wfL7QmkxXQTgB2VePO9W9CwqnuMScNwMYw2nw7n-Gm8Kcqfq_TNTaTCiRuj34hJ0cu1nQUWtgPjipQvJVQ13VjMKbWpJktbcRvkKUGdXoU6SbBUh8LvZVDinw3jjgJ48_fG1CP35HfNU49HYXRk2WVfJ1ro89vFIHxMoqIeqkgTs_tFosD0ngc_Q6eUBb1oEtSHrzldiy1xqlStpPXglRrbstoY2jScUR60"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent flex flex-col justify-end p-6 text-white">
+<div class="flex items-center gap-2 mb-2">
+<span class="bg-primary-container text-white px-2.5 py-0.5 rounded text-label-caps font-label-caps uppercase tracking-wider">
+                VIGILANCE CRUES &amp; RISQUES NATURELS
+              </span>
+<span class="text-xs text-slate-300 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">schedule</span> 29 octobre 2026 à 08:30
+              </span>
+</div>
+<h2 class="text-headline-lg font-headline-lg text-white leading-tight mb-2 hover:text-primary-fixed transition-colors cursor-pointer">
+              Jendouba &amp; Bassin de la Medjerda : Les équipes de l'ONPC mobilisées, situation sous contrôle opérationnel
+            </h2>
+<p class="text-body-md font-body-md text-slate-200 line-clamp-2 max-w-2xl">
+              La cellule de crise régionale surveille activement l'évolution des débits d'eau après les récentes précipitations. Les digues et déversoirs absorbent l'afflux d'eau et aucune évacuation d'urgence n'est requise à cette heure.
+            </p>
+</div>
+</div>
+<!-- Sub-ticker highlights beneath hero -->
+<div class="p-4 bg-surface-container-low border-t border-surface-dim grid grid-cols-1 md:grid-cols-2 gap-4">
+<a class="flex items-start gap-3 group" href="#">
+<span class="material-symbols-outlined text-primary text-xl mt-0.5 group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+<div>
+<h4 class="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">Opération de désencombrement à Béja</h4>
+<p class="text-body-sm font-body-sm text-secondary">Intervention rapide des unités de secours suite à un éboulement rocheux.</p>
+</div>
+</a>
+<a class="flex items-start gap-3 group" href="#">
+<span class="material-symbols-outlined text-primary text-xl mt-0.5 group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+<div>
+<h4 class="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">Contrôle de conformité des réservoirs</h4>
+<p class="text-body-sm font-body-sm text-secondary">Inspections conjointes des installations hydrauliques de Sidi Salem.</p>
+</div>
+</a>
+</div>
+</div>
+<!-- Quick Procedures / Institutional Emergency Services Panel (4 Columns) -->
+<div class="lg:col-span-4 flex flex-col gap-4">
+<!-- Emergency Dispatch High-Contrast Card -->
+<div class="bg-primary text-on-primary p-6 rounded shadow-md border-l-4 border-yellow-400 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3">
+<span class="text-label-caps font-label-caps uppercase tracking-wider text-primary-fixed">CENTRE DE SECOURS ET D'APPELS</span>
+<span class="material-symbols-outlined text-2xl text-yellow-300">emergency</span>
+</div>
+<h3 class="text-headline-md font-headline-md text-white mb-2">Besoin d'aide immédiate ?</h3>
+<p class="text-body-sm font-body-sm text-primary-fixed mb-4">
+              Composez sans délai le numéro gratuit national. Nos équipes d'intervention sont opérationnelles 24h/24 et 7j/7 sur tout le territoire.
+            </p>
+</div>
+<a class="bg-white text-primary hover:bg-surface-container py-3 px-4 rounded font-bold text-center flex items-center justify-center gap-3 transition-colors shadow" href="tel:198">
+<span class="material-symbols-outlined text-2xl text-primary" style="font-variation-settings: 'FILL' 1;">call</span>
+<span class="text-headline-sm font-headline-sm tracking-wider">APPELER LE 198</span>
+</a>
+</div>
+<!-- Administrative Quick Links Bento Box -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded p-5 flex-1 shadow-sm flex flex-col justify-between">
+<div class="border-b border-surface-dim pb-3 mb-3">
+<h4 class="text-title-section font-title-section text-on-surface uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base">desktop_windows</span>
+              Démarches &amp; Services en Ligne
+            </h4>
+</div>
+<ul class="space-y-2 text-body-sm font-body-sm">
+<li>
+<a class="p-2.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface hover:text-primary flex items-center justify-between transition-colors border border-transparent hover:border-surface-dim" href="#">
+<span class="flex items-center gap-2.5 font-medium">
+<span class="material-symbols-outlined text-primary text-lg">verified_user</span>
+                  Certificat de prévention (Sécurité)
+                </span>
+<span class="material-symbols-outlined text-secondary text-sm">chevron_right</span>
+</a>
+</li>
+<li>
+<a class="p-2.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface hover:text-primary flex items-center justify-between transition-colors border border-transparent hover:border-surface-dim" href="#">
+<span class="flex items-center gap-2.5 font-medium">
+<span class="material-symbols-outlined text-primary text-lg">health_and_safety</span>
+                  Attestation de sauvetage &amp; secours
+                </span>
+<span class="material-symbols-outlined text-secondary text-sm">chevron_right</span>
+</a>
+</li>
+<li>
+<a class="p-2.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface hover:text-primary flex items-center justify-between transition-colors border border-transparent hover:border-surface-dim" href="#">
+<span class="flex items-center gap-2.5 font-medium">
+<span class="material-symbols-outlined text-primary text-lg">folder_open</span>
+                  Dépôt de dossier d'étude de projet
+                </span>
+<span class="material-symbols-outlined text-secondary text-sm">chevron_right</span>
+</a>
+</li>
+<li>
+<a class="p-2.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface hover:text-primary flex items-center justify-between transition-colors border border-transparent hover:border-surface-dim" href="#">
+<span class="flex items-center gap-2.5 font-medium">
+<span class="material-symbols-outlined text-primary text-lg">school</span>
+                  Formation premiers secours civiques
+                </span>
+<span class="material-symbols-outlined text-secondary text-sm">chevron_right</span>
+</a>
+</li>
+</ul>
+<div class="mt-4 pt-3 border-t border-surface-dim">
+<a class="text-xs font-bold text-primary hover:underline flex items-center justify-center gap-1 uppercase tracking-wider" href="#">
+              Accéder au portail des téléprocédures
+              <span class="material-symbols-outlined text-sm">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 2: INTERVENTIONS RÉCENTES (Faithful to Screenshots 2 & 3) -->
+<section class="space-y-4">
+<!-- Section Header with Red Structural Border Accent -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-primary pb-2 gap-2">
+<div class="flex items-center gap-3">
+<span class="bg-primary text-white p-1 rounded">
+<span class="material-symbols-outlined text-xl">fmd_bad</span>
+</span>
+<h2 class="text-title-section font-title-section text-on-surface uppercase tracking-wider">
+            INTERVENTIONS RÉCENTES
+          </h2>
+</div>
+<div class="flex items-center gap-4">
+<!-- Filter Tabs -->
+<div class="hidden md:flex items-center gap-1 text-xs font-medium text-secondary">
+<span class="px-2.5 py-1 bg-primary text-white rounded font-bold cursor-pointer">Tous</span>
+<span class="px-2.5 py-1 hover:bg-surface-container rounded cursor-pointer">Accidents routiers</span>
+<span class="px-2.5 py-1 hover:bg-surface-container rounded cursor-pointer">Incendies</span>
+<span class="px-2.5 py-1 hover:bg-surface-container rounded cursor-pointer">Secours à victimes</span>
+</div>
+<a class="text-xs font-bold text-primary hover:text-on-primary-fixed-variant hover:underline flex items-center gap-0.5" href="#">
+            Voir plus <span class="material-symbols-outlined text-sm">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- Grid of Incident Cards Matching Uploaded Screenshots -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Card 1: Primary Spotlight (Accident Zaghouan) -->
+<article class="bg-surface-container-lowest border border-surface-dim rounded overflow-hidden flex flex-col group hover:shadow-md hover:border-primary transition-all duration-200">
+<div class="relative h-48 overflow-hidden bg-slate-100">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="An official Tunisian Civil Protection red and yellow emergency ambulance van deployed alongside an asphalt roadway near Zaghouan. Professional emergency response paramedics in dark uniforms and reflective vests attend to the scene with emergency red beacon lights on. High daylight, documentary governmental photojournalism style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAdoKXfRNQSSaVlpUKvMS8T9ycwWnYqnNXXfYeIfY3YTZoZA4ErM0bJpEhu0xSJS63sSfg-kOQCn7oqAD7BRvsVyujL1IbzgSCdDH7wCKRkHcM1KItFQDCp637eMPqDp3fJZFh_atDCsD47kVCDDKarzUj9VI1FYAmtx5VVrjHZSOS_WtmYqPnsuEnv96Sw0EYqqAexNmeGmZhqEoSXAdEfWweRTqOePU6_JC_MOPv"/>
+<span class="absolute top-2.5 left-2.5 bg-primary-container text-white px-2 py-0.5 rounded text-label-caps font-label-caps uppercase tracking-wider shadow">
+              INTERVENTIONS
+            </span>
+</div>
+<div class="p-4 flex-1 flex flex-col justify-between">
+<div>
+<div class="text-xs text-secondary flex items-center gap-1 mb-1.5 font-medium">
+<span class="material-symbols-outlined text-xs">calendar_today</span> 11 juin, 2026 à 03:35
+              </div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface leading-snug group-hover:text-primary transition-colors mb-2">
+                Accident Zaghouen le 11/06/2026 à 03:35
+              </h3>
+<p class="text-body-sm font-body-sm text-secondary line-clamp-3">
+                Un grave accident de la route s'est produit dans la région d'El Hmira, relevant de la délégation de Zaghouan. Mobilisation immédiate de deux ambulances et d'une équipe de désincarcération.
+              </p>
+</div>
+<div class="mt-4 pt-3 border-t border-surface-dim flex items-center justify-between text-xs font-bold text-primary">
+<span>Rapport d'intervention</span>
+<span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</div>
+</article>
+<!-- Card 2: Sousse Highway Incident -->
+<article class="bg-surface-container-lowest border border-surface-dim rounded overflow-hidden flex flex-col group hover:shadow-md hover:border-primary transition-all duration-200">
+<div class="relative h-48 overflow-hidden bg-slate-100">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Civil protection patrol team securing a highway lane in Sousse following a commercial vehicle incident. Tunisian civil protection rescue officers coordinate traffic around a truck on the asphalt pavement under overcast skies. Authentic crisp editorial lighting, clean composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcYDLhieIshKb9TNUZyZ7nC46RWvOQ8Y_ixlqO3Ci-ondiNEIdTiaMMpRtmBBtGcoyFIW5xCKPukhdosc7e875N2T7BygZI7gBOa89T5NjaNO1yq_jNARNLo1fTJ0JUit4EEUM6yTQ7kp4wqW8kX7QVnAcRqNQtdHxHdezZQ3Jmpg9BoTOQUn6ym6f_c-DDxRr-4W0wr0XZXVULuEVsmy-nS54EHa-CjBEOndOL8q7"/>
+<span class="absolute top-2.5 left-2.5 bg-primary-container text-white px-2 py-0.5 rounded text-label-caps font-label-caps uppercase tracking-wider shadow">
+              INTERVENTIONS
+            </span>
+</div>
+<div class="p-4 flex-1 flex flex-col justify-between">
+<div>
+<div class="text-xs text-secondary flex items-center gap-1 mb-1.5 font-medium">
+<span class="material-symbols-outlined text-xs">calendar_today</span> 9 juin, 2026
+              </div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface leading-snug group-hover:text-primary transition-colors mb-2">
+                Sousse, le 08/06/2026 à 11h40 : accident...
+              </h3>
+<p class="text-body-sm font-body-sm text-secondary line-clamp-3">
+                Collision entre un véhicule utilitaire et un camion lourd sur la route nationale. Prise en charge rapide de trois blessés légers et sécurisation de la chaussée.
+              </p>
+</div>
+<div class="mt-4 pt-3 border-t border-surface-dim flex items-center justify-between text-xs font-bold text-primary">
+<span>Consulter le bilan</span>
+<span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</div>
+</article>
+<!-- Card 3: Gafsa Evacuation Intervention -->
+<article class="bg-surface-container-lowest border border-surface-dim rounded overflow-hidden flex flex-col group hover:shadow-md hover:border-primary transition-all duration-200">
+<div class="relative h-48 overflow-hidden bg-slate-100">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Tunisian Civil Protection disaster relief responders and red all-terrain rescue vehicles operating in the arid terrain of Gafsa. Personnel in protective rescue turnout gear coordinate logistics during a twilight search operation. Authentic high quality governmental reportage photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2X2OTAKqjfxzRJN78rqt9ifa4F-upeLMRiq_kGr3iWRNinP9YUX9DgE27q3eaV17PMVFUZTd5aT9fEZsIN_udJCs2ZyGgPmt-9LVhRXA7WEMQO0WEHAYpyebkDXyQTxl68YuUfu3ELz7mjL1CoIymjSZY_bi5G9l5erfIBAE1ESn0iBQMVNU5xiDIlXUw-H70CM1_CWU04BiMKKowzUZ8Hcd8bTn5RAyNip3mF87r"/>
+<span class="absolute top-2.5 left-2.5 bg-primary-container text-white px-2 py-0.5 rounded text-label-caps font-label-caps uppercase tracking-wider shadow">
+              INTERVENTIONS
+            </span>
+</div>
+<div class="p-4 flex-1 flex flex-col justify-between">
+<div>
+<div class="text-xs text-secondary flex items-center gap-1 mb-1.5 font-medium">
+<span class="material-symbols-outlined text-xs">calendar_today</span> 27 février, 2025
+              </div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface leading-snug group-hover:text-primary transition-colors mb-2">
+                Gafsa Mardi 18 Février : Intervention d'urgence
+              </h3>
+<p class="text-body-sm font-body-sm text-secondary line-clamp-3">
+                Intervention coordonnée pour l'assistance de passagers en zone isolée et évacuation préventive de zones inondables dans le gouvernorat de Gafsa.
+              </p>
+</div>
+<div class="mt-4 pt-3 border-t border-surface-dim flex items-center justify-between text-xs font-bold text-primary">
+<span>Détails de mission</span>
+<span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</div>
+</article>
+<!-- Card 4: Sidi Bouzid Fire Rescue -->
+<article class="bg-surface-container-lowest border border-surface-dim rounded overflow-hidden flex flex-col group hover:shadow-md hover:border-primary transition-all duration-200">
+<div class="relative h-48 overflow-hidden bg-slate-100">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A modern red Tunisian civil defense fire and rescue van parked in front of an operational civil protection station in Sidi Bouzid under bright Mediterranean daylight. The iconic vehicle features official emblems and crisp lettering. Professional governmental documentation style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsFurGs-jEPSJjOelMZvAJblcRvsn6C8i1G4z2ETL8JxSxY1EHjaeIxMvCNfUFIk4QcbZaJ0bPhkJBJKkrNz5O2JvT-XhAx7fN6FgNySRxhmYsvleI8dzUopPLcVPxHY5_m8f-2ZY-0spNlm_lU2XkApm1Nt8JbArfwWx7ohXY6aLusyfrj5zol4-lsqLir6mY7ZAecduEpFbSfpQdqaVqBfgP3wUokhqBy_CKwotj"/>
+<span class="absolute top-2.5 left-2.5 bg-primary-container text-white px-2 py-0.5 rounded text-label-caps font-label-caps uppercase tracking-wider shadow">
+              INTERVENTIONS
+            </span>
+</div>
+<div class="p-4 flex-1 flex flex-col justify-between">
+<div>
+<div class="text-xs text-secondary flex items-center gap-1 mb-1.5 font-medium">
+<span class="material-symbols-outlined text-xs">calendar_today</span> 27 février, 2025
+              </div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface leading-snug group-hover:text-primary transition-colors mb-2">
+                Sidi Bouzid : Secours d'urgence &amp; assistance
+              </h3>
+<p class="text-body-sm font-body-sm text-secondary line-clamp-3">
+                Extinction d'un foyer d'incendie agricole et transfert immédiat des sinistrés vers l'hôpital régional par les équipes médicales de la Protection Civile.
+              </p>
+</div>
+<div class="mt-4 pt-3 border-t border-surface-dim flex items-center justify-between text-xs font-bold text-primary">
+<span>Consulter le rapport</span>
+<span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- SECTION 3: ACTUALITÉS, COMMUNIQUÉS & PUBLICATIONS EN LIGNE (Screenshot 2 Split Layout) -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
+<!-- LEFT 8 COLUMNS: ACTUALITÉS & COMMUNIQUÉS OFFICIELS -->
+<div class="lg:col-span-8 space-y-4">
+<div class="flex items-center justify-between border-b-2 border-primary pb-2">
+<div class="flex items-center gap-3">
+<span class="bg-primary text-white p-1 rounded">
+<span class="material-symbols-outlined text-xl">newspaper</span>
+</span>
+<h2 class="text-title-section font-title-section text-on-surface uppercase tracking-wider">
+              ACTUALITÉS &amp; COMMUNIQUÉS
+            </h2>
+</div>
+<a class="text-xs font-bold text-primary hover:underline flex items-center gap-0.5" href="#">
+            Voir plus <span class="material-symbols-outlined text-sm">chevron_right</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Official Institutional "Communiqué" Card (Faithful to Screenshot 2) -->
+<article class="bg-surface-container-lowest border border-surface-dim rounded overflow-hidden shadow-sm flex flex-col justify-between group hover:border-primary transition-colors">
+<div>
+<div class="p-6 bg-gradient-to-b from-red-50 to-white border-b border-surface-dim text-center relative">
+<div class="w-14 h-14 mx-auto mb-2 rounded-full bg-primary-container p-1 shadow flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+<p class="text-xs font-bold text-secondary uppercase tracking-widest">Office National de la Protection Civile</p>
+<h3 class="text-2xl font-extrabold text-primary uppercase tracking-tight mt-1">Communiqué</h3>
+</div>
+<div class="p-5">
+<div class="text-xs text-secondary mb-2 flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-xs">calendar_today</span> 7 juillet, 2026
+                </div>
+<h4 class="text-headline-sm font-headline-sm text-on-surface group-hover:text-primary transition-colors leading-snug mb-3">
+                  Résultats de l'épreuve écrite du concours de recrutement des officiers
+                </h4>
+<p class="text-body-sm font-body-sm text-secondary">
+                  L'Office National de la Protection Civile porte à la connaissance de tous les candidats ayant passé les épreuves écrites que les listes d'admission aux épreuves orales et médicales sont disponibles en téléchargement.
+                </p>
+</div>
+</div>
+<div class="p-5 pt-0">
+<a class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary hover:underline" href="#">
+<span>Télécharger la liste officielle</span>
+<span class="material-symbols-outlined text-sm">download</span>
+</a>
+</div>
+</article>
+<!-- Secondary News Feed List (Stacked Rows matching Screenshot 2) -->
+<div class="flex flex-col gap-3">
+<!-- Item 1: Symposium -->
+<a class="bg-surface-container-lowest border border-surface-dim p-3 rounded flex gap-3 hover:border-primary hover:shadow-sm transition-all group" href="#">
+<div class="w-24 h-20 rounded overflow-hidden flex-shrink-0 bg-slate-100">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="An official Tunisian civil security auditorium symposium with military and civil protection senior officers in formal navy dress uniforms seated in tiered conference seating listening to strategic emergency presentations. Official professional governmental meeting photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCR-R82gQ5TW0QWgp-P-_QDyu4rVuLTzqZY2_dWh1GRdDo0z2ajDuDMq8PhxTPwrYVREKW9h2wKMgPsWww_IzZ6wN-0iOnbbA1o2DgR-_4-BmMdt2qvpHrxka9bPVl9ZLOKqdS0b_re3Y58B4VRNcQzRPY6Kc9iWFR7UG1ORXama8NZBPkJswLKAFU6DDD_pyoBjIWpujDRcq_csmD7mz6IWFAJiZ8DNdSWulf8Hg2Q"/>
+</div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<span class="text-[10px] font-bold text-primary uppercase">ACTIVITÉS &amp; ACTUALITÉS</span>
+<h4 class="text-body-sm font-bold text-on-surface line-clamp-2 group-hover:text-primary transition-colors">
+                    Symposium scientifique sur « La gestion des crises majeures et anticipation »
+                  </h4>
+</div>
+<span class="text-[11px] text-secondary">19 juin, 2026</span>
+</div>
+</a>
+<!-- Item 2: Montée des eaux -->
+<a class="bg-surface-container-lowest border border-surface-dim p-3 rounded flex gap-3 hover:border-primary hover:shadow-sm transition-all group" href="#">
+<div class="w-24 h-20 rounded overflow-hidden flex-shrink-0 bg-slate-100">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="Hydraulic river embankment monitoring in northern Tunisia, displaying an overflowing river channel with civil protection reconnaissance officers measuring water levels using telemetric measuring equipment. Realistic governmental operational photography under morning light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwcYFlOWPVTTN4C4pkDY2lJoEE8Y1nLjogInnmyi9pqpa4EIyXhofBSfHNej8p9CSrA-eexFj3qUTt1e65NJnk6u6ftDH-UKpF4rg4RqPevvSrrj7VOawAyB6wgZ0bgwyVhbFVSYPS-ZbLwaZMc5cAouoywVGhKuEGYNRW_VgiPz8hGuuIiYTs6tq5LeenqS3_bxAoNjHRJUpkKjmvcde4i2enpCZTmoY9OiaF9ACz"/>
+</div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<span class="text-[10px] font-bold text-primary uppercase">ENVIRONNEMENT</span>
+<h4 class="text-body-sm font-bold text-on-surface line-clamp-2 group-hover:text-primary transition-colors">
+                    Montée des eaux à Jendouba : inspection sur le terrain des points de déversement
+                  </h4>
+</div>
+<span class="text-[11px] text-secondary">18 juin, 2026</span>
+</div>
+</a>
+<!-- Item 3: Barrage Mellègue -->
+<a class="bg-surface-container-lowest border border-surface-dim p-3 rounded flex gap-3 hover:border-primary hover:shadow-sm transition-all group" href="#">
+<div class="w-24 h-20 rounded overflow-hidden flex-shrink-0 bg-slate-100">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="Massive concrete hydraulic dam barrage structure in Mellègue Tunisia discharging foaming water from spillway sluice gates into the downstream gorge. Official civil protection civil engineering security check under bright skies." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVWMZnGysiSBt1gvP5MSFtrSM_ciE0kZGGHp4Tp6ndXHhFtNX-iJMRXEDH2nwpiVIQUiJ5KsQxUIuXjyGGu87oqgLskTxG_A3Sz8Oa1OEXUHbJ9vLMK5ibFVK5E0vyGdKMVERfL02xZLRo5mF6ews8SaxqWMq7s-lg0WI19NEW8KBxFYhY2LaiF0CuxPPBK2zz-X81LZwthfYdKTbMZ_2_Oy0VwyjoQK5visGcm_0b"/>
+</div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<span class="text-[10px] font-bold text-primary uppercase">BULLETIN TECHNIQUE</span>
+<h4 class="text-body-sm font-bold text-on-surface line-clamp-2 group-hover:text-primary transition-colors">
+                    Une panne technique sur l'une des vannes du barrage de Mellègue maîtrisée
+                  </h4>
+</div>
+<span class="text-[11px] text-secondary">18 juin, 2026</span>
+</div>
+</a>
+<!-- Item 4: Commission régionale -->
+<a class="bg-surface-container-lowest border border-surface-dim p-3 rounded flex gap-3 hover:border-primary hover:shadow-sm transition-all group" href="#">
+<div class="w-24 h-20 rounded overflow-hidden flex-shrink-0 bg-slate-100">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="Regional civil security committee meeting chaired by the Tunisian governor and civil protection colonel around a large institutional U-shaped conference table reviewing emergency relief contingency plans. Professional administrative interior." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBs_yXm-33XoqPFtf0NPVqc1m19dHYzSuaQkowAER2i88jhVu8VZ9PYCVn5yk06naJ8c7Jv-Usz2kAHVsWmNPJXsz0RrN6TNmwfLHwD0MeA4kXFyZOr7roNH5Zi-hUlgKCyPS7lo3HplFU9PvikPWcSEUQn1vHqnaT9AXWHxGChn3FnPhXV7RMH4xed1ALAi-mUnTFLTc6hYKLVUg8Tyg_mzeQvpB1uV2M6ZBPpxF5F"/>
+</div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<span class="text-[10px] font-bold text-primary uppercase">GOUVERNORATS</span>
+<h4 class="text-body-sm font-bold text-on-surface line-clamp-2 group-hover:text-primary transition-colors">
+                    La commission régionale de lutte contre les catastrophes réunie à Nabeul
+                  </h4>
+</div>
+<span class="text-[11px] text-secondary">9 juin, 2026</span>
+</div>
+</a>
+</div>
+</div>
+</div>
+<!-- RIGHT 4 COLUMNS: EXTRAITS D'IMAGES & PUBLICATIONS EN LIGNE (Sidebar matching Screenshot 2) -->
+<div class="lg:col-span-4 space-y-6">
+<!-- Block 1: Extraits d'Images (Training / Rescue Drill photo) -->
+<div class="space-y-3">
+<div class="bg-primary text-white px-3.5 py-1.5 rounded-t font-title-section text-title-section uppercase tracking-wider flex items-center justify-between">
+<span>EXTRAITS D'IMAGES</span>
+<span class="material-symbols-outlined text-base">photo_library</span>
+</div>
+<div class="bg-surface-container-lowest border border-surface-dim rounded-b overflow-hidden shadow-sm">
+<div class="relative h-56 overflow-hidden group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A dedicated Tunisian civil protection rescuer officer in dark tactical rescue uniform and orange high-visibility harness guiding a young student boy holding hydraulic rescue spreader shears during an educational community safety demonstration. In the background a red civil protection van stands on green grass under warm sunlight. Candid, heart-warming official community civil service photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbb-pPJyK4mjFvBY1c2bCp9nK0BkYR9XK4gUh_fF9zLiUnFY_jKuNquUUlUhTtUJsTQr3lbQNbaNPHKOev7dQn6pqu5q1ZJuLSpLaQD4FCszdkqg0WNSFr8KzzYh-vRYFSfXWwvmvt73ep8ntqxu7M0JwQ1J840IDi92I6a6vzxzpSsvMCIvOdvOFJGHj0QMOsIqcoqRd1MEt0X15Xl_8c_NfBw92-Ot2p4njSGDYR"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
+<h4 class="text-sm font-bold leading-tight">Sensibilisation citoyenne &amp; gestes qui sauvent</h4>
+<p class="text-xs text-slate-300">Exercice pratique d'initiation aux matériels de secours pour les jeunes élèves.</p>
+</div>
+</div>
+<div class="p-3 bg-surface-container-low flex justify-between items-center text-xs">
+<span class="text-secondary font-medium">Médiathèque de l'ONPC</span>
+<a class="font-bold text-primary hover:underline flex items-center gap-1" href="#">
+                Toutes les galeries <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+<!-- Block 2: Publications en Ligne (Administrative Dossiers List) -->
+<div class="space-y-3">
+<div class="bg-primary text-white px-3.5 py-1.5 rounded-t font-title-section text-title-section uppercase tracking-wider flex items-center justify-between">
+<span>PUBLICATIONS EN LIGNE</span>
+<span class="material-symbols-outlined text-base">description</span>
+</div>
+<div class="bg-surface-container-lowest border border-surface-dim rounded-b p-4 shadow-sm">
+<p class="text-xs text-secondary mb-3 font-medium">Téléchargez les guides et dossiers réglementaires :</p>
+<ul class="space-y-2.5 text-body-sm font-body-sm">
+<li class="flex items-start gap-2 group">
+<span class="text-primary font-bold text-lg leading-none">•</span>
+<a class="text-on-surface hover:text-primary hover:underline transition-colors leading-snug" href="#">
+                  Documents nécessaires à la constitution d'un dossier de demande de certificat de protection pour une <strong class="font-semibold text-primary">personne physique</strong>
+</a>
+</li>
+<li class="flex items-start gap-2 group">
+<span class="text-primary font-bold text-lg leading-none">•</span>
+<a class="text-on-surface hover:text-primary hover:underline transition-colors leading-snug" href="#">
+                  Documents nécessaires à la constitution d'un dossier de demande de certificat de protection pour une <strong class="font-semibold text-primary">personne morale</strong>
+</a>
+</li>
+<li class="flex items-start gap-2 group">
+<span class="text-primary font-bold text-lg leading-none">•</span>
+<a class="text-on-surface hover:text-primary hover:underline transition-colors leading-snug" href="#">
+                  Documents nécessaires à la constitution d'un dossier pour une <strong class="font-semibold">étude de projet</strong>
+</a>
+</li>
+<li class="flex items-start gap-2 group">
+<span class="text-primary font-bold text-lg leading-none">•</span>
+<a class="text-on-surface hover:text-primary hover:underline transition-colors leading-snug" href="#">
+                  Documents nécessaires à la constitution d'un dossier de demande de certificat de sauvetage et de secours
+                </a>
+</li>
+<li class="flex items-start gap-2 group">
+<span class="text-primary font-bold text-lg leading-none">•</span>
+<a class="text-on-surface hover:text-primary hover:underline transition-colors leading-snug" href="#">
+                  Documents nécessaires à la constitution d'un dossier de demande d'attestation de premiers secours pour le grand public
+                </a>
+</li>
+<li class="flex items-start gap-2 group">
+<span class="text-primary font-bold text-lg leading-none">•</span>
+<a class="text-on-surface hover:text-primary hover:underline transition-colors leading-snug" href="#">
+                  Documents nécessaires à la constitution d'un dossier de demande d'attestation de premiers secours pour les organisations
+                </a>
+</li>
+</ul>
+<div class="mt-4 pt-3 border-t border-surface-dim">
+<a class="text-xs font-bold text-primary hover:underline flex items-center justify-between" href="#">
+<span>Espace de téléchargement officiel</span>
+<span class="material-symbols-outlined text-sm">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+<!-- Block 3: Fast Newsletter Card (Matching Screenshot 1 & 2) -->
+<div class="space-y-3">
+<div class="bg-primary text-white px-3.5 py-1.5 rounded-t font-title-section text-title-section uppercase tracking-wider flex items-center justify-between">
+<span>NEWSLETTER</span>
+<span class="material-symbols-outlined text-base">mail</span>
+</div>
+<div class="bg-surface-container-lowest border border-surface-dim rounded-b p-4 shadow-sm text-center">
+<p class="text-body-sm font-body-sm text-secondary mb-3">
+              Inscrivez-vous à notre liste de diffusion pour recevoir les dernières actualités et alertes sanitaires !
+            </p>
+<form class="flex items-center gap-1">
+<input class="flex-1 h-10 px-3 text-body-sm bg-surface-container-low border border-surface-dim rounded text-on-surface focus:outline-none focus:border-primary" placeholder="E-mail" type="email"/>
+<button aria-label="S'inscrire" class="h-10 px-4 bg-inverse-surface hover:bg-primary text-white rounded flex items-center justify-center transition-colors" type="submit">
+<span class="material-symbols-outlined text-lg">send</span>
+</button>
+</form>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 4: STATISTIQUES OPÉRATIONNELLES (High-Authority Live Operations Matrix) -->
+<section class="bg-surface-container-low border border-surface-dim rounded p-6 shadow-sm">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-surface-dim pb-4 mb-6 gap-2">
+<div>
+<span class="text-label-caps font-label-caps text-primary uppercase tracking-wider">INDICATEURS D'ENGAGEMENT EN TEMPS RÉEL</span>
+<h2 class="text-headline-md font-headline-md text-on-surface">
+            Statistiques Nationales des Interventions
+          </h2>
+</div>
+<div class="flex items-center gap-2 text-xs font-medium text-secondary">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+<span>Données consolidées ONPC • Année 2026</span>
+</div>
+</div>
+<!-- 6-Metric Bento Grid (Accurately reflecting the numbers from screenshot 1) -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+<!-- Metric 1 -->
+<div class="bg-surface-container-lowest border border-surface-dim p-4 rounded text-center shadow-xs">
+<span class="text-xs font-bold text-secondary uppercase tracking-wider block mb-1">Aujourd'hui</span>
+<span class="text-headline-lg font-headline-lg text-primary block tracking-tight">1 605</span>
+<span class="text-[11px] text-slate-500">Missions traitées</span>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface-container-lowest border border-surface-dim p-4 rounded text-center shadow-xs">
+<span class="text-xs font-bold text-secondary uppercase tracking-wider block mb-1">Cette semaine</span>
+<span class="text-headline-lg font-headline-lg text-on-surface block tracking-tight">15 561</span>
+<span class="text-[11px] text-slate-500">Secours d'urgence</span>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface-container-lowest border border-surface-dim p-4 rounded text-center shadow-xs">
+<span class="text-xs font-bold text-secondary uppercase tracking-wider block mb-1">Semaine passée</span>
+<span class="text-headline-lg font-headline-lg text-on-surface block tracking-tight">32 818</span>
+<span class="text-[11px] text-slate-500">Interventions globales</span>
+</div>
+<!-- Metric 4 -->
+<div class="bg-surface-container-lowest border border-surface-dim p-4 rounded text-center shadow-xs">
+<span class="text-xs font-bold text-secondary uppercase tracking-wider block mb-1">Ce mois</span>
+<span class="text-headline-lg font-headline-lg text-on-surface block tracking-tight">114 279</span>
+<span class="text-[11px] text-slate-500">Tous gouvernorats</span>
+</div>
+<!-- Metric 5 -->
+<div class="bg-surface-container-lowest border border-surface-dim p-4 rounded text-center shadow-xs">
+<span class="text-xs font-bold text-secondary uppercase tracking-wider block mb-1">Cette année</span>
+<span class="text-headline-lg font-headline-lg text-primary block tracking-tight">549 708</span>
+<span class="text-[11px] text-slate-500">Engagements effectifs</span>
+</div>
+<!-- Metric 6: Total -->
+<div class="bg-surface-container-lowest border border-surface-dim p-4 rounded text-center shadow-xs">
+<span class="text-xs font-bold text-secondary uppercase tracking-wider block mb-1">Total global</span>
+<span class="text-headline-lg font-headline-lg text-on-surface block tracking-tight">557 791</span>
+<span class="text-[11px] text-slate-500">Actes de secours</span>
+</div>
+</div>
+</section>
+</main>
+<!-- OFFICIAL INSTITUTIONAL FOOTER (Dark Slate & Crimson, Exact to Screenshot 1 & Shared Component JSON) -->
+<footer class="w-full bg-[#13171F] text-slate-300 border-t-2 border-primary mt-space-xl">
+<div class="max-w-7xl mx-auto px-margin py-12">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 pb-10 border-b border-slate-800">
+<!-- Column 1: Office Info & Address & Newsletter (5 Columns) -->
+<div class="lg:col-span-5 space-y-4">
+<div class="border-b border-primary/60 pb-2">
+<h3 class="text-title-section font-title-section text-white uppercase tracking-wider">
+              OFFICE NATIONAL DE PROTECTION CIVILE
+            </h3>
+</div>
+<p class="text-body-sm font-body-sm text-slate-300">
+            Site officiel de l'Office National de la Protection Civile (République Tunisienne).
+          </p>
+<ul class="space-y-2.5 text-body-sm font-body-sm text-slate-300">
+<li class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary-container text-lg mt-0.5">home</span>
+<span>Avenue de la Bourse - les Berges du Lac 2, Tunis</span>
+</li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary-container text-lg">call</span>
+<span>+(216) 71.190.100</span>
+</li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary-container text-lg">mail</span>
+<a class="hover:text-white underline" href="mailto:info@onpc.nat.tn">info@onpc.nat.tn</a>
+</li>
+</ul>
+<!-- Footer Newsletter Box -->
+<div class="pt-4">
+<div class="border-b border-primary/40 pb-1 mb-3">
+<h4 class="text-xs font-bold text-white uppercase tracking-wider">NEWSLETTER</h4>
+</div>
+<p class="text-xs text-slate-400 mb-3">
+              Enregistrez votre adresse e-mail et recevez toutes les nouvelles et les alertes importantes instantanément.
+            </p>
+<form class="space-y-2">
+<input class="w-full h-10 px-3.5 bg-[#1F2633] border border-slate-700 rounded text-sm text-white placeholder-slate-400 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container" placeholder="E-mail" type="email"/>
+<button class="w-full py-2.5 bg-primary-container hover:bg-primary text-white text-xs font-bold uppercase tracking-wider rounded transition-colors" type="submit">
+                S'ABONNER
+              </button>
+</form>
+</div>
+</div>
+<!-- Column 2: Dashboard Statistics Matrix (3 Columns matching Screenshot 1) -->
+<div class="lg:col-span-3 space-y-4">
+<div class="border-b border-primary/60 pb-2">
+<h3 class="text-title-section font-title-section text-white uppercase tracking-wider text-center">
+              STATISTIQUES
+            </h3>
+</div>
+<div class="bg-[#1A222D] border border-slate-800 rounded divide-y divide-slate-800 text-center">
+<div class="grid grid-cols-2 divide-x divide-slate-800 p-2.5">
+<div>
+<span class="text-[11px] text-slate-400 block">Aujourd'hui</span>
+<span class="text-sm font-bold text-white">1605</span>
+</div>
+<div>
+<span class="text-[11px] text-slate-400 block">Cette semaine</span>
+<span class="text-sm font-bold text-white">15561</span>
+</div>
+</div>
+<div class="grid grid-cols-2 divide-x divide-slate-800 p-2.5">
+<div>
+<span class="text-[11px] text-slate-400 block">La semaine dernière</span>
+<span class="text-sm font-bold text-white">32818</span>
+</div>
+<div>
+<span class="text-[11px] text-slate-400 block">Ce mois</span>
+<span class="text-sm font-bold text-white">114279</span>
+</div>
+</div>
+<div class="grid grid-cols-2 divide-x divide-slate-800 p-2.5">
+<div>
+<span class="text-[11px] text-slate-400 block">Le mois dernier</span>
+<span class="text-sm font-bold text-white">109896</span>
+</div>
+<div>
+<span class="text-[11px] text-slate-400 block">Cette année</span>
+<span class="text-sm font-bold text-white">549708</span>
+</div>
+</div>
+<div class="grid grid-cols-2 divide-x divide-slate-800 p-2.5">
+<div>
+<span class="text-[11px] text-slate-400 block">L'année dernière</span>
+<span class="text-sm font-bold text-white">3758</span>
+</div>
+<div>
+<span class="text-[11px] text-slate-400 block font-bold text-primary-container">Total</span>
+<span class="text-sm font-bold text-primary-container">557791</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 3: Autres Sites & Liens Utiles (4 Columns matching Screenshot 1 & JSON) -->
+<div class="lg:col-span-4 space-y-4">
+<div class="border-b border-primary/60 pb-2">
+<h3 class="text-title-section font-title-section text-white uppercase tracking-wider">
+              AUTRES SITES
+            </h3>
+</div>
+<ul class="space-y-2.5 text-body-sm font-body-sm text-slate-300">
+<li>
+<a class="hover:text-primary-fixed hover:underline transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-xs text-primary-container">link</span>
+<span>Institut National de la Météorologie</span>
+</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed hover:underline transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-xs text-primary-container">link</span>
+<span>Organisation Internationale de Protection Civile</span>
+</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed hover:underline transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-xs text-primary-container">link</span>
+<span>Marchés Publics</span>
+</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed hover:underline transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-xs text-primary-container">link</span>
+<span>Portail du Gouvernement Tunisien</span>
+</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed hover:underline transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-xs text-primary-container">link</span>
+<span>Coopération Tunisienne Française</span>
+</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed hover:underline transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-xs text-primary-container">link</span>
+<span>Portail des Concours Publics</span>
+</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed hover:underline transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-xs text-primary-container">link</span>
+<span>Site des Consultations Nationales</span>
+</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed hover:underline transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-xs text-primary-container">link</span>
+<span>Mentions Légales</span>
+</a>
+</li>
+</ul>
+</div>
+</div>
+<!-- Footer Bottom Bar (Social, Copyright, Top Scroll) -->
+<div class="pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+<!-- Logo Stamp -->
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-white font-bold text-xs">
+            TN
+          </div>
+<div>
+<span class="block text-slate-200 font-bold" style="font-family: 'Amiri', serif;">الديوان الوطني للحماية المدنية</span>
+<span>Office National de la Protection Civile</span>
+</div>
+</div>
+<!-- Social Icons Centered -->
+<div class="flex items-center gap-3">
+<a aria-label="Facebook ONPC" class="w-8 h-8 rounded-full bg-[#1F2633] flex items-center justify-center text-slate-300 hover:text-white hover:bg-primary-container transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">public</span>
+</a>
+<a aria-label="YouTube ONPC" class="w-8 h-8 rounded-full bg-[#1F2633] flex items-center justify-center text-slate-300 hover:text-white hover:bg-primary-container transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">smart_display</span>
+</a>
+</div>
+<!-- Copyright Notice exactly as provided -->
+<div class="flex items-center gap-4">
+<p>© 2026 Office National de la Protection Civile (ONPC) - République Tunisienne. Tous droits réservés.</p>
+<!-- Back To Top Button matching red circular element in Screenshot 1 -->
+<a aria-label="Retour en haut de page" class="w-9 h-9 rounded-full bg-primary-container hover:bg-primary text-white flex items-center justify-center shadow transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">keyboard_arrow_up</span>
+</a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

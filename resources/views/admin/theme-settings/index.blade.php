@@ -54,8 +54,8 @@
                 </svg>
             </div>
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ __('admin.theme_settings') }}</h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __('admin.theme_settings_desc') }}</p>
+                <h1 class="text-2xl font-bold text-on-surface dark:text-gray-100">{{ __('admin.theme_settings') }}</h1>
+                <p class="text-sm text-secondary dark:text-gray-400 mt-1">{{ __('admin.theme_settings_desc') }}</p>
             </div>
         </div>
     </div>
@@ -70,7 +70,7 @@
                     @php($meta = $groupMeta[$group] ?? $groupMeta['components'])
 
                     <section class="admin-form-card">
-                        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
+                        <div class="px-6 py-4 border-b border-surface-dim dark:border-gray-700 bg-surface-container/50 dark:bg-gray-900/30">
                             <div class="flex items-center justify-between gap-3">
                                 <div class="flex items-center gap-3">
                                     <div class="p-2 rounded-lg {{ $meta['classes'] }}">
@@ -79,13 +79,13 @@
                                         </svg>
                                     </div>
                                     <div>
-                                        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ $meta['title'] }}</h2>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ $meta['description'] }}</p>
+                                        <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">{{ $meta['title'] }}</h2>
+                                        <p class="text-sm text-secondary dark:text-gray-400">{{ $meta['description'] }}</p>
                                     </div>
                                 </div>
 
                                 @if($group === 'colors')
-                                    <button type="button" id="reset-theme-colors" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gov-500/30 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                                    <button type="button" id="reset-theme-colors" class="inline-flex items-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-2 text-xs font-semibold text-on-surface transition hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-gov-500/30 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9M4.582 9H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>
@@ -98,21 +98,21 @@
                         <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                             @foreach($settings as $setting)
                                 <div>
-                                    <label for="{{ $setting->key }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                    <label for="{{ $setting->key }}" class="block text-sm font-medium text-on-surface dark:text-gray-300 mb-1.5">
                                         {{ $labelFor($setting) }}
                                     </label>
 
                                     @if($descriptionFor($setting))
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ $descriptionFor($setting) }}</p>
+                                        <p class="text-xs text-secondary dark:text-gray-400 mb-2">{{ $descriptionFor($setting) }}</p>
                                     @endif
 
                                     @if($setting->type === 'color')
                                         <div class="flex items-center gap-3">
-                                            <input type="color" id="{{ $setting->key }}" name="{{ $setting->key }}" value="{{ old($setting->key, $setting->value) }}" class="h-11 w-14 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 cursor-pointer">
-                                            <input type="text" value="{{ old($setting->key, $setting->value) }}" class="theme-color-text block w-full px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 focus:outline-none transition-all duration-200" data-color-target="{{ $setting->key }}" maxlength="7">
+                                            <input type="color" id="{{ $setting->key }}" name="{{ $setting->key }}" value="{{ old($setting->key, $setting->value) }}" class="h-11 w-14 rounded-lg border border-surface-dim dark:border-gray-600 bg-surface-container-lowest dark:bg-gray-900 cursor-pointer">
+                                            <input type="text" value="{{ old($setting->key, $setting->value) }}" class="theme-color-text block w-full px-4 py-2.5 text-sm text-on-surface dark:text-gray-100 bg-surface-container-lowest dark:bg-gray-900/50 border border-surface-dim dark:border-gray-600 rounded-xl shadow-sm focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 focus:outline-none transition-all duration-200" data-color-target="{{ $setting->key }}" maxlength="7">
                                         </div>
                                     @elseif($setting->type === 'select')
-                                        <select id="{{ $setting->key }}" name="{{ $setting->key }}" class="block w-full px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 focus:outline-none transition-all duration-200">
+                                        <select id="{{ $setting->key }}" name="{{ $setting->key }}" class="block w-full px-4 py-2.5 text-sm text-on-surface dark:text-gray-100 bg-surface-container-lowest dark:bg-gray-900/50 border border-surface-dim dark:border-gray-600 rounded-xl shadow-sm focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 focus:outline-none transition-all duration-200">
                                             @foreach(($setting->options ?? []) as $option)
                                                 <option value="{{ $option }}" {{ old($setting->key, $setting->value) === $option ? 'selected' : '' }}>
                                                     {{ $optionLabelFor($option) }}
@@ -121,8 +121,8 @@
                                         </select>
                                     @else
                                         <div class="flex items-center gap-3">
-                                            <input type="number" id="{{ $setting->key }}" name="{{ $setting->key }}" value="{{ old($setting->key, $setting->value) }}" min="10" max="28" class="block w-full px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 focus:outline-none transition-all duration-200">
-                                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">px</span>
+                                            <input type="number" id="{{ $setting->key }}" name="{{ $setting->key }}" value="{{ old($setting->key, $setting->value) }}" min="10" max="28" class="block w-full px-4 py-2.5 text-sm text-on-surface dark:text-gray-100 bg-surface-container-lowest dark:bg-gray-900/50 border border-surface-dim dark:border-gray-600 rounded-xl shadow-sm focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 focus:outline-none transition-all duration-200">
+                                            <span class="text-sm font-medium text-secondary dark:text-gray-400">px</span>
                                         </div>
                                     @endif
 
@@ -139,16 +139,16 @@
             <aside class="admin-form-card self-start xl:sticky xl:top-24">
                 <div class="p-6 space-y-5">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ __('admin.theme_preview') }}</p>
-                        <h2 class="mt-2 text-xl font-bold text-gray-900 dark:text-gray-100">{{ setting('app_name', __('app.name')) }}</h2>
-                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('admin.theme_preview_desc') }}</p>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-secondary dark:text-gray-400">{{ __('admin.theme_preview') }}</p>
+                        <h2 class="mt-2 text-xl font-bold text-on-surface dark:text-gray-100">{{ setting('app_name', __('app.name')) }}</h2>
+                        <p class="mt-2 text-sm text-secondary dark:text-gray-400">{{ __('admin.theme_preview_desc') }}</p>
                     </div>
 
-                    <div id="theme-preview" class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div id="theme-preview" class="rounded-xl border border-surface-dim dark:border-gray-700 overflow-hidden">
                         <div class="h-16 bg-gradient-to-r from-sidebar via-gov-600 to-accent-600"></div>
-                        <div class="p-4 bg-white dark:bg-gray-800">
+                        <div class="p-4 bg-surface-container-lowest dark:bg-gray-800">
                             <div class="h-2.5 w-24 rounded-full bg-gov-100 dark:bg-gov-900/40 mb-3"></div>
-                            <div class="h-2.5 w-36 rounded-full bg-gray-100 dark:bg-gray-700 mb-4"></div>
+                            <div class="h-2.5 w-36 rounded-full bg-surface-container dark:bg-gray-700 mb-4"></div>
                             <button type="button" class="admin-add-button px-4 py-2 text-sm">{{ __('admin.theme_preview_button') }}</button>
                         </div>
                     </div>

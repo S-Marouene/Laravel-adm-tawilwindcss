@@ -1,8 +1,8 @@
 @php
     $theme = \App\Models\ThemeSetting::getCssValues();
-    $fontFamily = $theme['font_family'] ?? 'Inter';
-    $baseFontSize = (int) ($theme['base_font_size'] ?? 16);
-    $radius = (int) ($theme['border_radius'] ?? 12);
+    $fontFamily = $theme['font_family'] ?? 'Public Sans';
+    $baseFontSize = (int) ($theme['base_font_size'] ?? 15);
+    $radius = (int) ($theme['border_radius'] ?? 4);
     $density = $theme['interface_density'] ?? 'comfortable';
     $buttonStyle = $theme['button_style'] ?? 'gradient';
     $cardShadow = $theme['card_shadow'] ?? 'soft';
@@ -27,13 +27,13 @@
     };
 
     $buttonBackground = match ($buttonStyle) {
-        'solid' => 'var(--color-gov-600)',
+        'solid' => 'var(--color-primary)',
         'outline' => 'transparent',
-        default => 'linear-gradient(135deg, var(--color-gov-600), var(--color-gov-700) 55%, color-mix(in srgb, var(--color-accent-600) 52%, black))',
+        default => 'linear-gradient(135deg, var(--color-primary), var(--color-primary-container))',
     };
 
-    $buttonColor = $buttonStyle === 'outline' ? 'var(--color-gov-700)' : 'white';
-    $buttonBorder = $buttonStyle === 'outline' ? '1px solid var(--color-gov-500)' : '1px solid transparent';
+    $buttonColor = $buttonStyle === 'outline' ? 'var(--color-primary)' : 'var(--color-on-primary)';
+    $buttonBorder = $buttonStyle === 'outline' ? '1px solid var(--color-primary)' : '1px solid transparent';
 @endphp
 
 <style>
@@ -47,21 +47,21 @@
         --app-primary-button-background: {{ $buttonBackground }};
         --app-primary-button-color: {{ $buttonColor }};
         --app-primary-button-border: {{ $buttonBorder }};
-        --color-gov-50: color-mix(in srgb, {{ $theme['primary_color'] ?? '#6B3FAF' }} 9%, white);
-        --color-gov-100: color-mix(in srgb, {{ $theme['primary_color'] ?? '#6B3FAF' }} 18%, white);
-        --color-gov-200: color-mix(in srgb, {{ $theme['primary_color'] ?? '#6B3FAF' }} 32%, white);
-        --color-gov-300: color-mix(in srgb, {{ $theme['primary_color'] ?? '#6B3FAF' }} 46%, white);
-        --color-gov-400: color-mix(in srgb, {{ $theme['primary_color'] ?? '#6B3FAF' }} 68%, white);
-        --color-gov-500: {{ $theme['primary_color'] ?? '#6B3FAF' }};
-        --color-gov-600: color-mix(in srgb, {{ $theme['primary_color'] ?? '#6B3FAF' }} 88%, black);
-        --color-gov-700: color-mix(in srgb, {{ $theme['primary_color'] ?? '#6B3FAF' }} 74%, black);
-        --color-gov-800: color-mix(in srgb, {{ $theme['primary_color'] ?? '#6B3FAF' }} 48%, black);
-        --color-gov-900: color-mix(in srgb, {{ $theme['primary_color'] ?? '#6B3FAF' }} 28%, black);
-        --color-accent-50: color-mix(in srgb, {{ $theme['accent_color'] ?? '#0891B2' }} 9%, white);
-        --color-accent-100: color-mix(in srgb, {{ $theme['accent_color'] ?? '#0891B2' }} 18%, white);
-        --color-accent-500: {{ $theme['accent_color'] ?? '#0891B2' }};
-        --color-accent-600: color-mix(in srgb, {{ $theme['accent_color'] ?? '#0891B2' }} 88%, black);
-        --color-sidebar: {{ $theme['sidebar_color'] ?? '#111C43' }};
-        --color-body: {{ $theme['page_background'] ?? '#F5F6FA' }};
+        --color-gov-50: color-mix(in srgb, {{ $theme['primary_color'] ?? '#9E001F' }} 8%, white);
+        --color-gov-100: color-mix(in srgb, {{ $theme['primary_color'] ?? '#9E001F' }} 16%, white);
+        --color-gov-200: color-mix(in srgb, {{ $theme['primary_color'] ?? '#9E001F' }} 30%, white);
+        --color-gov-300: color-mix(in srgb, {{ $theme['primary_color'] ?? '#9E001F' }} 45%, white);
+        --color-gov-400: color-mix(in srgb, {{ $theme['primary_color'] ?? '#9E001F' }} 66%, white);
+        --color-gov-500: {{ $theme['primary_color'] ?? '#9E001F' }};
+        --color-gov-600: color-mix(in srgb, {{ $theme['primary_color'] ?? '#9E001F' }} 88%, black);
+        --color-gov-700: color-mix(in srgb, {{ $theme['primary_color'] ?? '#9E001F' }} 74%, black);
+        --color-gov-800: color-mix(in srgb, {{ $theme['primary_color'] ?? '#9E001F' }} 48%, black);
+        --color-gov-900: color-mix(in srgb, {{ $theme['primary_color'] ?? '#9E001F' }} 28%, black);
+        --color-accent-50: color-mix(in srgb, {{ $theme['accent_color'] ?? '#9A5200' }} 8%, white);
+        --color-accent-100: color-mix(in srgb, {{ $theme['accent_color'] ?? '#9A5200' }} 16%, white);
+        --color-accent-500: {{ $theme['accent_color'] ?? '#9A5200' }};
+        --color-accent-600: color-mix(in srgb, {{ $theme['accent_color'] ?? '#9A5200' }} 88%, black);
+        --color-sidebar: {{ $theme['sidebar_color'] ?? '#283044' }};
+        --color-body: {{ $theme['page_background'] ?? '#FAF8FF' }};
     }
 </style>

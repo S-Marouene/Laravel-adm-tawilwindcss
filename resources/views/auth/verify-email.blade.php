@@ -32,7 +32,7 @@
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit"
-                    class="w-full px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-gov-500/40">
+                    class="w-full px-5 py-2.5 text-sm font-medium text-on-surface dark:text-gray-300 bg-surface-container-lowest dark:bg-gray-800 border border-surface-dim dark:border-gray-600 rounded-xl hover:bg-surface-container dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-gov-500/40">
                     <span class="inline-flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>

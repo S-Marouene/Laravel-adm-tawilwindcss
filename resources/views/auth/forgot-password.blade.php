@@ -13,7 +13,7 @@
         <div>
             <x-input-label for="email" :value="__('Email')" />
             <x-text-input id="email" type="email" name="email" :value="old('email')" required autofocus
-                leadingIcon='<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>'
+                leadingIcon='<svg class="w-5 h-5 text-outline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>'
                 placeholder="email@example.com" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
@@ -27,7 +27,7 @@
         </x-primary-button>
 
         <!-- Back to Login -->
-        <p class="text-center text-sm text-gray-500 dark:text-gray-400">
+        <p class="text-center text-sm text-secondary dark:text-gray-400">
             {{ __('Remember your password?') }}
             <a href="{{ route('login') }}" class="font-semibold text-gov-600 dark:text-gov-400 hover:text-gov-700 dark:hover:text-gov-300 transition-colors">
                 {{ __('Log in') }}

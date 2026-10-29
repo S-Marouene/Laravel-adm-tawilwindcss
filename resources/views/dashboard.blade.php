@@ -1,60 +1,100 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <div>
-                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">
-                    {{ __('prevention_request.dashboard_title') }}
+    {{-- ================================================================
+         ESPACE CITOYEN — Tableau de bord (design/demades.html)
+         ================================================================ --}}
+    {{-- Pas de slot "header" : le bloc héro ci-dessous sert d'en-tête de page --}}
+    <div class="py-8 sm:py-10">
+        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-6">
+
+            {{-- Bloc de bienvenue façon design/demades.html --}}
+            <section class="relative overflow-hidden rounded border border-surface-dim bg-surface-container-lowest shadow-sm">
+                <div class="absolute top-0 left-0 right-0 h-1.5 bg-primary-container" aria-hidden="true"></div>
+                <div class="p-6 md:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                    <div class="space-y-2 max-w-2xl">
+                        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-secondary-container text-on-secondary-fixed text-label-caps font-label-caps uppercase">
+                            <span class="material-symbols-outlined text-[14px]" aria-hidden="true">verified_user</span>
+                            <span>{{ app()->getLocale() === 'ar' ? 'البوابة الرسمية المؤمّنة — وكالة الحماية المدنية' : "PORTAIL OFFICIEL SÉCURISÉ — GUICHET UNIQUE ONPC" }}</span>
+                        </div>
+                        <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+                            {{ __('prevention_request.dashboard_title') }}
+                        </h1>
+                        <p class="text-body-md leading-relaxed text-secondary">
+                            {{ __('prevention_request.dashboard_subtitle') }}
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            {{-- Services disponibles --}}
+            <section aria-label="{{ __('nav.services') }}">
+                <h2 class="text-title-section text-secondary uppercase tracking-wider mb-4">
+                    {{ app()->getLocale() === 'ar' ? 'الخدمات المتاحة' : 'Services disponibles' }}
                 </h2>
-                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('prevention_request.dashboard_subtitle') }}</p>
-            </div>
-        </div>
-    </x-slot>
 
-    <div class="py-8 sm:py-12">
-        <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <div class="grid gap-5 sm:grid-cols-2">
-                {{-- Service 1: Prevention certificate --}}
-                <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
-                    <div class="px-6 py-8 sm:px-8 sm:py-8">
-                        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gov-50 text-gov-700 dark:bg-gov-900/30 dark:text-gov-300">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
-                            </svg>
+                <div class="grid gap-5 sm:grid-cols-2">
+                    {{-- Service 1 : Certificat de prévention --}}
+                    <article class="group relative overflow-hidden rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition-all duration-300 hover:border-primary-container/40 hover:shadow-md">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-primary-container" aria-hidden="true"></div>
+                        <div class="p-6 sm:p-7">
+                            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <span class="material-symbols-outlined filled text-2xl" aria-hidden="true">verified_user</span>
+                            </div>
+                            <h3 class="text-headline-sm font-headline-sm text-on-surface">{{ __('services.prevention_certificate') }}</h3>
+                            <p class="mt-2 text-body-sm leading-relaxed text-secondary">
+                                {{ __('services.prevention_certificate.desc') }}
+                            </p>
+                            <a href="{{ route('prevention-requests.index') }}" class="ui-btn-primary mt-5 inline-flex w-full items-center justify-center gap-2 px-5 py-3 text-body-sm">
+                                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">description</span>
+                                <span>{{ __('prevention_request.list_requests') }}</span>
+                            </a>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ __('services.prevention_certificate') }}</h3>
-                        <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
-                            {{ __('services.prevention_certificate.desc') }}
-                        </p>
-                        <a href="{{ route('prevention-requests.index') }}" class="ui-btn-primary mt-5 inline-flex w-full items-center justify-center gap-2 px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h6m-6 4h6m-7 4h8m-9 8h10a2 2 0 002-2V7.414a1 1 0 00-.293-.707l-3.414-3.414A1 1 0 0014.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                            </svg>
-                            <span>{{ __('prevention_request.list_requests') }}</span>
-                        </a>
-                    </div>
-                </div>
+                    </article>
 
-                {{-- Service 2: Preventive presence --}}
-                <div class="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md dark:border-emerald-800/50 dark:bg-gray-800">
-                    <div class="px-6 py-8 sm:px-8 sm:py-8">
-                        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
+                    {{-- Service 2 : escorte / présence préventive --}}
+                    <article class="group relative overflow-hidden rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition-all duration-300 hover:border-primary-container/40 hover:shadow-md">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-primary-container" aria-hidden="true"></div>
+                        <div class="p-6 sm:p-7">
+                            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-secondary-container text-on-secondary-fixed">
+                                <span class="material-symbols-outlined filled text-2xl" aria-hidden="true">group</span>
+                            </div>
+                            <h3 class="text-headline-sm font-headline-sm text-on-surface">{{ __('services.preventive_presence') }}</h3>
+                            <p class="mt-2 text-body-sm leading-relaxed text-secondary">
+                                {{ __('services.preventive_presence.desc') }}
+                            </p>
+                            <a href="{{ route('preventive-presence.index') }}" class="ui-btn-primary mt-5 inline-flex w-full items-center justify-center gap-2 px-5 py-3 text-body-sm">
+                                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">description</span>
+                                <span>{{ __('preventive_presence.my_requests') }}</span>
+                            </a>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ __('services.preventive_presence') }}</h3>
-                        <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
-                            {{ __('services.preventive_presence.desc') }}
-                        </p>
-                        <a href="{{ route('preventive-presence.index') }}" class="ui-btn-primary mt-5 inline-flex w-full items-center justify-center gap-2 px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h6m-6 4h6m-7 4h8m-9 8h10a2 2 0 002-2V7.414a1 1 0 00-.293-.707l-3.414-3.414A1 1 0 0014.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                            </svg>
-                            <span>{{ __('preventive_presence.my_requests') }}</span>
-                        </a>
-                    </div>
+                    </article>
                 </div>
-            </div>
+            </section>
+
+            {{-- Accès rapide citoyen --}}
+            <section aria-label="{{ app()->getLocale() === 'ar' ? 'روابط مهنية' : 'Accès rapides' }}"
+                     class="grid gap-4 sm:grid-cols-3">
+                <a href="{{ route('mes-demandes') }}" class="flex items-center justify-between gap-3 rounded border border-surface-dim bg-surface-container-low p-4 shadow-sm transition-colors hover:border-primary-container/40 hover:bg-surface-container">
+                    <span class="text-label-caps font-label-caps uppercase tracking-wider text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-primary" aria-hidden="true">folder_shared</span>
+                        {{ __('nav.my_requests') }}
+                    </span>
+                    <span class="material-symbols-outlined text-[18px] rtl:rotate-180 text-secondary" aria-hidden="true">chevron_right</span>
+                </a>
+                <div class="flex items-center justify-between gap-3 rounded border border-surface-dim bg-surface-container-low p-4 shadow-sm" title="{{ app()->getLocale() === 'ar' ? 'قريبًا' : 'Bientôt disponible' }}">
+                    <span class="text-label-caps font-label-caps uppercase tracking-wider text-secondary flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-outline" aria-hidden="true">workspace_premium</span>
+                        {{ app()->getLocale() === 'ar' ? 'شهادات الإسعاف' : 'Mes attestations de secourisme' }}
+                    </span>
+                    <span class="material-symbols-outlined text-[16px] text-outline" aria-hidden="true">schedule</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 rounded border border-surface-dim bg-surface-container-low p-4 shadow-sm" title="{{ app()->getLocale() === 'ar' ? 'قريبًا' : 'Bientôt disponible' }}">
+                    <span class="text-label-caps font-label-caps uppercase tracking-wider text-secondary flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-outline" aria-hidden="true">event_available</span>
+                        {{ app()->getLocale() === 'ar' ? 'حجز موعد' : 'Rendez-vous en salle des opérations' }}
+                    </span>
+                    <span class="material-symbols-outlined text-[16px] text-outline" aria-hidden="true">schedule</span>
+                </div>
+            </section>
         </div>
     </div>
 </x-app-layout>

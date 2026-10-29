@@ -4,8 +4,8 @@
 
 @section('content')
     <div class="mb-6">
-        <a href="{{ route('admin.roles.index') }}" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">&larr; Back to Roles</a>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">Create Role</h1>
+        <a href="{{ route('admin.roles.index') }}" class="text-sm text-secondary hover:text-on-surface dark:text-gray-400 dark:hover:text-gray-200">&larr; Back to Roles</a>
+        <h1 class="text-2xl font-bold text-on-surface dark:text-gray-100 mt-2">Create Role</h1>
     </div>
 
     <div class="max-w-2xl">
@@ -13,9 +13,9 @@
             @csrf
 
             <div>
-                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role Name</label>
+                <label for="name" class="block text-sm font-medium text-on-surface dark:text-gray-300 mb-1">Role Name</label>
                 <input type="text" name="name" id="name" value="{{ old('name') }}" required
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-gray-100 text-sm @error('name') border-red-500 @enderror"
+                    class="w-full px-3 py-2 border border-surface-dim dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-gray-100 text-sm @error('name') border-red-500 @enderror"
                     placeholder="e.g., editor, moderator">
                 @error('name')
                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -23,15 +23,15 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Permissions</label>
+                <label class="block text-sm font-medium text-on-surface dark:text-gray-300 mb-3">Permissions</label>
                 @foreach($permissions as $group => $groupPermissions)
                     <div class="mb-4">
-                        <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">{{ $group }}</h4>
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-secondary dark:text-gray-400 mb-2">{{ $group }}</h4>
                         <div class="grid grid-cols-2 gap-2">
                             @foreach($groupPermissions as $permission)
                                 <label class="inline-flex items-center p-2 rounded-lg hover:bg-sand-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" class="rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500">
-                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ $permission->name }}</span>
+                                    <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" class="rounded border-surface-dim text-purple-600 shadow-sm focus:ring-purple-500">
+                                    <span class="ml-2 text-sm text-on-surface dark:text-gray-300">{{ $permission->name }}</span>
                                 </label>
                             @endforeach
                         </div>
@@ -40,7 +40,7 @@
             </div>
 
             <div class="flex items-center justify-end space-x-3">
-                <a href="{{ route('admin.roles.index') }}" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-500">Cancel</a>
+                <a href="{{ route('admin.roles.index') }}" class="px-4 py-2 text-sm font-medium text-on-surface dark:text-gray-300 hover:text-secondary">Cancel</a>
                 <button type="submit" class="admin-add-button px-4 py-2 text-sm">Create Role</button>
             </div>
         </form>

@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Espace Citoyen — Mes Demandes | Office National de la Protection Civile</title>
+<!-- Material Symbols Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Public Sans Typography -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config verbatim matching Design Tokens -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary-fixed": "#2f1500",
+            "surface-dim": "#d2d9f4",
+            "surface-variant": "#dae2fd",
+            "surface": "#faf8ff",
+            "surface-container-high": "#e2e7ff",
+            "on-primary": "#ffffff",
+            "on-secondary": "#ffffff",
+            "inverse-primary": "#ffb3b1",
+            "on-primary-container": "#ffdad8",
+            "secondary-container": "#dbe3f1",
+            "tertiary": "#773e00",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-fixed": "#141c26",
+            "on-error": "#ffffff",
+            "primary-container": "#c8102e",
+            "on-primary-fixed": "#410007",
+            "outline": "#906f6e",
+            "tertiary-container": "#9a5200",
+            "error": "#ba1a1a",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "on-secondary-fixed-variant": "#3f4752",
+            "background": "#faf8ff",
+            "surface-tint": "#bf0229",
+            "tertiary-fixed-dim": "#ffb77d",
+            "surface-container-highest": "#dae2fd",
+            "surface-bright": "#faf8ff",
+            "on-tertiary": "#ffffff",
+            "secondary": "#575f6b",
+            "tertiary-fixed": "#ffdcc3",
+            "on-secondary-container": "#5d6571",
+            "on-background": "#131b2e",
+            "inverse-surface": "#283044",
+            "primary-fixed": "#ffdad8",
+            "on-primary-fixed-variant": "#92001c",
+            "on-surface-variant": "#5c403f",
+            "secondary-fixed-dim": "#bfc7d5",
+            "inverse-on-surface": "#eef0ff",
+            "on-surface": "#131b2e",
+            "error-container": "#ffdad6",
+            "primary": "#9e001f",
+            "on-tertiary-container": "#ffdcc3",
+            "primary-fixed-dim": "#ffb3b1",
+            "secondary-fixed": "#dbe3f1",
+            "surface-container-low": "#f2f3ff",
+            "outline-variant": "#e5bdbb",
+            "on-error-container": "#93000a",
+            "surface-container": "#eaedff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "margin": "2rem",
+            "margin-mobile": "1rem",
+            "space-xl": "2.5rem",
+            "gutter-mobile": "0.75rem",
+            "space-lg": "1.5rem",
+            "space-md": "1rem",
+            "space-xs": "0.25rem",
+            "gutter": "1.5rem",
+            "space-sm": "0.5rem"
+          },
+          "fontFamily": {
+            "emergency-hotline": ["Public Sans"],
+            "body-md": ["Public Sans"],
+            "display-hero-mobile": ["Public Sans"],
+            "headline-lg": ["Public Sans"],
+            "body-sm": ["Public Sans"],
+            "headline-md": ["Public Sans"],
+            "body-lg": ["Public Sans"],
+            "display-hero": ["Public Sans"],
+            "headline-lg-mobile": ["Public Sans"],
+            "label-caps": ["Public Sans"],
+            "title-section": ["Public Sans"],
+            "headline-sm": ["Public Sans"]
+          },
+          "fontSize": {
+            "emergency-hotline": ["28px", { "lineHeight": "28px", "letterSpacing": "0.02em", "fontWeight": "900" }],
+            "body-md": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "display-hero-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "800" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "display-hero": ["44px", { "lineHeight": "52px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+            "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "0em", "fontWeight": "700" }],
+            "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "700" }],
+            "title-section": ["15px", { "lineHeight": "20px", "letterSpacing": "0.08em", "fontWeight": "800" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "700" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
+    @keyframes pulse-gentle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.92; transform: scale(1.02); }
+    }
+    .emergency-pulse {
+      animation: pulse-gentle 2.2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md text-body-md antialiased min-h-screen flex flex-col selection:bg-primary selection:text-on-primary">
+<!-- ================= TOP UTILITY & LANGUAGE BAR ================= -->
+<header class="bg-primary text-on-primary w-full border-b border-primary">
+<div class="max-w-7xl mx-auto px-margin py-1.5 flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex items-center space-x-4">
+<span class="flex items-center gap-1.5 opacity-90">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+<span>jeudi, 29 octobre 2026</span>
+</span>
+<span class="hidden sm:inline-block opacity-40">|</span>
+<span class="hidden sm:inline-block opacity-90 text-[12px] tracking-wide">
+          République Tunisienne — Ministère de l'Intérieur
+        </span>
+</div>
+<div class="flex items-center space-x-5">
+<!-- Language selector FR / AR -->
+<button class="flex items-center gap-1 hover:underline text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[16px]">language</span>
+<span class="font-bold">Français</span>
+<span class="text-xs opacity-75">/ العربية</span>
+</button>
+<span class="opacity-40">|</span>
+<!-- User profile indicator -->
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+            M
+          </div>
+<span class="font-bold hidden md:inline">Mohamed Ben Salem</span>
+<span class="bg-white/20 text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Citoyen</span>
+</div>
+</div>
+</div>
+</header>
+<!-- ================= INSTITUTIONAL BRAND HEADER ================= -->
+<div class="bg-surface-container-lowest border-b border-surface-dim">
+<div class="max-w-7xl mx-auto px-margin py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+<!-- Brand & Emblems -->
+<div class="flex items-center gap-4">
+<!-- Tunisian Republic Emblem & Civil Protection Shield -->
+<div class="flex items-center gap-3">
+<div class="w-14 h-14 rounded-full bg-surface-container-low border border-surface-dim flex items-center justify-center p-1 shadow-sm">
+<!-- Tunisian Crest Stylized -->
+<svg class="w-10 h-10 text-primary-container" fill="currentColor" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="#C8102E" r="46"></circle>
+<circle cx="50" cy="50" fill="#FFFFFF" r="28"></circle>
+<path d="M52 28 A 20 20 0 1 0 52 72 A 16 16 0 1 1 52 34 Z" fill="#C8102E"></path>
+<polygon fill="#C8102E" points="56,43 59,51 68,51 61,56 63,65 56,60 49,65 51,56 44,51 53,51"></polygon>
+</svg>
+</div>
+<div>
+<div class="text-xl md:text-2xl font-black text-on-surface tracking-normal font-headline-md leading-tight text-right md:text-left" dir="rtl">
+              الديوان الوطني للحماية المدنية
+            </div>
+<div class="text-xs md:text-sm font-bold tracking-tight text-primary uppercase font-title-section">
+              Office National de la Protection Civile
+            </div>
+</div>
+</div>
+</div>
+<!-- Actions & 198 Emergency Hotline -->
+<div class="flex items-center gap-4">
+<!-- 198 Dialer Pill Component -->
+<a class="emergency-pulse bg-primary-container hover:bg-primary text-on-primary px-4 py-2 rounded-lg flex items-center gap-3 shadow-md transition-colors" href="tel:198">
+<div class="w-9 h-9 rounded-full bg-white text-primary-container flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">emergency</span>
+</div>
+<div>
+<div class="text-[10px] uppercase font-bold tracking-wider opacity-90 leading-tight">Numéro d'Urgence</div>
+<div class="font-emergency-hotline text-emergency-hotline leading-none">198</div>
+</div>
+</a>
+<!-- Search shortcut -->
+<div class="hidden lg:flex items-center relative">
+<input class="h-10 pl-3 pr-9 border border-surface-dim rounded-lg text-body-sm focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container w-56" placeholder="Rechercher démarche, texte loi..." type="text"/>
+<button class="absolute right-2 text-secondary hover:text-primary">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- ================= TOP NAV BAR (Shared Components Integration) ================= -->
+<nav class="bg-surface-container-lowest border-b border-surface-dim sticky top-0 z-40">
+<div class="w-full max-w-7xl mx-auto px-margin flex items-center justify-between">
+<div class="flex items-center space-x-1 sm:space-x-4 md:space-x-8 overflow-x-auto py-2">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 py-2 text-body-md font-body-md whitespace-nowrap" href="#">
+          Accueil
+        </a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 py-2 text-body-md font-body-md whitespace-nowrap" href="#">
+          À Propos
+        </a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 py-2 text-body-md font-body-md whitespace-nowrap" href="#">
+          Services à distance
+        </a>
+<!-- ACTIVE STATE ITEM: Mes Demandes (Aligned with page intent) -->
+<a class="border-b-2 border-primary text-primary font-bold pb-1 text-body-md font-body-md whitespace-nowrap flex items-center gap-1.5" href="#">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">folder_shared</span>
+<span>Mes Demandes</span>
+</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 py-2 text-body-md font-body-md whitespace-nowrap" href="#">
+          Interventions
+        </a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 py-2 text-body-md font-body-md whitespace-nowrap" href="#">
+          Activités &amp; Actualités
+        </a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 py-2 text-body-md font-body-md whitespace-nowrap" href="#">
+          Statistiques
+        </a>
+</div>
+<div class="hidden sm:flex items-center gap-2">
+<a class="text-xs font-bold uppercase tracking-wider text-secondary hover:text-primary flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">account_circle</span>
+<span>Mon Compte</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- ================= BREADCRUMB & CONTEXT ================= -->
+<div class="bg-surface-container-low border-b border-surface-dim py-2.5">
+<div class="max-w-7xl mx-auto px-margin flex items-center justify-between text-body-sm font-body-sm">
+<nav class="flex items-center space-x-2 text-secondary">
+<a class="hover:text-primary flex items-center" href="#"><span class="material-symbols-outlined text-[16px]">home</span></a>
+<span>/</span>
+<a class="hover:text-primary" href="#">Services en ligne</a>
+<span>/</span>
+<span class="text-on-surface font-semibold">Espace Citoyen : Mes Demandes</span>
+</nav>
+<div class="hidden md:flex items-center gap-2 text-secondary">
+<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+<span class="text-xs">Identifiant National Unique : <strong class="text-on-surface">CIN ****8492</strong></span>
+</div>
+</div>
+</div>
+<!-- ================= MAIN CONTENT CANVAS ================= -->
+<main class="flex-grow max-w-7xl mx-auto px-margin py-8 w-full space-y-8">
+<!-- WELCOME HERO BANNER (Espace Citoyen) -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-6 md:p-8 relative overflow-hidden shadow-sm">
+<!-- Decorative Sovereign Red Ribbon / Accent line -->
+<div class="absolute top-0 left-0 right-0 h-1.5 bg-primary-container"></div>
+<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+<div class="space-y-2 max-w-2xl">
+<div class="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-secondary-container text-on-secondary-fixed text-label-caps font-label-caps">
+<span class="material-symbols-outlined text-[14px]">verified_user</span>
+<span>PORTAIL OFFICIEL SÉCURISÉ — GUICHET UNIQUE ONPC</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+            Espace Citoyen — Suivi de mes Démarches &amp; Dossiers
+          </h1>
+<p class="font-body-md text-body-md text-secondary leading-relaxed">
+            Consultez l'avancement en temps réel de vos demandes d'attestations d'intervention, certificats de conformité incendie (ERP) et inscriptions aux sessions nationales de secourisme civique.
+          </p>
+</div>
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+<button class="bg-primary-container hover:bg-primary text-on-primary font-bold uppercase tracking-wider text-xs px-5 py-3 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>Nouvelle Demande de Service</span>
+</button>
+<button class="bg-surface-container hover:bg-surface-dim text-on-surface font-semibold text-xs px-4 py-3 rounded-lg border border-surface-dim flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[18px]">help_center</span>
+<span>Guide des pièces</span>
+</button>
+</div>
+</div>
+<!-- KEY PERFORMANCE INDICATORS (SUMMARY KPI CARDS) -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-surface-dim">
+<div class="bg-surface-container-low p-4 rounded-lg border border-surface-dim flex items-center justify-between">
+<div>
+<div class="text-xs uppercase font-bold text-secondary font-label-caps tracking-wider">Total Demandes</div>
+<div class="text-3xl font-black text-on-surface mt-1">4</div>
+<div class="text-[11px] text-secondary mt-0.5">Dossiers déposés</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">folder_open</span>
+</div>
+</div>
+<div class="bg-amber-50 p-4 rounded-lg border border-amber-200 flex items-center justify-between">
+<div>
+<div class="text-xs uppercase font-bold text-amber-900 font-label-caps tracking-wider">En cours d'instruction</div>
+<div class="text-3xl font-black text-amber-900 mt-1">2</div>
+<div class="text-[11px] text-amber-700 mt-0.5">Visite &amp; analyse technique</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-800">
+<span class="material-symbols-outlined text-[20px]">pending_actions</span>
+</div>
+</div>
+<div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200 flex items-center justify-between">
+<div>
+<div class="text-xs uppercase font-bold text-emerald-900 font-label-caps tracking-wider">Validées &amp; Prêtes</div>
+<div class="text-3xl font-black text-emerald-900 mt-1">1</div>
+<div class="text-[11px] text-emerald-700 mt-0.5">Attestation disponible</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+</div>
+</div>
+<div class="bg-rose-50 p-4 rounded-lg border border-rose-200 flex items-center justify-between">
+<div>
+<div class="text-xs uppercase font-bold text-rose-900 font-label-caps tracking-wider">Complément Requis</div>
+<div class="text-3xl font-black text-rose-900 mt-1">1</div>
+<div class="text-[11px] text-rose-700 mt-0.5">Pièce justificative exigée</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-800">
+<span class="material-symbols-outlined text-[20px]">notification_important</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ================= FILTER & SEARCH BAR ================= -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-surface-dim shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+<!-- Search Input -->
+<div class="relative flex-1">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-secondary">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</span>
+<input class="w-full pl-9 pr-4 py-2 border border-surface-dim rounded-lg text-body-sm focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container" placeholder="Rechercher par référence (ex: PC-TN-2026...), établissement ou ville..." type="text"/>
+</div>
+<!-- Filters Group -->
+<div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
+<!-- Status Filter -->
+<div class="flex items-center gap-1.5 w-full sm:w-auto">
+<span class="text-xs font-semibold text-secondary whitespace-nowrap">Statut :</span>
+<select class="w-full sm:w-auto text-body-sm font-body-sm border border-surface-dim rounded-lg py-2 px-3 bg-surface-container-lowest focus:outline-none focus:border-primary-container">
+<option value="all">Tous les statuts</option>
+<option selected="" value="pending">En cours d'instruction (2)</option>
+<option value="completed">Validées &amp; Disponibles (1)</option>
+<option value="action">Complément requis (1)</option>
+<option value="archived">Archivées (1)</option>
+</select>
+</div>
+<!-- Procedure Type Filter -->
+<div class="flex items-center gap-1.5 w-full sm:w-auto">
+<span class="text-xs font-semibold text-secondary whitespace-nowrap">Type :</span>
+<select class="w-full sm:w-auto text-body-sm font-body-sm border border-surface-dim rounded-lg py-2 px-3 bg-surface-container-lowest focus:outline-none focus:border-primary-container">
+<option value="all">Toutes les démarches</option>
+<option value="certif">Certificat de Prévention ERP</option>
+<option value="attest">Attestation d'Intervention</option>
+<option value="homolog">Homologation de plan</option>
+<option value="formation">Formation Premiers Secours</option>
+</select>
+</div>
+<!-- Refresh / Reset -->
+<button class="p-2 border border-surface-dim rounded-lg text-secondary hover:text-primary hover:bg-surface-container" title="Réinitialiser">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+</button>
+</div>
+</div>
+<!-- ================= DOSSIERS & DEMANDES LIST ================= -->
+<div class="space-y-6">
+<!-- DEMANDE 1: Active / Visite technique programmée -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-5 md:p-6 shadow-sm hover:border-primary-container/40 transition-all">
+<div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-surface-dim gap-4">
+<div class="flex items-start md:items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed/30 border border-outline-variant flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">fire_extinguisher</span>
+</div>
+<div>
+<div class="flex items-center gap-2 flex-wrap">
+<span class="text-xs font-bold text-primary font-mono tracking-wide">Réf. PC-TN-2026-04128</span>
+<span class="bg-amber-100 text-amber-900 border border-amber-300 text-label-caps font-label-caps px-2 py-0.5 rounded">
+                  Visite technique programmée
+                </span>
+<span class="text-xs text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                  Déposé le 14 Octobre 2026
+                </span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mt-1">
+                Certificat de Prévention &amp; Conformité Sécurité Incendie
+              </h2>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end md:self-auto">
+<button class="text-xs font-bold text-primary hover:text-primary-container flex items-center gap-1 px-3 py-1.5 rounded border border-surface-dim hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[16px]">receipt_long</span>
+<span>Récépissé de dépôt</span>
+</button>
+<button class="bg-surface-container hover:bg-surface-dim text-on-surface text-xs font-bold px-3 py-1.5 rounded border border-surface-dim flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+<span>Détails</span>
+</button>
+</div>
+</div>
+<!-- Dossier Details Sub-grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 py-4 text-body-sm font-body-sm border-b border-surface-dim">
+<div>
+<span class="text-xs text-secondary block font-semibold">Établissement / Objet</span>
+<span class="font-bold text-on-surface">Café-Restaurant « Le Phare »</span>
+</div>
+<div>
+<span class="text-xs text-secondary block font-semibold">Localisation &amp; Direction régionale</span>
+<span class="text-on-surface">Avenue Habib Bourguiba, Sousse Ville</span>
+</div>
+<div>
+<span class="text-xs text-secondary block font-semibold">Commission d'inspection</span>
+<span class="text-on-surface">Direction Régionale de la Protection Civile de Sousse</span>
+</div>
+</div>
+<!-- PROGRESS STEPPER (Workflow 4 steps) -->
+<div class="pt-5">
+<div class="text-xs font-bold text-secondary uppercase font-label-caps tracking-wider mb-3 flex items-center justify-between">
+<span>Étape du traitement</span>
+<span class="text-amber-800 font-bold">Étape 3 sur 4 — Date visite : 03 Novembre 2026 (10h00)</span>
+</div>
+<!-- Responsive Stepper Bar -->
+<div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+<!-- Step 1 -->
+<div class="bg-emerald-50 border border-emerald-200 rounded p-2.5 flex items-center gap-2">
+<span class="material-symbols-outlined text-emerald-700 text-[18px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="leading-tight">
+<div class="text-[11px] font-bold text-emerald-900">1. Dépôt &amp; Recevabilité</div>
+<div class="text-[10px] text-emerald-700">Dossier conforme</div>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="bg-emerald-50 border border-emerald-200 rounded p-2.5 flex items-center gap-2">
+<span class="material-symbols-outlined text-emerald-700 text-[18px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="leading-tight">
+<div class="text-[11px] font-bold text-emerald-900">2. Étude technique</div>
+<div class="text-[10px] text-emerald-700">Plans validés</div>
+</div>
+</div>
+<!-- Step 3 (Current) -->
+<div class="bg-amber-100/70 border-2 border-amber-500 rounded p-2.5 flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-amber-900 text-[18px]">calendar_clock</span>
+<div class="leading-tight">
+<div class="text-[11px] font-bold text-amber-950">3. Inspection sur site</div>
+<div class="text-[10px] text-amber-800 font-bold">Prévue : 03 Nov 2026</div>
+</div>
+</div>
+<!-- Step 4 -->
+<div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-center gap-2 opacity-60">
+<span class="material-symbols-outlined text-secondary text-[18px]">radio_button_unchecked</span>
+<div class="leading-tight">
+<div class="text-[11px] font-bold text-secondary">4. Délivrance Certificat</div>
+<div class="text-[10px] text-secondary">En attente de visite</div>
+</div>
+</div>
+</div>
+<div class="mt-4 flex flex-wrap items-center justify-between text-xs text-secondary gap-2 bg-surface-container-low p-3 rounded-lg border border-surface-dim">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-amber-700">info</span>
+<span><strong>Recommandation :</strong> Veuillez vous assurer de la présence du responsable de sécurité et de la mise à disposition des extincteurs et registres le jour de la visite.</span>
+</div>
+<a class="text-primary font-bold hover:underline" href="#">Modifier les coordonnées de contact →</a>
+</div>
+</div>
+</div>
+<!-- DEMANDE 2: Validée / Prête au téléchargement avec Cachet QR Code -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-5 md:p-6 shadow-sm hover:border-emerald-600/40 transition-all relative overflow-hidden">
+<!-- Success Accent line -->
+<div class="absolute top-0 left-0 bottom-0 w-1.5 bg-emerald-600"></div>
+<div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-surface-dim gap-4 pl-2">
+<div class="flex items-start md:items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-800">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<div>
+<div class="flex items-center gap-2 flex-wrap">
+<span class="text-xs font-bold text-emerald-900 font-mono tracking-wide">Réf. PC-TN-2026-03915</span>
+<span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-label-caps font-label-caps px-2 py-0.5 rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                  Validé &amp; Signé électroniquement
+                </span>
+<span class="text-xs text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                  Déposé le 01 Octobre 2026
+                </span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mt-1">
+                Attestation d'Intervention &amp; Constat de Sauvetage
+              </h2>
+</div>
+</div>
+<!-- High Priority Action -->
+<div class="flex items-center gap-2 self-start md:self-auto pl-2 md:pl-0">
+<button class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Télécharger l'Attestation Officielle (PDF)</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 py-4 text-body-sm font-body-sm pl-2">
+<div>
+<span class="text-xs text-secondary block font-semibold">Nature du Sinistre</span>
+<span class="font-bold text-on-surface">Dégât des eaux &amp; Inondation fluviale</span>
+</div>
+<div>
+<span class="text-xs text-secondary block font-semibold">Date &amp; Lieu de l'intervention</span>
+<span class="text-on-surface">28 Septembre 2026 — Nabeul Centre</span>
+</div>
+<div>
+<span class="text-xs text-secondary block font-semibold">Sécurité du document</span>
+<span class="text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-emerald-700">qr_code_2</span>
+<span>Cachet électronique officiel (QR Code vérifiable)</span>
+</span>
+</div>
+</div>
+<div class="bg-emerald-50/60 border border-emerald-200 rounded-lg p-3 ml-2 flex items-center justify-between flex-wrap gap-2 text-xs">
+<div class="flex items-center gap-2 text-emerald-900">
+<span class="material-symbols-outlined text-[18px]">shield</span>
+<span>Document opposable aux compagnies d'assurance tunisiennes conformément à la législation en vigueur.</span>
+</div>
+<button class="text-emerald-900 hover:underline font-bold flex items-center gap-1">
+<span>Rapport de clôture d'intervention</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- DEMANDE 3: Action Requise / Complément d'information -->
+<div class="bg-surface-container-lowest border-2 border-rose-300 rounded-xl p-5 md:p-6 shadow-sm relative overflow-hidden">
+<!-- Emergency Orange/Red Accent -->
+<div class="absolute top-0 left-0 bottom-0 w-1.5 bg-primary-container"></div>
+<div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-rose-100 gap-4 pl-2">
+<div class="flex items-start md:items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-rose-100 border border-rose-200 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[22px]">error</span>
+</div>
+<div>
+<div class="flex items-center gap-2 flex-wrap">
+<span class="text-xs font-bold text-primary-container font-mono tracking-wide">Réf. PC-TN-2026-04290</span>
+<span class="bg-rose-100 text-rose-900 border border-rose-300 text-label-caps font-label-caps px-2 py-0.5 rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">warning</span>
+                  Complément d'information requis
+                </span>
+<span class="text-xs text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                  Déposé le 22 Octobre 2026
+                </span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mt-1">
+                Dossier d'Étude de Projet ERP (Établissement Recevant du Public - 3ème Catégorie)
+              </h2>
+</div>
+</div>
+<div class="flex items-center gap-2 self-start md:self-auto pl-2 md:pl-0">
+<button class="bg-primary-container hover:bg-primary text-on-primary font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px]">upload_file</span>
+<span>Déposer la pièce manquante</span>
+</button>
+</div>
+</div>
+<!-- Alert Notification Panel -->
+<div class="my-4 bg-rose-50 border border-rose-200 rounded-lg p-4 ml-2 space-y-2">
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-rose-700 text-[20px] mt-0.5">notification_important</span>
+<div>
+<h3 class="text-body-sm font-bold text-rose-900">
+                Avis de la Direction de la Prévention — Pièce justificative manquante ou non conforme
+              </h3>
+<p class="text-body-sm text-rose-800 mt-1">
+                Le document <strong>« Plan masse d'évacuation conforme avec voies échelles et accès pompiers »</strong> est illisible ou incomplet.
+                Veuillez téléverser une version actualisée sous format PDF certifié avant le <strong>10 Novembre 2026</strong> pour éviter l'ajournement du dossier.
+              </p>
+</div>
+</div>
+<div class="pt-2 pl-7 flex flex-wrap items-center gap-4 text-xs font-semibold">
+<button class="text-rose-900 underline hover:text-black flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">description</span>
+<span>Consulter la notification officielle (Ref: NOTIF-PREV-882.pdf)</span>
+</button>
+<span class="text-rose-300">|</span>
+<button class="text-rose-900 underline hover:text-black flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">support_agent</span>
+<span>Contacter l'instructeur du dossier (Tunis Lac 2)</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-body-sm font-body-sm pl-2">
+<div>
+<span class="text-xs text-secondary block font-semibold">Bâtiment concerné</span>
+<span class="font-bold text-on-surface">Immeuble de bureaux Al-Manar 2</span>
+</div>
+<div>
+<span class="text-xs text-secondary block font-semibold">Délégation &amp; Gouvernorat</span>
+<span class="text-on-surface">El Menzah, Tunis</span>
+</div>
+<div>
+<span class="text-xs text-secondary block font-semibold">Délai accordé</span>
+<span class="text-rose-800 font-bold">12 jours restants</span>
+</div>
+</div>
+</div>
+<!-- DEMANDE 4: Historique Archivé -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-5 md:p-6 shadow-sm opacity-90 hover:opacity-100 transition-opacity">
+<div class="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-surface-dim gap-4">
+<div class="flex items-start md:items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container border border-surface-dim flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[22px]">school</span>
+</div>
+<div>
+<div class="flex items-center gap-2 flex-wrap">
+<span class="text-xs font-bold text-secondary font-mono tracking-wide">Réf. PC-TN-2025-01844</span>
+<span class="bg-surface-container text-secondary border border-surface-dim text-label-caps font-label-caps px-2 py-0.5 rounded">
+                  Clôturé &amp; Archivé
+                </span>
+<span class="text-xs text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                  Session du 18 Mai 2025
+                </span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mt-1">
+                Attestation de Formation Civique aux Premiers Secours (PSC-1)
+              </h2>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end md:self-auto">
+<button class="bg-surface-container hover:bg-surface-dim text-on-surface text-xs font-bold px-3 py-1.5 rounded border border-surface-dim flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+<span>Re-télécharger l'attestation</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 text-body-sm font-body-sm">
+<div>
+<span class="text-xs text-secondary block font-semibold">Organisme formateur</span>
+<span class="text-on-surface">Centre Régional de Formation — Tunis</span>
+</div>
+<div>
+<span class="text-xs text-secondary block font-semibold">Validité</span>
+<span class="text-on-surface">Permanente (Recyclage conseillé sous 2 ans)</span>
+</div>
+<div>
+<span class="text-xs text-secondary block font-semibold">Numéro d'enregistrement</span>
+<span class="font-mono text-secondary">CERT-PSC1-TN-2025-9912</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ================= HELP & CITIZEN RELATION SECTION (Bento Grid) ================= -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
+<!-- Box 1 : Contact BRC -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-6 shadow-sm space-y-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">contact_support</span>
+</div>
+<h3 class="font-title-section text-title-section text-on-surface uppercase">
+          Bureau des Relations avec le Citoyen (BRC)
+        </h3>
+<p class="text-body-sm text-secondary">
+          Une équipe dédiée vous accueille pour le dépôt physique, le suivi de dossiers contentieux ou l'obtention de renseignements techniques.
+        </p>
+<div class="space-y-2 text-xs text-on-surface pt-2 border-t border-surface-dim">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">location_on</span>
+<span>Avenue de la Bourse, Les Berges du Lac 2, Tunis</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">phone</span>
+<span>Standard BRC : (+216) 71.190.100</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">mail</span>
+<span>brc@onpc.nat.tn</span>
+</div>
+</div>
+</div>
+<!-- Box 2 : Prendre RDV Consultation -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-6 shadow-sm space-y-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">event_available</span>
+</div>
+<h3 class="font-title-section text-title-section text-on-surface uppercase">
+          Prendre Rendez-vous avec un Inspecteur
+        </h3>
+<p class="text-body-sm text-secondary">
+          Besoin d'éclaircissements préalables sur le cahier des charges sécurité incendie avant le dépôt d'un projet ERP ?
+        </p>
+<div class="pt-2">
+<button class="w-full bg-surface-container hover:bg-surface-dim text-on-surface font-bold text-xs py-2.5 px-4 rounded-lg border border-surface-dim flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+<span>Réserver un créneau technique en ligne</span>
+</button>
+</div>
+<p class="text-[11px] text-secondary">
+          Consultations disponibles les mardis et jeudis de 09h00 à 12h00.
+        </p>
+</div>
+<!-- Box 3 : Foire aux questions & Textes Réglementaires -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-6 shadow-sm space-y-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">menu_book</span>
+</div>
+<h3 class="font-title-section text-title-section text-on-surface uppercase">
+          Cadre Réglementaire &amp; FAQ
+        </h3>
+<ul class="text-body-sm text-secondary space-y-2.5">
+<li>
+<a class="hover:text-primary hover:underline flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[16px] text-primary">arrow_right</span>
+<span>Délais légaux de traitement des attestations</span>
+</a>
+</li>
+<li>
+<a class="hover:text-primary hover:underline flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[16px] text-primary">arrow_right</span>
+<span>Nomenclature des ERP et règles de sécurité</span>
+</a>
+</li>
+<li>
+<a class="hover:text-primary hover:underline flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[16px] text-primary">arrow_right</span>
+<span>Comment contester un avis technique défavorable ?</span>
+</a>
+</li>
+</ul>
+<div class="pt-1">
+<a class="text-xs font-bold text-primary hover:underline flex items-center gap-1" href="#">
+<span>Accéder à la bibliothèque juridique ONPC</span>
+<span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+</main>
+<!-- ================= INSTITUTIONAL FOOTER (Verbatim JSON & Identity) ================= -->
+<footer class="bg-inverse-surface text-inverse-on-surface border-t border-secondary mt-16">
+<div class="w-full max-w-7xl mx-auto px-margin py-space-xl">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-10 pb-10 border-b border-white/10">
+<!-- Column 1 : Office Identity & Coordinates -->
+<div class="space-y-4">
+<div class="text-headline-sm font-headline-sm font-bold text-inverse-on-surface uppercase tracking-tight flex items-center gap-2">
+<span class="w-3 h-3 bg-primary-container rounded-sm inline-block"></span>
+<span>Office National de Protection Civile</span>
+</div>
+<p class="text-body-sm font-body-sm text-surface-variant leading-relaxed">
+            Site officiel de l'Office National de la Protection Civile (ONPC) — République Tunisienne.
+          </p>
+<div class="space-y-2 text-body-sm text-surface-variant">
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-primary-container">location_on</span>
+<span>Avenue de la Bourse - les Berges du Lac 2, Tunis</span>
+</div>
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-primary-container">call</span>
+<span>+(216) 71.190.100</span>
+</div>
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-primary-container">mail</span>
+<span>info@onpc.nat.tn</span>
+</div>
+</div>
+<!-- Emergency Reminder in Footer -->
+<div class="pt-2">
+<div class="inline-flex items-center gap-3 bg-primary-container px-4 py-2 rounded-lg text-white font-bold">
+<span class="material-symbols-outlined text-[20px]">e911_emergency</span>
+<span class="text-xs uppercase tracking-wider">Urgence 24h/24 :</span>
+<span class="text-xl font-black font-emergency-hotline">198</span>
+</div>
+</div>
+</div>
+<!-- Column 2 : Operational Statistics Matrix -->
+<div class="space-y-4">
+<div class="text-title-section font-title-section uppercase tracking-wider text-inverse-on-surface border-b border-primary-container pb-2 inline-block">
+            Statistiques Opérationnelles
+          </div>
+<div class="grid grid-cols-2 gap-2 text-center">
+<div class="bg-[#1f2636] p-2.5 rounded border border-white/5">
+<div class="text-[11px] text-surface-variant uppercase">Aujourd'hui</div>
+<div class="text-lg font-bold text-white mt-0.5">1 605</div>
+</div>
+<div class="bg-[#1f2636] p-2.5 rounded border border-white/5">
+<div class="text-[11px] text-surface-variant uppercase">Cette semaine</div>
+<div class="text-lg font-bold text-white mt-0.5">15 561</div>
+</div>
+<div class="bg-[#1f2636] p-2.5 rounded border border-white/5">
+<div class="text-[11px] text-surface-variant uppercase">Ce mois</div>
+<div class="text-lg font-bold text-white mt-0.5">114 279</div>
+</div>
+<div class="bg-[#1f2636] p-2.5 rounded border border-white/5">
+<div class="text-[11px] text-surface-variant uppercase">Total Année</div>
+<div class="text-lg font-bold text-white mt-0.5">549 708</div>
+</div>
+</div>
+<div class="text-[11px] text-surface-variant text-center opacity-70">
+            Données agrégées par la salle des opérations centrale de l'ONPC.
+          </div>
+</div>
+<!-- Column 3 : Institutional Public Links & Newsletter -->
+<div class="space-y-4">
+<div class="text-title-section font-title-section uppercase tracking-wider text-inverse-on-surface border-b border-primary-container pb-2 inline-block">
+            Autres Sites Publics
+          </div>
+<ul class="text-body-sm font-body-sm text-surface-variant space-y-2">
+<li>
+<a class="hover:text-primary-fixed underline transition-all" href="#">Mentions Légales</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed underline transition-all" href="#">Institut National de la Météorologie</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed underline transition-all" href="#">Organisation Internationale de Protection Civile</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed underline transition-all" href="#">Marchés Publics</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed underline transition-all" href="#">Portail du Gouvernement</a>
+</li>
+<li>
+<a class="hover:text-primary-fixed underline transition-all" href="#">Portail des Concours Publics</a>
+</li>
+</ul>
+<!-- Newsletter registration -->
+<div class="pt-2">
+<div class="text-xs uppercase font-bold text-white mb-2">Bulletin d'Alerte &amp; Actualités</div>
+<div class="flex">
+<input class="bg-[#1f2636] border border-white/20 text-white text-xs px-3 py-2 rounded-l-md w-full focus:outline-none focus:border-primary-container" placeholder="Votre e-mail..." type="email"/>
+<button class="bg-primary-container hover:bg-primary text-white px-3 py-2 rounded-r-md text-xs font-bold uppercase transition-colors">
+<span class="material-symbols-outlined text-[16px]">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Legal Copyright & Socials -->
+<div class="pt-8 flex flex-col md:flex-row items-center justify-between text-body-sm font-body-sm text-surface-variant gap-4">
+<div class="flex items-center gap-3">
+<!-- Small flag / seal -->
+<span class="w-4 h-4 rounded-full bg-primary-container flex items-center justify-center text-white text-[10px] font-bold">★</span>
+<span>© 2026 Office National de la Protection Civile (ONPC) - République Tunisienne. Tous droits réservés.</span>
+</div>
+<div class="flex items-center space-x-6">
+<a class="hover:text-primary-fixed transition-colors text-xs" href="#">Accessibilité Numérique</a>
+<a class="hover:text-primary-fixed transition-colors text-xs" href="#">Données Personnelles</a>
+<a class="hover:text-primary-fixed transition-colors text-xs" href="#">Plan du Portail</a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

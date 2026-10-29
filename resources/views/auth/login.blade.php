@@ -14,7 +14,7 @@
         <div>
             <x-input-label for="email" :value="__('Email')" />
             <x-text-input id="email" type="email" name="email" :value="old('email')" required autofocus autocomplete="username"
-                leadingIcon='<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>'
+                leadingIcon='<svg class="w-5 h-5 text-outline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>'
                 placeholder="admin@example.com" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
@@ -23,7 +23,7 @@
         <div>
             <x-input-label for="password" :value="__('Password')" />
             <x-text-input id="password" type="password" name="password" required autocomplete="current-password"
-                leadingIcon='<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'
+                leadingIcon='<svg class="w-5 h-5 text-outline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'
                 trailingIcon="password"
                 placeholder="••••••••" />
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
@@ -35,7 +35,7 @@
                 <div class="relative">
                     <input id="remember_me" type="checkbox" name="remember"
                         class="peer sr-only" />
-                    <div class="w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded-md
+                    <div class="w-5 h-5 border-2 border-surface-dim dark:border-gray-600 rounded-md
                                 peer-checked:border-gov-500 peer-checked:bg-gov-500
                                 transition-all duration-200
                                 group-hover:border-gov-400">
@@ -45,7 +45,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
                     </svg>
                 </div>
-                <span class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">{{ __('login.remember') }}</span>
+                <span class="text-sm text-secondary dark:text-gray-400 group-hover:text-on-surface dark:group-hover:text-gray-300 transition-colors">{{ __('login.remember') }}</span>
             </label>
 
             @if (Route::has('password.request'))
@@ -66,7 +66,7 @@
 
         <!-- Register Link -->
         @if (Route::has('register'))
-            <p class="text-center text-sm text-gray-500 dark:text-gray-400">
+            <p class="text-center text-sm text-secondary dark:text-gray-400">
                 {{ __('login.no_account') }}
                 <a href="{{ route('register') }}" class="font-semibold text-gov-600 dark:text-gov-400 hover:text-gov-700 dark:hover:text-gov-300 transition-colors">
                     {{ __('Register') }}

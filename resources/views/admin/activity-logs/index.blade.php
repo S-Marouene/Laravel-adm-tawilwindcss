@@ -5,8 +5,8 @@
 @section('content')
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Activity Logs</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Track user actions and system events.</p>
+            <h1 class="text-2xl font-bold text-on-surface dark:text-gray-100">Activity Logs</h1>
+            <p class="text-sm text-secondary dark:text-gray-400 mt-1">Track user actions and system events.</p>
         </div>
         <div class="flex items-center space-x-3">
             <form action="{{ route('admin.activity-logs.clear') }}" method="POST" onsubmit="return confirm('Are you sure you want to clear all activity logs? This cannot be undone.')">
@@ -27,8 +27,8 @@
         <form method="GET" action="{{ route('admin.activity-logs.index') }}">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
-                    <label for="type" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Type</label>
-                    <select name="type" id="type" class="w-full px-3 py-2 border border-gray-300/90 dark:border-gray-600/90 rounded-xl text-sm dark:bg-gray-900/55 dark:text-gray-100 hover:border-gov-300 dark:hover:border-gov-700 focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 transition-all">
+                    <label for="type" class="block text-xs font-medium text-secondary dark:text-gray-400 mb-1">Type</label>
+                    <select name="type" id="type" class="w-full px-3 py-2 border border-surface-dim/90 dark:border-gray-600/90 rounded-xl text-sm dark:bg-gray-900/55 dark:text-gray-100 hover:border-gov-300 dark:hover:border-gov-700 focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 transition-all">
                         <option value="">All Types</option>
                         @foreach($types as $t)
                             <option value="{{ $t }}" {{ request('type') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
@@ -37,8 +37,8 @@
                 </div>
 
                 <div>
-                    <label for="user_id" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">User</label>
-                    <select name="user_id" id="user_id" class="w-full px-3 py-2 border border-gray-300/90 dark:border-gray-600/90 rounded-xl text-sm dark:bg-gray-900/55 dark:text-gray-100 hover:border-gov-300 dark:hover:border-gov-700 focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 transition-all">
+                    <label for="user_id" class="block text-xs font-medium text-secondary dark:text-gray-400 mb-1">User</label>
+                    <select name="user_id" id="user_id" class="w-full px-3 py-2 border border-surface-dim/90 dark:border-gray-600/90 rounded-xl text-sm dark:bg-gray-900/55 dark:text-gray-100 hover:border-gov-300 dark:hover:border-gov-700 focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 transition-all">
                         <option value="">All Users</option>
                         @foreach($users as $user)
                             <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
@@ -47,26 +47,26 @@
                 </div>
 
                 <div>
-                    <label for="from" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">From</label>
+                    <label for="from" class="block text-xs font-medium text-secondary dark:text-gray-400 mb-1">From</label>
                     <input type="date" name="from" id="from" value="{{ request('from') }}"
-                        class="w-full px-3 py-2 border border-gray-300/90 dark:border-gray-600/90 rounded-xl text-sm dark:bg-gray-900/55 dark:text-gray-100 hover:border-gov-300 dark:hover:border-gov-700 focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 transition-all">
+                        class="w-full px-3 py-2 border border-surface-dim/90 dark:border-gray-600/90 rounded-xl text-sm dark:bg-gray-900/55 dark:text-gray-100 hover:border-gov-300 dark:hover:border-gov-700 focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 transition-all">
                 </div>
 
                 <div>
-                    <label for="to" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">To</label>
+                    <label for="to" class="block text-xs font-medium text-secondary dark:text-gray-400 mb-1">To</label>
                     <input type="date" name="to" id="to" value="{{ request('to') }}"
-                        class="w-full px-3 py-2 border border-gray-300/90 dark:border-gray-600/90 rounded-xl text-sm dark:bg-gray-900/55 dark:text-gray-100 hover:border-gov-300 dark:hover:border-gov-700 focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 transition-all">
+                        class="w-full px-3 py-2 border border-surface-dim/90 dark:border-gray-600/90 rounded-xl text-sm dark:bg-gray-900/55 dark:text-gray-100 hover:border-gov-300 dark:hover:border-gov-700 focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 transition-all">
                 </div>
 
                 <div>
-                    <label for="search" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Search</label>
+                    <label for="search" class="block text-xs font-medium text-secondary dark:text-gray-400 mb-1">Search</label>
                     <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Search description..."
-                        class="w-full px-3 py-2 border border-gray-300/90 dark:border-gray-600/90 rounded-xl text-sm dark:bg-gray-900/55 dark:text-gray-100 hover:border-gov-300 dark:hover:border-gov-700 focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 transition-all">
+                        class="w-full px-3 py-2 border border-surface-dim/90 dark:border-gray-600/90 rounded-xl text-sm dark:bg-gray-900/55 dark:text-gray-100 hover:border-gov-300 dark:hover:border-gov-700 focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 transition-all">
                 </div>
             </div>
 
             <div class="mt-4 flex items-center justify-end space-x-3">
-                <a href="{{ route('admin.activity-logs.index') }}" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">Reset</a>
+                <a href="{{ route('admin.activity-logs.index') }}" class="text-sm text-secondary hover:text-on-surface dark:text-gray-400 dark:hover:text-gray-200">Reset</a>
                 <button type="submit" class="admin-add-button px-4 py-2 text-sm">
                     <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -83,20 +83,20 @@
             <table class="w-full">
                 <thead>
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Time</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">IP Address</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Description</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">IP Address</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                     @forelse($logs as $log)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <tr class="hover:bg-surface-container dark:hover:bg-gray-700/30 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary dark:text-gray-400">
                                 <div>{{ $log->created_at->format('M d, Y') }}</div>
-                                <div class="text-xs text-gray-400">{{ $log->created_at->format('H:i:s') }}</div>
+                                <div class="text-xs text-outline">{{ $log->created_at->format('H:i:s') }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($log->user)
@@ -104,10 +104,10 @@
                                         <div class="admin-avatar w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0">
                                             <span class="text-xs font-semibold text-white">{{ substr($log->user->name, 0, 1) }}</span>
                                         </div>
-                                        <span class="ml-2 text-sm text-gray-900 dark:text-gray-100">{{ $log->user->name }}</span>
+                                        <span class="ml-2 text-sm text-on-surface dark:text-gray-100">{{ $log->user->name }}</span>
                                     </div>
                                 @else
-                                    <span class="text-sm text-gray-400 italic">System</span>
+                                    <span class="text-sm text-outline italic">System</span>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -116,11 +116,11 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4">
-                                <a href="{{ route('admin.activity-logs.show', $log) }}" class="text-sm text-gray-700 dark:text-gray-300 hover:text-gov-600 dark:hover:text-gov-300 transition-colors">
+                                <a href="{{ route('admin.activity-logs.show', $log) }}" class="text-sm text-on-surface dark:text-gray-300 hover:text-gov-600 dark:hover:text-gov-300 transition-colors">
                                     {{ Str::limit($log->description, 80) }}
                                 </a>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">{{ $log->ip_address ?? '—' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary dark:text-gray-400 font-mono">{{ $log->ip_address ?? '—' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <a href="{{ route('admin.activity-logs.show', $log) }}" class="admin-action-link mr-3">View</a>
                                 <form action="{{ route('admin.activity-logs.destroy', $log) }}" method="POST" class="inline" onsubmit="return confirm('Delete this log entry?')">
@@ -132,12 +132,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                            <td colspan="6" class="px-6 py-12 text-center text-secondary dark:text-gray-400">
                                 <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                                 </svg>
-                                <p class="text-gray-500 dark:text-gray-400">No activity logs found.</p>
-                                <p class="text-xs text-gray-400 mt-1">Try adjusting your filters or perform some actions to generate logs.</p>
+                                <p class="text-secondary dark:text-gray-400">No activity logs found.</p>
+                                <p class="text-xs text-outline mt-1">Try adjusting your filters or perform some actions to generate logs.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -145,7 +145,7 @@
             </table>
         </div>
         @if($logs->hasPages())
-            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-t border-surface-dim dark:border-gray-700">
                 {{ $logs->links() }}
             </div>
         @endif

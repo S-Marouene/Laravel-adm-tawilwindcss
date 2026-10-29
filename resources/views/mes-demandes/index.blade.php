@@ -1,147 +1,249 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between gap-4">
-            <div>
-                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ __('demandes.title') }}</h2>
-                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('demandes.subtitle') }}</p>
-            </div>
-        </div>
-    </x-slot>
+    {{-- ================================================================
+         ESPACE CITOYEN — Mes Demandes (design/demades.html)
+         Filtre client-side réel (Alpine) : recherche, statut, type.
+         ================================================================ --}}
+    @php
+        // Normalisation sérialisable pour le filtre Alpine
+        $iconMap  = ['prevention' => 'fire_extinguisher', 'presence' => 'event_available', 'rescue' => 'ecg_heart', 'works' => 'construction'];
+        $badgeMap = [
+            'needs_correction'   => ['action',    'text-error bg-[#FFE8E4] border-error/30'],
+            'under_consultation' => ['progress',  'text-primary bg-primary/10 border-primary/20'],
+            'approved'           => ['done',      'text-emerald-800 bg-emerald-50 border-emerald-300'],
+            'served'             => ['done',      'text-emerald-800 bg-emerald-50 border-emerald-300'],
+            'cancelled'          => ['cancelled', 'text-secondary bg-surface-container border-surface-dim'],
+        ];
+        $itemsJson = $items->map(function ($item, $index) use ($iconMap, $badgeMap) {
+            [$bucket, $badgeClass] =
+                $badgeMap[$item['status']] ?? ['progress', 'text-amber-800 bg-amber-50 border-amber-200'];
 
-    <div class="py-8 sm:py-12">
-        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            return array_merge($item, [
+                'id'             => $item['kind'] . '-' . $index,
+                'icon'           => $iconMap[$item['kind']] ?? 'article',
+                'date'           => $item['created_at']->format(app()->getLocale() === 'ar' ? 'Y/m/d' : 'd/m/Y'),
+                'badge'          => $item['status_label'],
+                'badgeClass'     => $badgeClass,
+                'bucket'         => $bucket,
+                'requiresAction' => $item['status'] === 'needs_correction',
+            ]);
+        })->values();
+
+        $kpi = [
+            'total'    => $items->count(),
+            'action'   => $items->where('status', 'needs_correction')->count(),
+            'done'     => $items->whereIn('status', ['approved', 'served'])->count(),
+            'prog'     => $items->whereNotIn('status', ['needs_correction', 'approved', 'served', 'cancelled', 'draft'])->count(),
+        ];
+    @endphp
+
+    <div class="py-8 sm:py-10">
+        <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-6"
+             x-data="mesDemandesFilter(@js($itemsJson))">
+
+            {{-- Bloc d'en-tête façon design/demades.html --}}
+            <section class="relative overflow-hidden rounded border border-surface-dim bg-surface-container-lowest shadow-sm">
+                <div class="absolute top-0 left-0 right-0 h-1.5 bg-primary-container" aria-hidden="true"></div>
+                <div class="p-6 md:p-8 space-y-6">
+                    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                        <div class="space-y-2 max-w-2xl">
+                            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-secondary-container text-on-secondary-fixed text-label-caps font-label-caps uppercase">
+                                <span class="material-symbols-outlined text-[14px]" aria-hidden="true">verified_user</span>
+                                <span>{{ app()->getLocale() === 'ar' ? 'البوابة الرسمية المؤمّنة — وكالة الحماية المدنية' : "PORTAIL OFFICIEL SÉCURISÉ — GUICHET UNIQUE ONPC" }}</span>
+                            </div>
+                            <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+                                {{ __('demandes.title') }}
+                            </h1>
+                            <p class="text-body-md leading-relaxed text-secondary">
+                                {{ __('demandes.subtitle') }}
+                            </p>
+                        </div>
+                        <a href="{{ url('/') }}#services" class="bg-primary-container hover:bg-primary text-on-primary font-bold px-5 py-3 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-colors text-body-sm">
+                            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">add_circle</span>
+                            <span>{{ app()->getLocale() === 'ar' ? 'طلب خدمة جديد' : 'Nouvelle demande de service' }}</span>
+                        </a>
+                    </div>
+
+                    {{-- KPI strip : valeurs réelles calculées sur la collection --}}
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-surface-dim">
+                        <div class="bg-surface-container-low p-4 rounded-lg border border-surface-dim flex items-center justify-between">
+                            <div>
+                                <div class="text-label-caps font-label-caps text-secondary uppercase tracking-wider">{{ app()->getLocale() === 'ar' ? 'مجموع الطلبات' : 'Total demandes' }}</div>
+                                <div class="text-3xl font-black text-on-surface mt-1">{{ $kpi['total'] }}</div>
+                                <div class="text-[11px] text-secondary mt-0.5">{{ app()->getLocale() === 'ar' ? 'ملفات مودعة' : 'Dossiers déposés' }}</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-secondary">
+                                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">folder_open</span>
+                            </div>
+                        </div>
+                        <div class="bg-amber-50 p-4 rounded-lg border border-amber-200 flex items-center justify-between">
+                            <div>
+                                <div class="text-label-caps font-label-caps text-amber-900 uppercase tracking-wider">{{ app()->getLocale() === 'ar' ? 'قيد المعالجة' : "En cours d'instruction" }}</div>
+                                <div class="text-3xl font-black text-amber-900 mt-1">{{ $kpi['prog'] }}</div>
+                                <div class="text-[11px] text-amber-700 mt-0.5">{{ app()->getLocale() === 'ar' ? 'تحليل الملف' : 'Analyse & instruction' }}</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-800">
+                                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">pending_actions</span>
+                            </div>
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200 flex items-center justify-between">
+                            <div>
+                                <div class="text-label-caps font-label-caps text-emerald-900 uppercase tracking-wider">{{ app()->getLocale() === 'ar' ? 'مقبولة ومكتملة' : 'Validées & prêtes' }}</div>
+                                <div class="text-3xl font-black text-emerald-900 mt-1">{{ $kpi['done'] }}</div>
+                                <div class="text-[11px] text-emerald-700 mt-0.5">{{ app()->getLocale() === 'ar' ? 'مؤشر للتنزيل' : 'Attestation disponible' }}</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800">
+                                <span class="material-symbols-outlined filled text-[20px]" aria-hidden="true">task_alt</span>
+                            </div>
+                        </div>
+                        <div class="bg-[#FFE8E4] border border-error/30 p-4 rounded-lg flex items-center justify-between">
+                            <div>
+                                <div class="text-label-caps font-label-caps text-error uppercase tracking-wider">{{ app()->getLocale() === 'ar' ? 'إجراء مطلوب' : 'Complément requis' }}</div>
+                                <div class="text-3xl font-black text-error mt-1">{{ $kpi['action'] }}</div>
+                                <div class="text-[11px] text-error/70 mt-0.5">{{ app()->getLocale() === 'ar' ? 'وثيقة مطلوبة' : 'Pièce justificative exigée' }}</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center text-error">
+                                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">notification_important</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             @if (session('success'))
-                <div class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200">
+                <div class="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-body-sm font-medium text-emerald-800" role="alert">
                     <div class="flex items-start gap-3">
-                        <svg class="h-5 w-5 flex-none text-emerald-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
+                        <span class="material-symbols-outlined text-[20px] flex-none text-emerald-600" aria-hidden="true">check_circle</span>
                         <span>{{ session('success') }}</span>
                     </div>
                 </div>
             @endif
 
-            {{-- Empty state --}}
+            {{-- État vide --}}
             @if ($items->isEmpty())
-                <div class="section-surface rounded-2xl border border-gray-200 dark:border-gray-700 p-10 text-center">
-                    <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700">
-                        <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{{ __('demandes.empty_title') }}</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">{{ __('demandes.empty_subtitle') }}</p>
-                    <a href="{{ url('/') }}#services" class="ui-btn-primary inline-flex items-center gap-2 px-5 py-2.5 text-sm">
-                        {{ __('demandes.discover_services') }}
-                    </a>
-                </div>
+                <x-onpc.empty-state
+                    icon="folder_off"
+                    :title="__('demandes.empty_title')"
+                    :description="__('demandes.empty_subtitle')"
+                    :action="__('demandes.discover_services')"
+                    :href="url('/') . '#services'"
+                    class="bg-surface-container-lowest" />
             @else
-                <div class="space-y-4">
-                    @foreach ($items as $item)
-                        <article class="group section-surface rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
-                            <div class="p-5">
-                                <div class="flex flex-wrap items-start gap-4">
-                                    {{-- Service icon (color per service) --}}
-                                    @php
-                                        $iconClass = match ($item['kind']) {
-                                            'presence' => 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300',
-                                            'rescue'   => 'bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-300',
-                                            'works'    => 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300',
-                                            default    => 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300',
-                                        };
-                                        $badgeClass = match ($item['status']) {
-                                            'needs_correction'   => 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-                                            'under_consultation' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
-                                            'approved'           => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-                                            'served'             => 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
-                                            'cancelled'          => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
-                                            default              => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-                                        };
-                                        $dotClass = match ($item['status']) {
-                                            'needs_correction'   => 'bg-red-500',
-                                            'under_consultation' => 'bg-purple-500',
-                                            'approved'           => 'bg-emerald-500',
-                                            'served'             => 'bg-teal-500',
-                                            'cancelled'          => 'bg-gray-400',
-                                            default              => 'bg-blue-500',
-                                        };
-                                    @endphp
+                {{-- Barre de filtre & recherche (Alpine, réellement fonctionnelle) --}}
+                <div class="bg-surface-container-lowest p-4 rounded border border-surface-dim shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none text-secondary">
+                            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">search</span>
+                        </span>
+                        <input x-model.debounce.300ms="q"
+                               type="text"
+                               class="w-full ps-9 pe-4 py-2 border border-surface-dim rounded-md bg-surface-container-lowest text-body-sm text-on-surface placeholder:text-secondary focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container"
+                               placeholder="{{ app()->getLocale() === 'ar' ? 'بحث بالمرجع، العنوان أو الولاية…' : 'Rechercher par référence, établissement ou ville…' }}">
+                    </div>
+                    <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
+                        <div class="flex items-center gap-1.5 w-full sm:w-auto">
+                            <span class="text-xs font-semibold text-secondary whitespace-nowrap">{{ app()->getLocale() === 'ar' ? 'الحالة :' : 'Statut :' }}</span>
+                            <select x-model="status" class="w-full sm:w-auto text-body-sm border border-surface-dim rounded-md py-2 px-3 bg-surface-container-lowest text-on-surface focus:outline-none focus:border-primary-container">
+                                <option value="all">{{ app()->getLocale() === 'ar' ? 'كل الحالات' : 'Tous les statuts' }}</option>
+                                <option value="progress">{{ app()->getLocale() === 'ar' ? 'قيد المعالجة' : "En cours d'instruction" }}</option>
+                                <option value="done">{{ app()->getLocale() === 'ar' ? 'مقبولة' : 'Validées & disponibles' }}</option>
+                                <option value="action">{{ app()->getLocale() === 'ar' ? 'إجراء مطلوب' : 'Complément requis' }}</option>
+                                <option value="cancelled">{{ app()->getLocale() === 'ar' ? 'ملغاة' : 'Annulées' }}</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-1.5 w-full sm:w-auto">
+                            <span class="text-xs font-semibold text-secondary whitespace-nowrap">{{ app()->getLocale() === 'ar' ? 'النوع :' : 'Type :' }}</span>
+                            <select x-model="kind" class="w-full sm:w-auto text-body-sm border border-surface-dim rounded-md py-2 px-3 bg-surface-container-lowest text-on-surface focus:outline-none focus:border-primary-container">
+                                <option value="all">{{ app()->getLocale() === 'ar' ? 'كل الطلبات' : 'Toutes les démarches' }}</option>
+                                <option value="prevention">{{ __('services.prevention_certificate') }}</option>
+                                <option value="presence">{{ __('services.preventive_presence') }}</option>
+                                <option value="rescue">{{ __('services.rescue_certificate') }}</option>
+                                <option value="works">{{ __('services.works_notification') }}</option>
+                            </select>
+                        </div>
+                        <button type="button" @click="q = ''; status = 'all'; kind = 'all'"
+                                class="p-2 border border-surface-dim rounded-md text-secondary hover:text-primary hover:bg-surface-container transition-colors"
+                                title="{{ app()->getLocale() === 'ar' ? 'إعادة التعيين' : 'Réinitialiser' }}">
+                            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">restart_alt</span>
+                        </button>
+                    </div>
+                </div>
 
-                                    <div class="flex h-11 w-11 flex-none items-center justify-center rounded-xl {{ $iconClass }}">
-                                        @switch ($item['kind'])
-                                            @case ('prevention')
-                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                                                </svg>
-                                            @break
-                                            @case ('presence')
-                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                                </svg>
-                                            @break
-                                            @case ('rescue')
-                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                                                </svg>
-                                            @break
-                                            @default
-                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM6.407 7.758L4 10h3l1.5-2 1.5 2h3l3-3m-9 9l-2.5 2.5a3 3 0 104.243 4.243L10 17m0 0l2-2"/>
-                                                </svg>
-                                        @endswitch
+                {{-- Liste des demandes — fiches façon design/demades.html, filtrées en direct --}}
+                <div class="space-y-4" role="list">
+                    <template x-for="item in filteredItems" :key="item.id" role="listitem">
+                        <article class="bg-surface-container-lowest border rounded-lg p-5 md:p-6 shadow-sm transition-all hover:shadow-md"
+                                 :class="item.requiresAction ? 'border-primary-container/50' : 'border-surface-dim'">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-surface-dim">
+                                <div class="flex items-start gap-3 min-w-0">
+                                    <div class="w-10 h-10 rounded-lg bg-primary/10 border border-outline-variant flex items-center justify-center text-primary shrink-0">
+                                        <span class="material-symbols-outlined text-[22px]" aria-hidden="true" x-text="item.icon"></span>
                                     </div>
-
-                                    <div class="min-w-0 flex-1">
-                                        {{-- Type chip — mentions the type of the dossier --}}
-                                        <p class="mb-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                                            {{ $item['label'] }}
-                                        </p>
-
-                                        {{-- Status badge --}}
-                                        <span class="ml-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $badgeClass }}">
-                                            <span class="h-1.5 w-1.5 rounded-full {{ $dotClass }}"></span>
-                                            {{ $item['status_label'] }}
-                                        </span>
-
-                                        <p class="mt-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                            {{ $item['title'] }}
-                                        </p>
-
-                                        {{-- Meta info --}}
-                                        @if (! empty($item['meta']))
-                                            <div class="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-                                                @foreach ($item['meta'] as $meta)
-                                                    <span class="truncate">{{ $meta }}</span>
-                                                @endforeach
-                                                <span>{{ __('demandes.submitted_on', ['date' => $item['created_at']->format('d/m/Y')]) }}</span>
-                                            </div>
-                                        @endif
-
-                                        {{-- Admin note for corrections / cancellation --}}
-                                        @if (in_array($item['status'], ['needs_correction', 'cancelled']))
-                                            <a href="{{ $item['url'] }}" class="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
-                                                {{ __('demandes.action_required') }} →
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="bg-surface-container border border-surface-dim text-label-caps font-label-caps px-2 py-0.5 rounded text-secondary" x-text="item.label"></span>
+                                            <span class="text-xs text-secondary flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[14px]" aria-hidden="true">calendar_today</span>
+                                                <span x-text="item.date"></span>
+                                            </span>
+                                        </div>
+                                        <h2 class="text-headline-sm font-headline-sm text-on-surface mt-1 truncate" x-text="item.title"></h2>
+                                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-secondary">
+                                            <span class="text-label-caps font-label-caps px-2 py-0.5 rounded border font-bold"
+                                                  :class="item.badgeClass" x-show="item.badge" x-text="item.badge"></span>
+                                            <span x-show="item.meta.length" x-text="item.meta.join(' · ')"></span>
+                                            <a href="#" x-show="item.requiresAction" x-bind:href="item.url" class="inline-flex items-center gap-1 text-xs font-bold text-error hover:underline">
+                                                {{ app()->getLocale() === 'ar' ? 'التصرف الآن' : 'Action requise' }}
+                                                <span class="material-symbols-outlined text-[14px] rtl:rotate-180" aria-hidden="true">arrow_forward</span>
                                             </a>
-                                        @endif
+                                        </div>
                                     </div>
-
-                                    {{-- View details --}}
-
-                                    <div class="flex-none self-center">
-                                        <a href="{{ $item['url'] }}" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-gov-600 hover:bg-gov-50 dark:text-gov-400 dark:hover:bg-gov-900/30 transition-colors">
-                                            {{ __('demandes.view_details') }}
-                                            <svg class="h-4 w-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                            </svg>
-                                        </a>
-                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 self-end md:self-auto shrink-0">
+                                    <a class="bg-surface-container hover:bg-surface-dim text-on-surface text-xs font-bold px-3 py-1.5 rounded border border-surface-dim flex items-center gap-1 transition-colors"
+                                       x-bind:href="item.url">
+                                        <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
+                                        <span>{{ __('demandes.view_details') }}</span>
+                                    </a>
                                 </div>
                             </div>
                         </article>
-                    @endforeach
+                    </template>
+
+                    {{-- Résultat de filtre vide --}}
+                    <div x-show="filteredItems.length === 0" class="text-center py-12 px-6 bg-surface-container-low border border-dashed border-surface-dim rounded">
+                        <span class="material-symbols-outlined text-4xl text-outline mx-auto mb-3" aria-hidden="true">search_off</span>
+                        <h3 class="text-headline-sm text-on-surface">{{ app()->getLocale() === 'ar' ? 'لا نتائج مطابقة' : 'Aucun résultat pour ce filtre' }}</h3>
+                        <button type="button" @click="q = ''; status = 'all'; kind = 'all'" class="ui-soft-button mt-4 inline-flex items-center gap-2 text-body-sm">
+                            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">restart_alt</span>
+                            {{ app()->getLocale() === 'ar' ? 'إعادة تعيين الفلاتر' : 'Réinitialiser les filtres' }}
+                        </button>
+                    </div>
                 </div>
             @endif
         </div>
     </div>
 </x-app-layout>
+
+<script>
+    // Filtre client (Alpine) : données réelles injectées par Blade.
+    function mesDemandesFilter(items) {
+        return {
+            items,
+            q: '',
+            status: 'all',
+            kind: 'all',
+            get filteredItems() {
+                const q = this.q.trim().toLowerCase();
+                return this.items.filter((item) => {
+                    if (this.kind !== 'all' && item.kind !== this.kind) return false;
+                    if (this.status !== 'all' && item.bucket !== this.status) return false;
+                    if (q) {
+                        const haystack = [item.title, item.label, item.meta.join(' '), item.date].join(' ').toLowerCase();
+                        if (!haystack.includes(q)) return false;
+                    }
+                    return true;
+                });
+            },
+        };
+    }
+</script>

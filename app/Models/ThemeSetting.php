@@ -99,7 +99,7 @@ class ThemeSetting extends Model
         return [
             [
                 'key' => 'primary_color',
-                'value' => '#6B3FAF',
+                'value' => '#9E001F',
                 'type' => 'color',
                 'group' => 'colors',
                 'label' => 'Primary color',
@@ -109,7 +109,7 @@ class ThemeSetting extends Model
             ],
             [
                 'key' => 'accent_color',
-                'value' => '#0891B2',
+                'value' => '#9A5200',
                 'type' => 'color',
                 'group' => 'colors',
                 'label' => 'Accent color',
@@ -119,7 +119,7 @@ class ThemeSetting extends Model
             ],
             [
                 'key' => 'sidebar_color',
-                'value' => '#111C43',
+                'value' => '#283044',
                 'type' => 'color',
                 'group' => 'colors',
                 'label' => 'Admin sidebar color',
@@ -129,7 +129,7 @@ class ThemeSetting extends Model
             ],
             [
                 'key' => 'page_background',
-                'value' => '#F5F6FA',
+                'value' => '#FAF8FF',
                 'type' => 'color',
                 'group' => 'colors',
                 'label' => 'Page background',
@@ -139,18 +139,18 @@ class ThemeSetting extends Model
             ],
             [
                 'key' => 'font_family',
-                'value' => 'Inter',
+                'value' => 'Public Sans',
                 'type' => 'select',
                 'group' => 'typography',
                 'label' => 'Font family',
                 'description' => 'Primary interface font for non-Arabic pages.',
-                'options' => ['Inter', 'Arial', 'Georgia', 'Tahoma', 'Verdana'],
+                'options' => ['Public Sans', 'Inter', 'Arial', 'Georgia', 'Tahoma', 'Verdana'],
                 'sort_order' => 10,
                 'is_public' => true,
             ],
             [
                 'key' => 'base_font_size',
-                'value' => '16',
+                'value' => '15',
                 'type' => 'number',
                 'group' => 'typography',
                 'label' => 'Base font size',
@@ -182,7 +182,7 @@ class ThemeSetting extends Model
             ],
             [
                 'key' => 'border_radius',
-                'value' => '12',
+                'value' => '4',
                 'type' => 'number',
                 'group' => 'layout',
                 'label' => 'Border radius',
@@ -192,7 +192,7 @@ class ThemeSetting extends Model
             ],
             [
                 'key' => 'button_style',
-                'value' => 'gradient',
+                'value' => 'solid',
                 'type' => 'select',
                 'group' => 'components',
                 'label' => 'Button style',

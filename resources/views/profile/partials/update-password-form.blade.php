@@ -1,6 +1,6 @@
-<section class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+<section class="bg-surface-container-lowest dark:bg-gray-800 rounded-2xl shadow-sm border border-surface-dim dark:border-gray-700 overflow-hidden">
     <!-- Section Header -->
-    <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+    <div class="px-6 py-5 border-b border-surface-dim dark:border-gray-700">
         <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg bg-gov-50 dark:bg-gov-900/30 text-gov-600 dark:text-gov-400">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -8,10 +8,10 @@
                 </svg>
             </div>
             <div>
-                <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">
                     {{ __('Update Password') }}
                 </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-secondary dark:text-gray-400">
                     {{ __('Ensure your account is using a long, random password to stay secure.') }}
                 </p>
             </div>
@@ -69,12 +69,12 @@
         </div>
 
         <!-- Password Strength Hint -->
-        <div class="p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
+        <div class="p-3 rounded-xl bg-surface-container dark:bg-gray-900/50 border border-surface-dim dark:border-gray-700">
             <div class="flex items-start gap-2.5">
-                <svg class="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-outline dark:text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
+                <p class="text-xs text-secondary dark:text-gray-400">
                     {{ __('Use at least 8 characters with a mix of letters, numbers, and symbols for a strong password.') }}
                 </p>
             </div>

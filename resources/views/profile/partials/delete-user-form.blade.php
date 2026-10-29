@@ -1,4 +1,4 @@
-<section class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-red-200 dark:border-red-900/50 overflow-hidden">
+<section class="bg-surface-container-lowest dark:bg-gray-800 rounded-2xl shadow-sm border border-red-200 dark:border-red-900/50 overflow-hidden">
     <!-- Section Header -->
     <div class="px-6 py-5 border-b border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10">
         <div class="flex items-center gap-3">
@@ -61,10 +61,10 @@
                     </svg>
                 </div>
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    <h2 class="text-lg font-semibold text-on-surface dark:text-gray-100">
                         {{ __('Are you sure you want to delete your account?') }}
                     </h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                    <p class="text-sm text-secondary dark:text-gray-400">
                         {{ __('This action cannot be undone.') }}
                     </p>
                 </div>

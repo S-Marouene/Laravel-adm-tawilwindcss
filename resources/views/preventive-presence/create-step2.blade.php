@@ -2,10 +2,10 @@
     <x-slot name="header">
         <div class="flex items-center justify-between gap-4">
             <div>
-                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ __('preventive_presence.create_title') }}</h2>
-                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('preventive_presence.create_subtitle') }}</p>
+                <h2 class="text-xl font-bold text-on-surface dark:text-gray-100">{{ __('preventive_presence.create_title') }}</h2>
+                <p class="mt-0.5 text-sm text-secondary dark:text-gray-400">{{ __('preventive_presence.create_subtitle') }}</p>
             </div>
-            <a href="{{ route('preventive-presence.index') }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+            <a href="{{ route('preventive-presence.index') }}" class="inline-flex items-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-2 text-sm font-medium text-on-surface transition hover:bg-surface-container dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                 <svg class="h-4 w-4 {{ app()->getLocale() === 'ar' ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
@@ -19,7 +19,7 @@
             <div class="grid gap-6 lg:grid-cols-[280px,1fr]">
 
                 {{-- Step sidebar --}}
-                <aside class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 h-fit">
+                <aside class="rounded-2xl border border-surface-dim bg-surface-container-lowest p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 h-fit">
                     <ol class="space-y-0">
                         {{-- Step 1 — done --}}
                         <li class="flex items-start gap-3">
@@ -27,20 +27,20 @@
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                             </span>
                             <div class="min-w-0 flex-1 pb-3">
-                                <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ __('preventive_presence.step_one_title') }}</p>
+                                <p class="text-sm font-semibold text-on-surface dark:text-gray-100">{{ __('preventive_presence.step_one_title') }}</p>
                                 <p class="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">{{ __('preventive_presence.step_done') }}</p>
                                 {{-- Step 1 data --}}
-                                <div class="mt-2 rounded-lg bg-gray-50 px-3 py-2 text-xs space-y-1 dark:bg-gray-900/40">
-                                    <p class="font-medium text-gray-800 dark:text-gray-200">{{ $presenceRequest->nom_prenom }}</p>
-                                    <p class="text-gray-500 dark:text-gray-400">{{ $presenceRequest->cin }}</p>
+                                <div class="mt-2 rounded-lg bg-surface-container px-3 py-2 text-xs space-y-1 dark:bg-gray-900/40">
+                                    <p class="font-medium text-on-surface dark:text-gray-200">{{ $presenceRequest->nom_prenom }}</p>
+                                    <p class="text-secondary dark:text-gray-400">{{ $presenceRequest->cin }}</p>
                                     @if($presenceRequest->phone)
-                                        <p class="text-gray-500 dark:text-gray-400">{{ $presenceRequest->phone }}</p>
+                                        <p class="text-secondary dark:text-gray-400">{{ $presenceRequest->phone }}</p>
                                     @endif
-                                    <p class="text-gray-500 dark:text-gray-400">{{ $presenceRequest->governorate?->name }}</p>
-                                    <p class="text-gray-500 dark:text-gray-400">{{ $presenceRequest->delegation?->name }}</p>
+                                    <p class="text-secondary dark:text-gray-400">{{ $presenceRequest->governorate?->name }}</p>
+                                    <p class="text-secondary dark:text-gray-400">{{ $presenceRequest->delegation?->name }}</p>
                                 </div>
                                 <a href="{{ route('preventive-presence.step1.edit', $presenceRequest) }}"
-                                   class="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-gov-200 bg-white px-3 py-1.5 text-xs font-semibold text-gov-700 transition hover:bg-gov-50 dark:border-gov-700 dark:bg-gray-800 dark:text-gov-400 dark:hover:bg-gov-900/20">
+                                   class="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-gov-200 bg-surface-container-lowest px-3 py-1.5 text-xs font-semibold text-gov-700 transition hover:bg-gov-50 dark:border-gov-700 dark:bg-gray-800 dark:text-gov-400 dark:hover:bg-gov-900/20">
                                     <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     {{ __('preventive_presence.edit_step1') }}
                                 </a>
@@ -52,7 +52,7 @@
                         <li class="flex items-start gap-3">
                             <span class="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-gov-600 text-sm font-bold text-white ring-4 ring-gov-100 dark:ring-gov-900/40">2</span>
                             <div class="min-w-0 pt-1">
-                                <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ __('preventive_presence.step_two_title') }}</p>
+                                <p class="text-sm font-semibold text-on-surface dark:text-gray-100">{{ __('preventive_presence.step_two_title') }}</p>
                                 <p class="mt-0.5 text-xs text-gov-600 dark:text-gov-400 font-medium">{{ __('preventive_presence.step_status') }}</p>
                             </div>
                         </li>
@@ -60,10 +60,10 @@
                 </aside>
 
                 {{-- Form card --}}
-                <section class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                    <div class="border-b border-gray-200 px-6 py-5 dark:border-gray-700">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ __('preventive_presence.step2_heading') }}</h3>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('preventive_presence.step2_description') }}</p>
+                <section class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div class="border-b border-surface-dim px-6 py-5 dark:border-gray-700">
+                        <h3 class="text-lg font-bold text-on-surface dark:text-gray-100">{{ __('preventive_presence.step2_heading') }}</h3>
+                        <p class="mt-1 text-sm text-secondary dark:text-gray-400">{{ __('preventive_presence.step2_description') }}</p>
                     </div>
 
                     <form method="POST" action="{{ route('preventive-presence.step2.store', $presenceRequest) }}" class="px-6 py-6" id="presence-step2-form" enctype="multipart/form-data">
@@ -93,12 +93,12 @@
                                     $uploaded = $uploadedDocs->get($doc->id);
                                 @endphp
                                 <div
-                                    class="doc-card rounded-xl border p-4 transition dark:border-gray-700 {{ $uploaded ? 'border-emerald-300 bg-emerald-50/30 dark:border-emerald-800/40 dark:bg-emerald-900/10' : 'border-gray-200' }}"
+                                    class="doc-card rounded-xl border p-4 transition dark:border-gray-700 {{ $uploaded ? 'border-emerald-300 bg-emerald-50/30 dark:border-emerald-800/40 dark:bg-emerald-900/10' : 'border-surface-dim' }}"
                                     data-doc-id="{{ $doc->id }}"
                                 >
                                     <div class="flex items-start gap-3">
                                         {{-- Status icon --}}
-                                        <span class="status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full {{ $uploaded ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500' }}">
+                                        <span class="status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full {{ $uploaded ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500' }}">
                                             @if ($uploaded)
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                             @else
@@ -109,7 +109,7 @@
                                         <div class="min-w-0 flex-1">
                                             {{-- Document name --}}
                                             <div class="flex items-center gap-2">
-                                                <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $loop->iteration }}. {{ $doc->name }}</p>
+                                                <p class="text-sm font-semibold text-on-surface dark:text-gray-100">{{ $loop->iteration }}. {{ $doc->name }}</p>
                                                 @if ($doc->is_conditional)
                                                     <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{{ __('preventive_presence.conditional') }}</span>
                                                 @endif
@@ -120,7 +120,7 @@
                                                 <div class="mt-2 flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
                                                     <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
                                                     <span class="truncate">{{ $uploaded->original_name }}</span>
-                                                    <span class="flex-none text-gray-400">({{ number_format($uploaded->size / 1024, 0) }} KB)</span>
+                                                    <span class="flex-none text-outline">({{ number_format($uploaded->size / 1024, 0) }} KB)</span>
                                                 </div>
                                             @endif
 
@@ -128,17 +128,17 @@
                                             <div class="preview-area mt-3 hidden">
                                                 <div class="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 dark:border-emerald-800/40 dark:bg-emerald-900/10">
                                                     {{-- Preview image or file icon --}}
-                                                    <div class="preview-thumb flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-lg bg-white dark:bg-gray-800">
+                                                    <div class="preview-thumb flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-lg bg-surface-container-lowest dark:bg-gray-800">
                                                         <img class="preview-img hidden h-full w-full object-cover" alt="">
-                                                        <svg class="preview-icon h-7 w-7 text-gray-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                                        <svg class="preview-icon h-7 w-7 text-outline hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                                                     </div>
                                                     {{-- File info --}}
                                                     <div class="min-w-0 flex-1">
-                                                        <p class="preview-name truncate text-xs font-semibold text-gray-900 dark:text-gray-100"></p>
-                                                        <p class="preview-size text-[11px] text-gray-400"></p>
+                                                        <p class="preview-name truncate text-xs font-semibold text-on-surface dark:text-gray-100"></p>
+                                                        <p class="preview-size text-[11px] text-outline"></p>
                                                     </div>
                                                     {{-- Remove button --}}
-                                                    <button type="button" class="remove-file flex-none rounded-lg p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20" title="{{ __('preventive_presence.remove_file') }}">
+                                                    <button type="button" class="remove-file flex-none rounded-lg p-1 text-outline transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20" title="{{ __('preventive_presence.remove_file') }}">
                                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                                     </button>
                                                 </div>
@@ -146,7 +146,7 @@
 
                                             {{-- Upload input --}}
                                             <div class="mt-3 upload-area">
-                                                <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                                                <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-2 text-xs font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                                     <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                     <span class="upload-label">{{ $uploaded ? __('preventive_presence.replace_file') : __('preventive_presence.upload_file') }}</span>
                                                     <input
@@ -164,8 +164,8 @@
                         </div>
 
                         {{-- Footer --}}
-                        <div class="mt-8 flex items-center justify-between gap-3 border-t border-gray-200 pt-5 dark:border-gray-700">
-                            <a href="{{ route('preventive-presence.step1.edit', $presenceRequest) }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                        <div class="mt-8 flex items-center justify-between gap-3 border-t border-surface-dim pt-5 dark:border-gray-700">
+                            <a href="{{ route('preventive-presence.step1.edit', $presenceRequest) }}" class="inline-flex items-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-4 py-2 text-sm font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                 <svg class="h-4 w-4 {{ app()->getLocale() === 'ar' ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                                 {{ __('preventive_presence.back') }}
                             </a>
@@ -201,7 +201,7 @@
                 if (!card || !file) return;
 
                 // ── Update card to "loaded" state ──
-                card.classList.remove('border-gray-200');
+                card.classList.remove('border-surface-dim');
                 card.classList.add('border-emerald-300', 'bg-emerald-50/30', 'dark:border-emerald-800/40', 'dark:bg-emerald-900/10');
 
                 // ── Update status icon to checkmark ──
@@ -241,7 +241,7 @@
                     } else if (ext === 'doc' || ext === 'docx') {
                         previewIcon.classList.add('text-blue-500');
                     } else {
-                        previewIcon.classList.add('text-gray-400');
+                        previewIcon.classList.add('text-outline');
                     }
                 }
 
@@ -257,10 +257,10 @@
                     // Hide preview
                     previewArea.classList.add('hidden');
                     // Reset card state
-                    card.classList.add('border-gray-200');
+                    card.classList.add('border-surface-dim');
                     card.classList.remove('border-emerald-300', 'bg-emerald-50/30', 'dark:border-emerald-800/40', 'dark:bg-emerald-900/10');
                     // Reset status icon
-                    statusIcon.className = 'status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500';
+                    statusIcon.className = 'status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500';
                     statusIcon.innerHTML = '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>';
                     // Reset upload label
                     uploadLabel.textContent = '{{ __('preventive_presence.upload_file') }}';

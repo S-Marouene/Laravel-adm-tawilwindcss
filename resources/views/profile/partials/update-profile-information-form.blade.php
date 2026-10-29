@@ -1,6 +1,6 @@
-<section class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+<section class="bg-surface-container-lowest dark:bg-gray-800 rounded-2xl shadow-sm border border-surface-dim dark:border-gray-700 overflow-hidden">
     <!-- Section Header -->
-    <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+    <div class="px-6 py-5 border-b border-surface-dim dark:border-gray-700">
         <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg bg-gov-50 dark:bg-gov-900/30 text-gov-600 dark:text-gov-400">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -8,10 +8,10 @@
                 </svg>
             </div>
             <div>
-                <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">
                     {{ __('Profile Information') }}
                 </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-secondary dark:text-gray-400">
                     {{ __("Update your account's profile information and email address.") }}
                 </p>
             </div>
