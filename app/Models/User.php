@@ -31,4 +31,16 @@ class User extends Authenticatable
             'is_admin' => 'boolean',
         ];
     }
+
+    /**
+     * Where this user should be redirected after logging in:
+     * admins go to the admin dashboard, everyone else to the
+     * public landing page.
+     */
+    public function homeUrl(): string
+    {
+        return ($this->is_admin || $this->hasRole('admin'))
+            ? route('admin.dashboard', absolute: false)
+            : url('/');
+    }
 }

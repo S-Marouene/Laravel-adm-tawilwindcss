@@ -70,9 +70,19 @@
                         <x-language-switcher variant="minimal" />
 
                         @auth
-                            <a href="{{ route('dashboard') }}" class="ui-btn-primary px-4 py-2 text-sm">
-                                {{ __('nav.dashboard') }}
+                            @if (auth()->user()->is_admin || auth()->user()->hasRole('admin'))
+                                <a href="{{ route('admin.dashboard') }}" class="hidden sm:inline-flex ui-soft-button px-4 py-2 text-sm">
+                                    {{ __('nav.admin') }}
+                                </a>
+                            @endif
+                            <a href="#services" class="hidden sm:inline-flex ui-soft-button px-4 py-2 text-sm">
+                                {{ __('nav.services') }}
                             </a>
+                            @if ($hasRequests)
+                                <a href="{{ route('mes-demandes') }}" class="ui-btn-primary px-4 py-2 text-sm">
+                                    {{ __('nav.my_requests') }}
+                                </a>
+                            @endif
                         @else
                             <a href="{{ route('login') }}" class="hidden sm:inline-flex ui-soft-button px-4 py-2 text-sm">
                                 {{ __('nav.login') }}
@@ -106,9 +116,14 @@
 
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="ui-soft-button w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base text-center">
-                                {{ __('nav.dashboard') }}
+                            <a href="#services" class="ui-ghost-button w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base text-center">
+                                {{ __('nav.services') }}
                             </a>
+                            @if ($hasRequests)
+                                <a href="{{ route('mes-demandes') }}" class="ui-soft-button w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base text-center">
+                                    {{ __('nav.my_requests') }}
+                                </a>
+                            @endif
                         @else
                             <a href="{{ route('register') }}" class="ui-soft-button w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base text-center">
                                 {{ __('register.submit') }}
@@ -123,7 +138,7 @@
         </section>
 
         <!-- Services Section -->
-        <section class="py-12 sm:py-16 lg:py-20 bg-sand-50 dark:bg-gray-900">
+        <section id="services" class="py-12 sm:py-16 lg:py-20 bg-sand-50 dark:bg-gray-900">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300 border border-gov-200 dark:border-gov-700 mb-4">
@@ -380,8 +395,13 @@
                     {{ __('app.description') }}
                 </p>
                 @auth
-                    <a href="{{ route('dashboard') }}" class="ui-soft-button px-8 py-3.5">
-                        {{ __('nav.dashboard') }}
+                    @if ($hasRequests)
+                        <a href="{{ route('mes-demandes') }}" class="ui-soft-button px-8 py-3.5">
+                            {{ __('nav.my_requests') }}
+                        </a>
+                    @endif
+                    <a href="#services" class="ui-ghost-button px-8 py-3.5">
+                        {{ __('nav.services') }}
                     </a>
                 @else
                     <a href="{{ route('register') }}" class="ui-soft-button px-8 py-3.5">

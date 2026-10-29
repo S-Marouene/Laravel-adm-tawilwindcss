@@ -3,7 +3,7 @@
         <div class="flex justify-between h-16 items-center">
             <!-- Logo -->
             <div class="shrink-0 flex items-center">
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-2 sm:gap-3 group">
+                <a href="{{ url('/') }}" class="flex items-center gap-2 sm:gap-3 group">
                     <!-- Tunisian Services Logo -->
                     <div class="w-9 h-9 bg-gradient-to-br from-gov-600 via-gov-700 to-accent-600 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-200 group-hover:scale-105">
                         <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -19,8 +19,12 @@
 
             <!-- Desktop Navigation -->
             <div class="hidden sm:flex sm:items-center sm:gap-1">
-                <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                    {{ __('nav.dashboard') }}
+                <x-nav-link :href="url('/')" :active="request()->path() === '/'">
+                    {{ __('nav.home') }}
+                </x-nav-link>
+
+                <x-nav-link :href="route('mes-demandes')" :active="request()->routeIs('mes-demandes')">
+                    {{ __('nav.my_requests') }}
                 </x-nav-link>
 
                 @auth
@@ -125,12 +129,21 @@
     <!-- Mobile Menu -->
     <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" class="sm:hidden border-t border-sand-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="display: none;">
         <div class="px-4 py-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+            <x-responsive-nav-link :href="url('/')" :active="request()->path() === '/'">
                 <div class="flex items-center gap-3">
                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                     </svg>
-                    {{ __('nav.dashboard') }}
+                    {{ __('nav.home') }}
+                </div>
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('mes-demandes')" :active="request()->routeIs('mes-demandes')">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 9l2 2 4-4"/>
+                    </svg>
+                    {{ __('nav.my_requests') }}
                 </div>
             </x-responsive-nav-link>
 

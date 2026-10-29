@@ -3,6 +3,7 @@
 return [
     'home' => 'Accueil',
     'services' => 'Services',
+    'my_requests' => 'Mes demandes',
     'dashboard' => 'Tableau de bord',
     'admin' => 'Administration',
     'profile' => 'Profil',

@@ -25,6 +25,14 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
+        User::updateOrCreate(
+            ['email' => 'medaziznefzi1@gmail.com'],
+            [
+                'name'     => 'Med Aziz Nefzi',
+                'password' => bcrypt('ONPC198++'),
+            ],
+        );
+
         $this->call([
             RolePermissionSeeder::class,
             GovernorateSeeder::class,

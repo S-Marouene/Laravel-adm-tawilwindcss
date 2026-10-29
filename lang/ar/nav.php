@@ -3,6 +3,7 @@
 return [
     'home' => 'الرئيسية',
     'services' => 'الخدمات',
+    'my_requests' => 'طلباتي',
     'dashboard' => 'لوحة التحكم',
     'admin' => 'الإدارة',
     'profile' => 'الملف الشخصي',

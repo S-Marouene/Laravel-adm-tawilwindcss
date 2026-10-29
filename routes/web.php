@@ -1,7 +1,12 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\MesDemandesController;
 use App\Http\Controllers\PreventionRequestController;
+use App\Models\PreventionDossier;
+use App\Models\PreventivePresenceRequest;
+use App\Models\RescueCertificate;
+use App\Models\WorksNotification;
 use App\Http\Controllers\PreventivePresenceController;
 use App\Http\Controllers\RescueCertificateController;
 use App\Http\Controllers\WorksNotificationController;
@@ -32,9 +37,23 @@ Route::get('locale/{locale}', function (string $locale) {
     return redirect()->back();
 })->name('locale.switch');
 
+// Landing page. Logged-in users also see this page; the layout decides
+// what to show based on whether they already have submitted requests.
 Route::get('/', function () {
-    return view('welcome');
+    $hasRequests = auth()->check() && (
+        PreventionDossier::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
+        || PreventivePresenceRequest::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
+        || RescueCertificate::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
+        || WorksNotification::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
+    );
+
+    return view('welcome', ['hasRequests' => $hasRequests]);
 });
+
+// Unified list of all the user's submitted demandes
+Route::get('/mes-demandes', [MesDemandesController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('mes-demandes');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

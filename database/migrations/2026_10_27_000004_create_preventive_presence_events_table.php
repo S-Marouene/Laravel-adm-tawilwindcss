@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('preventive_presence_events', function (Blueprint $table) {
             $table->id();
             $table->foreignId('preventive_presence_request_id')
-                ->constrained('preventive_presence_requests')
+                ->constrained('preventive_presence_requests', 'id', 'ppe_request_fk')
                 ->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('type', 40);
@@ -19,7 +19,7 @@ return new class extends Migration
             $table->json('data')->nullable();
             $table->timestamps();
 
-            $table->index(['preventive_presence_request_id', 'created_at']);
+            $table->index(['preventive_presence_request_id', 'created_at'], 'ppe_request_created_idx');
         });
     }
 
