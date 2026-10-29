@@ -39,8 +39,41 @@ class User extends Authenticatable
      */
     public function homeUrl(): string
     {
-        return ($this->is_admin || $this->hasRole('admin'))
+        return $this->isAdministrator()
             ? route('admin.dashboard', absolute: false)
             : url('/');
+    }
+
+    public function isAdministrator(): bool
+    {
+        return $this->is_admin || $this->hasRole('admin');
+    }
+
+    /**
+     * Destination après authentification (connexion, vérification email,
+     * confirmation de mot de passe…) :
+     * - les utilisateurs simples vont sur la page d'accueil, sauf s'ils
+     *   avaient cliqué sur un service (formulaire de création d'une
+     *   demande) : la demande en cours reprend après connexion ;
+     * - les administrateurs suivent l'URL prévue (souvent une page admin),
+     *   avec le tableau de bord en secours.
+     */
+    public function toHome(): \Illuminate\Http\RedirectResponse
+    {
+        $intended = session()->pull('url.intended');
+
+        if (! $this->isAdministrator()) {
+            // Reprise d'une demande entamée (clic sur une carte du service)
+            if (is_string($intended) && preg_match(
+                '#/(?:prevention-requests|preventive-presence|rescue-certificates|works-notifications)/create#',
+                $intended,
+            )) {
+                return redirect($intended);
+            }
+
+            return redirect(url('/'));
+        }
+
+        return redirect()->intended($intended ?: $this->homeUrl());
     }
 }

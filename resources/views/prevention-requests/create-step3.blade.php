@@ -34,7 +34,7 @@
                                     <p class="font-medium text-on-surface dark:text-gray-200">{{ $dossier->nom_prenom }}</p>
                                     <p class="text-secondary dark:text-gray-400">{{ $dossier->cin }}</p>
                                     @if($dossier->phone)
-                                        <p class="text-secondary dark:text-gray-400">{{ $dossier->phone }}</p>
+                                        <p class="text-secondary dark:text-gray-400"><span class="num-ltr">{{ $dossier->phone }}</span></p>
                                     @endif
                                     <p class="text-secondary dark:text-gray-400">{{ $dossier->governorate?->name }}</p>
                                     <p class="text-secondary dark:text-gray-400">{{ $dossier->delegation?->name }}</p>

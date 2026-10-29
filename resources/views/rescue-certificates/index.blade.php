@@ -166,7 +166,7 @@
                                             <div class="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-secondary dark:text-gray-400 sm:grid-cols-3">
                                                 <span><span class="font-medium text-on-surface dark:text-gray-300">CIN:</span> {{ $rescueCertificate->cin }}</span>
                                                 @if ($rescueCertificate->phone)
-                                                    <span><span class="font-medium text-on-surface dark:text-gray-300">{{ __('rescue_certificate.phone') }}:</span> {{ $rescueCertificate->phone }}</span>
+                                                    <span><span class="font-medium text-on-surface dark:text-gray-300">{{ __('rescue_certificate.phone') }}:</span> <span class="num-ltr">{{ $rescueCertificate->phone }}</span></span>
                                                 @endif
                                                 @if ($rescueCertificate->incident_type)
                                                     <span class="truncate"><span class="font-medium text-on-surface dark:text-gray-300">{{ __('rescue_certificate.incident_type') }}:</span> {{ $rescueCertificate->incidentTypeLabel() }}</span>
@@ -267,7 +267,7 @@
                                     <p class="text-sm font-semibold text-on-surface dark:text-gray-100 truncate">{{ $draft->nom_prenom }}</p>
                                     <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">
                                         {{ $draft->cin }}
-                                        @if($draft->phone) &bull; {{ $draft->phone }} @endif
+                                        @if($draft->phone) &bull; <span class="num-ltr">{{ $draft->phone }}</span></span> @endif
                                         &bull; {{ $draft->governorate?->name }} &bull; {{ $draft->delegation?->name }}
                                     </p>
                                     <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">

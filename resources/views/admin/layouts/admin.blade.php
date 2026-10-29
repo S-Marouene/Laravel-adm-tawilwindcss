@@ -41,9 +41,9 @@
         </script>
     </head>
     <body class="font-sans antialiased bg-surface-container-low dark:bg-surface-dim text-on-surface overflow-x-hidden">
-        <div class="min-h-screen flex w-full overflow-x-hidden flex-col lg:flex-row" x-data="sidebarManager()">
-            <!-- Bandeau officiel (full width) -->
-            <div class="w-full">
+        <div class="min-h-screen flex w-full overflow-x-hidden flex-col" x-data="sidebarManager()">
+            <!-- Bandeau officiel (full width, au-dessus de la zone admin) -->
+            <div class="w-full shrink-0">
                 @include('partials.super-band')
             </div>
             <div class="flex w-full flex-1 min-h-0">

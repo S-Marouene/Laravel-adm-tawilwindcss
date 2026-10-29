@@ -5,6 +5,10 @@ return [
     'subtitle' => 'Select a service to get started',
     'under_construction' => 'Under development',
     'coming_soon' => 'Coming soon',
+    'kicker' => 'Our online services',
+    'available' => 'Available services',
+    'status_available' => 'Available',
+    'upcoming' => 'Coming soon',
     'access_service' => 'Access service',
     'free' => 'Free',
 

@@ -70,7 +70,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-on-surface dark:text-gray-300">{{ $presenceRequest->cin }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-on-surface dark:text-gray-300">{{ $presenceRequest->phone ?? '—' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-on-surface dark:text-gray-300"><span class="num-ltr">{{ $presenceRequest->phone ?? '—' }}</span></td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-on-surface dark:text-gray-300 max-w-[180px] truncate" title="{{ $presenceRequest->event_title }}">
                             {{ $presenceRequest->event_title ?? '—' }}
                             @if($presenceRequest->event_date)

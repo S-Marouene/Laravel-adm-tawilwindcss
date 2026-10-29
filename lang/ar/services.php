@@ -5,6 +5,10 @@ return [
     'subtitle' => 'اختر خدمة للبدء',
     'under_construction' => 'قيد الإنشاء',
     'coming_soon' => 'قريباً',
+    'kicker' => 'خدماتنا عبر الإنترنت',
+    'available' => 'الخدمات المتوفرة',
+    'status_available' => 'متوفرة',
+    'upcoming' => 'قريباً',
     'access_service' => 'الوصول إلى الخدمة',
     'free' => 'مجاني',
 

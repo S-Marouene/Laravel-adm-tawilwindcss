@@ -34,7 +34,7 @@
                                     <p class="font-medium text-on-surface dark:text-gray-200">{{ $presenceRequest->nom_prenom }}</p>
                                     <p class="text-secondary dark:text-gray-400">{{ $presenceRequest->cin }}</p>
                                     @if($presenceRequest->phone)
-                                        <p class="text-secondary dark:text-gray-400">{{ $presenceRequest->phone }}</p>
+                                        <p class="text-secondary dark:text-gray-400"><span class="num-ltr">{{ $presenceRequest->phone }}</span></p>
                                     @endif
                                     <p class="text-secondary dark:text-gray-400">{{ $presenceRequest->governorate?->name }}</p>
                                     <p class="text-secondary dark:text-gray-400">{{ $presenceRequest->delegation?->name }}</p>

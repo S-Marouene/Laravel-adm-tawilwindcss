@@ -68,7 +68,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-on-surface dark:text-gray-300">{{ $notification->owner_cin }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-on-surface dark:text-gray-300">{{ $notification->phone ?? '—' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-on-surface dark:text-gray-300"><span class="num-ltr">{{ $notification->phone ?? '—' }}</span></td>
                         <td class="px-6 py-4 text-sm text-on-surface dark:text-gray-300 max-w-[220px] truncate" title="{{ $notification->property_address }}">
                             @if($notification->works_type)
                                 {{ $notification->works_type }}

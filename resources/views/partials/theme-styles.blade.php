@@ -1,6 +1,6 @@
 @php
     $theme = \App\Models\ThemeSetting::getCssValues();
-    $fontFamily = $theme['font_family'] ?? 'Public Sans';
+    $fontFamily = $theme['font_family'] ?? 'Roboto';
     $baseFontSize = (int) ($theme['base_font_size'] ?? 15);
     $radius = (int) ($theme['border_radius'] ?? 4);
     $density = $theme['interface_density'] ?? 'comfortable';

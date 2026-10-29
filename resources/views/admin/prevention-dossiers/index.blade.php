@@ -69,7 +69,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-on-surface dark:text-gray-300">{{ $dossier->cin }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-on-surface dark:text-gray-300">{{ $dossier->phone ?? '—' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-on-surface dark:text-gray-300"><span class="num-ltr">{{ $dossier->phone ?? '—' }}</span></td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary dark:text-gray-400">
                             {{ $dossier->governorate?->name_fr ?? $dossier->governorate?->name_ar ?? '—' }}
                             @if($dossier->delegation)

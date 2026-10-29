@@ -34,7 +34,7 @@
                                     <p class="font-medium text-on-surface dark:text-gray-200">{{ $worksNotification->nom_prenom }}</p>
                                     <p class="text-secondary dark:text-gray-400">{{ $worksNotification->cin }}</p>
                                     @if($worksNotification->phone)
-                                        <p class="text-secondary dark:text-gray-400">{{ $worksNotification->phone }}</p>
+                                        <p class="text-secondary dark:text-gray-400"><span class="num-ltr">{{ $worksNotification->phone }}</span></p>
                                     @endif
                                     <p class="text-secondary dark:text-gray-400">{{ $worksNotification->governorate?->name }}</p>
                                     <p class="text-secondary dark:text-gray-400">{{ $worksNotification->delegation?->name }}</p>

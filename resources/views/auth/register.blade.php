@@ -4,7 +4,7 @@
 @section('auth-subtitle', __('register.subtitle'))
 
 @section('content')
-    <form method="POST" action="{{ route('register') }}" class="space-y-4">
+    <form method="POST" action="{{ route('register') }}" class="space-y-4" novalidate>
         @csrf
 
         <!-- Name -->
@@ -32,6 +32,10 @@
                 leadingIcon='<svg class="w-5 h-5 text-outline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'
                 trailingIcon="password"
                 placeholder="••••••••" />
+            <p class="mt-1.5 text-[11px] text-secondary flex items-center gap-1">
+                <span class="material-symbols-outlined text-[13px]" aria-hidden="true">info</span>
+                {{ __('register.password_hint') }}
+            </p>
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
@@ -46,19 +50,29 @@
         </div>
 
         <!-- Submit -->
-        <x-primary-button>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-            </svg>
-            {{ __('register.submit') }}
-        </x-primary-button>
+        <div class="pt-2">
+            <x-primary-button>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                </svg>
+                {{ __('register.submit') }}
+            </x-primary-button>
+
+            <!-- Security note -->
+            <p class="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-secondary">
+                <span class="material-symbols-outlined text-sm" aria-hidden="true">lock</span>
+                {{ __('login.secure') }}
+            </p>
+        </div>
 
         <!-- Login Link -->
-        <p class="text-center text-sm text-secondary dark:text-gray-400">
-            {{ __('register.has_account') }}
-            <a href="{{ route('login') }}" class="font-semibold text-gov-600 dark:text-gov-400 hover:text-gov-700 dark:hover:text-gov-300 transition-colors">
-                {{ __('login.submit') }}
-            </a>
-        </p>
+        <div class="pt-4 border-t border-surface-dim text-center">
+            <p class="text-sm text-secondary">
+                {{ __('register.has_account') }}
+                <a href="{{ route('login') }}" class="font-semibold text-primary hover:text-primary-container underline-offset-2 hover:underline transition-colors">
+                    {{ __('login.submit') }}
+                </a>
+            </p>
+        </div>
     </form>
 @endsection

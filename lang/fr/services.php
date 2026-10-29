@@ -7,6 +7,10 @@ return [
     'coming_soon' => 'Bientôt disponible',
     'access_service' => 'Accéder au service',
     'free' => 'Gratuit',
+    'kicker' => 'Nos services en ligne',
+    'available' => 'Services disponibles',
+    'status_available' => 'Disponible',
+    'upcoming' => 'Bientôt disponibles',
 
     // Service 1
     'prevention_certificate' => 'Certificat de prévention',

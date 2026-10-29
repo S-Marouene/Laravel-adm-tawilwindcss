@@ -70,7 +70,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-on-surface dark:text-gray-300">{{ $certificate->cin }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-on-surface dark:text-gray-300">{{ $certificate->phone ?? '—' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-on-surface dark:text-gray-300"><span class="num-ltr">{{ $certificate->phone ?? '—' }}</span></td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-on-surface dark:text-gray-300 max-w-[180px] truncate" title="{{ $certificate->incident_address }}">
                             {{ __('rescue_certificate.incident_type') }}: {{ $certificate->incidentTypeLabel() }}
                             @if($certificate->incident_date)

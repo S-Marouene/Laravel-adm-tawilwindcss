@@ -34,7 +34,7 @@
                                     <p class="font-medium text-on-surface dark:text-gray-200">{{ $rescueCertificate->nom_prenom }}</p>
                                     <p class="text-secondary dark:text-gray-400">{{ $rescueCertificate->cin }}</p>
                                     @if($rescueCertificate->phone)
-                                        <p class="text-secondary dark:text-gray-400">{{ $rescueCertificate->phone }}</p>
+                                        <p class="text-secondary dark:text-gray-400"><span class="num-ltr">{{ $rescueCertificate->phone }}</span></p>
                                     @endif
                                     <p class="text-secondary dark:text-gray-400">{{ $rescueCertificate->governorate?->name }}</p>
                                     <p class="text-secondary dark:text-gray-400">{{ $rescueCertificate->delegation?->name }}</p>

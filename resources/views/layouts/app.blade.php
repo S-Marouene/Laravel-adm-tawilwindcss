@@ -21,11 +21,11 @@
 
         <title>@yield('title', setting('app_name', __('app.name'))) - {{ setting('app_name', config('app.name', __('app.name'))) }}</title>
 
-        <!-- Fonts: Public Sans (Janna LT arabe auto-hébergée via app.css) -->
+        <!-- Fonts (Roboto latin ; Janna LT arabe auto-hébergée via app.css) -->
         @if(app()->getLocale() === 'ar')
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100..900&display=swap" rel="stylesheet">
         @endif
 
         <!-- Scripts -->
@@ -61,7 +61,7 @@
 
         <div class="min-h-screen flex flex-col">
             @include('layouts.navigation')
-            <div class="h-[2px] bg-primary" aria-hidden="true"></div>
+            <div class="h-[2px] bg-gradient-to-r from-primary via-primary-container/70 to-transparent" aria-hidden="true"></div>
 
             <!-- Page Heading -->
             @isset($header)

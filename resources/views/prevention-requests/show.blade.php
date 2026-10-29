@@ -203,7 +203,7 @@
                     </div>
                     <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('prevention_request.phone') }}</p>
-                        <p class="mt-1 text-sm font-semibold text-on-surface dark:text-gray-100">{{ $dossier->phone ?? '—' }}</p>
+                        <p class="mt-1 text-sm font-semibold text-on-surface dark:text-gray-100"><span class="num-ltr">{{ $dossier->phone ?? '—' }}</span></p>
                     </div>
                     <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">{{ __('prevention_request.email') }}</p>

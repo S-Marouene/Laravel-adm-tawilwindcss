@@ -5,8 +5,8 @@
                     design/nouvelle.html, design/demades.html
    ===================================================================== */
 
-/* Google Fonts: Public Sans — Janna LT (arabe) auto-hébergée + Material Symbols (iconographie institutionnelle) */
-@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+/* Google Fonts: Roboto (latin complet) — Janna LT (arabe) auto-hébergée + Material Symbols (iconographie institutionnelle) */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100..900&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 
 /* Janna LT — police arabe institutionnelle (auto-hébergée) */
 @font-face {
@@ -91,7 +91,8 @@
     --color-body: #faf8ff;
 
     /* ================= TYPOGRAPHIE ONPC ================= */
-    --font-sans: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-sans: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-heading: 'Roboto', system-ui, sans-serif;
     --font-arabic-crest: 'Janna LT', sans-serif;
 
     --text-display-hero: 44px;
@@ -265,6 +266,7 @@ body {
 h1,
 h2,
 h3 {
+    font-family: var(--app-heading-font, var(--font-heading));
     font-weight: var(--app-heading-weight, 700);
 }
 
@@ -288,12 +290,22 @@ button:disabled,
     cursor: not-allowed;
 }
 
-/* --- Arabic / RTL base --- */
+/* --- Arabic / RTL base — FULL text in Janna LT --- */
 [dir="rtl"] {
     font-family: 'Janna LT', 'Noto Sans Arabic', system-ui, sans-serif;
 }
 
-[dir="rtl"] .font-sans {
+/* body a sa propre police explicite -> forçage nécessaire */
+[dir="rtl"] body,
+[dir="rtl"] body .font-sans {
+    font-family: 'Janna LT', 'Noto Sans Arabic', system-ui, sans-serif !important;
+}
+
+/* Les titres (h1-h3) et la marque utilisent --font-heading (latin) -> réaffection Janna LT */
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] .font-heading {
     font-family: 'Janna LT', 'Noto Sans Arabic', system-ui, sans-serif !important;
 }
 
@@ -375,6 +387,11 @@ button:disabled,
 /* =====================================================================
    7. FORMULAIRES — style ONPC (champs blancs, ombres fines, focus rouge)
    ===================================================================== */
+
+/* NB: dans @layer base pour que les utilitaires Tailwind (ps-10, pe-10...)
+   gagnent la cascade — sinon le padding global écrase les champs à icônes. */
+@layer base {
+
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -461,6 +478,26 @@ select.border-red-400 {
 input[type="checkbox"],
 input[type="radio"] {
     accent-color: var(--color-primary);
+}
+
+} /* fin @layer base (section formulaires) */
+
+/* =====================================================================
+   7 bis. NOMBRES ET TÉLÉPHONES — toujours lus de gauche à droite même
+   en RTL : l'algorithme bidi inverse les groupes de chiffres séparés
+   par des espaces ou des points (ex. « 71 190 100 » → « 100 190 71 »)
+   ===================================================================== */
+.num-ltr {
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+/* Champs de saisie de téléphone / dates : contenu saisi affiché en LTR */
+input[name="phone"],
+input[type="tel"] {
+    direction: ltr;
+    unicode-bidi: plaintext;
+    text-align: start;
 }
 
 /* =====================================================================
@@ -829,6 +866,77 @@ input[type="radio"] {
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+}
+
+/* =====================================================================
+    11 bis. HERO CLAIR (accueil) — variante institutionnelle sobre :
+    le rouge devient un accent, plus un aplat plein écran
+   ===================================================================== */
+.hero-light {
+    background:
+        radial-gradient(56% 88% at 88% 10%, color-mix(in srgb, var(--color-primary) 8%, transparent), transparent 62%),
+        radial-gradient(42% 64% at 4% 96%, color-mix(in srgb, var(--color-primary) 6%, transparent), transparent 65%),
+        linear-gradient(180deg, var(--color-surface-container-low), var(--color-background));
+}
+
+.hero-light::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--color-inverse-surface) 7%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--color-inverse-surface) 7%, transparent) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(72% 62% at 58% 28%, rgba(0, 0, 0, 0.9), transparent 100%);
+    -webkit-mask-image: radial-gradient(72% 62% at 58% 28%, rgba(0, 0, 0, 0.9), transparent 100%);
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+/* Bande d'action finale — bandeau bleu nuit institutionnel (inverse tokens :
+   s'inverse automatiquement en mode sombre) */
+.cta-band {
+    background-color: var(--color-inverse-surface);
+    color: var(--color-inverse-on-surface);
+}
+
+.cta-band::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    inset-inline-end: -6%;
+    width: 32rem;
+    height: 32rem;
+    border-radius: 9999px;
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary-container) 22%, transparent), transparent 65%);
+    pointer-events: none;
+}
+
+/* Panneau d'identité des pages connexion / inscription — écrin bleu nuit
+   (tokens inversés => s'adapte automatiquement au mode sombre),
+   éclat rouge discret en accent, trame technique en diagonale */
+.auth-brand {
+    position: absolute;
+    inset: 0;
+    background-color: var(--color-inverse-surface);
+    background-image:
+        radial-gradient(52% 74% at 86% 4%, color-mix(in srgb, var(--color-primary) 24%, transparent), transparent 66%),
+        radial-gradient(46% 60% at -4% 102%, color-mix(in srgb, var(--color-primary-container) 18%, transparent), transparent 70%),
+        linear-gradient(160deg, color-mix(in srgb, var(--color-inverse-on-surface) 5%, transparent), transparent 52%);
+}
+
+.auth-brand::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(135deg, color-mix(in srgb, var(--color-inverse-on-surface) 9%, transparent) 1px, transparent 1px),
+        linear-gradient(45deg, color-mix(in srgb, var(--color-inverse-on-surface) 9%, transparent) 1px, transparent 1px);
+    background-size: 30px 30px;
+    mask-image: radial-gradient(78% 64% at 26% 22%, rgba(0, 0, 0, 0.85), transparent 100%);
+    -webkit-mask-image: radial-gradient(78% 64% at 26% 22%, rgba(0, 0, 0, 0.85), transparent 100%);
+    opacity: 0.55;
+    pointer-events: none;
 }
 
 /* =====================================================================

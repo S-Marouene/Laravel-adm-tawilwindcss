@@ -18,11 +18,11 @@
 
         <title>@yield('title', __('login.title')) - {{ __('app.name') }}</title>
 
-        <!-- Fonts (Janna LT arabe auto-hébergée via app.css) -->
+        <!-- Fonts (Roboto latin ; Janna LT arabe auto-hébergée via app.css) -->
         @if(app()->getLocale() === 'ar')
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100..900&display=swap" rel="stylesheet">
         @endif
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -45,51 +45,89 @@
     </head>
     <body class="font-sans antialiased text-on-surface bg-background min-h-screen flex flex-col">
         <div class="min-h-screen flex flex-col lg:flex-row">
-            <!-- Left/Brand Panel - visible on desktop -->
-            <div class="hidden lg:flex lg:w-1/2 relative bg-primary flex-col overflow-hidden">
-                <div class="hero-panel absolute inset-0"></div>
+            <!-- Left/Brand Panel — vitrine institutionnelle bleu nuit (garde le contraste
+                 en mode sombre : le contenu s'inverse automatiquement via les tokens) -->
+            <div class="hidden lg:flex lg:w-[46%] xl:w-1/2 relative flex-col overflow-hidden bg-inverse-surface">
+                <div class="auth-brand" aria-hidden="true"></div>
+                <div class="relative z-10 flex flex-col flex-1 w-full max-w-xl mx-auto justify-center px-8 xl:px-12 py-10 min-h-0 overflow-y-auto" style="color: var(--color-inverse-on-surface)">
 
-                <!-- Official band overlay -->
-                <div class="relative z-10 bg-inverse-surface text-inverse-on-surface text-body-sm border-b border-secondary/40">
-                    <div class="px-8 xl:px-12 py-1.5 flex items-center gap-2 text-[11px] font-semibold tracking-wider">
-                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-primary-container animate-alert-pulse"></span>
-                        <span class="uppercase">RÉPUBLIQUE TUNISIENNE</span>
-                        <span class="text-secondary-fixed opacity-60">|</span>
-                        <span class="uppercase">Ministère de l'Intérieur</span>
-                        <span class="font-arabic-crest text-sm tracking-normal text-surface-variant font-bold">الجمهورية التونسية - وزارة الداخلية</span>
+                    <!-- Identité (logo dans une pastille verre dépoli) -->
+                    <div class="flex items-center gap-3.5 shrink-0 mb-8">
+                        <a href="{{ url('/') }}" class="w-13 h-13 shrink-0 rounded-2xl flex items-center justify-center bg-inverse-on-surface/10 ring-1 ring-inverse-on-surface/15 backdrop-blur-sm" aria-label="{{ __('app.name') }}">
+                            <img src="/images/logo.png" alt="Emblème de la Protection Civile — دائرة الحماية المدنية" class="w-10.5 h-10.5 object-contain">
+                        </a>
+                        <div class="min-w-0">
+                            <p class="text-lg font-black tracking-tight leading-tight truncate">{{ __('app.brand') }}</p>
+                            <p class="text-[11px] font-semibold opacity-70 leading-snug truncate">{{ __('app.brand_sub') }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Déclaration -->
+                    <div class="shrink-0">
+                        <span class="inline-flex items-center gap-1.5 rounded-full border border-inverse-on-surface/20 bg-inverse-on-surface/5 px-3 py-1.5 text-label-caps uppercase opacity-90">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden="true"></span>
+                            {{ __('home.kicker') }}
+                        </span>
+                        <h1 class="mt-4 text-[26px] xl:text-[30px] font-black tracking-tight leading-[1.22] max-w-md">
+                            {{ __('app.tagline') }}
+                        </h1>
+                        <p class="mt-2.5 text-body-lg opacity-75 leading-relaxed max-w-md">
+                            {{ __('app.description') }}
+                        </p>
+                    </div>
+
+                    <!-- Services phares disponibles après connexion -->
+                    <div class="mt-7 space-y-2.5 w-full max-w-md shrink-0">
+                        @foreach ([['prevention_certificate', 'verified_user'], ['volunteering', 'volunteer_activism'], ['training', 'school']] as [$svc, $icon])
+                            <div class="group flex items-center gap-3 rounded-xl border border-inverse-on-surface/12 bg-inverse-on-surface/5 px-3.5 py-3 transition-colors hover:bg-inverse-on-surface/10 hover:border-inverse-on-surface/25">
+                                <span class="w-9 h-9 shrink-0 rounded-lg bg-inverse-primary/15 flex items-center justify-center" aria-hidden="true">
+                                    <span class="material-symbols-outlined filled text-[18px]" style="color: var(--color-inverse-primary)">{{ $icon }}</span>
+                                </span>
+                                <span class="text-body-sm font-semibold leading-snug min-w-0">{{ __('services.' . $svc) }}</span>
+                                <span class="ms-auto inline-flex items-center gap-1.5 text-[11px] font-semibold opacity-65 shrink-0">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden="true"></span>
+                                    {{ __('services.status_available') }}
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <!-- Gages de confiance (rangée compacte) -->
+                    <div class="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12.5px] font-semibold opacity-70 shrink-0">
+                        @foreach (['trust_official' => 'verified', 'trust_online' => 'devices', 'trust_tracking' => 'timeline'] as $trust => $icon)
+                            <span class="inline-flex items-center gap-1.5">
+                                <span class="material-symbols-outlined filled text-[15px]" style="color: var(--color-inverse-primary)" aria-hidden="true">{{ $icon }}</span>
+                                {{ __("home.$trust") }}
+                            </span>
+                        @endforeach
                     </div>
                 </div>
 
-                <!-- Brand Content -->
-                <div class="relative z-10 flex flex-col justify-center items-center flex-1 w-full px-12 py-12">
-                    <img src="/images/logo.png" alt="Emblème de la Protection Civile — دائرة الحماية المدنية" class="w-20 h-20 object-contain mb-8 drop-shadow-lg">
-
-                    <h1 class="text-headline-lg font-bold text-white uppercase tracking-tight text-center mb-2">{{ __('app.name') }}</h1>
-                    <p class="font-arabic-crest text-2xl text-primary-fixed font-bold text-center mb-4">الديوان الوطني للحماية المدنية</p>
-                    <p class="text-body-md text-white/85 text-center max-w-md leading-relaxed">{{ __('app.description') }}</p>
-
-                    <!-- Features list -->
-                    <div class="mt-10 space-y-3 w-full max-w-md">
-                        <div class="flex items-center gap-3 text-white/85 text-body-sm">
-                            <span class="w-9 h-9 bg-white/10 rounded flex items-center justify-center shrink-0 border border-white/10">
-                                <span class="material-symbols-outlined text-lg" aria-hidden="true">domain_verification</span>
-                            </span>
-                            <span>{{ __('services.title') }}</span>
+                <!-- Bandeau numéros d'urgence (tous cliquables) -->
+                <div class="relative z-10 shrink-0 bg-inverse-on-surface/5 border-t border-inverse-on-surface/12 backdrop-blur-sm py-3.5" style="color: var(--color-inverse-on-surface)">
+                    <div class="max-w-xl mx-auto px-8 xl:px-12 flex items-center justify-between gap-4 min-w-0">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="material-symbols-outlined filled text-lg shrink-0" style="color: var(--color-inverse-primary)" aria-hidden="true">emergency</span>
+                            <div class="min-w-0 leading-tight">
+                                <p class="text-body-sm font-bold truncate">{{ __('home.emergency_title') }}</p>
+                                <p class="text-[11px] opacity-65 truncate">{{ __('home.emergency_subtitle') }}</p>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-3 text-white/85 text-body-sm">
-                            <span class="w-9 h-9 bg-white/10 rounded flex items-center justify-center shrink-0 border border-white/10">
-                                <span class="material-symbols-outlined text-lg" aria-hidden="true">verified_user</span>
-                            </span>
-                            <span>{{ __('stats.satisfaction') }}</span>
-                        </div>
-                        <div class="flex items-center gap-3 text-white/85 text-body-sm">
-                            <span class="w-9 h-9 bg-white/10 rounded flex items-center justify-center shrink-0 border border-white/10">
-                                <span class="material-symbols-outlined text-lg" aria-hidden="true">group</span>
-                            </span>
-                            <span>{{ __('stats.users') }}</span>
+                        <div class="flex items-center gap-2 shrink-0" aria-label="{{ __('home.emergency_title') }} : 198, 190, 197">
+                            <a href="tel:198" class="num-ltr rounded-lg px-2.5 py-1.5 leading-none hover:bg-inverse-on-surface/10 transition-colors">
+                                <span class="block text-base font-black tabular-nums" style="color: var(--color-inverse-primary)">198</span>
+                                <span class="block text-[10px] opacity-70 mt-0.5">{{ __('home.emergency_civil') }}</span>
+                            </a>
+                            <a href="tel:190" class="num-ltr rounded-lg px-2.5 py-1.5 leading-none hover:bg-inverse-on-surface/10 transition-colors">
+                                <span class="block text-base font-black tabular-nums" style="color: var(--color-inverse-primary)">190</span>
+                                <span class="block text-[10px] opacity-70 mt-0.5">{{ __('home.emergency_samu') }}</span>
+                            </a>
+                            <a href="tel:197" class="num-ltr hidden xl:block rounded-lg px-2.5 py-1.5 leading-none hover:bg-inverse-on-surface/10 transition-colors">
+                                <span class="block text-base font-black tabular-nums" style="color: var(--color-inverse-primary)">197</span>
+                                <span class="block text-[10px] opacity-70 mt-0.5">{{ __('home.emergency_police') }}</span>
+                            </a>
                         </div>
                     </div>
-
                 </div>
             </div>
 
@@ -114,22 +152,23 @@
                 </div>
 
                 <!-- Mobile brand (shown on small screens) -->
-                <div class="lg:hidden flex flex-col items-center mb-6 mt-10">
+                <div class="lg:hidden flex flex-col items-center mb-6 mt-10 px-6 text-center">
                     <a href="{{ url('/') }}" class="block mb-3">
                         <img src="/images/logo.png" alt="" class="w-13 h-13 object-contain">
                     </a>
-                    <h1 class="text-headline-sm text-primary uppercase tracking-tight">{{ __('app.name') }}</h1>
-                    <p class="text-[11px] text-secondary mt-1">{{ app()->getLocale() === 'ar' ? 'Office National de la Protection Civile' : 'الديوان الوطني للحماية المدنية' }}</p>
+                    <h1 class="text-headline-md text-primary font-black tracking-tight">{{ __('app.brand') }}</h1>
+                    <p class="text-body-sm text-secondary mt-1.5 max-w-xs">{{ __('app.brand_sub') }}</p>
                 </div>
 
                 <!-- Auth Card -->
                 <div class="w-full max-w-md">
-                    <div class="auth-card bg-surface-container-lowest border border-surface-dim rounded shadow-sm p-6 sm:p-8">
+                    <div class="auth-card bg-surface-container-lowest border border-surface-dim rounded-2xl shadow-lg shadow-surface-dim/30 p-6 sm:p-8">
                         <!-- Page Header -->
-                        <div class="mb-6 pb-4 border-b border-surface-dim">
-                            <span class="inline-block bg-primary text-on-primary text-label-caps font-label-caps px-2 py-0.5 rounded uppercase mb-2">
-                                {{ app()->getLocale() === 'ar' ? 'ONPC' : 'Portail ONPC' }}
-                            </span>
+                        <div class="mb-6 pb-5 border-b border-surface-dim">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="h-px w-6 bg-primary" aria-hidden="true"></span>
+                                <span class="text-label-caps text-primary uppercase">{{ __('home.kicker') }}</span>
+                            </div>
                             <h2 class="text-headline-md text-on-surface tracking-tight">
                                 @yield('auth-title', __('login.title'))
                             </h2>
