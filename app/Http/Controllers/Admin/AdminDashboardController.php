@@ -13,6 +13,15 @@ class AdminDashboardController extends Controller
 {
     public function index()
     {
+        // Scoped administrators (gouvernorat / delegation) go straight to
+        // their first handled service's dossier workspace — the user-management
+        // dashboard is not relevant for them.
+        if (auth()->user()->adminScope() !== 'all') {
+            $route = \App\Support\AdminScope::firstAllowedServiceRoute(auth()->user());
+
+            return redirect()->route($route ?? 'admin.prevention-dossiers.index');
+        }
+
         $stats = [
             'total_users' => User::count(),
             'total_roles' => Role::count(),

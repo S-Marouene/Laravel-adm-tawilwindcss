@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\DocumentType;
 use App\Models\PreventivePresenceRequest;
 use App\Models\PresenceDocument;
+use App\Models\Service;
+use App\Support\AdminScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,10 +21,13 @@ class PreventivePresenceController extends Controller
     public function index(Request $request): View
     {
         $this->authorize('view preventive-presence');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTIVE_PRESENCE);
 
         $query = PreventivePresenceRequest::with(['user', 'governorate', 'delegation'])
             ->whereNotIn('status', ['draft'])
             ->latest();
+
+        AdminScope::apply($query);
 
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
@@ -49,6 +54,8 @@ class PreventivePresenceController extends Controller
     public function show(PreventivePresenceRequest $preventivePresence): View
     {
         $this->authorize('view preventive-presence');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTIVE_PRESENCE);
+        AdminScope::authorize($preventivePresence);
 
         $preventivePresence->load(['user', 'governorate', 'delegation', 'reviewer', 'documents.documentType', 'events.actor']);
 
@@ -71,6 +78,8 @@ class PreventivePresenceController extends Controller
     public function advance(PreventivePresenceRequest $preventivePresence): RedirectResponse
     {
         $this->authorize('manage preventive-presence');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTIVE_PRESENCE);
+        AdminScope::authorize($preventivePresence);
 
         if (! in_array($preventivePresence->status, ['completed', 'needs_correction'])) {
             return back()->withErrors(['status' => 'Cannot advance this request from its current status.']);
@@ -96,6 +105,8 @@ class PreventivePresenceController extends Controller
     public function requestCorrection(Request $request, PreventivePresenceRequest $preventivePresence): RedirectResponse
     {
         $this->authorize('manage preventive-presence');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTIVE_PRESENCE);
+        AdminScope::authorize($preventivePresence);
 
         $validated = $request->validate([
             'admin_note' => ['required', 'string', 'max:2000'],
@@ -126,6 +137,8 @@ class PreventivePresenceController extends Controller
     public function approve(PreventivePresenceRequest $preventivePresence): RedirectResponse
     {
         $this->authorize('manage preventive-presence');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTIVE_PRESENCE);
+        AdminScope::authorize($preventivePresence);
 
         if (! $preventivePresence->isActionable()) {
             return back()->withErrors(['status' => 'Cannot approve this request from its current status.']);
@@ -151,6 +164,8 @@ class PreventivePresenceController extends Controller
     public function cancel(Request $request, PreventivePresenceRequest $preventivePresence): RedirectResponse
     {
         $this->authorize('manage preventive-presence');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTIVE_PRESENCE);
+        AdminScope::authorize($preventivePresence);
 
         $validated = $request->validate([
             'admin_note' => ['required', 'string', 'max:2000'],
@@ -181,6 +196,8 @@ class PreventivePresenceController extends Controller
     public function recordPayment(Request $request, PreventivePresenceRequest $preventivePresence): RedirectResponse
     {
         $this->authorize('manage preventive-presence');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTIVE_PRESENCE);
+        AdminScope::authorize($preventivePresence);
 
         $validated = $request->validate([
             'fee_amount'     => ['required', 'numeric', 'min:0'],
@@ -217,6 +234,8 @@ class PreventivePresenceController extends Controller
     public function markServed(Request $request, PreventivePresenceRequest $preventivePresence): RedirectResponse
     {
         $this->authorize('manage preventive-presence');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTIVE_PRESENCE);
+        AdminScope::authorize($preventivePresence);
 
         $validated = $request->validate([
             'service_date'   => ['required', 'date'],

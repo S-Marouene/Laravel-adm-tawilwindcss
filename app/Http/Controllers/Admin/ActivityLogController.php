@@ -11,6 +11,7 @@ class ActivityLogController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('view activity-logs');
         $query = ActivityLog::with('user')->latest();
 
         // Filter by type
@@ -46,12 +47,14 @@ class ActivityLogController extends Controller
 
     public function show(ActivityLog $activityLog)
     {
+        $this->authorize('view activity-logs');
         $activityLog->load('user');
         return view('admin.activity-logs.show', compact('activityLog'));
     }
 
     public function destroy(ActivityLog $activityLog)
     {
+        $this->authorize('delete activity-logs');
         $activityLog->delete();
 
         return redirect()->route('admin.activity-logs.index')
@@ -60,6 +63,7 @@ class ActivityLogController extends Controller
 
     public function clear()
     {
+        $this->authorize('delete activity-logs');
         ActivityLog::query()->delete();
 
         return redirect()->route('admin.activity-logs.index')

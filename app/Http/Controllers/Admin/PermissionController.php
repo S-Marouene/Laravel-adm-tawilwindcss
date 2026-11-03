@@ -11,17 +11,20 @@ class PermissionController extends Controller
 {
     public function index()
     {
+        $this->authorize('view permissions');
         $permissions = Permission::latest()->paginate(15);
         return view('admin.permissions.index', compact('permissions'));
     }
 
     public function create()
     {
+        $this->authorize('view permissions');
         return view('admin.permissions.create');
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create permissions');
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:permissions,name'],
             'guard_name' => ['nullable', 'string', 'in:web,api'],
@@ -40,11 +43,13 @@ class PermissionController extends Controller
 
     public function edit(Permission $permission)
     {
+        $this->authorize('edit permissions');
         return view('admin.permissions.edit', compact('permission'));
     }
 
     public function update(Request $request, Permission $permission)
     {
+        $this->authorize('edit permissions');
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:permissions,name,'.$permission->id],
             'guard_name' => ['nullable', 'string', 'in:web,api'],
@@ -66,6 +71,7 @@ class PermissionController extends Controller
 
     public function destroy(Permission $permission)
     {
+        $this->authorize('delete permissions');
         $permName = $permission->name;
         $permission->delete();
 

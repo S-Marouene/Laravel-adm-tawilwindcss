@@ -9,6 +9,8 @@ use App\Models\DocumentType;
 use App\Models\Governorate;
 use App\Models\PreventionCertificate;
 use App\Models\PreventionDossier;
+use App\Models\Service;
+use App\Support\AdminScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -22,10 +24,15 @@ class PreventionDossierController extends Controller
     public function index(Request $request): View
     {
         $this->authorize('view prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
 
         $query = PreventionDossier::with(['user', 'governorate', 'delegation', 'buildingType'])
             ->whereNotIn('status', ['draft'])
             ->latest();
+
+        // Territory scope: delegation admins see only their delegation,
+        // gouvernorat admins only their governorate, everyone else everything.
+        AdminScope::apply($query);
 
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
@@ -51,6 +58,8 @@ class PreventionDossierController extends Controller
     public function show(PreventionDossier $preventionDossier): View
     {
         $this->authorize('view prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($preventionDossier);
 
         $preventionDossier->load(['user', 'governorate', 'delegation', 'buildingType', 'buildingActivity', 'reviewer', 'appointments.scheduler', 'certificate.governorate', 'certificate.delegation', 'events.actor', 'events.dossier:id,building_address']);
 
@@ -59,8 +68,16 @@ class PreventionDossierController extends Controller
             ->get()
             ->keyBy('document_type_id');
 
-        // Delegations grouped by governorate — used by the "issue certificate" form
-        $governorates = Governorate::with('delegations')->orderBy('id')->get();
+        // Delegations grouped by governorate — used by the "issue certificate" form.
+        // Scoped administrators are restricted to their own territory.
+        $governorates = match (auth()->user()->adminScope()) {
+            'governorate' => Governorate::whereKey(auth()->user()->governorate_id)
+                ->with('delegations')->orderBy('id')->get(),
+            'delegation' => Governorate::whereKey(auth()->user()->governorate_id)
+                ->with(['delegations' => fn ($q) => $q->whereKey(auth()->user()->delegation_id)])
+                ->orderBy('id')->get(),
+            default => Governorate::with('delegations')->orderBy('id')->get(),
+        };
 
         return view('admin.prevention-dossiers.show', compact('preventionDossier', 'documentTypes', 'uploadedDocs', 'governorates'));
     }
@@ -72,6 +89,8 @@ class PreventionDossierController extends Controller
     public function advanceToConsultation(PreventionDossier $preventionDossier): RedirectResponse
     {
         $this->authorize('manage prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($preventionDossier);
 
         if (! in_array($preventionDossier->status, ['completed', 'submitted', 'needs_correction'])) {
             return back()->withErrors(['status' => 'Cannot advance this dossier from its current status.']);
@@ -97,6 +116,8 @@ class PreventionDossierController extends Controller
     public function requestCorrection(Request $request, PreventionDossier $preventionDossier): RedirectResponse
     {
         $this->authorize('manage prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($preventionDossier);
 
         $validated = $request->validate([
             'admin_note' => ['required', 'string', 'max:2000'],
@@ -126,6 +147,8 @@ class PreventionDossierController extends Controller
     public function approve(PreventionDossier $preventionDossier): RedirectResponse
     {
         $this->authorize('manage prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($preventionDossier);
 
         if (! $preventionDossier->isActionable()) {
             return back()->withErrors(['status' => 'Cannot approve this dossier from its current status.']);
@@ -151,6 +174,8 @@ class PreventionDossierController extends Controller
     public function cancel(Request $request, PreventionDossier $preventionDossier): RedirectResponse
     {
         $this->authorize('manage prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($preventionDossier);
 
         $validated = $request->validate([
             'admin_note' => ['required', 'string', 'max:2000'],
@@ -180,6 +205,8 @@ class PreventionDossierController extends Controller
     public function scheduleAppointment(Request $request, PreventionDossier $preventionDossier): RedirectResponse
     {
         $this->authorize('manage prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($preventionDossier);
 
         $validated = $request->validate([
             'visit_date' => ['required', 'date', 'after_or_equal:today'],
@@ -212,6 +239,8 @@ class PreventionDossierController extends Controller
     public function updateAppointment(Request $request, PreventionDossier $preventionDossier, DossierAppointment $appointment): RedirectResponse
     {
         $this->authorize('manage prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($preventionDossier);
 
         if ($appointment->prevention_dossier_id !== $preventionDossier->id) {
             abort(403);
@@ -256,6 +285,8 @@ class PreventionDossierController extends Controller
     public function deleteAppointment(PreventionDossier $preventionDossier, DossierAppointment $appointment): RedirectResponse
     {
         $this->authorize('manage prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($preventionDossier);
 
         if ($appointment->prevention_dossier_id !== $preventionDossier->id) {
             abort(403);
@@ -287,6 +318,8 @@ class PreventionDossierController extends Controller
     public function issueCertificate(Request $request, PreventionDossier $preventionDossier): RedirectResponse
     {
         $this->authorize('manage prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($preventionDossier);
 
         if ($preventionDossier->isCancelled()) {
             return back()->withErrors(['status' => 'Cannot issue a certificate for a cancelled dossier.']);
@@ -306,6 +339,21 @@ class PreventionDossierController extends Controller
             'valid_until'    => ['nullable', 'date', 'after_or_equal:today'],
             'note'           => ['nullable', 'string', 'max:2000'],
         ]);
+
+        // Scoped administrators can only assign a pickup location inside
+        // their own territory (delegation scope is clamped automatically).
+        $user = auth()->user();
+        if (in_array($user->adminScope(), ['governorate', 'delegation'])) {
+            if ((int) $validated['governorate_id'] !== (int) $user->governorate_id) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'governorate_id' => 'The pickup governorate must be inside your territory.',
+                ]);
+            }
+
+            if ($user->adminScope() === 'delegation') {
+                $validated['delegation_id'] = $user->delegation_id;
+            }
+        }
 
         $governorate = \App\Models\Governorate::find($validated['governorate_id']);
         $delegation  = $validated['delegation_id'] ? \App\Models\Delegation::find($validated['delegation_id']) : null;
@@ -344,6 +392,8 @@ class PreventionDossierController extends Controller
     public function updateCertificate(Request $request, PreventionDossier $preventionDossier): RedirectResponse
     {
         $this->authorize('manage prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($preventionDossier);
 
         $validated = $request->validate([
             'action' => ['required', 'in:collected,ready'],
@@ -381,6 +431,8 @@ class PreventionDossierController extends Controller
     public function revokeCertificate(PreventionDossier $preventionDossier): RedirectResponse
     {
         $this->authorize('manage prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($preventionDossier);
 
         $certificate = $preventionDossier->certificate;
 

@@ -12,12 +12,16 @@ class RoleController extends Controller
 {
     public function index()
     {
+        $this->authorize('view roles');
+
         $roles = Role::with('permissions')->latest()->paginate(10);
         return view('admin.roles.index', compact('roles'));
     }
 
     public function create()
     {
+        $this->authorize('create roles');
+
         $permissions = Permission::all()->groupBy(function ($permission) {
             return explode(' ', $permission->name)[0] ?? 'general';
         });
@@ -26,6 +30,8 @@ class RoleController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create roles');
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
             'permissions' => ['nullable', 'array'],
@@ -53,6 +59,8 @@ class RoleController extends Controller
 
     public function edit(Role $role)
     {
+        $this->authorize('edit roles');
+
         $permissions = Permission::all()->groupBy(function ($permission) {
             return explode(' ', $permission->name)[0] ?? 'general';
         });
@@ -62,6 +70,8 @@ class RoleController extends Controller
 
     public function update(Request $request, Role $role)
     {
+        $this->authorize('edit roles');
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:roles,name,'.$role->id],
             'permissions' => ['nullable', 'array'],
@@ -87,8 +97,10 @@ class RoleController extends Controller
 
     public function destroy(Role $role)
     {
-        if ($role->name === 'admin') {
-            return back()->with('error', 'Cannot delete the super admin role.');
+        $this->authorize('delete roles');
+
+        if (in_array($role->name, ['admin', 'super-admin'])) {
+            return back()->with('error', 'Cannot delete a built-in administration role.');
         }
 
         $roleName = $role->name;

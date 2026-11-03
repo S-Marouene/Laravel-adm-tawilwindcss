@@ -24,6 +24,8 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Name</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Email</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Roles</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Territory</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Services</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Joined</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Actions</th>
@@ -52,6 +54,25 @@
                                     @endforelse
                                 </div>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary dark:text-gray-400">
+                                @php $scope = $user->adminScope(); @endphp
+                                @if($scope === 'all')
+                                    <span class="admin-badge inline-flex items-center px-2 py-0.5 text-xs font-medium bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">All</span>
+                                @else
+                                    <span class="admin-badge inline-flex items-center px-2 py-0.5 text-xs font-medium bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                                        {{ $scope === 'delegation' ? 'Délégation' : 'Gouvernorat' }}: {{ $user->scopeLabel() }}
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex flex-wrap gap-1">
+                                    @forelse($user->services as $service)
+                                        <span class="admin-badge inline-flex items-center px-2 py-0.5 text-xs font-medium bg-sky-50 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300">{{ $service->name }}</span>
+                                    @empty
+                                        <span class="text-xs text-outline">—</span>
+                                    @endforelse
+                                </div>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($user->is_admin)
                                     <span class="admin-badge inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-gov-50 dark:bg-gov-900/45 text-gov-700 dark:text-gov-300">Admin</span>
@@ -71,7 +92,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-secondary dark:text-gray-400">No users found.</td>
+                            <td colspan="8" class="px-6 py-12 text-center text-secondary dark:text-gray-400">No users found.</td>
                         </tr>
                     @endforelse
                 </tbody>

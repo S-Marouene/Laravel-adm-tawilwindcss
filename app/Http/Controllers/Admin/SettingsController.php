@@ -15,6 +15,7 @@ class SettingsController extends Controller
      */
     public function index()
     {
+        $this->authorize('view settings');
         $settings = Setting::getGrouped();
         return view('admin.settings.index', compact('settings'));
     }
@@ -24,6 +25,7 @@ class SettingsController extends Controller
      */
     public function update(Request $request)
     {
+        $this->authorize('edit settings');
         $settings = Setting::all()->keyBy('key');
 
         foreach ($settings as $setting) {
@@ -73,6 +75,7 @@ class SettingsController extends Controller
      */
     public function removeImage(Request $request, string $key)
     {
+        $this->authorize('edit settings');
         $setting = Setting::where('key', $key)->firstOrFail();
 
         if ($setting->value) {
@@ -89,6 +92,7 @@ class SettingsController extends Controller
      */
     public function testMail(Request $request)
     {
+        $this->authorize('edit settings');
         $request->validate([
             'test_email' => ['required', 'email'],
         ]);

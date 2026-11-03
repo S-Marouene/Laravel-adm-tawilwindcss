@@ -79,27 +79,34 @@
                         <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('nav.services') }}</p>
                     </div>
 
+                    @can('view users')
                     <a href="{{ route('admin.users.index') }}" data-tooltip="{{ __('admin.users') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/>
                         </svg>
                         <span x-show="!collapsed" class="truncate">{{ __('admin.users') }}</span>
                     </a>
+                    @endcan
 
+                    @can('view roles')
                     <a href="{{ route('admin.roles.index') }}" data-tooltip="{{ __('admin.roles') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                         </svg>
                         <span x-show="!collapsed" class="truncate">{{ __('admin.roles') }}</span>
                     </a>
+                    @endcan
 
+                    @can('view permissions')
                     <a href="{{ route('admin.permissions.index') }}" data-tooltip="{{ __('admin.permissions') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                         </svg>
                         <span x-show="!collapsed" class="truncate">{{ __('admin.permissions') }}</span>
                     </a>
+                    @endcan
 
+                    @can('view roles')
                     <!-- Advanced UI (Collapsible Submenu) -->
                     <div class="pt-4 pb-1" x-show="!collapsed">
                         <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('nav.advanced_ui') }}</p>
@@ -169,10 +176,13 @@
                             </a>
                         </div>
                     </div>
+                    @endcan
 
+                    @can('view delegations')
                     <div class="pt-4 pb-1" x-show="!collapsed">
                         <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('admin.ref_data') }}</p>
                     </div>
+                    @endcan
 
                     {{-- Prevention Dossiers --}}
                     @can('view prevention-dossiers')
@@ -204,6 +214,7 @@
                     </a>
                     @endcan
 
+                    @can('view delegations')
                     {{-- Reference data: collapsible submenu --}}
                     <div x-data="{ refOpen: {{ request()->routeIs('admin.governorates.*', 'admin.delegations.*', 'admin.building-types.*', 'admin.building-activities.*', 'admin.document-types.*') ? 'true' : 'false' }} }" class="space-y-0.5">
                         <button @click="refOpen = !refOpen; if(collapsed) collapsed = false" data-tooltip="{{ __('admin.ref_data') }}" class="sidebar-nav-link flex items-center justify-between w-full gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.governorates.*', 'admin.delegations.*', 'admin.building-types.*', 'admin.building-activities.*', 'admin.document-types.*') ? 'active' : '' }}">
@@ -240,7 +251,9 @@
                             </a>
                         </div>
                     </div>
+                    @endcan
 
+                    @can('view activity-logs')
                     <div class="pt-4 pb-1" x-show="!collapsed">
                         <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('admin.logs') }}</p>
                     </div>
@@ -251,22 +264,29 @@
                         </svg>
                         <span x-show="!collapsed" class="truncate">{{ __('admin.logs') }}</span>
                     </a>
+                    @endcan
 
+                    @canany(['edit settings', 'edit theme-settings'])
                     <div class="pt-4 pb-1" x-show="!collapsed">
                         <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('admin.configuration') }}</p>
                     </div>
 
+                    @can('edit theme-settings')
                     <a href="{{ route('admin.theme-settings.index') }}" data-tooltip="{{ __('admin.theme_settings') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.theme-settings.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
                         </svg>
                         <span x-show="!collapsed" class="truncate">{{ __('admin.theme_settings') }}</span>
                     </a>
+                    @endcan
 
+                    @can('edit settings')
                     <a href="{{ route('admin.settings.index') }}" data-tooltip="{{ __('admin.settings') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         <span x-show="!collapsed" class="truncate">{{ __('admin.settings') }}</span>
                     </a>
+                    @endcan
+                    @endcanany
                 </nav>
             </aside>
 
@@ -439,7 +459,13 @@
                                             </div>
                                             <div class="hidden md:block text-start">
                                                 <p class="font-semibold mb-0 leading-none text-on-surface dark:text-gray-300 text-sm">{{ Auth::user()->name }}</p>
-                                                <span class="opacity-70 font-normal text-secondary dark:text-gray-400 block text-[0.6875rem]">{{ Auth::user()->is_admin ? 'Administrator' : 'User' }}</span>
+                                                <span class="opacity-70 font-normal text-secondary dark:text-gray-400 block text-[0.6875rem]">
+                                                    @if(auth()->user()->adminScope() !== 'all')
+                                                        {{ auth()->user()->adminScope() === 'delegation' ? 'Délégation' : 'Gouvernorat' }} — {{ auth()->user()->scopeLabel() }}
+                                                    @else
+                                                        Administrator
+                                                    @endif
+                                                </span>
                                             </div>
                                             <i class="bx bx-chevron-down text-outline text-sm hidden md:block"></i>
                                         </button>
@@ -450,10 +476,12 @@
                                                     <i class="bx bx-user-circle text-lg me-2 opacity-70"></i>
                                                     {{ __('nav.profile') }}
                                                 </a>
+                                                @can('edit settings')
                                                 <a href="{{ route('admin.settings.index') }}" class="ti-dropdown-item w-full !text-[0.8125rem] !p-[0.65rem] !flex">
                                                     <i class="bx bx-slider text-lg me-2 opacity-70"></i>
                                                     {{ __('admin.settings') }}
                                                 </a>
+                                                @endcan
                                                 <div class="border-t border-surface-container-high dark:border-gray-700 my-1"></div>
                                                 <form method="POST" action="{{ route('logout') }}">
                                                     @csrf
@@ -491,19 +519,26 @@
                                     <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                                     {{ __('nav.dashboard') }}
                                 </a>
+                                @can('view users')
                                 <a href="{{ route('admin.users.index') }}" @click="closeMobile()" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.users.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-on-surface dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
                                     <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
                                     {{ __('admin.users') }}
                                 </a>
+                                @endcan
+                                @can('view roles')
                                 <a href="{{ route('admin.roles.index') }}" @click="closeMobile()" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.roles.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-on-surface dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
                                     <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                                     {{ __('admin.roles') }}
                                 </a>
+                                @endcan
+                                @can('view permissions')
                                 <a href="{{ route('admin.permissions.index') }}" @click="closeMobile()" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.permissions.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-on-surface dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
                                     <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                                     {{ __('admin.permissions') }}
                                 </a>
+                                @endcan
 
+                                @can('view roles')
                                 <!-- Mobile Advanced UI Submenu -->
                                 <div x-data="{ advOpen: {{ request()->routeIs('admin.advanced-ui.*') ? 'true' : 'false' }} }">
                                     <button @click="advOpen = !advOpen" class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.advanced-ui.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-on-surface dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
@@ -548,19 +583,26 @@
                                         </a>
                                     </div>
                                 </div>
+                                @endcan
 
+                                @can('view activity-logs')
                                 <a href="{{ route('admin.activity-logs.index') }}" @click="closeMobile()" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.activity-logs.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-on-surface dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
                                     <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                                     {{ __('admin.logs') }}
                                 </a>
+                                @endcan
+                                @can('edit theme-settings')
                                 <a href="{{ route('admin.theme-settings.index') }}" @click="closeMobile()" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.theme-settings.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-on-surface dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
                                     <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
                                     {{ __('admin.theme_settings') }}
                                 </a>
+                                @endcan
+                                @can('edit settings')
                                 <a href="{{ route('admin.settings.index') }}" @click="closeMobile()" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.settings.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-on-surface dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
                                     <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                     {{ __('admin.settings') }}
                                 </a>
+                                @endcan
                     </div>
                     <div class="border-t border-surface-dim dark:border-gray-700 px-4 py-3">
                         <div class="flex items-center gap-3 mb-3">

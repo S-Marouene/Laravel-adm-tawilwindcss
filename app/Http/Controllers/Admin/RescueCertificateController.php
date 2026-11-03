@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\DocumentType;
 use App\Models\RescueCertificate;
 use App\Models\RescueDocument;
+use App\Models\Service;
+use App\Support\AdminScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,10 +21,13 @@ class RescueCertificateController extends Controller
     public function index(Request $request): View
     {
         $this->authorize('view rescue-certificates');
+        AdminScope::authorizeService(Service::SERVICE_RESCUE_CERTIFICATE);
 
         $query = RescueCertificate::with(['user', 'governorate', 'delegation'])
             ->whereNotIn('status', ['draft'])
             ->latest();
+
+        AdminScope::apply($query);
 
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
@@ -48,6 +53,8 @@ class RescueCertificateController extends Controller
     public function show(RescueCertificate $rescueCertificate): View
     {
         $this->authorize('view rescue-certificates');
+        AdminScope::authorizeService(Service::SERVICE_RESCUE_CERTIFICATE);
+        AdminScope::authorize($rescueCertificate);
 
         $rescueCertificate->load(['user', 'governorate', 'delegation', 'reviewer', 'documents.documentType', 'events.actor']);
 
@@ -70,6 +77,8 @@ class RescueCertificateController extends Controller
     public function advance(RescueCertificate $rescueCertificate): RedirectResponse
     {
         $this->authorize('manage rescue-certificates');
+        AdminScope::authorizeService(Service::SERVICE_RESCUE_CERTIFICATE);
+        AdminScope::authorize($rescueCertificate);
 
         if (! in_array($rescueCertificate->status, ['completed', 'needs_correction'])) {
             return back()->withErrors(['status' => 'Cannot advance this request from its current status.']);
@@ -95,6 +104,8 @@ class RescueCertificateController extends Controller
     public function requestCorrection(Request $request, RescueCertificate $rescueCertificate): RedirectResponse
     {
         $this->authorize('manage rescue-certificates');
+        AdminScope::authorizeService(Service::SERVICE_RESCUE_CERTIFICATE);
+        AdminScope::authorize($rescueCertificate);
 
         $validated = $request->validate([
             'admin_note' => ['required', 'string', 'max:2000'],
@@ -125,6 +136,8 @@ class RescueCertificateController extends Controller
     public function approve(RescueCertificate $rescueCertificate): RedirectResponse
     {
         $this->authorize('manage rescue-certificates');
+        AdminScope::authorizeService(Service::SERVICE_RESCUE_CERTIFICATE);
+        AdminScope::authorize($rescueCertificate);
 
         if (! $rescueCertificate->isActionable()) {
             return back()->withErrors(['status' => 'Cannot approve this request from its current status.']);
@@ -150,6 +163,8 @@ class RescueCertificateController extends Controller
     public function cancel(Request $request, RescueCertificate $rescueCertificate): RedirectResponse
     {
         $this->authorize('manage rescue-certificates');
+        AdminScope::authorizeService(Service::SERVICE_RESCUE_CERTIFICATE);
+        AdminScope::authorize($rescueCertificate);
 
         $validated = $request->validate([
             'admin_note' => ['required', 'string', 'max:2000'],
@@ -180,6 +195,8 @@ class RescueCertificateController extends Controller
     public function deliver(Request $request, RescueCertificate $rescueCertificate): RedirectResponse
     {
         $this->authorize('manage rescue-certificates');
+        AdminScope::authorizeService(Service::SERVICE_RESCUE_CERTIFICATE);
+        AdminScope::authorize($rescueCertificate);
 
         $validated = $request->validate([
             'certificate_number' => ['required', 'string', 'max:50'],
@@ -217,6 +234,8 @@ class RescueCertificateController extends Controller
     public function downloadDocument(RescueDocument $rescueDocument)
     {
         $this->authorize('view rescue-certificates');
+        AdminScope::authorizeService(Service::SERVICE_RESCUE_CERTIFICATE);
+        AdminScope::authorize($rescueDocument->certificate);
 
         abort_unless(\Storage::disk('local')->exists($rescueDocument->file_path), 404);
 

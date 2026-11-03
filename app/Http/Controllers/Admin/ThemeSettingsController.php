@@ -12,6 +12,7 @@ class ThemeSettingsController extends Controller
 {
     public function index()
     {
+        $this->authorize('view theme-settings');
         $themeSettings = ThemeSetting::getGrouped();
 
         return view('admin.theme-settings.index', compact('themeSettings'));
@@ -19,6 +20,7 @@ class ThemeSettingsController extends Controller
 
     public function update(Request $request)
     {
+        $this->authorize('edit theme-settings');
         ThemeSetting::ensureDefaults();
 
         $settings = ThemeSetting::all()->keyBy('key');

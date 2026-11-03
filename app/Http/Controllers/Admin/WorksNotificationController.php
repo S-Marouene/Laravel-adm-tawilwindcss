@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\DocumentType;
 use App\Models\WorksNotification;
 use App\Models\WorksDocument;
+use App\Models\Service;
+use App\Support\AdminScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,10 +21,13 @@ class WorksNotificationController extends Controller
     public function index(Request $request): View
     {
         $this->authorize('view works-notifications');
+        AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
 
         $query = WorksNotification::with(['user', 'governorate', 'delegation'])
             ->whereNotIn('status', ['draft'])
             ->latest();
+
+        AdminScope::apply($query);
 
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
@@ -50,6 +55,8 @@ class WorksNotificationController extends Controller
     public function show(WorksNotification $worksNotification): View
     {
         $this->authorize('view works-notifications');
+        AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
+        AdminScope::authorize($worksNotification);
 
         $worksNotification->load(['user', 'governorate', 'delegation', 'reviewer', 'documents.documentType', 'events.actor']);
 
@@ -72,6 +79,8 @@ class WorksNotificationController extends Controller
     public function advance(WorksNotification $worksNotification): RedirectResponse
     {
         $this->authorize('manage works-notifications');
+        AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
+        AdminScope::authorize($worksNotification);
 
         if (! in_array($worksNotification->status, ['completed', 'needs_correction'])) {
             return back()->withErrors(['status' => 'Cannot advance this notification from its current status.']);
