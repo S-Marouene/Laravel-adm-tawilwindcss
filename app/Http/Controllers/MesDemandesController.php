@@ -26,11 +26,17 @@ class MesDemandesController extends Controller
         // ── Prevention dossiers (certificat de prévention) ──
         PreventionDossier::where('user_id', $user->id)
             ->whereNotIn('status', ['draft'])
-            ->with(['governorate', 'delegation', 'buildingType', 'buildingActivity'])
+            ->with(['governorate', 'delegation', 'buildingType', 'buildingActivity', 'appointments'])
             ->withCount('documents')
             ->latest()
             ->get()
             ->each(function ($dossier) use ($items) {
+                $pendingAppt = $dossier->appointments->first(fn ($a) => $a->isPending());
+                $rdv = $pendingAppt ? [
+                    'date' => $pendingAppt->visit_date->format(app()->getLocale() === 'ar' ? 'Y/m/d' : 'd/m/Y'),
+                    'time' => substr($pendingAppt->visit_time, 0, 5),
+                ] : null;
+
                 $items->push($this->makeItem(
                     kind:  'prevention',
                     lang:  'prevention_request',
@@ -41,6 +47,7 @@ class MesDemandesController extends Controller
                     details: $this->dossierDetails($dossier),
                     status:    $dossier->status,
                     createdAt: $dossier->created_at,
+                    rdv: $rdv,
                 ));
             });
 
@@ -241,6 +248,7 @@ class MesDemandesController extends Controller
         $createdAt,
         string $destroyUrl = '',
         array $details = [],
+        ?array $rdv = null,
     ): array {
         return [
             'kind'         => $kind,
@@ -254,6 +262,7 @@ class MesDemandesController extends Controller
             'status_label' => __($lang . '.status_' . str_replace('-', '_', $status)),
             'created_at'   => $createdAt,
             'destroy_url'  => $destroyUrl ?: null,
+            'rdv'          => $rdv,
         ];
     }
 

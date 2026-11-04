@@ -63,6 +63,15 @@
                         </span>
                     </div>
 
+                    {{-- Old version card — correction mode: show what the user previously submitted --}}
+                    @if (!empty($correction))
+                        @include('prevention-requests.partials.old-version-card', [
+                            'correction'         => $correction,
+                            'archivedDocs'       => $archivedDocs ?? collect(),
+                            'allCorrectionRounds'=> $allCorrectionRounds ?? [],
+                        ])
+                    @endif
+
                     <form method="POST" action="{{ route('prevention-requests.step2.store', $dossier) }}" id="prevention-step2-form"
                           class="bg-surface-container-lowest rounded border border-surface-dim shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         @csrf

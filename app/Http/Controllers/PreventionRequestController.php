@@ -94,15 +94,20 @@ class PreventionRequestController extends Controller
             ->orderBy('created_at')
             ->get();
 
+        // Full correction history — ALL rounds, so the user can consult any
+        // previous version of the dossier even after several correction cycles.
+        $allCorrectionRounds = $dossier->allCorrectionRounds();
+
         return view('prevention-requests.create', [
-            'gouvernorats' => $this->gouvernorats(),
-            'delegations'  => $this->delegations(),
-            'drafts'       => $drafts,
-            'dossier'      => $dossier,   // pre-fills the form & unlocks "editing" mode
-            'returnTo'     => $request->query('return'), // step the user came from
-            'hasDocuments' => $dossier->documents_count > 0,
-            'correction'   => $correction,
-            'archivedDocs' => $archivedDocs,
+            'gouvernorats'       => $this->gouvernorats(),
+            'delegations'        => $this->delegations(),
+            'drafts'             => $drafts,
+            'dossier'            => $dossier,   // pre-fills the form & unlocks "editing" mode
+            'returnTo'           => $request->query('return'), // step the user came from
+            'hasDocuments'       => $dossier->documents_count > 0,
+            'correction'         => $correction,
+            'archivedDocs'       => $archivedDocs,
+            'allCorrectionRounds'=> $allCorrectionRounds,
         ]);
     }
 
@@ -200,14 +205,18 @@ class PreventionRequestController extends Controller
             ->orderBy('created_at')
             ->get();
 
+        // Full history of all correction rounds — user can consult any prior version
+        $allCorrectionRounds = $dossier->allCorrectionRounds();
+
         return view('prevention-requests.create-step2', [
-            'dossier'       => $dossier,
-            'buildingTypes' => BuildingType::forSelect(),
-            'activitiesMap' => BuildingType::activitiesMap(),
-            'isEditing'     => $isEditing,
-            'hasDocuments'  => $dossier->documents_count > 0,
-            'correction'    => $correction,
-            'archivedDocs'  => $archivedDocs,
+            'dossier'            => $dossier,
+            'buildingTypes'      => BuildingType::forSelect(),
+            'activitiesMap'      => BuildingType::activitiesMap(),
+            'isEditing'          => $isEditing,
+            'hasDocuments'       => $dossier->documents_count > 0,
+            'correction'         => $correction,
+            'archivedDocs'       => $archivedDocs,
+            'allCorrectionRounds'=> $allCorrectionRounds,
         ]);
     }
 
@@ -283,12 +292,16 @@ class PreventionRequestController extends Controller
             ->orderBy('created_at')
             ->get();
 
+        // Full history of all correction rounds
+        $allCorrectionRounds = $dossier->allCorrectionRounds();
+
         return view('prevention-requests.create-step3', [
-            'dossier'       => $dossier,
-            'documentTypes'  => $documentTypes,
-            'uploadedDocs'   => $uploadedDocs,
-            'correction'    => $correction,
-            'archivedDocs'  => $archivedDocs,
+            'dossier'            => $dossier,
+            'documentTypes'      => $documentTypes,
+            'uploadedDocs'       => $uploadedDocs,
+            'correction'         => $correction,
+            'archivedDocs'       => $archivedDocs,
+            'allCorrectionRounds'=> $allCorrectionRounds,
         ]);
     }
 
@@ -449,8 +462,18 @@ class PreventionRequestController extends Controller
             ->get()
             ->groupBy('document_type_id');
 
+        // All correction rounds — full history shown on the dossier detail page
+        $allCorrectionRounds = $dossier->allCorrectionRounds();
+
+        // Flat list of archived docs for the correction-history partial
+        $allArchivedDocuments = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->where('status', 'archived')
+            ->orderBy('created_at')
+            ->get();
+
         return view('prevention-requests.show', compact(
             'dossier', 'documentTypes', 'documents', 'archivedDocuments',
+            'allCorrectionRounds', 'allArchivedDocuments',
         ));
     }
 
@@ -571,31 +594,190 @@ class PreventionRequestController extends Controller
     // the history (snapshot + archived files anchored on "correction_requested").
     // =========================================================================
 
-    public function resubmit(Request $request, PreventionDossier $dossier): RedirectResponse
+    // =========================================================================
+    // Targeted correction form — the new flow replacing the 3-step resubmit.
+    // The admin selects exactly which fields/documents need fixing; the user
+    // sees a single page with only those items editable.
+    // =========================================================================
+
+    /**
+     * Legacy POST /resubmit redirect — keeps old email links working.
+     * Simply bounces to the new targeted correction page.
+     */
+    public function resubmitRedirect(PreventionDossier $dossier): RedirectResponse
+    {
+        if ($dossier->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        return redirect()->route('prevention-requests.correct', $dossier);
+    }
+
+    /**
+     * GET — show the targeted correction form.
+     * Only the fields/documents flagged by the admin are editable.
+     */
+    public function showCorrectForm(PreventionDossier $dossier): View|RedirectResponse
     {
         if ($dossier->user_id !== auth()->id()) {
             abort(403);
         }
 
         if (! $dossier->isNeedsCorrection()) {
-            return redirect()->route('prevention-requests.index')
-                ->withErrors(['status' => 'This dossier cannot be resubmitted right now.']);
+            return redirect()->route('prevention-requests.show', $dossier)
+                ->withErrors(['status' => __('prevention_request.not_needs_correction')]);
         }
 
-        // Already in fixing mode → don't re-archive the files he may have
-        // re-uploaded during this round; just send him back to step 1.
-        if ($dossier->current_step === 1) {
-            return redirect()
-                ->route('prevention-requests.step1.edit', $dossier)
-                ->with('info', __('prevention_request.resubmit_info'));
+        $dossier->load([
+            'governorate', 'delegation', 'buildingType', 'buildingActivity', 'events',
+        ]);
+
+        $correction = $dossier->lastCorrectionData();
+
+        // If no correction data (e.g. legacy dossier), fall back to all fields editable
+        $fieldsToFix = $correction['fields_to_fix'] ?? [];
+        $docsToFix   = $correction['docs_to_fix'] ?? [];
+
+        // Load only the document types the admin flagged
+        $documentTypes = collect();
+        if (! empty($docsToFix)) {
+            $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)
+                ->with('buildingTypes')
+                ->orderBy('sort_order')
+                ->get()
+                ->filter(fn ($t) => in_array($t->id, $docsToFix))
+                ->values();
         }
 
-        // ── Legacy compat — dossiers corrected before this "history" system:
-        // freeze their old version now (no previous snapshot exists): archive
-        // the active uploads and store the old values as a history_snapshot
-        // event so they remain consultable like any other correction round.
-        if ($dossier->documents->active()->isNotEmpty() || ! $dossier->lastCorrectionData()) {
-            $previousParams = [
+        // Archived docs for those types (the ones replaced by this correction)
+        $archivedDocs = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->where('status', 'archived')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('prevention-requests.correct', [
+            'dossier'      => $dossier,
+            'correction'   => $correction,
+            'fieldsToFix'  => $fieldsToFix,
+            'docsToFix'    => $docsToFix,
+            'documentTypes'=> $documentTypes,
+            'archivedDocs' => $archivedDocs,
+            'gouvernorats' => Governorate::with('delegations')->orderBy('id')->get(),
+            'delegations'  => $this->delegations(),
+            'buildingTypes'=> BuildingType::forSelect(),
+            'activitiesMap'=> BuildingType::activitiesMap(),
+        ]);
+    }
+
+    /**
+     * POST — save the targeted corrections and resubmit the dossier.
+     */
+    public function submitCorrection(Request $request, PreventionDossier $dossier): RedirectResponse
+    {
+        if ($dossier->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (! $dossier->isNeedsCorrection()) {
+            return redirect()->route('prevention-requests.show', $dossier)
+                ->withErrors(['status' => __('prevention_request.not_needs_correction')]);
+        }
+
+        $dossier->load(['governorate', 'delegation', 'buildingType', 'buildingActivity', 'events']);
+        $correction  = $dossier->lastCorrectionData();
+        $fieldsToFix = $correction['fields_to_fix'] ?? [];
+        $docsToFix   = array_map('intval', $correction['docs_to_fix'] ?? []);
+
+        // ── Build validation rules for only the flagged items ──
+        $rules = [];
+
+        if (in_array('cin', $fieldsToFix)) {
+            $rules['cin'] = ['required', 'string', 'max:20'];
+        }
+        if (in_array('nom_prenom', $fieldsToFix)) {
+            $rules['nom_prenom'] = ['required', 'string', 'max:255'];
+        }
+        if (in_array('phone', $fieldsToFix)) {
+            $rules['phone'] = ['required', 'string', 'max:20'];
+        }
+        if (in_array('governorate_id', $fieldsToFix)) {
+            $rules['code_structure'] = ['required', 'integer', 'between:1,24'];
+        }
+        if (in_array('delegation_id', $fieldsToFix)) {
+            $rules['delegation_id'] = ['required', 'integer', 'exists:delegations,id'];
+        }
+        if (in_array('building_address', $fieldsToFix)) {
+            $rules['building_address'] = ['required', 'string', 'max:500'];
+        }
+        if (in_array('building_type_id', $fieldsToFix)) {
+            $rules['building_type_id'] = ['required', 'integer', 'exists:building_types,id'];
+        }
+        if (in_array('building_activity_id', $fieldsToFix)) {
+            $rules['building_activity_id'] = ['nullable', 'integer', 'exists:building_activities,id'];
+            $rules['activity_other']        = ['nullable', 'string', 'max:255'];
+        }
+
+        foreach ($docsToFix as $docTypeId) {
+            $rules["documents.{$docTypeId}"]       = ['nullable', 'array', 'max:10'];
+            $rules["documents.{$docTypeId}.*"]     = ['file', 'max:10240'];
+        }
+
+        $validated = $request->validate($rules);
+
+        // ── Apply field changes (only those flagged) ──
+        $updates = [];
+        if (in_array('cin', $fieldsToFix))               $updates['cin']              = $validated['cin'];
+        if (in_array('nom_prenom', $fieldsToFix))         $updates['nom_prenom']       = $validated['nom_prenom'];
+        if (in_array('phone', $fieldsToFix))              $updates['phone']            = $validated['phone'];
+        if (in_array('governorate_id', $fieldsToFix))     $updates['governorate_id']   = $validated['code_structure'];
+        if (in_array('delegation_id', $fieldsToFix))      $updates['delegation_id']    = $validated['delegation_id'];
+        if (in_array('building_address', $fieldsToFix))   $updates['building_address'] = $validated['building_address'];
+        if (in_array('building_type_id', $fieldsToFix))   $updates['building_type_id'] = $validated['building_type_id'];
+        if (in_array('building_activity_id', $fieldsToFix)) {
+            $updates['building_activity_id'] = $validated['building_activity_id'] ?? null;
+            $updates['activity_other']       = $validated['activity_other'] ?? null;
+        }
+
+        if (! empty($updates)) {
+            $dossier->update($updates);
+        }
+
+        // ── Upload new files for flagged document types ──
+        $uploadDir = "prevention-documents/{$dossier->id}";
+
+        foreach ($docsToFix as $docTypeId) {
+            $files = $request->file("documents.{$docTypeId}");
+            if (! $files) continue;
+            $files = is_array($files) ? $files : [$files];
+
+            foreach ($files as $file) {
+                if (! $file || ! $file->isValid()) continue;
+
+                $path = $file->store($uploadDir, 'local');
+
+                DossierDocument::create([
+                    'prevention_dossier_id' => $dossier->id,
+                    'document_type_id'      => $docTypeId,
+                    'file_path'             => $path,
+                    'original_name'         => $file->getClientOriginalName(),
+                    'mime_type'             => $file->getMimeType(),
+                    'size'                  => $file->getSize(),
+                    'status'                => 'uploaded',
+                ]);
+            }
+        }
+
+        // ── Mark as re-submitted ──
+        $dossier->refresh()->load(['governorate', 'delegation', 'buildingType', 'buildingActivity']);
+
+        $dossier->update([
+            'status'       => 'completed',
+            'current_step' => 3,
+            'reference'    => $dossier->reference ?: \App\Support\Reference::make('prevention', $dossier),
+        ]);
+
+        $dossier->logEvent('resubmitted', null, [
+            'updated' => [
                 'cin'              => $dossier->cin,
                 'nom_prenom'       => $dossier->nom_prenom,
                 'phone'            => $dossier->phone,
@@ -604,37 +786,14 @@ class PreventionRequestController extends Controller
                 'building_address' => $dossier->building_address,
                 'building_type'    => $dossier->buildingType?->name,
                 'building_activity'=> $dossier->buildingActivity?->name ?? $dossier->activity_other,
-            ];
-
-            $oldDocs = $dossier->documents->map(fn (DossierDocument $doc) => [
-                'type'        => $doc->documentType?->name,
-                'file'        => $doc->original_name,
-                'size'        => $doc->size,
-                'uploaded_at' => $doc->created_at?->format('d/m/Y H:i'),
-            ])->all();
-
-            if ($dossier->documents->active()->isNotEmpty()) {
-                DossierDocument::where('prevention_dossier_id', $dossier->id)
-                    ->where('status', '!=', 'archived')
-                    ->update(['status' => 'archived']);
-            }
-
-            $dossier->logEvent('history_snapshot', null, [
-                'previous'       => $previousParams,
-                'archived_files' => $oldDocs,
-            ]);
-        }
-
-        // Hands the dossier back to the applicant — starts at STEP 1 so he
-        // reviews/supposes every piece of data (the old values are prefilled
-        // and shown next to the form as the "previous version").
-        $dossier->update([
-            'current_step' => 1,   // fix mode starts at step 1 (not step 3)
+            ],
+            'fields_fixed' => $fieldsToFix,
+            'docs_fixed'   => $docsToFix,
         ]);
 
         return redirect()
-            ->route('prevention-requests.step1.edit', $dossier)
-            ->with('info', __('prevention_request.resubmit_info'));
+            ->route('prevention-requests.show', $dossier)
+            ->with('success', __('prevention_request.correction_submitted_success'));
     }
 
     // =========================================================================

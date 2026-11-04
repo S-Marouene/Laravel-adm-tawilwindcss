@@ -61,6 +61,17 @@
                         </span>
                     </div>
 
+                    {{-- Old version card — shown when in correction mode so the user can
+                         compare old uploads with what they're about to upload now. --}}
+                    @if (!empty($correction))
+                        @include('prevention-requests.partials.old-version-card', [
+                            'correction'         => $correction,
+                            'archivedDocs'       => $archivedDocs ?? collect(),
+                            'allCorrectionRounds'=> $allCorrectionRounds ?? [],
+                            'documentTypes'      => $documentTypes,
+                        ])
+                    @endif
+
                     <form method="POST" action="{{ route('prevention-requests.step3.store', $dossier) }}" id="prevention-step3-form" enctype="multipart/form-data"
                           class="bg-surface-container-lowest rounded border border-surface-dim shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         @csrf

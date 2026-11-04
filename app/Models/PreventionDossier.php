@@ -220,9 +220,37 @@ class PreventionDossier extends Model
         return [
             'round'          => $this->correctionRoundsCount(),
             'note'           => $event->note,
+            'fields_to_fix'  => $event->data['fields_to_fix'] ?? [],
+            'docs_to_fix'    => $event->data['docs_to_fix'] ?? [],
             'previous'       => $event->data['previous'] ?? null,
             'archived_files' => $event->data['archived_files'] ?? null,
         ];
+    }
+
+    /**
+     * ALL correction rounds in chronological order — each entry has:
+     *   round, date, note, previous (old field values), archived_files (metadata)
+     * Used to render the full correction history on the form and show pages.
+     */
+    public function allCorrectionRounds(): array
+    {
+        $snapshotEvents = $this->events->filter(
+            fn ($e) => in_array($e->type, self::SNAPSHOT_EVENT_TYPES)
+                || ($e->type === 'resubmitted' && is_array($e->data) && ! empty($e->data['previous']))
+        )->values();
+
+        $round = 0;
+
+        return $snapshotEvents->map(function ($event) use (&$round) {
+            $round++;
+            return [
+                'round'          => $round,
+                'date'           => $event->created_at,
+                'note'           => $event->note,
+                'previous'       => is_array($event->data) ? ($event->data['previous'] ?? null) : null,
+                'archived_files' => is_array($event->data) ? ($event->data['archived_files'] ?? null) : null,
+            ];
+        })->all();
     }
 
     public function isUnderReview(): bool

@@ -77,8 +77,9 @@
                     {{-- Ancienne version : données + fichiers de l'ancien tour de correction,
                          toujours consultables (l'historique est conservé après chaque tour) --}}
                     @include('prevention-requests.partials.old-version-card', [
-                        'correction'    => $correction ?? null,
-                        'archivedDocs'  => $archivedDocs ?? null,
+                        'correction'         => $correction ?? null,
+                        'archivedDocs'       => $archivedDocs ?? null,
+                        'allCorrectionRounds'=> $allCorrectionRounds ?? [],
                     ])
 
                     <form method="POST" action="{{ $formAction }}" id="prevention-create-form"

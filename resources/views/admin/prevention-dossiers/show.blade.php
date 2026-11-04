@@ -728,19 +728,8 @@
                     </form>
                 @endif
 
-                {{-- Approve --}}
-                @if (in_array($status, ['completed', 'submitted', 'under_consultation']))
-                    <form method="POST" action="{{ route('admin.prevention-dossiers.approve', $preventionDossier) }}"
-                          onsubmit="return confirm('Approve this dossier? This action marks it as fully resolved.')">
-                        @csrf
-                        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            Approve Dossier
-                        </button>
-                    </form>
-                @endif
-
-                {{-- Request Correction --}}
+                {{-- Request Correction — only before consultation phase --}}
+                @if (in_array($status, ['completed', 'submitted', 'needs_correction']))
                 <div x-data="{ open: false }">
                     <button type="button" @click="open = !open"
                         class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300 dark:hover:bg-amber-900/40 focus:outline-none">
@@ -758,10 +747,90 @@
                          class="mt-3">
                         <form method="POST" action="{{ route('admin.prevention-dossiers.correction', $preventionDossier) }}">
                             @csrf
-                            <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1.5">Note to applicant <span class="text-red-500">*</span></label>
-                            <textarea name="admin_note" rows="5" required maxlength="2000"
-                                placeholder="Describe what needs to be fixed (e.g. missing document, wrong file, incorrect data)...">{{ old('admin_note') }}</textarea>
-                            <p class="mt-1 text-xs text-outline dark:text-gray-500">This note will be shown to the applicant with a "Fix & Resubmit" button.</p>
+
+                            {{-- Admin note ─────────────────────────────────── --}}
+                            <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1.5">
+                                Note to applicant <span class="text-red-500">*</span>
+                            </label>
+                            <textarea name="admin_note" rows="4" required maxlength="2000"
+                                class="text-xs"
+                                placeholder="Explain clearly what needs to be corrected…">{{ old('admin_note') }}</textarea>
+
+                            {{-- Field checkboxes ─────────────────────────── --}}
+                            <p class="mt-3 mb-1.5 text-xs font-semibold text-secondary dark:text-gray-400">
+                                Fields to fix <span class="font-normal text-outline">(select all that apply)</span>
+                            </p>
+                            @php
+                                $fixableFields = [
+                                    'nom_prenom'         => 'Full name',
+                                    'cin'                => 'National ID (CIN)',
+                                    'phone'              => 'Phone number',
+                                    'governorate_id'     => 'Governorate',
+                                    'delegation_id'      => 'Delegation',
+                                    'building_address'   => 'Building address',
+                                    'building_type_id'   => 'Building type',
+                                    'building_activity_id' => 'Activity',
+                                ];
+                            @endphp
+                            <div class="rounded-lg border border-surface-dim dark:border-gray-600 divide-y divide-surface-dim dark:divide-gray-700 overflow-hidden">
+                                @foreach ($fixableFields as $fieldKey => $fieldLabel)
+                                    <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container dark:hover:bg-gray-700/40 text-xs text-on-surface dark:text-gray-200">
+                                        <input type="checkbox" name="fields_to_fix[]" value="{{ $fieldKey }}"
+                                               class="rounded border-surface-dim text-amber-500 focus:ring-amber-500/30"
+                                               {{ in_array($fieldKey, old('fields_to_fix', [])) ? 'checked' : '' }}>
+                                        <span class="flex-1">{{ $fieldLabel }}</span>
+                                        @php
+                                            $currentVal = match($fieldKey) {
+                                                'nom_prenom'         => $preventionDossier->nom_prenom,
+                                                'cin'                => $preventionDossier->cin,
+                                                'phone'              => $preventionDossier->phone,
+                                                'governorate_id'     => $preventionDossier->governorate?->name_fr ?? $preventionDossier->governorate?->name_ar,
+                                                'delegation_id'      => $preventionDossier->delegation?->name_fr ?? $preventionDossier->delegation?->name_ar,
+                                                'building_address'   => $preventionDossier->building_address,
+                                                'building_type_id'   => $preventionDossier->buildingType?->name,
+                                                'building_activity_id' => $preventionDossier->buildingActivity?->name ?? $preventionDossier->activity_other,
+                                                default              => null,
+                                            };
+                                        @endphp
+                                        @if ($currentVal)
+                                            <span class="text-outline dark:text-gray-500 truncate max-w-28 text-end" title="{{ $currentVal }}">{{ $currentVal }}</span>
+                                        @endif
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            {{-- Document type checkboxes ────────────────── --}}
+                            @php
+                                $corrDocTypes = \App\Models\DocumentType::service(\App\Models\DocumentType::SERVICE_PREVENTION)
+                                    ->with('buildingTypes')
+                                    ->orderBy('sort_order')
+                                    ->get()
+                                    ->filter(fn ($t) => $t->appliesToBuildingType($preventionDossier->building_type_id));
+                            @endphp
+                            @if ($corrDocTypes->isNotEmpty())
+                                <p class="mt-3 mb-1.5 text-xs font-semibold text-secondary dark:text-gray-400">
+                                    Documents to re-upload <span class="font-normal text-outline">(select which files need replacement)</span>
+                                </p>
+                                <div class="rounded-lg border border-surface-dim dark:border-gray-600 divide-y divide-surface-dim dark:divide-gray-700 overflow-hidden">
+                                    @foreach ($corrDocTypes as $docType)
+                                        @php
+                                            $hasDoc = $uploadedDocs->has($docType->id);
+                                        @endphp
+                                        <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container dark:hover:bg-gray-700/40 text-xs text-on-surface dark:text-gray-200">
+                                            <input type="checkbox" name="docs_to_fix[]" value="{{ $docType->id }}"
+                                                   class="rounded border-surface-dim text-amber-500 focus:ring-amber-500/30"
+                                                   {{ in_array($docType->id, old('docs_to_fix', [])) ? 'checked' : '' }}>
+                                            <span class="flex-1">{{ $docType->name }}</span>
+                                            @if ($hasDoc)
+                                                <span class="text-[10px] rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-400 font-bold whitespace-nowrap">uploaded</span>
+                                            @else
+                                                <span class="text-[10px] rounded-full bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 text-red-600 dark:text-red-400 font-bold whitespace-nowrap">missing</span>
+                                            @endif
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endif
+
                             <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500/40">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                                 Send Correction Request
@@ -769,6 +838,7 @@
                         </form>
                     </div>
                 </div>
+                @endif
 
                 {{-- Cancel --}}
                 <div x-data="{ open: false }">
@@ -868,6 +938,28 @@
                 @endforeach
             </div>
         </div>
+
+        {{-- Correction history — old vs new, all rounds, with archived documents --}}
+        @if (!empty($allCorrectionRounds))
+        <div class="rounded-2xl border border-amber-200 dark:border-amber-800/40 bg-surface-container-lowest shadow-sm dark:bg-gray-800">
+            <div class="border-b border-amber-100 dark:border-amber-800/30 px-5 py-4 flex items-center gap-2">
+                <svg class="h-4 w-4 text-amber-600 dark:text-amber-400 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                    <h3 class="text-sm font-semibold text-amber-900 dark:text-amber-300">Correction History</h3>
+                    <p class="text-xs text-amber-700 dark:text-amber-400 mt-0.5">{{ count($allCorrectionRounds) }} correction round(s) — all previous versions are consultable below</p>
+                </div>
+            </div>
+            <div class="px-5 py-4">
+                @include('prevention-requests.partials.correction-history', [
+                    'allCorrectionRounds' => $allCorrectionRounds,
+                    'archivedDocuments'   => $archivedDocuments,
+                    'documentTypes'       => $documentTypes,
+                ])
+            </div>
+        </div>
+        @endif
 
         {{-- Quick info --}}
         <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800 px-5 py-4">

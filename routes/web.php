@@ -76,8 +76,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Legacy store (kept for backward-compat, now redirects to step1)
     Route::post('/prevention-requests', [PreventionRequestController::class, 'store'])->name('prevention-requests.store');
 
-    // Resubmit after correction
-    Route::post('/prevention-requests/{dossier}/resubmit', [PreventionRequestController::class, 'resubmit'])->name('prevention-requests.resubmit');
+    // Targeted correction form (replaces the old 3-step resubmit flow)
+    Route::get('/prevention-requests/{dossier}/correct', [PreventionRequestController::class, 'showCorrectForm'])->name('prevention-requests.correct');
+    Route::post('/prevention-requests/{dossier}/correct', [PreventionRequestController::class, 'submitCorrection'])->name('prevention-requests.correct.submit');
+
+    // Legacy resubmit POST — kept so old bookmarks/emails don't break; redirects to the new correct page
+    Route::post('/prevention-requests/{dossier}/resubmit', [PreventionRequestController::class, 'resubmitRedirect'])->name('prevention-requests.resubmit');
 
     // Certificate delivery choice (after the RDV passed) — pickup / post / digital(soon)
     Route::post('/prevention-requests/{dossier}/delivery', [PreventionRequestController::class, 'chooseDelivery'])

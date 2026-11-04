@@ -79,12 +79,18 @@ class PreventionDossierController extends Controller
             default => Governorate::with('delegations')->orderBy('id')->get(),
         };
 
-        return view('admin.prevention-dossiers.show', compact('preventionDossier', 'documentTypes', 'uploadedDocs', 'governorates'));
-    }
+        // All correction rounds — each round has the old field values + archived file metadata
+        // so the admin can consult every version of the dossier at any time.
+        $allCorrectionRounds = $preventionDossier->allCorrectionRounds();
 
-    // =========================================================================
-    // Advance to Consultation
-    // =========================================================================
+        // Archived documents — kept on disk, downloadable from the admin view
+        $archivedDocuments = DossierDocument::where('prevention_dossier_id', $preventionDossier->id)
+            ->where('status', 'archived')
+            ->orderBy('created_at')
+            ->get();
+
+        return view('admin.prevention-dossiers.show', compact('preventionDossier', 'documentTypes', 'uploadedDocs', 'governorates', 'allCorrectionRounds', 'archivedDocuments'));
+    }
 
     public function advanceToConsultation(PreventionDossier $preventionDossier): RedirectResponse
     {
@@ -120,19 +126,23 @@ class PreventionDossierController extends Controller
         AdminScope::authorize($preventionDossier);
 
         $validated = $request->validate([
-            'admin_note' => ['required', 'string', 'max:2000'],
+            'admin_note'    => ['required', 'string', 'max:2000'],
+            // Which dossier fields need fixing (e.g. 'phone', 'cin', 'building_type_id'…)
+            'fields_to_fix' => ['nullable', 'array'],
+            'fields_to_fix.*' => ['string', 'in:cin,nom_prenom,phone,governorate_id,delegation_id,building_address,building_type_id,building_activity_id'],
+            // Which document types need a new upload (array of document_type_id integers)
+            'docs_to_fix'   => ['nullable', 'array'],
+            'docs_to_fix.*' => ['integer', 'exists:document_types,id'],
         ]);
 
         if (! $preventionDossier->isActionable()) {
             return back()->withErrors(['status' => 'Cannot request correction for this dossier.']);
         }
 
-        // ── Full history: anchor the current round (1, 2, 3…) by freezing
-        // the OLD version of the demande at request time —
-        //   • the old field values are stored in the event (data.previous),
-        //   • the old uploads are ARCHIVED (kept on disk, status=archived)
-        //     and listed in the event (data.archived_files), so they remain
-        //     downloadable/consultable even after several correction rounds.
+        $fieldsToFix = $validated['fields_to_fix'] ?? [];
+        $docsToFix   = array_map('intval', $validated['docs_to_fix'] ?? []);
+
+        // Snapshot the current field values so the user can see what changed later
         $previousParams = [
             'cin'              => $preventionDossier->cin,
             'nom_prenom'       => $preventionDossier->nom_prenom,
@@ -144,17 +154,29 @@ class PreventionDossierController extends Controller
             'building_activity'=> $preventionDossier->buildingActivity?->name ?? $preventionDossier->activity_other,
         ];
 
-        $previousDocs = $preventionDossier->documents->map(fn (DossierDocument $doc) => [
-            'type'        => $doc->documentType?->name,
-            'file'        => $doc->original_name,
-            'size'        => $doc->size,
-            'uploaded_at' => $doc->created_at?->format('d/m/Y H:i'),
-        ])->all();
+        // Archive ONLY the documents whose type was flagged for correction
+        // (not everything — unflagged documents stay active and don't need re-uploading).
+        $archivedDocsMeta = [];
 
-        // Archive (never delete) the uploads of the version being corrected
-        DossierDocument::where('prevention_dossier_id', $preventionDossier->id)
-            ->where('status', '!=', 'archived')
-            ->update(['status' => 'archived']);
+        if (! empty($docsToFix)) {
+            $docsToArchive = $preventionDossier->documents
+                ->filter(fn ($d) => $d->status !== 'archived' && in_array($d->document_type_id, $docsToFix));
+
+            foreach ($docsToArchive as $doc) {
+                $archivedDocsMeta[] = [
+                    'document_type_id' => $doc->document_type_id,
+                    'type'        => $doc->documentType?->name,
+                    'file'        => $doc->original_name,
+                    'size'        => $doc->size,
+                    'uploaded_at' => $doc->created_at?->format('d/m/Y H:i'),
+                ];
+            }
+
+            if ($docsToArchive->isNotEmpty()) {
+                DossierDocument::whereIn('id', $docsToArchive->pluck('id'))
+                    ->update(['status' => 'archived']);
+            }
+        }
 
         $preventionDossier->update([
             'status'      => 'needs_correction',
@@ -164,12 +186,14 @@ class PreventionDossierController extends Controller
         ]);
 
         $preventionDossier->logEvent('correction_requested', $validated['admin_note'], [
+            'fields_to_fix'  => $fieldsToFix,
+            'docs_to_fix'    => $docsToFix,
             'previous'       => $previousParams,
-            'archived_files' => $previousDocs,
+            'archived_files' => $archivedDocsMeta,
         ]);
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', 'Correction requested. The old data and uploads are kept in the history — the applicant will re-walk the dossier from step 1 to fix it.');
+            ->with('success', 'Correction requested — the applicant will see exactly which fields and documents to fix.');
     }
 
     // =========================================================================

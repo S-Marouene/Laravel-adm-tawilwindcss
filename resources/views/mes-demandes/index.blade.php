@@ -29,6 +29,7 @@
                 'destroyUrl'     => $item['destroy_url'],
                 'confirmText'    => $item['destroy_url'] ? __($item['lang'] . '.delete_confirm') : '',
                 'summary'        => implode(' · ', $item['meta']),
+                'rdv'            => $item['rdv'] ?? null,
                 'open'           => false,
             ]);
         })->values();
@@ -211,6 +212,17 @@
                                                 {{ app()->getLocale() === 'ar' ? 'التصرف الآن' : 'Action requise' }}
                                                 <span class="material-symbols-outlined text-[14px] rtl:rotate-180" aria-hidden="true">arrow_forward</span>
                                             </a>
+                                        </div>
+
+                                        {{-- RDV chip — shown when a pending visit is scheduled --}}
+                                        <div x-show="item.rdv" class="mt-2">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                                                         bg-blue-50 border border-blue-200 text-blue-800 text-[11px] font-bold
+                                                         dark:bg-blue-900/20 dark:border-blue-700/40 dark:text-blue-300">
+                                                <span class="material-symbols-outlined text-[13px]" aria-hidden="true">calendar_month</span>
+                                                {{ app()->getLocale() === 'ar' ? 'موعد الزيارة:' : 'Visite prévue :' }}
+                                                <span x-text="item.rdv ? item.rdv.date + ' {{ __('at') }} ' + item.rdv.time : ''"></span>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
