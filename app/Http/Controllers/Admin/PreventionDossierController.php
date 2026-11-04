@@ -61,7 +61,7 @@ class PreventionDossierController extends Controller
         AdminScope::authorizeService(Service::SERVICE_PREVENTION);
         AdminScope::authorize($preventionDossier);
 
-        $preventionDossier->load(['user', 'governorate', 'delegation', 'buildingType', 'buildingActivity', 'reviewer', 'appointments.scheduler', 'certificate.governorate', 'certificate.delegation', 'events.actor', 'events.dossier:id,building_address']);
+        $preventionDossier->load(['user', 'governorate', 'delegation', 'buildingType', 'buildingActivity', 'reviewer', 'appointments.scheduler', 'certificate.governorate', 'certificate.delegation', 'events.actor.roles', 'events.dossier:id,building_address']);
 
         $documentTypes = DocumentType::service(DocumentType::SERVICE_PREVENTION)->orderBy('sort_order')->get();
         $uploadedDocs  = DossierDocument::where('prevention_dossier_id', $preventionDossier->id)
@@ -584,6 +584,9 @@ class PreventionDossierController extends Controller
                     'collected_at'      => null,
                     'post_sent_at'      => null,
                     'post_delivered_at' => null,
+                ]);
+                $preventionDossier->logEvent('certificate_reset', null, [
+                    'reference' => $certificate->reference,
                 ]);
                 $msg = 'Certificate marked as ready.';
                 break;

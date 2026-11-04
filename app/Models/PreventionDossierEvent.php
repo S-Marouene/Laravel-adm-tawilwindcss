@@ -22,6 +22,8 @@ class PreventionDossierEvent extends Model
     // approved | cancelled | appointment_scheduled | appointment_passed
     // appointment_failed | appointment_deleted
     // certificate_issued | certificate_collected | certificate_deleted
+    // certificate_reset | draft_created | step1_updated | step2_saved
+    // document_uploaded | document_deleted
 
     // -----------------------------------------------------------------------
     // Relations
@@ -83,6 +85,12 @@ class PreventionDossierEvent extends Model
             'certificate_post_delivered' => 'Certificate delivered by post',
             'certificate_collected'     => 'Certificate collected by applicant',
             'certificate_deleted'       => 'Prevention certificate deleted',
+            'certificate_reset'         => 'Certificate reset to ready',
+            'draft_created'             => 'Draft dossier created',
+            'step1_updated'             => 'Step 1 (identity) updated',
+            'step2_saved'               => 'Step 2 (building type) saved',
+            'document_uploaded'         => 'Document(s) uploaded',
+            'document_deleted'          => 'Document deleted',
             default                     => ucfirst(str_replace('_', ' ', $this->type)),
         };
     }
@@ -108,6 +116,12 @@ class PreventionDossierEvent extends Model
             'certificate_post_delivered' => 'bg-teal-500',
             'certificate_collected'      => 'bg-teal-500',
             'certificate_deleted'        => 'bg-gray-400',
+            'certificate_reset'         => 'bg-amber-500',
+            'draft_created'              => 'bg-teal-400',
+            'step1_updated'              => 'bg-teal-400',
+            'step2_saved'                => 'bg-teal-400',
+            'document_uploaded'          => 'bg-indigo-400',
+            'document_deleted'           => 'bg-orange-400',
             default                      => 'bg-gray-400',
         };
     }
@@ -143,6 +157,28 @@ class PreventionDossierEvent extends Model
                 $text .= ' · ' . $keys . ($changed->count() > 3 ? ', …' : '');
             }
 
+            return $text;
+        }
+
+        // Document upload/delete events
+        if (! empty($data['count'])) {
+            return $data['count'] . ' file(s) uploaded';
+        }
+
+        if (! empty($data['document'])) {
+            $text = 'File: ' . $data['document'];
+            if (! empty($data['type'])) {
+                $text .= ' · Type: ' . $data['type'];
+            }
+            return $text;
+        }
+
+        // Step 2 saved — show the building type chosen
+        if (! empty($data['building_type'])) {
+            $text = 'Building: ' . $data['building_type'];
+            if (! empty($data['building_activity'])) {
+                $text .= ' · Activity: ' . $data['building_activity'];
+            }
             return $text;
         }
 

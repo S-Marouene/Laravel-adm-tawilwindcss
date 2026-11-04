@@ -39,8 +39,10 @@ class BuildingTypeController extends Controller
             'name_en'        => ['required', 'string', 'max:255'],
             'has_activities' => ['boolean'],
             'sort_order'     => ['nullable', 'integer', 'min:0'],
+            'certificate_fee'=> ['nullable', 'numeric', 'min:0'],
         ]);
         $data['has_activities'] = $request->boolean('has_activities');
+        $data['certificate_fee'] = $data['certificate_fee'] ?? 0;
         BuildingType::create($data);
         return redirect()->route('admin.building-types.index')
             ->with('success', __('admin.ref_created'));
@@ -63,8 +65,10 @@ class BuildingTypeController extends Controller
             'name_en'        => ['required', 'string', 'max:255'],
             'has_activities' => ['boolean'],
             'sort_order'     => ['nullable', 'integer', 'min:0'],
+            'certificate_fee'=> ['nullable', 'numeric', 'min:0'],
         ]);
         $data['has_activities'] = $request->boolean('has_activities');
+        $data['certificate_fee'] = $data['certificate_fee'] ?? 0;
         $buildingType->update($data);
         return redirect()->route('admin.building-types.index')
             ->with('success', __('admin.ref_updated'));

@@ -28,8 +28,9 @@ $fieldLabels = [
     'building_activity'=> __('prevention_request.field_activity'),
 ];
 
-// Sort rounds newest-first so the most recent correction is shown first
-$rounds = array_reverse($allCorrectionRounds);
+// Keep rounds in chronological order — the oldest (first) version appears
+// at the top, collapsed by default.
+$rounds = $allCorrectionRounds;
 @endphp
 
 <div class="space-y-3">
@@ -46,7 +47,7 @@ $rounds = array_reverse($allCorrectionRounds);
             ->values();
     @endphp
     <div class="rounded-lg border border-amber-200 bg-amber-50/60 dark:border-amber-700/50 dark:bg-amber-900/10 shadow-sm"
-         x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }">
+         x-data="{ open: false }">
 
         {{-- Header --}}
         <button type="button" @click="open = !open"

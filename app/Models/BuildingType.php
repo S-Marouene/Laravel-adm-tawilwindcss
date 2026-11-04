@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BuildingType extends Model
 {
-    protected $fillable = ['name_ar', 'name_fr', 'name_en', 'has_activities', 'sort_order'];
+    protected $fillable = ['name_ar', 'name_fr', 'name_en', 'has_activities', 'sort_order', 'certificate_fee'];
 
     protected $casts = [
-        'has_activities' => 'boolean',
+        'has_activities'    => 'boolean',
+        'certificate_fee'   => 'decimal:3',
     ];
 
     // -----------------------------------------------------------------------

@@ -25,6 +25,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase">{{ __('admin.name_en') }}</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase">{{ __('admin.has_activities') }}</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase">{{ __('admin.activities_count') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase">{{ __('prevention_request.delivery_fee_label') }}</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-secondary dark:text-gray-400 uppercase">{{ __('admin.actions') }}</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -36,6 +37,7 @@
                     <td class="px-6 py-4 text-sm text-secondary dark:text-gray-300">{{ $type->name_en }}</td>
                     <td class="px-6 py-4 text-sm">@if($type->has_activities)<span class="admin-badge bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">{{ __('admin.yes') }}</span>@else<span class="text-outline">{{ __('admin.no') }}</span>@endif</td>
                     <td class="px-6 py-4 text-sm"><span class="admin-badge">{{ $type->activities_count }}</span></td>
+                    <td class="px-6 py-4 text-sm font-mono text-secondary dark:text-gray-300">{{ number_format((float) $type->certificate_fee, 3) }} DT</td>
                     <td class="px-6 py-4 text-right text-sm font-medium">
                         <a href="{{ route('admin.building-types.edit', $type) }}" class="admin-action-link mr-3">{{ __('action.edit') }}</a>
                         <form action="{{ route('admin.building-types.destroy', $type) }}" method="POST" class="inline" onsubmit="return confirm('{{ __('admin.confirm_delete') }}')">
@@ -44,7 +46,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="7" class="px-6 py-12 text-center text-secondary dark:text-gray-400">{{ __('admin.no_data') }}</td></tr>
+                <tr><td colspan="8" class="px-6 py-12 text-center text-secondary dark:text-gray-400">{{ __('admin.no_data') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

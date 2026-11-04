@@ -143,6 +143,11 @@
                 <div>
                     <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Building Type</p>
                     <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $preventionDossier->buildingType?->name ?? '—' }}</p>
+                    @if ($preventionDossier->buildingType && (float) $preventionDossier->buildingType->certificate_fee > 0)
+                        <p class="mt-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                            Certificate fee: <span class="font-mono">{{ number_format((float) $preventionDossier->buildingType->certificate_fee, 3) }} TND</span>
+                        </p>
+                    @endif
                 </div>
                 <div>
                     <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Activity</p>
@@ -914,8 +919,27 @@
                         <span class="mt-1 flex-none h-2 w-2 rounded-full {{ $event->typeDot() }}"></span>
                         <div class="min-w-0">
                             <p class="text-xs font-semibold text-on-surface dark:text-gray-100">{{ $event->typeLabel() }}</p>
-                            <p class="text-xs text-secondary dark:text-gray-400">
-                                {{ $event->actor?->name ?? 'System' }} · {{ $event->created_at->format('d M Y, H:i') }}
+                            <p class="text-xs text-secondary dark:text-gray-400 flex flex-wrap items-center gap-1.5">
+                                @if ($event->actor)
+                                    <span class="font-semibold text-on-surface dark:text-gray-200">{{ $event->actor->name }}</span>
+                                    @php
+                                        $actorRole = $event->actor->roles->first()?->name;
+                                        $isApplicant = $event->actor->roles->isEmpty();
+                                    @endphp
+                                    @if ($actorRole)
+                                        <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide {{ $isApplicant ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' }}">
+                                            {{ $isApplicant ? 'Applicant' : ucfirst(str_replace('-', ' ', $actorRole)) }}
+                                        </span>
+                                    @elseif ($isApplicant)
+                                        <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">Applicant</span>
+                                    @else
+                                        <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">Admin</span>
+                                    @endif
+                                @else
+                                    <span class="italic text-secondary dark:text-gray-500">System</span>
+                                @endif
+                                <span class="text-secondary dark:text-gray-400">·</span>
+                                <span class="font-mono">{{ $event->created_at->format('d M Y, H:i') }}</span>
                             </p>
 
                             {{-- RDV details (date / time / location) --}}

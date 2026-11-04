@@ -448,6 +448,43 @@
                             </div>
                         </div>
 
+                        {{-- Frais du certificat (selon le type de bâtiment) --}}
+                        @php $certFee = (float) ($dossier->buildingType?->certificate_fee ?? 0); @endphp
+                        @if ($certFee > 0)
+                        <div class="mb-3 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3">
+                            <span class="material-symbols-outlined text-amber-700 text-xl" aria-hidden="true">payments</span>
+                            <div class="flex-1 min-w-0">
+                                <span class="block text-[11px] font-extrabold uppercase tracking-wider text-amber-800">{{ __('prevention_request.delivery_fee_label') }}</span>
+                                <div class="flex flex-wrap items-center gap-2 mt-1">
+                                    <span class="text-lg font-black text-amber-900 font-mono" dir="ltr">{{ number_format($certFee, 3, '.', ',') }} DT</span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[11px]" aria-hidden="true">storefront</span>{{ __('prevention_request.delivery_fee_pickup') }}
+                                    </span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[11px]" aria-hidden="true">credit_card</span>{{ __('prevention_request.delivery_fee_card') }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- Message d'information : réception par e-mail --}}
+                        <div x-show="method === 'pickup' || method === ''" x-cloak
+                             class="mb-3 flex items-start gap-3 rounded-lg border border-indigo-200 bg-indigo-50/60 px-4 py-3">
+                            <span class="material-symbols-outlined text-indigo-600 text-lg mt-px shrink-0" aria-hidden="true">mark_email_read</span>
+                            <p class="text-[11px] text-indigo-900 leading-relaxed">
+                                @php
+                                    $govName = $dossier->governorate?->name ?? '—';
+                                    $delName = $dossier->delegation?->name;
+                                @endphp
+                                @if ($delName)
+                                    {{ __('prevention_request.delivery_info_pickup', ['governorate' => $govName . ' — ' . $delName]) }}
+                                @else
+                                    {{ __('prevention_request.delivery_info_pickup', ['governorate' => $govName]) }}
+                                @endif
+                            </p>
+                        </div>
+
                         <form method="POST" action="{{ route('prevention-requests.delivery', $dossier) }}" class="space-y-3">
                             @csrf
                             <label class="flex items-start gap-3.5 bg-surface-container-low border border-surface-dim rounded p-3.5 opacity-60 select-none cursor-not-allowed">
@@ -479,7 +516,6 @@
                                     <div class="flex flex-wrap items-center gap-2">
                                         <span class="material-symbols-outlined text-blue-700 text-lg" aria-hidden="true">local_shipping</span>
                                         <span class="text-xs font-bold text-on-surface">{{ __('prevention_request.delivery_post_title') }}</span>
-                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">B3</span>
                                         <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">{{ __('prevention_request.delivery_soon') }}</span>
                                         <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-dim text-secondary flex items-center gap-0.5"><span class="material-symbols-outlined text-[11px]" aria-hidden="true">credit_card</span>{{ __('prevention_request.delivery_needs_payment') }}</span>
                                     </div>
@@ -631,37 +667,90 @@
                             </div>
                         </div>
 
-                        {{-- Faits clés — identité du demandeur --}}
-                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                        {{-- Faits clés — détails complets du dossier --}}
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">fact_check</span>
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-secondary">{{ __('prevention_request.details_title') }}</span>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                             <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
                                 <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">badge</span>
                                 <div class="min-w-0">
                                     <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention_request.nom_prenom') }}</span>
-                                    <span class="block text-xs font-bold text-on-surface truncate">{{ $dossier->nom_prenom ?? '—' }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->nom_prenom ?? '' }}">{{ $dossier->nom_prenom ?? '—' }}</span>
                                 </div>
                             </div>
                             <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
                                 <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">fingerprint</span>
                                 <div class="min-w-0">
                                     <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention_request.cin') }}</span>
-                                    <span class="block text-xs font-bold text-on-surface truncate font-mono" dir="ltr">{{ $dossier->cin ?? '—' }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate font-mono" dir="ltr" title="{{ $dossier->cin ?? '' }}">{{ $dossier->cin ?? '—' }}</span>
                                 </div>
                             </div>
                             <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
                                 <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">call</span>
                                 <div class="min-w-0">
                                     <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention_request.phone') }}</span>
-                                    <span class="block text-xs font-bold text-on-surface truncate font-mono num-ltr" dir="ltr">{{ $dossier->phone ?? '—' }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate font-mono num-ltr" dir="ltr" title="{{ $dossier->phone ?? '' }}">{{ $dossier->phone ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">mail</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention_request.email') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" dir="ltr" title="{{ $dossier->user?->email ?? '' }}">{{ $dossier->user?->email ?? '—' }}</span>
                                 </div>
                             </div>
                             <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
                                 <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">account_balance</span>
                                 <div class="min-w-0">
                                     <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention_request.field_governorate') }}</span>
-                                    <span class="block text-xs font-bold text-on-surface truncate">{{ $dossier->governorate?->name ?? '—' }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->governorate?->name ?? '' }}">{{ $dossier->governorate?->name ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">location_city</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention_request.delegation') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->delegation?->name ?? '' }}">{{ $dossier->delegation?->name ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">apartment</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention_request.building_type') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->buildingType?->name ?? '' }}">{{ $dossier->buildingType?->name ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">domain</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention_request.building_activity') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->buildingActivity?->name ?? $dossier->activity_other ?? '' }}">{{ $dossier->buildingActivity?->name ?? $dossier->activity_other ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">place</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention_request.building_address') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->building_address ?? '' }}">{{ $dossier->building_address ?? '—' }}</span>
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Note de l'administration (si présente) — espace dédié sous les détails --}}
+                        @if ($dossier->admin_note && $status !== 'needs_correction')
+                        <div class="mt-4 rounded-lg border border-surface-dim bg-surface-container-low px-4 py-3">
+                            <p class="text-[11px] font-extrabold uppercase tracking-wider text-secondary mb-1 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">sticky_note_2</span>
+                                {{ __('prevention_request.admin_note_label') }}
+                            </p>
+                            <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $dossier->admin_note }}</p>
+                        </div>
+                        @endif
+
+                        {{-- Espacement avant l'alerte d'état --}}
+                        <div class="h-2"></div>
 
                         {{-- Alerte d'état opérationnel — contextuelle --}}
                         @if ($heroAlert === 'visit')
@@ -686,6 +775,13 @@
                                 <div class="font-bold text-red-900 leading-relaxed">
                                     {{ __('prevention_request.visit_failed_banner', ['date' => $lastFailedAppointment?->visit_date?->format('d/m/Y')]) }}
                                     <span class="block font-normal text-red-800 mt-0.5">{{ __('prevention_request.visit_failed_banner_d') }}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2.5 bg-amber-50 border border-amber-300 rounded px-3.5 py-2.5 text-xs mt-2">
+                                <span class="material-symbols-outlined text-amber-700 text-base mt-px" aria-hidden="true">event_repeat</span>
+                                <div class="font-bold text-amber-900 leading-relaxed">
+                                    {{ __('prevention_request.visit_failed_newrdv_title') }}
+                                    <span class="block font-normal text-amber-800 mt-0.5">{{ __('prevention_request.visit_failed_newrdv_d') }}</span>
                                 </div>
                             </div>
                         @elseif ($heroAlert === 'info')
@@ -769,7 +865,7 @@
                                                     <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                                                         <div class="flex items-center gap-2">
                                                             <span class="text-xs font-bold {{ $chipCls }} px-2 py-0.5 rounded uppercase">{{ $chip }}</span>
-                                                            <span class="text-xs font-semibold text-on-surface">{{ in_array($event->type, ['submitted', 'resubmitted', 'delivery_chosen']) ? __('prevention_request.timeline_actor_you') : __('prevention_request.timeline_actor_admin') }}</span>
+                                                            <span class="text-xs font-semibold text-on-surface">{{ in_array($event->type, ['submitted', 'resubmitted', 'delivery_chosen', 'draft_created', 'step1_updated', 'step2_saved', 'document_uploaded', 'document_deleted']) ? __('prevention_request.timeline_actor_you') : __('prevention_request.timeline_actor_admin') }}</span>
                                                         </div>
                                                         <time class="text-xs font-mono font-medium text-secondary" dir="ltr">{{ $event->created_at->format('d/m/Y H:i') }}</time>
                                                     </div>

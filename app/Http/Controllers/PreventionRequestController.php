@@ -140,6 +140,8 @@ class PreventionRequestController extends Controller
             'building_address' => $validated['building_address'],
         ]);
 
+        $dossier->logEvent('step1_updated');
+
         // Return the user to the step they came from (default: step 2 in editing mode)
         if ($request->input('return_to') === 'step3') {
             return redirect()->route('prevention-requests.step3.show', $dossier);
@@ -174,6 +176,8 @@ class PreventionRequestController extends Controller
             'delegation_id'    => $validated['delegation_id'],
             'building_address' => $validated['building_address'],
         ]);
+
+        $dossier->logEvent('draft_created');
 
         return redirect()->route('prevention-requests.step2.show', $dossier);
     }
@@ -242,6 +246,11 @@ class PreventionRequestController extends Controller
             'building_activity_id' => $validated['building_activity_id'] ?? null,
             'activity_other'       => $validated['activity_other'] ?? null,
             'current_step'         => 2,
+        ]);
+
+        $dossier->logEvent('step2_saved', null, [
+            'building_type'     => $dossier->buildingType?->name,
+            'building_activity' => $dossier->buildingActivity?->name ?? $dossier->activity_other,
         ]);
 
         return redirect()->route('prevention-requests.step3.show', $dossier);
@@ -355,6 +364,14 @@ class PreventionRequestController extends Controller
             }
         }
 
+        // Log the document upload(s) before marking the dossier as completed
+        $uploadedCount = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->where('status', 'uploaded')
+            ->count();
+        if ($uploadedCount > 0) {
+            $dossier->logEvent('document_uploaded', null, ['count' => $uploadedCount]);
+        }
+
         // Mark dossier as completed + assign the citizen-facing reference (PRV26-0001)
         $dossier->update([
             'current_step' => 3,
@@ -435,7 +452,7 @@ class PreventionRequestController extends Controller
 
         $dossier->load([
             'governorate', 'delegation', 'buildingType', 'buildingActivity',
-            'appointments', 'events', 'certificate.governorate', 'certificate.delegation',
+            'appointments', 'events.actor', 'certificate.governorate', 'certificate.delegation',
         ]);
 
         // Checklist du service PRÉVENTION, filtrée strictement selon le type de
@@ -579,8 +596,16 @@ class PreventionRequestController extends Controller
                 ->withErrors(['status' => __('prevention_request.delete_forbidden')]);
         }
 
+        $docName = $document->original_name;
+        $docType = $document->documentType?->name;
+
         Storage::disk('local')->delete($document->file_path);
         $document->delete();
+
+        $dossier->logEvent('document_deleted', null, [
+            'document' => $docName,
+            'type'      => $docType,
+        ]);
 
         return redirect()
             ->route('prevention-requests.step3.show', $dossier)
