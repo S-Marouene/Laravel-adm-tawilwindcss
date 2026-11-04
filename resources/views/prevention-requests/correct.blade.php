@@ -250,6 +250,13 @@ $hasDocs   = $documentTypes->isNotEmpty();
                                required maxlength="500"
                                class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gov-400 dark:focus:ring-gov-400/50 @error('building_address') border-red-400 @enderror">
                         @error('building_address')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
+
+                        {{-- ── Map: pin the exact building location (optional) ── --}}
+                        @include('prevention-requests.partials.map-picker', [
+                            'initialLat' => old('latitude',  $dossier->latitude  ?? ''),
+                            'initialLng' => old('longitude', $dossier->longitude ?? ''),
+                            'mapId'       => 'map-picker-correct',
+                        ])
                     </div>
                     @endif
 

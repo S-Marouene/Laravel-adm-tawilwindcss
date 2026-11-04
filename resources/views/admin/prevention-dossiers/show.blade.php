@@ -371,6 +371,15 @@
                                 <strong class="font-semibold break-all">{{ $preventionDossier->building_address ?? '—' }}</strong>
                             </span>
                         </div>
+
+                        {{-- ── Map: show pinned building location (if coordinates were provided) ── --}}
+                        @if ($preventionDossier->latitude && $preventionDossier->longitude)
+                            @include('prevention-requests.partials.map-display', [
+                                'lat'   => $preventionDossier->latitude,
+                                'lng'   => $preventionDossier->longitude,
+                                'mapId' => 'map-admin',
+                            ])
+                        @endif
                         <div>
                             <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Visit Date <span class="text-red-500">*</span></label>
                             <input type="date" name="visit_date" required
@@ -792,6 +801,8 @@
                                                 'governorate_id'     => $preventionDossier->governorate?->name_fr ?? $preventionDossier->governorate?->name_ar,
                                                 'delegation_id'      => $preventionDossier->delegation?->name_fr ?? $preventionDossier->delegation?->name_ar,
                                                 'building_address'   => $preventionDossier->building_address,
+                                                'latitude'            => $preventionDossier->latitude,
+                                                'longitude'           => $preventionDossier->longitude,
                                                 'building_type_id'   => $preventionDossier->buildingType?->name,
                                                 'building_activity_id' => $preventionDossier->buildingActivity?->name ?? $preventionDossier->activity_other,
                                                 default              => null,

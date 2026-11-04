@@ -51,6 +51,7 @@
                 });
             })();
         </script>
+        @stack('styles')
     </head>
     <body class="font-sans antialiased bg-background text-on-surface min-h-screen flex flex-col selection:bg-primary selection:text-on-primary">
         <!-- Skip Link for Accessibility -->
@@ -78,5 +79,6 @@
 
             @include('partials.footer')
         </div>
+        @stack('scripts')
     </body>
 </html>

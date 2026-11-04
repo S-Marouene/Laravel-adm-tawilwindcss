@@ -12,6 +12,8 @@
     $valGov   = old('code_structure', $isEditing ? $dossier->governorate_id : '');
     $valDelId = old('delegation_id',  $isEditing ? $dossier->delegation_id  : '');
     $valAddress = old('building_address', $isEditing ? $dossier->building_address : '');
+    $valLat     = old('latitude',  $isEditing ? ($dossier->latitude  ?? '') : '');
+    $valLng     = old('longitude', $isEditing ? ($dossier->longitude ?? '') : '');
 
     // ── Récapitulatif des étapes pour la barre de progression ──
     $wizardSteps = [
@@ -251,6 +253,13 @@
                                 </div>
                                 @error('building_address')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                             </div>
+
+                            {{-- ── Map: pin the exact building location (optional) ── --}}
+                            @include('prevention-requests.partials.map-picker', [
+                                'initialLat' => $valLat,
+                                'initialLng' => $valLng,
+                                'mapId'       => 'map-picker',
+                            ])
                         </div>
 
                         {{-- Pied de formulaire --}}

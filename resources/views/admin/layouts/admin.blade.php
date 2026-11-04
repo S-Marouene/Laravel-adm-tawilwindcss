@@ -38,6 +38,7 @@
                 });
             })();
         </script>
+        @stack('styles')
     </head>
     <body class="font-sans antialiased bg-surface-container-low dark:bg-surface-dim text-on-surface overflow-x-hidden">
         <div class="min-h-screen flex w-full overflow-x-hidden flex-col" x-data="sidebarManager()">
@@ -677,5 +678,6 @@
                 </main>
             </div>
         </div>
+        @stack('scripts')
     </body>
 </html>

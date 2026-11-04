@@ -156,6 +156,8 @@ class PreventionDossierController extends Controller
             'governorate'      => $preventionDossier->governorate?->name_fr ?? $preventionDossier->governorate?->name_ar,
             'delegation'       => $preventionDossier->delegation?->name_fr ?? $preventionDossier->delegation?->name_ar,
             'building_address' => $preventionDossier->building_address,
+            'latitude'         => $preventionDossier->latitude,
+            'longitude'        => $preventionDossier->longitude,
             'building_type'    => $preventionDossier->buildingType?->name,
             'building_activity'=> $preventionDossier->buildingActivity?->name ?? $preventionDossier->activity_other,
         ];

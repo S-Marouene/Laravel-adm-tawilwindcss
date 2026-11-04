@@ -129,6 +129,8 @@ class PreventionRequestController extends Controller
             'code_structure'   => ['required', 'integer', 'between:1,24'],
             'delegation_id'    => ['required', 'integer', 'exists:delegations,id'],
             'building_address' => ['required', 'string', 'max:500'],
+            'latitude'         => ['nullable', 'numeric', 'between:29.9,37.8'],
+            'longitude'        => ['nullable', 'numeric', 'between:7.2,11.9'],
         ]);
 
         // The building address is where the future RDV (site visit) takes place
@@ -139,6 +141,8 @@ class PreventionRequestController extends Controller
             'governorate_id'   => $validated['code_structure'],
             'delegation_id'    => $validated['delegation_id'],
             'building_address' => $validated['building_address'],
+            'latitude'         => $validated['latitude'] ?? null,
+            'longitude'        => $validated['longitude'] ?? null,
         ]);
 
         ActivityLogger::log('prevention_update', "Prevention — Step 1 (identity) updated for dossier #{$dossier->id} by {$dossier->nom_prenom}", $dossier, [
@@ -170,6 +174,8 @@ class PreventionRequestController extends Controller
             'code_structure'   => ['required', 'integer', 'between:1,24'],
             'delegation_id'    => ['required', 'integer', 'exists:delegations,id'],
             'building_address' => ['required', 'string', 'max:500'],
+            'latitude'         => ['nullable', 'numeric', 'between:29.9,37.8'],
+            'longitude'        => ['nullable', 'numeric', 'between:7.2,11.9'],
         ]);
 
         $dossier = PreventionDossier::create([
@@ -182,6 +188,8 @@ class PreventionRequestController extends Controller
             'governorate_id'   => $validated['code_structure'],
             'delegation_id'    => $validated['delegation_id'],
             'building_address' => $validated['building_address'],
+            'latitude'         => $validated['latitude'] ?? null,
+            'longitude'        => $validated['longitude'] ?? null,
         ]);
 
         ActivityLogger::log('prevention_create', "Prevention — Draft created by {$dossier->nom_prenom} (CIN: {$dossier->cin}, Gov: {$dossier->governorate?->name})", $dossier, [
@@ -410,6 +418,8 @@ class PreventionRequestController extends Controller
                     'governorate'      => $dossier->governorate?->name_fr ?? $dossier->governorate?->name_ar,
                     'delegation'       => $dossier->delegation?->name_fr ?? $dossier->delegation?->name_ar,
                     'building_address' => $dossier->building_address,
+                    'latitude'         => $dossier->latitude,
+                    'longitude'        => $dossier->longitude,
                     'building_type'    => $dossier->buildingType?->name,
                     'building_activity'=> $dossier->buildingActivity?->name ?? $dossier->activity_other,
                 ],
@@ -767,6 +777,8 @@ class PreventionRequestController extends Controller
         }
         if (in_array('building_address', $fieldsToFix)) {
             $rules['building_address'] = ['required', 'string', 'max:500'];
+            $rules['latitude']         = ['nullable', 'numeric', 'between:29.9,37.8'];
+            $rules['longitude']        = ['nullable', 'numeric', 'between:7.2,11.9'];
         }
         if (in_array('building_type_id', $fieldsToFix)) {
             $rules['building_type_id'] = ['required', 'integer', 'exists:building_types,id'];
@@ -790,7 +802,11 @@ class PreventionRequestController extends Controller
         if (in_array('phone', $fieldsToFix))              $updates['phone']            = $validated['phone'];
         if (in_array('governorate_id', $fieldsToFix))     $updates['governorate_id']   = $validated['code_structure'];
         if (in_array('delegation_id', $fieldsToFix))      $updates['delegation_id']    = $validated['delegation_id'];
-        if (in_array('building_address', $fieldsToFix))   $updates['building_address'] = $validated['building_address'];
+        if (in_array('building_address', $fieldsToFix)) {
+            $updates['building_address'] = $validated['building_address'];
+            $updates['latitude']          = $validated['latitude'] ?? null;
+            $updates['longitude']          = $validated['longitude'] ?? null;
+        }
         if (in_array('building_type_id', $fieldsToFix))   $updates['building_type_id'] = $validated['building_type_id'];
         if (in_array('building_activity_id', $fieldsToFix)) {
             $updates['building_activity_id'] = $validated['building_activity_id'] ?? null;
@@ -843,6 +859,8 @@ class PreventionRequestController extends Controller
                 'governorate'      => $dossier->governorate?->name_fr ?? $dossier->governorate?->name_ar,
                 'delegation'       => $dossier->delegation?->name_fr ?? $dossier->delegation?->name_ar,
                 'building_address' => $dossier->building_address,
+                'latitude'         => $dossier->latitude,
+                'longitude'        => $dossier->longitude,
                 'building_type'    => $dossier->buildingType?->name,
                 'building_activity'=> $dossier->buildingActivity?->name ?? $dossier->activity_other,
             ],

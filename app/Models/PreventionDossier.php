@@ -18,7 +18,7 @@ class PreventionDossier extends Model
     protected $fillable = [
         'user_id', 'current_step', 'status',
         'cin', 'nom_prenom', 'phone', 'governorate_id', 'delegation_id',
-        'building_address',
+        'building_address', 'latitude', 'longitude',
         'building_type_id', 'building_activity_id', 'activity_other',
         'num_demande', 'api_reference', 'reference',
         'delivery_method', 'post_address',
@@ -31,6 +31,8 @@ class PreventionDossier extends Model
         'building_type_id'     => 'integer',
         'building_activity_id' => 'integer',
         'current_step'         => 'integer',
+        'latitude'             => 'decimal:7',
+        'longitude'            => 'decimal:7',
         'reviewed_at'          => 'datetime',
         'delivery_choice_at'   => 'datetime',
     ];

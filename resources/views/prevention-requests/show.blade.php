@@ -738,6 +738,17 @@
                             </div>
                         </div>
 
+                        {{-- ── Map: show pinned building location (if coordinates were provided) ── --}}
+                        @if ($dossier->latitude && $dossier->longitude)
+                            <div class="mt-3">
+                                @include('prevention-requests.partials.map-display', [
+                                    'lat'   => $dossier->latitude,
+                                    'lng'   => $dossier->longitude,
+                                    'mapId' => 'map-show',
+                                ])
+                            </div>
+                        @endif
+
                         {{-- Note de l'administration (si présente) — espace dédié sous les détails --}}
                         @if ($dossier->admin_note && $status !== 'needs_correction')
                         <div class="mt-4 rounded-lg border border-surface-dim bg-surface-container-low px-4 py-3">
@@ -1164,6 +1175,9 @@
                                 <tr><th>{{ __('prevention_request.building_activity') }}</th><td>{{ $dossier->buildingActivity?->name ?? $dossier->activity_other ?? '—' }}</td></tr>
                                 <tr><th>{{ __('prevention_request.delegation') }}</th><td>{{ $dossier->delegation?->name ?? '—' }}</td></tr>
                                 <tr><th>{{ __('prevention_request.building_address') }}</th><td>{{ $dossier->building_address ?? '—' }}</td></tr>
+                                @if ($dossier->latitude && $dossier->longitude)
+                                <tr><th>{{ __('prevention_request.map_selected_coords') }}</th><td class="fiche-mono" dir="ltr">{{ number_format((float)$dossier->latitude, 5) }}, {{ number_format((float)$dossier->longitude, 5) }}</td></tr>
+                                @endif
                             </table>
                         </section>
                     </div>
