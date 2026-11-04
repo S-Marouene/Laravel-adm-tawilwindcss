@@ -127,6 +127,35 @@ class PreventionDossierController extends Controller
             return back()->withErrors(['status' => 'Cannot request correction for this dossier.']);
         }
 
+        // ── Full history: anchor the current round (1, 2, 3…) by freezing
+        // the OLD version of the demande at request time —
+        //   • the old field values are stored in the event (data.previous),
+        //   • the old uploads are ARCHIVED (kept on disk, status=archived)
+        //     and listed in the event (data.archived_files), so they remain
+        //     downloadable/consultable even after several correction rounds.
+        $previousParams = [
+            'cin'              => $preventionDossier->cin,
+            'nom_prenom'       => $preventionDossier->nom_prenom,
+            'phone'            => $preventionDossier->phone,
+            'governorate'      => $preventionDossier->governorate?->name_fr ?? $preventionDossier->governorate?->name_ar,
+            'delegation'       => $preventionDossier->delegation?->name_fr ?? $preventionDossier->delegation?->name_ar,
+            'building_address' => $preventionDossier->building_address,
+            'building_type'    => $preventionDossier->buildingType?->name,
+            'building_activity'=> $preventionDossier->buildingActivity?->name ?? $preventionDossier->activity_other,
+        ];
+
+        $previousDocs = $preventionDossier->documents->map(fn (DossierDocument $doc) => [
+            'type'        => $doc->documentType?->name,
+            'file'        => $doc->original_name,
+            'size'        => $doc->size,
+            'uploaded_at' => $doc->created_at?->format('d/m/Y H:i'),
+        ])->all();
+
+        // Archive (never delete) the uploads of the version being corrected
+        DossierDocument::where('prevention_dossier_id', $preventionDossier->id)
+            ->where('status', '!=', 'archived')
+            ->update(['status' => 'archived']);
+
         $preventionDossier->update([
             'status'      => 'needs_correction',
             'admin_note'  => $validated['admin_note'],
@@ -134,10 +163,13 @@ class PreventionDossierController extends Controller
             'reviewed_at' => now(),
         ]);
 
-        $preventionDossier->logEvent('correction_requested', $validated['admin_note']);
+        $preventionDossier->logEvent('correction_requested', $validated['admin_note'], [
+            'previous'       => $previousParams,
+            'archived_files' => $previousDocs,
+        ]);
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', 'Correction requested. The applicant will see your note and can fix and resubmit their dossier.');
+            ->with('success', 'Correction requested. The old data and uploads are kept in the history — the applicant will re-walk the dossier from step 1 to fix it.');
     }
 
     // =========================================================================

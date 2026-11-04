@@ -86,6 +86,14 @@ class PreventionRequestController extends Controller
 
         $dossier->loadCount('documents');
 
+        // Old version (correction round): previous values + archived files,
+        // shown next to the form so the applicant knows exactly what changed.
+        $correction = $dossier->lastCorrectionData();
+        $archivedDocs = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->where('status', 'archived')
+            ->orderBy('created_at')
+            ->get();
+
         return view('prevention-requests.create', [
             'gouvernorats' => $this->gouvernorats(),
             'delegations'  => $this->delegations(),
@@ -93,6 +101,8 @@ class PreventionRequestController extends Controller
             'dossier'      => $dossier,   // pre-fills the form & unlocks "editing" mode
             'returnTo'     => $request->query('return'), // step the user came from
             'hasDocuments' => $dossier->documents_count > 0,
+            'correction'   => $correction,
+            'archivedDocs' => $archivedDocs,
         ]);
     }
 
@@ -183,12 +193,21 @@ class PreventionRequestController extends Controller
             || $dossier->status !== 'draft'
             || $dossier->current_step > 2;
 
+        // Old version of the demande (correction round) — shown next to the form
+        $correction = $dossier->lastCorrectionData();
+        $archivedDocs = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->where('status', 'archived')
+            ->orderBy('created_at')
+            ->get();
+
         return view('prevention-requests.create-step2', [
             'dossier'       => $dossier,
             'buildingTypes' => BuildingType::forSelect(),
             'activitiesMap' => BuildingType::activitiesMap(),
             'isEditing'     => $isEditing,
             'hasDocuments'  => $dossier->documents_count > 0,
+            'correction'    => $correction,
+            'archivedDocs'  => $archivedDocs,
         ]);
     }
 
@@ -255,10 +274,21 @@ class PreventionRequestController extends Controller
             ->get()
             ->groupBy('document_type_id');
 
+        // Correction round context: previous values (from the snapshot of the
+        // round) + the OLD (archived) uploads of earlier versions, kept and
+        // still downloadable in this dossier's history.
+        $correction    = $dossier->lastCorrectionData();
+        $archivedDocs  = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->where('status', 'archived')
+            ->orderBy('created_at')
+            ->get();
+
         return view('prevention-requests.create-step3', [
             'dossier'       => $dossier,
             'documentTypes'  => $documentTypes,
             'uploadedDocs'   => $uploadedDocs,
+            'correction'    => $correction,
+            'archivedDocs'  => $archivedDocs,
         ]);
     }
 
@@ -319,7 +349,28 @@ class PreventionRequestController extends Controller
             'reference'    => $dossier->reference ?: \App\Support\Reference::make('prevention', $dossier),
         ]);
 
-        $dossier->logEvent('submitted');
+        // ── History: a re-submission after correction rounds logs
+        // "resubmitted" with the NEW values of this version (data.updated),
+        // so old (from the round snapshot) vs new versions can be compared.
+        // A first submission simply logs "submitted".
+        $isResubmission = $dossier->lastCorrectionData() !== null;
+
+        if ($isResubmission) {
+            $dossier->logEvent('resubmitted', null, [
+                'updated' => [
+                    'cin'              => $dossier->cin,
+                    'nom_prenom'       => $dossier->nom_prenom,
+                    'phone'            => $dossier->phone,
+                    'governorate'      => $dossier->governorate?->name_fr ?? $dossier->governorate?->name_ar,
+                    'delegation'       => $dossier->delegation?->name_fr ?? $dossier->delegation?->name_ar,
+                    'building_address' => $dossier->building_address,
+                    'building_type'    => $dossier->buildingType?->name,
+                    'building_activity'=> $dossier->buildingActivity?->name ?? $dossier->activity_other,
+                ],
+            ]);
+        } else {
+            $dossier->logEvent('submitted');
+        }
 
         // Attempt to push to external API if configured
         if ($this->hasPreventionApiBaseUrl()) {
@@ -406,9 +457,23 @@ class PreventionRequestController extends Controller
     // =========================================================================
     // Choose delivery — how the applicant wants to receive the certificate.
     // Available once the inspection (RDV) passed (status waiting_delivery):
-    //   - digital : NOT ACTIVE YET ("coming soon")
-    //   - pickup  : at the delegation / gouvernorat office
-    //   - post    : sent via Poste Tunisienne (B3, registered mail)
+    //   - digital : NOT ACTIVE YET (requires the on-line payment module)
+    //   - pickup  : at the delegation / gouvernorat office  ← only active option
+    //   - post    : sent via Poste Tunisienne (B3) (requires the payment module)
+    //
+    // TODO(paiement): when the credit-card gateway goes live, this flow becomes:
+    //   1. user selects digital|post → the (currently mocked) card form shows;
+    //   2. the PSP (Paymee / D17 / e-dinar, 3-D Secure redirect + hosted fields)
+    //      charges the certificate delivery fee;
+    //   3. a SIGNED PSP webhook confirms payment server-side: a payment record
+    //      (amount, PSP reference, status) is attached to the dossier and a
+    //      'delivery_paid' event is logged;
+    //   4. only then is the choice persisted here and, for digital, the PDF
+    //      certificate is generated (download button unlocks) / for post the
+    //      postal address is required and the B3 request is recorded.
+    //   Until then the post/digital radios stay disabled in the UI and only
+    //   "pickup" reaches this method — the whitelist below is voluntarily kept
+    //   permissive for the switchover.
     // =========================================================================
 
     public function chooseDelivery(Request $request, PreventionDossier $dossier): RedirectResponse
@@ -500,8 +565,10 @@ class PreventionRequestController extends Controller
     }
 
     // =========================================================================
-    // Resubmit — user fixes a needs_correction dossier and re-submits step 3
-    // The dossier status goes back to completed so admin can review again.
+    // Resubmit — the user starts fixing a needs_correction dossier.
+    // He re-walks EVERY step (1 → 2 → 3): old values are editable, and any
+    // change becomes the new version while the old one stays conserved in
+    // the history (snapshot + archived files anchored on "correction_requested").
     // =========================================================================
 
     public function resubmit(Request $request, PreventionDossier $dossier): RedirectResponse
@@ -515,50 +582,58 @@ class PreventionRequestController extends Controller
                 ->withErrors(['status' => 'This dossier cannot be resubmitted right now.']);
         }
 
-        // ── Historique complet : snapshot the previous version of the demande ──
-        // Old parameters, old data and old uploads are preserved:
-        //   1. the previous field values go into the "resubmitted" event data,
-        //   2. all previously uploaded documents are ARCHIVED (kept on disk,
-        //      status = archived) so the user fixes/uploads fresh versions
-        //      while the older ones remain reachable from this timeline.
-        $oldParams = [
-            'cin'                 => $dossier->cin,
-            'nom_prenom'          => $dossier->nom_prenom,
-            'phone'               => $dossier->phone,
-            'governorate'         => $dossier->governorate?->name_fr ?? $dossier->governorate?->name_ar,
-            'delegation'          => $dossier->delegation?->name_fr ?? $dossier->delegation?->name_ar,
-            'building_address'    => $dossier->building_address,
-            'building_type'       => $dossier->buildingType?->name,
-            'building_activity'   => $dossier->buildingActivity?->name ?? $dossier->activity_other,
-            'admin_note'          => $dossier->admin_note,
-        ];
+        // Already in fixing mode → don't re-archive the files he may have
+        // re-uploaded during this round; just send him back to step 1.
+        if ($dossier->current_step === 1) {
+            return redirect()
+                ->route('prevention-requests.step1.edit', $dossier)
+                ->with('info', __('prevention_request.resubmit_info'));
+        }
 
-        $oldDocs = $dossier->documents->map(fn (DossierDocument $doc) => [
-            'type'         => $doc->documentType?->name,
-            'file'         => $doc->original_name,
-            'size'         => $doc->size,
-            'uploaded_at'  => $doc->created_at?->format('d/m/Y H:i'),
-        ])->all();
+        // ── Legacy compat — dossiers corrected before this "history" system:
+        // freeze their old version now (no previous snapshot exists): archive
+        // the active uploads and store the old values as a history_snapshot
+        // event so they remain consultable like any other correction round.
+        if ($dossier->documents->active()->isNotEmpty() || ! $dossier->lastCorrectionData()) {
+            $previousParams = [
+                'cin'              => $dossier->cin,
+                'nom_prenom'       => $dossier->nom_prenom,
+                'phone'            => $dossier->phone,
+                'governorate'      => $dossier->governorate?->name_fr ?? $dossier->governorate?->name_ar,
+                'delegation'       => $dossier->delegation?->name_fr ?? $dossier->delegation?->name_ar,
+                'building_address' => $dossier->building_address,
+                'building_type'    => $dossier->buildingType?->name,
+                'building_activity'=> $dossier->buildingActivity?->name ?? $dossier->activity_other,
+            ];
 
-        $dossier->logEvent('resubmitted', null, [
-            'previous' => $oldParams,
-            'archived_files' => $oldDocs,
-        ]);
+            $oldDocs = $dossier->documents->map(fn (DossierDocument $doc) => [
+                'type'        => $doc->documentType?->name,
+                'file'        => $doc->original_name,
+                'size'        => $doc->size,
+                'uploaded_at' => $doc->created_at?->format('d/m/Y H:i'),
+            ])->all();
 
-        // Archive (never delete) the previous uploads
-        DossierDocument::where('prevention_dossier_id', $dossier->id)
-            ->where('status', '!=', 'archived')
-            ->update(['status' => 'archived']);
+            if ($dossier->documents->active()->isNotEmpty()) {
+                DossierDocument::where('prevention_dossier_id', $dossier->id)
+                    ->where('status', '!=', 'archived')
+                    ->update(['status' => 'archived']);
+            }
 
-        // Re-open to step 3 so user can upload corrected documents
+            $dossier->logEvent('history_snapshot', null, [
+                'previous'       => $previousParams,
+                'archived_files' => $oldDocs,
+            ]);
+        }
+
+        // Hands the dossier back to the applicant — starts at STEP 1 so he
+        // reviews/supposes every piece of data (the old values are prefilled
+        // and shown next to the form as the "previous version").
         $dossier->update([
-            'status'       => 'draft',
-            'current_step' => 2,   // bring them back to step 3 (step 2 completed, step 3 open)
-            'admin_note'   => null,
+            'current_step' => 1,   // fix mode starts at step 1 (not step 3)
         ]);
 
         return redirect()
-            ->route('prevention-requests.step3.show', $dossier)
+            ->route('prevention-requests.step1.edit', $dossier)
             ->with('info', __('prevention_request.resubmit_info'));
     }
 

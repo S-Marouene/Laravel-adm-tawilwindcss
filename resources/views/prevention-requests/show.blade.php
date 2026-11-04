@@ -611,6 +611,10 @@
                                                 </div>
                                                 <p class="text-body-sm font-body-sm text-secondary mt-1.5">
                                                     {{ __('prevention_request.delivery_intro') }}
+                                                    <span class="block mt-1 text-[11px] font-semibold text-amber-800 flex items-start gap-1">
+                                                        <span class="material-symbols-outlined text-sm mt-px" aria-hidden="true">info</span>
+                                                        {{ __('prevention_request.delivery_note_soon') }}
+                                                    </span>
                                                 </p>
                                             </div>
                                         </div>
@@ -618,7 +622,7 @@
                                         <form method="POST" action="{{ route('prevention-requests.delivery', $dossier) }}" class="space-y-3">
                                             @csrf
 
-                                            {{-- Option 1 — numérique (bientôt disponible) --}}
+                                            {{-- Option 1 — numérique (bientôt disponible : requiert le paiement en ligne) --}}
                                             <label class="flex items-start gap-3.5 bg-surface-container-low border border-surface-dim rounded p-3.5 opacity-60 select-none cursor-not-allowed">
                                                 <input type="radio" name="delivery_method" value="digital" disabled
                                                     class="mt-0.5 rounded-full border-surface-dim" aria-disabled="true">
@@ -627,12 +631,16 @@
                                                         <span class="material-symbols-outlined text-secondary text-lg" aria-hidden="true">download</span>
                                                         <span class="text-xs font-bold text-on-surface">{{ __('prevention_request.delivery_digital_title') }}</span>
                                                         <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">{{ __('prevention_request.delivery_soon') }}</span>
+                                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-dim text-secondary flex items-center gap-0.5">
+                                                            <span class="material-symbols-outlined text-[11px]" aria-hidden="true">credit_card</span>
+                                                            {{ __('prevention_request.delivery_needs_payment') }}
+                                                        </span>
                                                     </div>
                                                     <p class="text-[11px] text-secondary mt-1 leading-relaxed">{{ __('prevention_request.delivery_digital_desc') }}</p>
                                                 </div>
                                             </label>
 
-                                            {{-- Option 2 — retrait au bureau (délégation / gouvernorat) --}}
+                                            {{-- Option 2 — retrait au bureau (délégation / gouvernorat) — SEULE OPTION ACTIVE pour l'instant --}}
                                             <label class="flex items-start gap-3.5 bg-surface-container-low border rounded p-3.5 cursor-pointer transition-colors hover:border-primary/50 border-surface-dim has-[:checked]:border-emerald-400 has-[:checked]:bg-emerald-50/40">
                                                 <input type="radio" name="delivery_method" value="pickup" x-model="method" required
                                                     class="mt-0.5 rounded-full border-surface-dim text-emerald-600 focus:ring-emerald-500">
@@ -640,40 +648,35 @@
                                                     <div class="flex flex-wrap items-center gap-2">
                                                         <span class="material-symbols-outlined text-emerald-700 text-lg" aria-hidden="true">storefront</span>
                                                         <span class="text-xs font-bold text-on-surface">{{ __('prevention_request.delivery_pickup_title') }}</span>
+                                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white flex items-center gap-0.5">
+                                                            <span class="material-symbols-outlined text-[11px]" aria-hidden="true">check_circle</span>
+                                                            {{ __('prevention_request.delivery_available') }}
+                                                        </span>
                                                     </div>
                                                     <p class="text-[11px] text-secondary mt-1 leading-relaxed">{{ __('prevention_request.delivery_pickup_desc', ['place' => $dossier->governorate?->name ?? '—']) }}</p>
                                                 </div>
                                             </label>
 
-                                            {{-- Option 3 — envoi par la Poste Tunisienne (B3) --}}
-                                            <div class="bg-surface-container-low border rounded p-3.5 transition-colors border-surface-dim has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50/40">
-                                                <label class="flex items-start gap-3.5 cursor-pointer">
-                                                    <input type="radio" name="delivery_method" value="post" x-model="method" required
-                                                        class="mt-0.5 rounded-full border-surface-dim text-blue-600 focus:ring-blue-500">
-                                                    <div class="flex-1 min-w-0">
-                                                        <div class="flex flex-wrap items-center gap-2">
-                                                            <span class="material-symbols-outlined text-blue-700 text-lg" aria-hidden="true">local_shipping</span>
-                                                            <span class="text-xs font-bold text-on-surface">{{ __('prevention_request.delivery_post_title') }}</span>
-                                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">B3</span>
-                                                        </div>
-                                                        <p class="text-[11px] text-secondary mt-1 leading-relaxed">{{ __('prevention_request.delivery_post_desc') }}</p>
+                                            {{-- Option 3 — envoi par la Poste Tunisienne (B3) — bientôt disponible
+                                                : nécessitera le paiement en ligne des frais d'envoi par carte bancaire
+                                                AVANT la confirmation (voir le module « Paiement » plus bas). --}}
+                                            <label class="flex items-start gap-3.5 bg-surface-container-low border border-surface-dim rounded p-3.5 opacity-60 select-none cursor-not-allowed">
+                                                <input type="radio" name="delivery_method" value="post" disabled
+                                                    class="mt-0.5 rounded-full border-surface-dim" aria-disabled="true">
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="material-symbols-outlined text-blue-700 text-lg" aria-hidden="true">local_shipping</span>
+                                                        <span class="text-xs font-bold text-on-surface">{{ __('prevention_request.delivery_post_title') }}</span>
+                                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">B3</span>
+                                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">{{ __('prevention_request.delivery_soon') }}</span>
+                                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-dim text-secondary flex items-center gap-0.5">
+                                                            <span class="material-symbols-outlined text-[11px]" aria-hidden="true">credit_card</span>
+                                                            {{ __('prevention_request.delivery_needs_payment') }}
+                                                        </span>
                                                     </div>
-                                                </label>
-
-                                                {{-- Adresse postale — affichée si l'option « poste » est sélectionnée --}}
-                                                <div x-show="method === 'post'" x-cloak class="mt-3 ms-8">
-                                                    <label class="block text-[11px] font-bold text-on-surface mb-1.5" for="post_address">
-                                                        {{ __('prevention_request.delivery_post_address') }} <span class="text-red-600">*</span>
-                                                    </label>
-                                                    <textarea name="post_address" id="post_address" rows="3" maxlength="500"
-                                                        x-bind:required="method === 'post' ? true : null"
-                                                        placeholder="{{ __('prevention_request.delivery_post_address_placeholder') }}"
-                                                        class="w-full text-sm rounded border-surface-dim focus:border-blue-500 focus:ring-blue-500/40">{{ old('post_address', $dossier->post_address) }}</textarea>
-                                                    @error('post_address')
-                                                        <p class="mt-1 text-[11px] font-semibold text-error">{{ $message }}</p>
-                                                    @enderror
+                                                    <p class="text-[11px] text-secondary mt-1 leading-relaxed">{{ __('prevention_request.delivery_post_desc') }}</p>
                                                 </div>
-                                            </div>
+                                            </label>
 
                                             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
                                                 <p class="text-[11px] text-secondary leading-relaxed flex-1">
@@ -692,6 +695,127 @@
                                                 </p>
                                             @enderror
                                         </form>
+
+                                        {{--
+                                            ─────────────────────────────────────────────────────────────────────
+                                            APERÇU DU MODULE PAIEMENT PAR CARTE BANCAIRE — DÉSACTIVÉ
+                                            ─────────────────────────────────────────────────────────────────────
+                                            Fonctionnement prévu (à implémenter avec un PSP agréé) :
+                                            1. L'utilisateur choisit « numérique » ou « poste » — ces deux
+                                               radios passeront de disabled → enabled une fois le module
+                                               de paiement branché.
+                                            2. Le formulaire de carte (titulaire, numéro au format 4-4-4-4,
+                                               expiration MM/AA, CVC) s'affiche sous l'option choisie.
+                                            3. « Payer et confirmer » redirige vers le prestataire de paiement
+                                               (ex. Paymee / D17 / e-dinar server, redirect 3-D Secure) —
+                                               AUCUNE donnée de carte ne transitant par ce serveur, ce bloc
+                                               devra être remplacé par les hosted fields / iFrame du PSP.
+                                            4. Le webhook signé du PSP confirme le paiement côté serveur :
+                                               création d'un enregistrement de paiement lié au dossier
+                                               (montant, référence PSP, statut), statut de la demande passe
+                                               à « payée », puis :
+                                                 - digital → génération + téléchargement du PDF certificat,
+                                                 - post    → enregistrement B3 auprès de La Poste Tunisienne.
+                                            5. En cas d'échec : l'utilisateur reste sur la même étape avec un
+                                               message d'erreur, le choix n'est pas enregistré.
+                                            ─────────────────────────────────────────────────────────────────────
+                                            Maquette ci-dessous : tout est « disabled » — non cliquable, jamais
+                                            soumis. Gabarit visuel du futur module uniquement.
+                                            ─────────────────────────────────────────────────────────────────────
+                                        --}}
+                                        <div x-data="{ payOpen: false }" class="mt-4 rounded border border-amber-300 bg-amber-50/70 overflow-hidden">
+                                            <button type="button" @click="payOpen = !payOpen"
+                                                class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-start hover:bg-amber-100/60 transition-colors">
+                                                <span class="material-symbols-outlined text-amber-700 text-lg" aria-hidden="true">credit_card</span>
+                                                <span class="flex-1 min-w-0">
+                                                    <span class="block text-[11px] font-extrabold uppercase tracking-wide text-amber-900">
+                                                        {{ __('prevention_request.payment_title') }}
+                                                    </span>
+                                                    <span class="block text-[10px] text-amber-800/90 leading-relaxed">
+                                                        {{ __('prevention_request.payment_desc') }}
+                                                    </span>
+                                                </span>
+                                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap flex items-center gap-1">
+                                                    <span class="material-symbols-outlined text-[11px]" aria-hidden="true">lock</span>
+                                                    {{ __('prevention_request.delivery_soon') }}
+                                                </span>
+                                                <svg class="w-4 h-4 text-amber-800 transition-transform flex-shrink-0" :class="payOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                            </button>
+
+                                            <div x-show="payOpen" x-cloak
+                                                class="px-3.5 pb-3.5 opacity-60 select-none"
+                                                aria-disabled="true">
+
+                                                {{-- Visuel carte — décoration uniquement --}}
+                                                <div class="rounded-lg bg-gradient-to-br from-amber-600 to-amber-800 text-white p-4 mb-3 relative overflow-hidden" aria-hidden="true">
+                                                    <span class="material-symbols-outlined absolute end-3 top-3 text-2xl opacity-40" aria-hidden="true">contactless</span>
+                                                    <p class="text-[10px] font-bold uppercase tracking-widest opacity-70">{{ __('prevention_request.payment_card_holder') }}</p>
+                                                    <p class="text-xs font-bold">NOM PRÉNOM</p>
+                                                    <p class="text-sm font-mono tracking-[0.2em] mt-2 num-ltr">0000 0000 0000 0000</p>
+                                                    <div class="flex justify-between items-end mt-2">
+                                                        <p class="text-[10px] font-mono opacity-80 num-ltr">MM/AA</p>
+                                                        <p class="text-[10px] font-bold uppercase tracking-widest opacity-70 num-ltr">CVC •••</p>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Champs désactivés — remplacés par les hosted fields du PSP à l'activation --}}
+                                                <form onsubmit="return false" novalidate aria-disabled="true" class="space-y-2.5">
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-amber-900 mb-1">{{ __('prevention_request.payment_card_holder') }}</label>
+                                                        <input type="text" disabled placeholder="NOM PRÉNOM"
+                                                            class="w-full text-xs rounded border-surface-dim bg-white/70 cursor-not-allowed" aria-disabled="true">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-amber-900 mb-1">{{ __('prevention_request.payment_card_number') }}</label>
+                                                        <input type="text" disabled placeholder="0000 0000 0000 0000" inputmode="numeric" autocomplete="off"
+                                                            class="w-full text-xs font-mono rounded border-surface-dim bg-white/70 cursor-not-allowed num-ltr" aria-disabled="true">
+                                                    </div>
+                                                    <div class="grid grid-cols-2 gap-2.5">
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold text-amber-900 mb-1">{{ __('prevention_request.payment_card_expiry') }}</label>
+                                                            <input type="text" disabled placeholder="MM/AA" inputmode="numeric" autocomplete="off"
+                                                                class="w-full text-xs font-mono rounded border-surface-dim bg-white/70 cursor-not-allowed num-ltr" aria-disabled="true">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold text-amber-900 mb-1">{{ __('prevention_request.payment_card_cvc') }}</label>
+                                                            <input type="password" disabled placeholder="•••" inputmode="numeric" autocomplete="off"
+                                                                class="w-full text-xs font-mono rounded border-surface-dim bg-white/70 cursor-not-allowed num-ltr" aria-disabled="true">
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-center justify-between gap-2 pt-1">
+                                                        <p class="text-[10px] text-amber-800/90 flex items-center gap-1 leading-tight">
+                                                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">verified_user</span>
+                                                            {{ __('prevention_request.payment_secure') }}
+                                                        </p>
+                                                        <button type="submit" disabled
+                                                            class="inline-flex items-center gap-1.5 bg-amber-600/70 text-white text-xs font-bold py-2 px-4 rounded cursor-not-allowed"
+                                                            aria-disabled="true">
+                                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">lock</span>
+                                                            {{ __('prevention_request.payment_pay_button') }}
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        {{-- ─────────────────────────────────────────────────────────────────────
+                                             APERÇU DU MODULE PAIEMENT (désactivé — non cliquable, jamais soumis)
+                                             ─────────────────────────────────────────────────────────────────────
+                                             Fonctionnement prévu (commentaire d'intégration) :
+                                             1. L'utilisateur choisit « numérique » ou « poste » (radios ci-dessus).
+                                             2. Ce formulaire de carte bancaire s'ouvre : titulaire, numéro
+                                                (formatage automatique 4-4-4-4), expiration (MM/AA) et CVC.
+                                             3. « Payer et confirmer » envoie la carte au prestataire de paiement
+                                                agréé (ex. Paymee / D17 / e-dinarhone de la SMT via redirect 3-D
+                                                Secure + webhook de confirmation côté serveur).
+                                             4. Le webhook signé crée un enregistrement de paiement lié au dossier,
+                                                passe le statut de la remise à « payée » et débloque :
+                                                  - digital  → génération + téléchargement du PDF du certificat,
+                                                  - post     → demande d'affranchissement B3 auprès de La Poste.
+                                             5. Aucune donnée de carte ne touche ce serveur : le formulaire
+                                                (hosted fields / iFrame) dit doit être remplacé par le widget du
+                                                prestataire. Ceci n'est qu'une maquette désactivée.
+                                             ───────────────────────────────────────────────────────────────────── --}}
                                     </div>
                                 </div>
                             </div>

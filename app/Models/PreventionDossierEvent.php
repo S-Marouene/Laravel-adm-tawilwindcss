@@ -18,6 +18,7 @@ class PreventionDossierEvent extends Model
 
     // Possible types — useful for reference:
     // submitted | resubmitted | advanced_to_consultation | correction_requested
+    // history_snapshot (legacy fallback: old version frozen at resubmit time)
     // approved | cancelled | appointment_scheduled | appointment_passed
     // appointment_failed | appointment_deleted
     // certificate_issued | certificate_collected | certificate_deleted
@@ -47,6 +48,7 @@ class PreventionDossierEvent extends Model
             'submitted', 'resubmitted'  => 'M12 19l9 2-9-18-9 18 9-2zm0 0v-8',
             'advanced_to_consultation'  => 'M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z',
             'correction_requested'      => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+            'history_snapshot'          => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
             'approved', 'certificate_issued' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
             'cancelled', 'certificate_deleted', 'appointment_deleted' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
             'appointment_scheduled'     => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
@@ -67,6 +69,7 @@ class PreventionDossierEvent extends Model
             'resubmitted'               => 'Dossier resubmitted after correction',
             'advanced_to_consultation'  => 'Dossier approved — awaiting RDV',
             'correction_requested'      => 'Correction requested',
+            'history_snapshot'          => 'Old version archived in history',
             'approved'                  => 'Dossier approved',
             'cancelled'                 => 'Dossier cancelled',
             'appointment_scheduled'     => 'RDV (visit) scheduled',
@@ -91,6 +94,7 @@ class PreventionDossierEvent extends Model
             'submitted', 'resubmitted'   => 'bg-teal-500',
             'advanced_to_consultation'   => 'bg-purple-500',
             'correction_requested'       => 'bg-amber-500',
+            'history_snapshot'           => 'bg-amber-400',
             'approved'                   => 'bg-emerald-500',
             'cancelled'                  => 'bg-red-400',
             'appointment_scheduled'      => 'bg-blue-500',
@@ -113,7 +117,36 @@ class PreventionDossierEvent extends Model
     {
         $data = $this->data;
 
-        if (! is_array($data) || (empty($data['visit_date']) && empty($data['reference']) && empty($data['method']))) {
+        if (! is_array($data)) {
+            return null;
+        }
+
+        // Correction-history events: summarize the old → new versions and the
+        // number of files that were archived for that round.
+        if (! empty($data['previous'])) {
+            $text = 'Old version snapshot';
+
+            if (! empty($data['archived_files']) && is_array($data['archived_files'])) {
+                $text .= ' · ' . count($data['archived_files']) . ' file(s) archived';
+            }
+
+            return $text;
+        }
+
+        if (! empty($data['updated'])) {
+            $text = 'New version saved';
+
+            $changed = collect($data['updated'])->filter(fn ($v, $k) => filled($v));
+
+            if ($changed->isNotEmpty()) {
+                $keys = $changed->keys()->take(3)->implode(', ');
+                $text .= ' · ' . $keys . ($changed->count() > 3 ? ', …' : '');
+            }
+
+            return $text;
+        }
+
+        if ((empty($data['visit_date']) && empty($data['reference']) && empty($data['method']))) {
             return null;
         }
 

@@ -488,7 +488,7 @@
                                     <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->collected_at->format('d M Y, H:i') }}</dd>
                                 </div>
                             @endif
-                        @endelse
+                        @endif
                     </dl>
 
                     @if ($cert->note)

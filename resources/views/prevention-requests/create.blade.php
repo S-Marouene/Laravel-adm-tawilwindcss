@@ -74,6 +74,13 @@
                         </span>
                     </div>
 
+                    {{-- Ancienne version : données + fichiers de l'ancien tour de correction,
+                         toujours consultables (l'historique est conservé après chaque tour) --}}
+                    @include('prevention-requests.partials.old-version-card', [
+                        'correction'    => $correction ?? null,
+                        'archivedDocs'  => $archivedDocs ?? null,
+                    ])
+
                     <form method="POST" action="{{ $formAction }}" id="prevention-create-form"
                           class="bg-surface-container-lowest rounded border border-surface-dim shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         @csrf

@@ -175,6 +175,56 @@ class PreventionDossier extends Model
         return $this->appointments->last();
     }
 
+    // -----------------------------------------------------------------------
+    // Correction history — every correction round keeps the old data & files
+    // -----------------------------------------------------------------------
+
+    /** Event types that hold a full snapshot of a previous (old) version */
+    public const SNAPSHOT_EVENT_TYPES = ['correction_requested', 'history_snapshot'];
+
+    /** The most recent snapshot event — anchor of the current correction round */
+    public function lastCorrectionEvent(): ?PreventionDossierEvent
+    {
+        return $this->events->last(
+            fn ($e) => in_array($e->type, self::SNAPSHOT_EVENT_TYPES)
+                || ($e->type === 'resubmitted' && is_array($e->data) && ! empty($e->data['previous']))
+        );
+    }
+
+    /** How many correction rounds this dossier went through (1, 2, 3…) */
+    public function correctionRoundsCount(): int
+    {
+        $legacy = $this->events->where('type', 'resubmitted')
+            ->filter(fn ($e) => is_array($e->data) && ! empty($e->data['previous']))
+            ->count();
+
+        return $this->events
+            ->whereIn('type', self::SNAPSHOT_EVENT_TYPES)
+            ->count() + $legacy;
+    }
+
+    /**
+     * Everything the applicant needs to see about the previous version of
+     * the demande: the old field values (if you change a field it becomes
+     * the new version — and the old value is kept in this history), plus
+     * the old upload files that were archived for that round.
+     */
+    public function lastCorrectionData(): ?array
+    {
+        $event = $this->lastCorrectionEvent();
+
+        if (! $event || ! is_array($event->data)) {
+            return null;
+        }
+
+        return [
+            'round'          => $this->correctionRoundsCount(),
+            'note'           => $event->note,
+            'previous'       => $event->data['previous'] ?? null,
+            'archived_files' => $event->data['archived_files'] ?? null,
+        ];
+    }
+
     public function isUnderReview(): bool
     {
         return in_array($this->status, ['completed', 'submitted', 'under_consultation']);
