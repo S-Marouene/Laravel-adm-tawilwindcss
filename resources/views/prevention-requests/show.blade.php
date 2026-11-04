@@ -4,6 +4,8 @@
     $viewRef = $dossier->num_demande ?: ($dossier->reference ?: \App\Support\Reference::provisional('prevention'));
 
     $pendingAppointment = $dossier->appointments->first(fn ($a) => ! $a->isPassed() && ! $a->isFailed());
+    $lastAppointment = $dossier->appointments->last();
+    $lastFailedAppointment = $dossier->appointments->last(fn ($a) => $a->isFailed());
 
     /* ── Stepper 4 étapes : dépôt → étude → inspection → certificat ── */
     $currentStep = match ($status) {
@@ -11,6 +13,7 @@
         'completed', 'submitted' => 2,
         'under_consultation'     => 3,
         'approved'               => 4,
+        'waiting_delivery'       => 4,
         'needs_correction'       => 2,
         default                  => null,
     };
@@ -60,8 +63,12 @@
             => ['bg-primary text-on-primary', 'campaign', __('prevention_request.chip_convocation'), 'bg-primary text-on-primary'],
         in_array($type, ['advanced_to_consultation', 'appointment_deleted'])
             => ['bg-secondary text-white', 'sync_alt', __('prevention_request.chip_phase'), 'bg-surface-dim text-secondary'],
-        in_array($type, ['approved', 'appointment_passed', 'certificate_issued'])
+        in_array($type, ['approved', 'appointment_passed', 'waiting_delivery', 'certificate_issued'])
             => ['bg-amber-600 text-white', 'task_alt', __('prevention_request.chip_favorable'), 'bg-amber-100 text-amber-900'],
+        $type === 'delivery_chosen'
+            => ['bg-indigo-600 text-white', 'local_shipping', __('prevention_request.chip_delivery'), 'bg-indigo-100 text-indigo-800'],
+        in_array($type, ['certificate_post_sent', 'certificate_post_delivered'])
+            => ['bg-amber-600 text-white', 'local_shipping', __('prevention_request.chip_post'), 'bg-emerald-100 text-emerald-800'],
         $type === 'certificate_collected'
             => ['bg-amber-600 text-white', 'handshake', __('prevention_request.chip_done'), 'bg-amber-100 text-amber-900'],
         // default: correction_requested, cancelled, appointment_failed, certificate_deleted
@@ -83,6 +90,7 @@
         'under_consultation'  => ['bg-secondary-container text-on-secondary-container', 'manage_search'],
         'needs_correction'    => ['bg-error-container text-error', 'error'],
         'approved'            => ['bg-amber-100 text-amber-900', 'task_alt'],
+        'waiting_delivery'    => ['bg-emerald-100 text-emerald-900', 'verified'],
         'cancelled'           => ['bg-surface-dim text-secondary', 'cancel'],
         default               => ['bg-surface-container-high text-secondary', 'info'],
     };
@@ -93,6 +101,8 @@
         $status === 'draft'               => 'draft',
         $status === 'needs_correction'    => 'error',
         $pendingAppointment !== null      => 'visit',
+        $status === 'waiting_delivery'    => 'delivery',
+        $status === 'under_consultation' && $lastFailedAppointment => 'visit_failed',
         $status === 'under_consultation'  => 'info',
         $status === 'approved' && ! $dossier->certificate => 'info',
         in_array($status, ['completed', 'submitted'])     => 'neutral',
@@ -321,6 +331,22 @@
                                     <span class="block font-normal text-amber-800 mt-0.5">{{ __('prevention_request.phase_instruction', ['step' => $currentStep ?: 3]) }}</span>
                                 </div>
                             </div>
+                        @elseif ($heroAlert === 'delivery')
+                            <div class="flex items-start gap-2.5 bg-emerald-50 border border-emerald-300 rounded px-3.5 py-2.5 text-xs">
+                                <span class="material-symbols-outlined text-emerald-600 text-base mt-px" aria-hidden="true">verified</span>
+                                <div class="font-bold text-emerald-900 leading-relaxed">
+                                    {{ __('prevention_request.waiting_delivery_banner') }}
+                                    <span class="block font-normal text-emerald-800 mt-0.5">{{ __('prevention_request.waiting_delivery_banner_d') }}</span>
+                                </div>
+                            </div>
+                        @elseif ($heroAlert === 'visit_failed')
+                            <div class="flex items-start gap-2.5 bg-red-50 border border-red-300 rounded px-3.5 py-2.5 text-xs">
+                                <span class="material-symbols-outlined text-red-600 text-base mt-px" aria-hidden="true">report</span>
+                                <div class="font-bold text-red-900 leading-relaxed">
+                                    {{ __('prevention_request.visit_failed_banner', ['date' => $lastFailedAppointment?->visit_date?->format('d/m/Y')]) }}
+                                    <span class="block font-normal text-red-800 mt-0.5">{{ __('prevention_request.visit_failed_banner_d') }}</span>
+                                </div>
+                            </div>
                         @elseif ($heroAlert === 'info')
                             <div class="flex items-start gap-2.5 bg-amber-50 border border-amber-300 rounded px-3.5 py-2.5 text-xs">
                                 <span class="material-symbols-outlined text-amber-600 text-base mt-px" aria-hidden="true">hourglass_bottom</span>
@@ -507,6 +533,170 @@
                             </div>
                         @endif
 
+                        {{-- Visiteur échoué — note de l'inspecteur + nouveau RDV --}}
+                        @if ($heroAlert === 'visit_failed' && $lastFailedAppointment)
+                            <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print">
+                                <div class="border-s-4 border-s-red-600">
+                                    <div class="p-5">
+                                        <div class="flex items-start gap-3.5 mb-3">
+                                            <div class="w-10 h-10 rounded bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0">
+                                                <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">report</span>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                                    <h4 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">
+                                                        {{ __('prevention_request.visit_failed_title') }}
+                                                    </h4>
+                                                    <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">
+                                                        {{ __('prevention_request.chip_alert') }}
+                                                    </span>
+                                                </div>
+                                                <p class="text-body-sm font-body-sm text-secondary mt-1.5">
+                                                    @php $failNote = $lastFailedAppointment->note; @endphp
+                                                    {{ __('prevention_request.visit_failed_intro', ['date' => $lastFailedAppointment->visit_date->format('d/m/Y') . ' ' . substr($lastFailedAppointment->visit_time, 0, 5)]) }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        @if ($failNote)
+                                            <div class="rounded border border-red-200 bg-red-50 px-4 py-3 mb-4">
+                                                <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 mb-1 flex items-center gap-1.5">
+                                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>
+                                                    {{ __('prevention_request.appointment_note_label') }}
+                                                </p>
+                                                <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $failNote }}</p>
+                                            </div>
+                                        @endif
+
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                            <div class="flex items-start gap-2.5 bg-amber-50 border border-amber-200 p-3 rounded">
+                                                <span class="material-symbols-outlined text-amber-600 text-base mt-0.5" aria-hidden="true">build</span>
+                                                <div>
+                                                    <span class="font-bold text-amber-900 block">{{ __('prevention_request.visit_failed_fix_title') }}</span>
+                                                    <span class="text-secondary text-[11px]">{{ __('prevention_request.visit_failed_fix_d') }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
+                                                <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">event_repeat</span>
+                                                <div>
+                                                    <span class="font-bold text-on-surface block">{{ __('prevention_request.visit_failed_newrdv_title') }}</span>
+                                                    <span class="text-secondary text-[11px]">{{ __('prevention_request.visit_failed_newrdv_d') }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- Tout est OK — choix du mode de remise du certificat --}}
+                        @if ($status === 'waiting_delivery' && ! $dossier->certificate)
+                            <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print"
+                                 x-data="{ method: '{{ old('delivery_method', $dossier->delivery_method) }}' }"
+                                 style="opacity:1;">
+                                <div class="border-s-4 border-s-emerald-600">
+                                    <div class="p-5">
+                                        <div class="flex items-start gap-3.5 mb-4">
+                                            <div class="w-10 h-10 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                                                <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">verified</span>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                                    <h4 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">
+                                                        {{ __('prevention_request.delivery_title') }}
+                                                    </h4>
+                                                    <span class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">
+                                                        {{ __('prevention_request.delivery_badge') }}
+                                                    </span>
+                                                </div>
+                                                <p class="text-body-sm font-body-sm text-secondary mt-1.5">
+                                                    {{ __('prevention_request.delivery_intro') }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <form method="POST" action="{{ route('prevention-requests.delivery', $dossier) }}" class="space-y-3">
+                                            @csrf
+
+                                            {{-- Option 1 — numérique (bientôt disponible) --}}
+                                            <label class="flex items-start gap-3.5 bg-surface-container-low border border-surface-dim rounded p-3.5 opacity-60 select-none cursor-not-allowed">
+                                                <input type="radio" name="delivery_method" value="digital" disabled
+                                                    class="mt-0.5 rounded-full border-surface-dim" aria-disabled="true">
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="material-symbols-outlined text-secondary text-lg" aria-hidden="true">download</span>
+                                                        <span class="text-xs font-bold text-on-surface">{{ __('prevention_request.delivery_digital_title') }}</span>
+                                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">{{ __('prevention_request.delivery_soon') }}</span>
+                                                    </div>
+                                                    <p class="text-[11px] text-secondary mt-1 leading-relaxed">{{ __('prevention_request.delivery_digital_desc') }}</p>
+                                                </div>
+                                            </label>
+
+                                            {{-- Option 2 — retrait au bureau (délégation / gouvernorat) --}}
+                                            <label class="flex items-start gap-3.5 bg-surface-container-low border rounded p-3.5 cursor-pointer transition-colors hover:border-primary/50 border-surface-dim has-[:checked]:border-emerald-400 has-[:checked]:bg-emerald-50/40">
+                                                <input type="radio" name="delivery_method" value="pickup" x-model="method" required
+                                                    class="mt-0.5 rounded-full border-surface-dim text-emerald-600 focus:ring-emerald-500">
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="material-symbols-outlined text-emerald-700 text-lg" aria-hidden="true">storefront</span>
+                                                        <span class="text-xs font-bold text-on-surface">{{ __('prevention_request.delivery_pickup_title') }}</span>
+                                                    </div>
+                                                    <p class="text-[11px] text-secondary mt-1 leading-relaxed">{{ __('prevention_request.delivery_pickup_desc', ['place' => $dossier->governorate?->name ?? '—']) }}</p>
+                                                </div>
+                                            </label>
+
+                                            {{-- Option 3 — envoi par la Poste Tunisienne (B3) --}}
+                                            <div class="bg-surface-container-low border rounded p-3.5 transition-colors border-surface-dim has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50/40">
+                                                <label class="flex items-start gap-3.5 cursor-pointer">
+                                                    <input type="radio" name="delivery_method" value="post" x-model="method" required
+                                                        class="mt-0.5 rounded-full border-surface-dim text-blue-600 focus:ring-blue-500">
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="flex flex-wrap items-center gap-2">
+                                                            <span class="material-symbols-outlined text-blue-700 text-lg" aria-hidden="true">local_shipping</span>
+                                                            <span class="text-xs font-bold text-on-surface">{{ __('prevention_request.delivery_post_title') }}</span>
+                                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">B3</span>
+                                                        </div>
+                                                        <p class="text-[11px] text-secondary mt-1 leading-relaxed">{{ __('prevention_request.delivery_post_desc') }}</p>
+                                                    </div>
+                                                </label>
+
+                                                {{-- Adresse postale — affichée si l'option « poste » est sélectionnée --}}
+                                                <div x-show="method === 'post'" x-cloak class="mt-3 ms-8">
+                                                    <label class="block text-[11px] font-bold text-on-surface mb-1.5" for="post_address">
+                                                        {{ __('prevention_request.delivery_post_address') }} <span class="text-red-600">*</span>
+                                                    </label>
+                                                    <textarea name="post_address" id="post_address" rows="3" maxlength="500"
+                                                        x-bind:required="method === 'post' ? true : null"
+                                                        placeholder="{{ __('prevention_request.delivery_post_address_placeholder') }}"
+                                                        class="w-full text-sm rounded border-surface-dim focus:border-blue-500 focus:ring-blue-500/40">{{ old('post_address', $dossier->post_address) }}</textarea>
+                                                    @error('post_address')
+                                                        <p class="mt-1 text-[11px] font-semibold text-error">{{ $message }}</p>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+                                                <p class="text-[11px] text-secondary leading-relaxed flex-1">
+                                                    {{ __('prevention_request.delivery_editable_note') }}
+                                                </p>
+                                                <button type="submit"
+                                                    class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                                                    <span class="material-symbols-outlined text-base" aria-hidden="true">check_circle</span>
+                                                    {{ __('prevention_request.delivery_save') }}
+                                                </button>
+                                            </div>
+                                            @error('delivery_method')
+                                                <p class="text-[11px] font-semibold text-error flex items-center gap-1">
+                                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">error</span>
+                                                    {{ $message }}
+                                                </p>
+                                            @enderror
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                         {{-- Correction requise — note du service --}}
                         @if ($status === 'needs_correction' && $dossier->admin_note)
                             <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden">
@@ -562,21 +752,108 @@
                                                     <h4 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">
                                                         {{ __('prevention_request.certificate_title') }} — <span class="font-mono" dir="ltr">{{ $cert->reference }}</span>
                                                     </h4>
-                                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded {{ $cert->isCollected() ? 'bg-surface-dim text-secondary' : 'bg-amber-500 text-white' }}">
-                                                        {{ $cert->isCollected() ? __('prevention_request.certificate_status_collected') : __('prevention_request.certificate_status_ready') }}
-                                                    </span>
-                                                </div>
-                                                <div class="flex items-start gap-2 bg-surface-container-low p-3 rounded border border-surface-dim text-xs">
-                                                    <span class="material-symbols-outlined text-amber-700 text-base mt-px" aria-hidden="true">where_to_vote</span>
-                                                    <div>
-                                                        <span class="font-bold text-on-surface block">{{ __('prevention_request.certificate_pickup_text', ['place' => $cert->delegation?->name ?? $cert->governorate?->name ?? '—']) }}</span>
-                                                        <span class="text-secondary text-[11px]">
-                                                            {{ __('prevention_request.certificate_brigade', ['name' => $cert->governorate?->name ?? '—']) }}
-                                                            @if ($cert->valid_until)
-                                                                • {{ __('prevention_request.certificate_valid_until') }} {{ $cert->valid_until->format('d/m/Y') }}
-                                                            @endif
+                                                    @php
+                                                        [$certStatusKey, $certStatusCls] = match (true) {
+                                                            $cert->isPostDelivered()               => ['certificate_status_post_delivered', 'bg-emerald-100 text-emerald-800'],
+                                                            $cert->isCollected()                   => ['certificate_status_collected', 'bg-emerald-100 text-emerald-800'],
+                                                            $cert->isPostSent()                    => ['certificate_status_post_sent', 'bg-blue-100 text-blue-800'],
+                                                            $cert->isPost()                        => ['certificate_status_post_prep', 'bg-blue-100 text-blue-800'],
+                                                            default                                => ['certificate_status_ready', 'bg-amber-500 text-white'],
+                                                        };
+                                                    @endphp
+                                                    <div class="flex items-center gap-1.5">
+                                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary">
+                                                            {{ $cert->isPickup() ? __('prevention_request.delivery_pickup_title') : ($cert->isPost() ? __('prevention_request.delivery_post_title') : __('prevention_request.delivery_digital_title')) }}
+                                                        </span>
+                                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded {{ $certStatusCls }}">
+                                                            {{ __('prevention_request.' . $certStatusKey) }}
                                                         </span>
                                                     </div>
+                                                </div>
+
+                                                @if ($cert->isPickup())
+                                                    {{-- Retrait au bureau de la délégation / gouvernorat --}}
+                                                    <div class="flex items-start gap-2 bg-amber-50/80 border border-amber-200 p-3 rounded text-xs mb-3">
+                                                        <span class="material-symbols-outlined text-amber-700 text-base mt-px" aria-hidden="true">storefront</span>
+                                                        <div>
+                                                            <span class="font-bold text-amber-900 block">{{ __('prevention_request.certificate_pickup_text', ['place' => $cert->delegation?->name ?? $cert->governorate?->name ?? '—']) }}</span>
+                                                            @php $office = $cert->pickupOffice()?->officeDetails(); @endphp
+                                                            @if ($office['address'] ?? null)
+                                                                <span class="block text-secondary text-[11px] mt-1 font-medium">
+                                                                    <span class="material-symbols-outlined text-[13px] align-[-2px]" aria-hidden="true">location_on</span>
+                                                                    {{ $office['address'] }}
+                                                                </span>
+                                                            @endif
+                                                            @if ($office['phone'] ?? null)
+                                                                <span class="block text-secondary text-[11px] mt-0.5">
+                                                                    <a class="inline-flex items-center gap-1 font-mono font-bold text-amber-900 hover:text-amber-700" href="tel:{{ preg_replace('/[^0-9+]/', '', $office['phone']) }}" dir="ltr">
+                                                                        <span class="material-symbols-outlined text-[13px] align-[-2px]" aria-hidden="true">call</span>{{ $office['phone'] }}
+                                                                    </a>
+                                                                </span>
+                                                            @endif
+                                                            @if ($office['hours'] ?? null)
+                                                                <span class="block text-secondary text-[11px] mt-0.5">
+                                                                    <span class="material-symbols-outlined text-[13px] align-[-2px]" aria-hidden="true">schedule</span>
+                                                                    {{ $office['hours'] }}
+                                                                </span>
+                                                            @endif
+                                                            <span class="block text-secondary text-[11px] mt-1 font-semibold">
+                                                                {{ __('prevention_request.certificate_pickup_id_note') }}
+                                                                @if ($cert->issued_at) — {{ __('prevention_request.certificate_issued_on') }} {{ $cert->issued_at->format('d/m/Y') }} @endif
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                @elseif ($cert->isPost())
+                                                    {{-- Envoi par la Poste Tunisienne (B3) --}}
+                                                    <div class="flex items-start gap-2 bg-blue-50/80 border border-blue-200 p-3 rounded text-xs mb-3">
+                                                        <span class="material-symbols-outlined text-blue-700 text-base mt-px" aria-hidden="true">local_shipping</span>
+                                                        <div class="min-w-0">
+                                                            <span class="font-bold text-blue-900 block">{{ __('prevention_request.certificate_post_text') }}</span>
+                                                            <span class="block text-secondary text-[11px] mt-1">
+                                                                {{ __('prevention_request.certificate_post_recipient') }} : <span class="font-semibold text-on-surface">{{ $cert->post_recipient ?? '—' }}</span>
+                                                                @if ($cert->post_phone)
+                                                                    — <a class="font-mono font-bold text-blue-900 hover:text-blue-700" href="tel:{{ preg_replace('/[^0-9+]/', '', $cert->post_phone) }}" dir="ltr">{{ $cert->post_phone }}</a>
+                                                                @endif
+                                                            </span>
+                                                            <span class="block text-secondary text-[11px] mt-0.5">{{ __('prevention_request.certificate_post_address') }} : <span class="font-medium text-on-surface">{{ $cert->post_address }}</span></span>
+                                                            @if ($cert->post_tracking)
+                                                                <span class="inline-flex items-center gap-1.5 mt-1.5 rounded bg-blue-100 px-2 py-0.5 font-mono font-bold text-blue-900" dir="ltr">
+                                                                    <span class="material-symbols-outlined text-[13px]" aria-hidden="true">qr_code</span>
+                                                                    {{ __('prevention_request.certificate_post_tracking') }} : {{ $cert->post_tracking }}
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Suivi postale : Y → Envoyé → Livré --}}
+                                                    <div class="grid grid-cols-3 gap-1.5 text-center mb-3">
+                                                        @php
+                                                            $postSteps = [
+                                                                'issued'    => ['label' => __('prevention_request.post_step_issued'), 'done' => true],
+                                                                'sent'      => ['label' => __('prevention_request.post_step_sent'),  'done' => $cert->post_sent_at !== null],
+                                                                'delivered' => ['label' => __('prevention_request.post_step_delivered'), 'done' => $cert->post_delivered_at !== null],
+                                                            ];
+                                                        @endphp
+                                                        @foreach ($postSteps as $step)
+                                                            <div class="p-2 rounded border {{ $step['done'] ? 'bg-emerald-50 border-emerald-300' : 'bg-surface-container-low border-surface-dim' }}">
+                                                                <span class="material-symbols-outlined text-base {{ $step['done'] ? 'text-emerald-600' : 'text-outline' }}" aria-hidden="true">{{ $step['done'] ? 'check_circle' : 'schedule' }}</span>
+                                                                <span class="block text-[10px] font-bold {{ $step['done'] ? 'text-emerald-800' : 'text-secondary' }}">{{ $step['label'] }}</span>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+
+                                                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-secondary">
+                                                    {{ __('prevention_request.certificate_brigade', ['name' => $cert->governorate?->name ?? '—']) }}
+                                                    @if ($cert->valid_until)
+                                                        • {{ __('prevention_request.certificate_valid_until') }} {{ $cert->valid_until->format('d/m/Y') }}
+                                                    @endif
+                                                    @if ($cert->isCollected() && $cert->collected_at)
+                                                        • {{ __('prevention_request.certificate_collected_on') }} {{ $cert->collected_at->format('d/m/Y') }}
+                                                    @endif
+                                                    @if ($cert->isPostSent() && $cert->post_sent_at)
+                                                        • {{ __('prevention_request.certificate_post_sent') }} {{ $cert->post_sent_at->format('d/m/Y') }}
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
@@ -643,7 +920,7 @@
                                                     <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                                                         <div class="flex items-center gap-2">
                                                             <span class="text-xs font-bold {{ $chipCls }} px-2 py-0.5 rounded uppercase">{{ $chip }}</span>
-                                                            <span class="text-xs font-semibold text-on-surface">{{ in_array($event->type, ['submitted', 'resubmitted']) ? __('prevention_request.timeline_actor_you') : __('prevention_request.timeline_actor_admin') }}</span>
+                                                            <span class="text-xs font-semibold text-on-surface">{{ in_array($event->type, ['submitted', 'resubmitted', 'delivery_chosen']) ? __('prevention_request.timeline_actor_you') : __('prevention_request.timeline_actor_admin') }}</span>
                                                         </div>
                                                         <time class="text-xs font-mono font-medium text-secondary" dir="ltr">{{ $event->created_at->format('d/m/Y H:i') }}</time>
                                                     </div>
@@ -660,6 +937,18 @@
                                                         <p class="text-xs inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 font-mono font-bold text-amber-900 mb-1.5" dir="ltr">
                                                             <span class="material-symbols-outlined text-[13px]" aria-hidden="true">workspace_premium</span>
                                                             {{ $event->data['reference'] }}
+                                                        </p>
+                                                    @endif
+                                                    @if (in_array($event->type, ['certificate_post_sent', 'certificate_post_delivered']) && is_array($event->data) && ! empty($event->data['tracking']))
+                                                        <p class="text-xs inline-flex items-center gap-1 rounded bg-blue-100 px-2 py-0.5 font-mono font-bold text-blue-900 mb-1.5" dir="ltr">
+                                                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">local_shipping</span>
+                                                            {{ __('prevention_request.timeline_tracking_short') }} {{ $event->data['tracking'] }}
+                                                        </p>
+                                                    @endif
+                                                    @if ($event->type === 'delivery_chosen' && is_array($event->data) && ! empty($event->data['method']))
+                                                        <p class="text-xs inline-flex items-center gap-1 rounded bg-indigo-100 px-2 py-0.5 font-bold text-indigo-800 mb-1.5">
+                                                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">local_shipping</span>
+                                                            {{ __('prevention_request.timeline_delivery_method') }} : {{ __('prevention_request.delivery_method_' . $event->data['method']) }}
                                                         </p>
                                                     @endif
                                                     @if ($event->note)
@@ -788,6 +1077,56 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Historique des versions archivées (corrections précédentes) --}}
+                        @if (! empty($archivedDocuments) && $archivedDocuments->flatten()->isNotEmpty())
+                            <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print" x-data="{ openArchive: false }">
+                                <div class="p-5">
+                                    <button type="button" @click="openArchive = !openArchive" class="w-full text-start">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="w-8 h-8 rounded bg-surface-dim/60 text-secondary flex items-center justify-center shrink-0">
+                                                <span class="material-symbols-outlined text-base" aria-hidden="true">inventory_2</span>
+                                            </span>
+                                            <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">
+                                                {{ __('prevention_request.archive_title') }}
+                                            </h3>
+                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary" dir="ltr">{{ $archivedDocuments->flatten()->count() }}</span>
+                                            <svg class="w-4 h-4 text-secondary transition-transform" :class="openArchive ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        </div>
+                                        <p class="text-[11px] text-secondary leading-relaxed">{{ __('prevention_request.archive_desc') }}</p>
+                                    </button>
+
+                                    <div x-show="openArchive" x-cloak class="pt-4 space-y-2.5">
+                                        @foreach ($archivedDocuments as $docType => $docs)
+                                            @php $archiveType = $documentTypes ? $documentTypes->firstWhere('id', $docType) : null; @endphp
+                                            @foreach ($docs as $doc)
+                                                <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5">
+                                                    <div class="flex items-start gap-2.5 min-w-0">
+                                                        <span class="material-symbols-outlined text-outline text-lg mt-0.5 shrink-0" aria-hidden="true">inventory_2</span>
+                                                        <div class="min-w-0">
+                                                            <h4 class="text-xs font-bold text-secondary leading-snug">{{ $archiveType?->name ?? __('prevention_request.other_files') }}</h4>
+                                                            <div class="flex items-center gap-2 text-[11px] text-secondary/80 mt-0.5 flex-wrap" dir="ltr">
+                                                                <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
+                                                                <span class="text-surface-dim">•</span>
+                                                                <span>{{ $doc->created_at->format('d/m/Y') }}</span>
+                                                                @if ($doc->original_name)
+                                                                    <span class="truncate max-w-36" title="{{ $doc->original_name }}">— {{ $doc->original_name }}</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <a href="{{ route('prevention-requests.documents.download', [$dossier, $doc]) }}"
+                                                        class="w-7 h-7 rounded bg-surface-container text-secondary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors"
+                                                        title="{{ __('prevention_request.download') }}">
+                                                        <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
+                                                    </a>
+                                                </div>
+                                            @endforeach
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
 
                         {{-- ENCADRÉ 2 : Direction régionale + coordonnées du demandeur --}}
                         <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden">

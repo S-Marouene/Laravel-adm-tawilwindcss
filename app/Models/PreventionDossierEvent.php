@@ -52,6 +52,9 @@ class PreventionDossierEvent extends Model
             'appointment_scheduled'     => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
             'appointment_passed', 'certificate_collected' => 'M5 13l4 4L19 7',
             'appointment_failed'        => 'M6 18L18 6M6 6l12 12',
+            'waiting_delivery', 'delivery_chosen' => 'M9 16l6-6m-6 0l6 6m5-3a9 9 0 11-18 0 9 9 0 0118 0z',
+            'certificate_post_sent'     => 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z',
+            'certificate_post_delivered' => 'M3 19h18m-2-8V9m-1-1h-4v2m7 0l-3-3m6 3a9 9 0 11-18 0 9 9 0 0118 0z',
             default                     => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
         };
     }
@@ -70,7 +73,11 @@ class PreventionDossierEvent extends Model
             'appointment_passed'        => 'Visit marked as passed',
             'appointment_failed'        => 'Visit marked as failed',
             'appointment_deleted'       => 'RDV removed',
+            'waiting_delivery'          => 'Inspection passed — awaiting certificate delivery',
+            'delivery_chosen'           => 'Certificate delivery method chosen',
             'certificate_issued'        => 'Prevention certificate issued',
+            'certificate_post_sent'     => 'Certificate sent via Poste Tunisienne (B3)',
+            'certificate_post_delivered' => 'Certificate delivered by post',
             'certificate_collected'     => 'Certificate collected by applicant',
             'certificate_deleted'       => 'Prevention certificate deleted',
             default                     => ucfirst(str_replace('_', ' ', $this->type)),
@@ -90,7 +97,11 @@ class PreventionDossierEvent extends Model
             'appointment_passed'         => 'bg-emerald-500',
             'appointment_failed'         => 'bg-red-500',
             'appointment_deleted'        => 'bg-gray-400',
+            'waiting_delivery'           => 'bg-amber-500',
+            'delivery_chosen'            => 'bg-indigo-500',
             'certificate_issued'         => 'bg-emerald-500',
+            'certificate_post_sent'      => 'bg-emerald-500',
+            'certificate_post_delivered' => 'bg-teal-500',
             'certificate_collected'      => 'bg-teal-500',
             'certificate_deleted'        => 'bg-gray-400',
             default                      => 'bg-gray-400',
@@ -102,8 +113,23 @@ class PreventionDossierEvent extends Model
     {
         $data = $this->data;
 
-        if (! is_array($data) || (empty($data['visit_date']) && empty($data['reference']))) {
+        if (! is_array($data) || (empty($data['visit_date']) && empty($data['reference']) && empty($data['method']))) {
             return null;
+        }
+
+        // Delivery-protocol events: show the certificate tracking / method
+        if (! empty($data['tracking'])) {
+            return 'Tracking: ' . $data['tracking'];
+        }
+
+        if (! empty($data['method'])) {
+            $text = 'Delivery: ' . $data['method'];
+
+            if (! empty($data['address'])) {
+                $text .= ' · ' . $data['address'];
+            }
+
+            return $text;
         }
 
         // Certificate events: show reference + pickup governorate / delegation

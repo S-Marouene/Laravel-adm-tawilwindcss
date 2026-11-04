@@ -20,6 +20,7 @@
         <option value="submitted"          {{ request('status') === 'submitted'          ? 'selected' : '' }}>Submitted to API</option>
         <option value="under_consultation" {{ request('status') === 'under_consultation' ? 'selected' : '' }}>Approved — Awaiting RDV</option>
         <option value="needs_correction"   {{ request('status') === 'needs_correction'   ? 'selected' : '' }}>Needs Correction</option>
+        <option value="waiting_delivery"   {{ request('status') === 'waiting_delivery'   ? 'selected' : '' }}>All OK — Awaiting Delivery</option>
         <option value="approved"           {{ request('status') === 'approved'           ? 'selected' : '' }}>Approved</option>
         <option value="cancelled"          {{ request('status') === 'cancelled'          ? 'selected' : '' }}>Cancelled</option>
     </select>
@@ -57,6 +58,7 @@
                             'submitted'          => ['dot' => 'bg-teal-500',    'text' => 'Submitted',          'cls' => 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'],
                             'needs_correction'   => ['dot' => 'bg-amber-500',   'text' => 'Needs Correction',   'cls' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'],
                             'approved'           => ['dot' => 'bg-emerald-500', 'text' => 'Approved',           'cls' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
+                            'waiting_delivery'   => ['dot' => 'bg-emerald-500', 'text' => 'All OK — Awaiting Delivery', 'cls' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
                             'cancelled'          => ['dot' => 'bg-gray-400',    'text' => 'Cancelled',          'cls' => 'bg-surface-container text-secondary dark:bg-gray-700 dark:text-gray-400'],
                             default              => ['dot' => 'bg-blue-500',    'text' => 'Under Review',       'cls' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'],
                         };

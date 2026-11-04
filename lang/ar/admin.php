@@ -139,6 +139,13 @@ return [
     'delegations' => 'المعتمديات',
     'delegations_desc' => 'إدارة المعتمديات حسب الولاية',
 
+    // Pickup office details (certificate delivery)
+    'office_details' => 'معلومات مكتب السحب (الشهادة)',
+    'office_details_desc' => 'تُعرض للمطلب عند اختياره السحب من مكتب شهادة الوقاية.',
+    'office_address' => 'عنوان المكتب',
+    'office_phone'   => 'هاتف المكتب',
+    'office_hours'   => 'ساعات العمل',
+
     // Building types
     'building_types' => 'أنواع البنايات',
     'building_types_desc' => 'إدارة أنواع البنايات المستخدمة في الملفات',

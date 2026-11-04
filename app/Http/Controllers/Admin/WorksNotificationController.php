@@ -106,6 +106,8 @@ class WorksNotificationController extends Controller
     public function requestCorrection(Request $request, WorksNotification $worksNotification): RedirectResponse
     {
         $this->authorize('manage works-notifications');
+        AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
+        AdminScope::authorize($worksNotification);
 
         $validated = $request->validate([
             'admin_note' => ['required', 'string', 'max:2000'],
@@ -136,6 +138,8 @@ class WorksNotificationController extends Controller
     public function approve(WorksNotification $worksNotification): RedirectResponse
     {
         $this->authorize('manage works-notifications');
+        AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
+        AdminScope::authorize($worksNotification);
 
         if (! $worksNotification->isActionable()) {
             return back()->withErrors(['status' => 'Cannot approve this notification from its current status.']);
@@ -161,6 +165,8 @@ class WorksNotificationController extends Controller
     public function cancel(Request $request, WorksNotification $worksNotification): RedirectResponse
     {
         $this->authorize('manage works-notifications');
+        AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
+        AdminScope::authorize($worksNotification);
 
         $validated = $request->validate([
             'admin_note' => ['required', 'string', 'max:2000'],
@@ -191,6 +197,8 @@ class WorksNotificationController extends Controller
     public function downloadDocument(WorksDocument $worksDocument)
     {
         $this->authorize('view works-notifications');
+        AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
+        AdminScope::authorize($worksDocument->notification);
 
         abort_unless(\Storage::disk('local')->exists($worksDocument->file_path), 404);
 

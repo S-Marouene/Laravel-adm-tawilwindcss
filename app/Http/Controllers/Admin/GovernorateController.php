@@ -35,6 +35,9 @@ class GovernorateController extends Controller
             'name_ar' => ['required', 'string', 'max:255'],
             'name_fr' => ['required', 'string', 'max:255'],
             'name_en' => ['required', 'string', 'max:255'],
+            'office_address' => ['nullable', 'string', 'max:255'],
+            'office_phone'   => ['nullable', 'string', 'max:40'],
+            'office_hours'   => ['nullable', 'string', 'max:255'],
         ]);
         Governorate::create($data);
         return redirect()->route('admin.governorates.index')
@@ -54,6 +57,9 @@ class GovernorateController extends Controller
             'name_ar' => ['required', 'string', 'max:255'],
             'name_fr' => ['required', 'string', 'max:255'],
             'name_en' => ['required', 'string', 'max:255'],
+            'office_address' => ['nullable', 'string', 'max:255'],
+            'office_phone'   => ['nullable', 'string', 'max:40'],
+            'office_hours'   => ['nullable', 'string', 'max:255'],
         ]);
         $governorate->update($data);
         return redirect()->route('admin.governorates.index')

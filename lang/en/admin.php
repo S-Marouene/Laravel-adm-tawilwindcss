@@ -42,6 +42,19 @@ return [
     'form_template_short' => 'Form',
     'building_scope_none' => 'No building type checked → hidden from users.',
 
+    // Reference data / pickup office details (certificate delivery)
+    'ref_created' => 'Record created successfully.',
+    'ref_updated' => 'Record updated successfully.',
+    'governorates' => 'Governorates',
+    'select_governorate' => 'Select a governorate',
+    'governorate' => 'Governorate',
+    'delegations' => 'Delegations',
+    'office_details' => 'Pickup office details (certificate)',
+    'office_details_desc' => 'Shown to the applicant when he chooses pickup at the office for the prevention certificate.',
+    'office_address' => 'Office address',
+    'office_phone'   => 'Office phone',
+    'office_hours'   => 'Opening hours',
+
     // Document types — downloadable form & building-type scope
     'form_template' => 'Downloadable form',
     'form_template_hint' => 'PDF, DOC, DOCX, JPG or PNG — max 10 MB. Users get a "Download form" button on Step 3.',

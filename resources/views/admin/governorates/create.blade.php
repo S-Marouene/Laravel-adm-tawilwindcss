@@ -8,6 +8,7 @@
         @csrf
         <div><label class="block text-sm font-medium text-on-surface dark:text-gray-300 mb-1.5">ID</label><input type="number" name="id" value="{{ old('id') }}" required class="block w-full px-4 py-2.5 text-sm bg-surface-container-lowest dark:bg-gray-900/50 border border-surface-dim dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-gov-500/30 dark:text-gray-100">@error('id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror</div>
         @include('admin.partials.lang-fields')
+        @include('admin.partials.office-fields')
         <div class="flex justify-end"><button type="submit" class="admin-add-button px-6 py-2.5 text-sm">{{ __('action.save') }}</button></div>
     </form>
 </div>

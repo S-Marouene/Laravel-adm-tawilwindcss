@@ -16,6 +16,11 @@ class DossierDocument extends Model
         'size' => 'integer',
     ];
 
+    // Document states: pending | uploaded | archived
+    // "archived" = replaced by a newer version after a correction round —
+    // the old file is kept on disk for history but excluded from the
+    // active checklist and from completeness counting.
+
     // -----------------------------------------------------------------------
 
     public function dossier(): BelongsTo
@@ -26,5 +31,18 @@ class DossierDocument extends Model
     public function documentType(): BelongsTo
     {
         return $this->belongsTo(DocumentType::class);
+    }
+
+    // -----------------------------------------------------------------------
+    // Status helpers
+    // -----------------------------------------------------------------------
+
+    public function isActive(): bool    { return $this->status !== 'archived'; }
+    public function isArchived(): bool  { return $this->status === 'archived'; }
+
+    /** Only the current (non-archived) documents — used by checklists */
+    public function scopeActive($query)
+    {
+        return $query->where('status', '!=', 'archived');
     }
 }

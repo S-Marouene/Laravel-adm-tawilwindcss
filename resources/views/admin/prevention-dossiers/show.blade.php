@@ -9,6 +9,7 @@
         'under_consultation' => ['label' => 'Approved — Awaiting RDV', 'dot' => 'bg-purple-500',  'badge' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'],
         'needs_correction'   => ['label' => 'Needs Correction',   'dot' => 'bg-red-500',     'badge' => 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'],
         'approved'           => ['label' => 'Approved',           'dot' => 'bg-emerald-500', 'badge' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
+        'waiting_delivery'   => ['label' => 'All OK — Awaiting Delivery', 'dot' => 'bg-emerald-500', 'badge' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
         'cancelled'          => ['label' => 'Cancelled',          'dot' => 'bg-gray-400',    'badge' => 'bg-surface-container text-secondary dark:bg-gray-700 dark:text-gray-400'],
     ];
     $sc = $statusConfig[$status] ?? ['label' => ucfirst($status), 'dot' => 'bg-gray-400', 'badge' => 'bg-surface-container text-secondary'];
@@ -79,6 +80,22 @@
                     <span class="text-sm text-purple-700 dark:text-purple-300">
                         Applicant's phone: <strong class="font-mono num-ltr">{{ $preventionDossier->phone ?? 'Not provided' }}</strong>
                         <span class="ms-2 text-xs text-purple-500">– Keep this available</span>
+                    </span>
+                </div>
+            @endif
+
+            {{-- Inspection passed — delivery step (certificate to be delivered) --}}
+            @if ($status === 'waiting_delivery')
+                <div class="flex flex-wrap items-center gap-3 px-6 py-3 bg-emerald-50 dark:bg-emerald-900/10">
+                    <svg class="h-4 w-4 text-emerald-500 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span class="text-sm text-emerald-700 dark:text-emerald-300">
+                        All inspections <strong>passed</strong> — everything is OK. Waiting for the certificate to be delivered.
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold
+                        {{ $preventionDossier->delivery_method ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' }}">
+                        Delivery: {{ $preventionDossier->delivery_method ? ucfirst($preventionDossier->delivery_method) : 'not chosen yet' }}
                     </span>
                 </div>
             @endif
@@ -389,7 +406,7 @@
                 </div>
                 @if ($preventionDossier->certificate)
                     <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold
-                        {{ $preventionDossier->certificate->isCollected() ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' }}">
+                        {{ $preventionDossier->certificate->status === \App\Models\PreventionCertificate::STATUS_READY ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : ($preventionDossier->certificate->status === \App\Models\PreventionCertificate::STATUS_POST_SENT ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300') }}">
                         {{ $preventionDossier->certificate->statusLabel() }}
                     </span>
                 @endif
@@ -404,31 +421,74 @@
                     </div>
                     <dl class="space-y-2 text-xs">
                         <div class="flex justify-between gap-2">
-                            <dt class="text-secondary dark:text-gray-400">Issued</dt>
-                            <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->issued_at->format('d M Y') }}</dd>
-                        </div>
-                        <div class="flex justify-between gap-2">
-                            <dt class="text-secondary dark:text-gray-400">Valid until</dt>
-                            <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->valid_until ? $cert->valid_until->format('d M Y') : '—' }}</dd>
-                        </div>
-                        <div class="flex justify-between gap-2">
-                            <dt class="text-secondary dark:text-gray-400">Pickup gouvernorat</dt>
-                            <dd class="text-end font-semibold text-on-surface dark:text-gray-100">
-                                {{ $cert->governorate?->name_fr ?? $cert->governorate?->name_ar ?? '—' }}
+                            <dt class="text-secondary dark:text-gray-400">Delivery</dt>
+                            <dd class="text-end font-semibold text-on-surface dark:text-gray-100 capitalize">
+                                @if ($cert->isPost())
+                                    Poste Tunisienne (B3)
+                                @elseif ($cert->isPickup())
+                                    Pickup at office
+                                @else
+                                    —
+                                @endif
                             </dd>
                         </div>
-                        <div class="flex justify-between gap-2">
-                            <dt class="text-secondary dark:text-gray-400">Pickup delegation</dt>
-                            <dd class="text-end font-semibold text-on-surface dark:text-gray-100">
-                                {{ $cert->delegation?->name_fr ?? $cert->delegation?->name_ar ?? '— All delegations —' }}
-                            </dd>
-                        </div>
-                        @if ($cert->collected_at)
+                        @if ($cert->isPost())
                             <div class="flex justify-between gap-2">
-                                <dt class="text-secondary dark:text-gray-400">Collected on</dt>
-                                <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->collected_at->format('d M Y, H:i') }}</dd>
+                                <dt class="text-secondary dark:text-gray-400">Recipient</dt>
+                                <dd class="text-end font-semibold text-on-surface dark:text-gray-100">{{ $cert->post_recipient ?? '—' }}</dd>
                             </div>
-                        @endif
+                            <div class="flex justify-between gap-2">
+                                <dt class="text-secondary dark:text-gray-400">Phone</dt>
+                                <dd class="font-semibold num-ltr text-on-surface dark:text-gray-100">{{ $cert->post_phone ?? '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-secondary dark:text-gray-400">Postal address</dt>
+                                <dd class="mt-1 rounded-lg bg-surface-container dark:bg-gray-700/30 px-2.5 py-2 text-[11px] leading-relaxed text-on-surface dark:text-gray-200 break-words">{{ $cert->post_address ?? '—' }}</dd>
+                            </div>
+                            <div class="flex justify-between gap-2">
+                                <dt class="text-secondary dark:text-gray-400">Tracking (B3)</dt>
+                                <dd class="text-end font-mono font-semibold text-on-surface dark:text-gray-100">{{ $cert->post_tracking ?? '—' }}</dd>
+                            </div>
+                            @if ($cert->post_sent_at)
+                                <div class="flex justify-between gap-2">
+                                    <dt class="text-secondary dark:text-gray-400">Sent on</dt>
+                                    <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->post_sent_at->format('d M Y, H:i') }}</dd>
+                                </div>
+                            @endif
+                            @if ($cert->post_delivered_at)
+                                <div class="flex justify-between gap-2">
+                                    <dt class="text-secondary dark:text-gray-400">Delivered on</dt>
+                                    <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->post_delivered_at->format('d M Y, H:i') }}</dd>
+                                </div>
+                            @endif
+                        @else
+                            <div class="flex justify-between gap-2">
+                                <dt class="text-secondary dark:text-gray-400">Issued</dt>
+                                <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->issued_at->format('d M Y') }}</dd>
+                            </div>
+                            <div class="flex justify-between gap-2">
+                                <dt class="text-secondary dark:text-gray-400">Valid until</dt>
+                                <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->valid_until ? $cert->valid_until->format('d M Y') : '—' }}</dd>
+                            </div>
+                            <div class="flex justify-between gap-2">
+                                <dt class="text-secondary dark:text-gray-400">Pickup gouvernorat</dt>
+                                <dd class="text-end font-semibold text-on-surface dark:text-gray-100">
+                                    {{ $cert->governorate?->name_fr ?? $cert->governorate?->name_ar ?? '—' }}
+                                </dd>
+                            </div>
+                            <div class="flex justify-between gap-2">
+                                <dt class="text-secondary dark:text-gray-400">Pickup delegation</dt>
+                                <dd class="text-end font-semibold text-on-surface dark:text-gray-100">
+                                    {{ $cert->delegation?->name_fr ?? $cert->delegation?->name_ar ?? '— All delegations —' }}
+                                </dd>
+                            </div>
+                            @if ($cert->collected_at)
+                                <div class="flex justify-between gap-2">
+                                    <dt class="text-secondary dark:text-gray-400">Collected on</dt>
+                                    <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->collected_at->format('d M Y, H:i') }}</dd>
+                                </div>
+                            @endif
+                        @endelse
                     </dl>
 
                     @if ($cert->note)
@@ -439,35 +499,93 @@
                     @endif
 
                     <div class="space-y-2 pt-1">
-                        @if ($cert->isReady())
-                            <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
-                                @csrf @method('PUT')
-                                <input type="hidden" name="action" value="collected">
-                                <button type="submit"
-                                    class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                    Mark as Collected
-                                </button>
-                            </form>
+                        @if ($cert->isPost())
+                            {{-- Post (B3) actions: register → confirm delivery --}}
+                            @if ($cert->isReady())
+                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
+                                    @csrf @method('PUT')
+                                    <input type="hidden" name="action" value="sent">
+                                    <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Tracking number (B3) <span class="text-red-500">*</span></label>
+                                    <input type="text" name="post_tracking" required maxlength="60"
+                                        value="{{ old('post_tracking', $cert->post_tracking) }}"
+                                        placeholder="e.g. 3029 8765 4321" class="w-full text-sm">
+                                    <button type="submit"
+                                        class="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                        Register at Poste Tunisienne
+                                    </button>
+                                </form>
+                            @elseif ($cert->isPostSent())
+                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
+                                    @csrf @method('PUT')
+                                    <input type="hidden" name="action" value="delivered">
+                                    <button type="submit"
+                                        class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500/40">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        Confirm Post Delivery
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
+                                    @csrf @method('PUT')
+                                    <input type="hidden" name="action" value="ready">
+                                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-4 py-2 text-xs font-semibold text-secondary hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                                        Roll back to ready (un-send)
+                                    </button>
+                                </form>
+                            @else
+                                <p class="text-xs text-teal-700 dark:text-teal-300 flex items-center gap-1.5">
+                                    <svg class="h-4 w-4 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                    Post delivery confirmed — nothing left to do.
+                                </p>
+                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
+                                    @csrf @method('PUT')
+                                    <input type="hidden" name="action" value="ready">
+                                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-4 py-2 text-xs font-semibold text-secondary hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                                        Reopen (roll back to ready)
+                                    </button>
+                                </form>
+                            @endif
                         @else
-                            <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
-                                @csrf @method('PUT')
-                                <input type="hidden" name="action" value="ready">
-                                <button type="submit"
-                                    class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-teal-300 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700 transition hover:bg-teal-100 dark:border-teal-700 dark:bg-teal-900/20 dark:text-teal-300">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
-                                    Mark as Ready (un-collect)
-                                </button>
-                            </form>
+                            {{-- Pickup actions: mark collected ↔ ready --}}
+                            @if ($cert->isReady())
+                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
+                                    @csrf @method('PUT')
+                                    <input type="hidden" name="action" value="collected">
+                                    <button type="submit"
+                                        class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        Mark as Collected
+                                    </button>
+                                </form>
+                            @else
+                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
+                                    @csrf @method('PUT')
+                                    <input type="hidden" name="action" value="ready">
+                                    <button type="submit"
+                                        class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-teal-300 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700 transition hover:bg-teal-100 dark:border-teal-700 dark:bg-teal-900/20 dark:text-teal-300">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                                        Mark as Ready (un-collect)
+                                    </button>
+                                </form>
+                            @endif
                         @endif
                     </div>
                 </div>
             @else
                 <div class="px-5 py-4">
-                    <p class="mb-3 flex items-start gap-1.5 text-xs text-emerald-700 dark:text-emerald-300">
-                        <svg class="h-3.5 w-3.5 flex-none mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>A visit was marked as <strong>passed</strong>. You can now issue the certificate — the applicant will see where to pick it up.</span>
-                    </p>
+                    @if ($preventionDossier->delivery_method)
+                        <div class="mb-3 flex items-start gap-1.5 text-xs text-indigo-700 dark:text-indigo-300">
+                            <svg class="h-3.5 w-3.5 flex-none mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>The applicant chose <strong>{{ ucfirst($preventionDossier->delivery_method) }}</strong> as the delivery method — it is pre-selected below. @if ($preventionDossier->delivery_method === 'post')His postal address is pre-filled. @endif</span>
+                        </div>
+                    @else
+                        <div class="mb-3 flex items-start gap-1.5 text-xs text-emerald-700 dark:text-emerald-300">
+                            <svg class="h-3.5 w-3.5 flex-none mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>A visit was marked as <strong>passed</strong>. Choose the delivery method, then issue the certificate.</span>
+                        </div>
+                    @endif
                     <button type="button" @click="open = !open"
                         class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -480,40 +598,92 @@
                          class="mt-4">
                         <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.store', $preventionDossier) }}">
                             @csrf
-                            <div class="space-y-3">
-                        {{-- Gouvernorat (required) + Delegation (optional, filtered by gouvernorat) --}}
-                        @php
-                            $certDelegationsMap = $governorates
-                                ->mapWithKeys(fn ($g) => [
-                                    $g->id => ['name' => $g->name_fr ?? $g->name_ar, 'delegations' => $g->delegations->map(fn ($d) => ['id' => $d->id, 'name' => $d->name_fr ?? $d->name_ar])->values()->all()],
-                                ])
-                                ->toArray();
-                        @endphp
-                        <div x-data="{
-                                gov: {{ old('governorate_id', $preventionDossier->governorate_id) ?? 'null' }},
-                                del: {{ old('delegation_id') ? old('delegation_id') : 'null' }},
-                                map: {{ \Illuminate\Support\Js::from($certDelegationsMap) }}
-                            }">
-                            <div>
-                                <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Gouvernorat <span class="text-red-500">*</span></label>
-                                <select name="governorate_id" required x-model="gov"
-                                    class="w-full text-sm">
-                                    <option value="">Select gouvernorat…</option>
-                                    <template x-for="(entry, govId) in map" :key="govId">
-                                        <option :value="govId" x-text="entry.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div class="mt-3">
-                                <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Pickup delegation <span class="text-outline font-normal">(optional)</span></label>
-                                <select name="delegation_id" x-model="del" class="w-full text-sm">
-                                    <option value="">— All delegations —</option>
-                                    <template x-for="d in (map[gov] ? map[gov].delegations : [])" :key="d.id">
-                                        <option :value="d.id" x-text="d.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                        </div>
+                            <div class="space-y-3"
+                                 x-data="{
+                                    method: '{{ old('delivery_method', $preventionDossier->delivery_method ?? 'pickup') }}',
+                                    gov: {{ old('governorate_id', $preventionDossier->governorate_id) ?? 'null' }},
+                                    del: {{ old('delegation_id') ? old('delegation_id') : 'null' }},
+                                    map: {{ \Illuminate\Support\Js::from($governorates
+                                        ->mapWithKeys(fn ($g) => [
+                                            $g->id => ['name' => $g->name_fr ?? $g->name_ar, 'delegations' => $g->delegations->map(fn ($d) => ['id' => $d->id, 'name' => $d->name_fr ?? $d->name_ar])->values()->all()],
+                                        ])
+                                        ->toArray()) }}
+                                 }">
+
+                                {{-- Delivery method — digital is announced but NOT active yet --}}
+                                <div class="rounded-lg border border-surface-dim dark:border-gray-600 overflow-hidden">
+                                    <p class="px-3 pt-2.5 pb-1.5 text-xs font-semibold text-secondary dark:text-gray-400">Delivery method</p>
+                                    <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container dark:hover:bg-gray-700/40"
+                                           :class="method === 'pickup' ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''">
+                                        <input type="radio" name="delivery_method" value="pickup" x-model="method" required class="text-emerald-600">
+                                        <span class="flex-1 text-sm font-semibold text-on-surface dark:text-gray-200">Pickup at office</span>
+                                    </label>
+                                    <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container dark:hover:bg-gray-700/40 border-t border-surface-dim dark:border-gray-600"
+                                           :class="method === 'post' ? 'bg-blue-50 dark:bg-blue-900/20' : ''">
+                                        <input type="radio" name="delivery_method" value="post" x-model="method" class="text-blue-600">
+                                        <span class="flex-1 text-sm font-semibold text-on-surface dark:text-gray-200">Poste Tunisienne (B3)</span>
+                                        <span class="text-[10px] rounded-full bg-blue-100 px-2 py-0.5 font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">Registered</span>
+                                    </label>
+                                    <div class="flex items-center gap-2.5 px-3 py-2 border-t border-surface-dim dark:border-gray-600 opacity-50 select-none">
+                                        <input type="radio" disabled class="text-gray-400">
+                                        <span class="flex-1 text-sm font-semibold text-outline dark:text-gray-500">Digital download</span>
+                                        <span class="text-[10px] rounded-full bg-amber-100 px-2 py-0.5 font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">Coming soon</span>
+                                    </div>
+                                </div>
+
+                                {{-- Pickup: gouvernorat + delegation selection --}}
+                                <div x-show="method === 'pickup'" x-cloak>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Gouvernorat <span class="text-red-500">*</span></label>
+                                        <select name="governorate_id" :required="method === 'pickup'" x-model="gov"
+                                            class="w-full text-sm">
+                                            <option value="">Select gouvernorat…</option>
+                                            <template x-for="(entry, govId) in map" :key="govId">
+                                                <option :value="govId" x-text="entry.name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div class="mt-3">
+                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Pickup delegation <span class="text-outline font-normal">(optional)</span></label>
+                                        <select name="delegation_id" x-model="del" class="w-full text-sm">
+                                            <option value="">— All delegations —</option>
+                                            <template x-for="d in (map[gov] ? map[gov].delegations : [])" :key="d.id">
+                                                <option :value="d.id" x-text="d.name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {{-- Post: B3 recipient data --}}
+                                <div x-show="method === 'post'" x-cloak class="space-y-3 rounded-lg border border-blue-200 dark:border-blue-800/40 p-3">
+                                    <p class="text-[11px] text-blue-700 dark:text-blue-300 font-semibold flex items-center gap-1">
+                                        <svg class="h-3.5 w-3.5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                        Certified mail (B3) — sent to the applicant's mailbox
+                                    </p>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Recipient <span class="text-red-500">*</span></label>
+                                        <input type="text" name="post_recipient" :required="method === 'post'" maxlength="255"
+                                            value="{{ old('post_recipient', $preventionDossier->delivery_method === 'post' ? $preventionDossier->nom_prenom : '') }}"
+                                            class="w-full text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Phone</label>
+                                        <input type="text" name="post_phone" maxlength="40"
+                                            value="{{ old('post_phone', $preventionDossier->delivery_method === 'post' ? $preventionDossier->phone : '') }}"
+                                            class="w-full text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Postal address <span class="text-red-500">*</span></label>
+                                        <textarea name="post_address" rows="3" :required="method === 'post'" maxlength="500"
+                                            placeholder="Street, building, postal code, city...">{{ old('post_address', $preventionDossier->delivery_method === 'post' ? $preventionDossier->post_address : '') }}</textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Tracking number (optional — can be added when sent)</label>
+                                        <input type="text" name="post_tracking" maxlength="60"
+                                            value="{{ old('post_tracking') }}" placeholder="e.g. 3029 8765 4321" class="w-full text-sm">
+                                    </div>
+                                </div>
+
                                 <div>
                                     <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Valid until (optional)</label>
                                     <input type="date" name="valid_until" min="{{ date('Y-m-d') }}" value="{{ old('valid_until') }}" class="w-full text-sm">

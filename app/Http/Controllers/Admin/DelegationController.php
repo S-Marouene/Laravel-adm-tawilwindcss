@@ -50,6 +50,9 @@ class DelegationController extends Controller
             'name_ar'        => ['required', 'string', 'max:255'],
             'name_fr'        => ['required', 'string', 'max:255'],
             'name_en'        => ['required', 'string', 'max:255'],
+            'office_address' => ['nullable', 'string', 'max:255'],
+            'office_phone'   => ['nullable', 'string', 'max:40'],
+            'office_hours'   => ['nullable', 'string', 'max:255'],
         ]);
         Delegation::create($data);
         return redirect()->route('admin.delegations.index')
@@ -73,6 +76,9 @@ class DelegationController extends Controller
             'name_ar'        => ['required', 'string', 'max:255'],
             'name_fr'        => ['required', 'string', 'max:255'],
             'name_en'        => ['required', 'string', 'max:255'],
+            'office_address' => ['nullable', 'string', 'max:255'],
+            'office_phone'   => ['nullable', 'string', 'max:40'],
+            'office_hours'   => ['nullable', 'string', 'max:255'],
         ]);
         $delegation->update($data);
         return redirect()->route('admin.delegations.index')

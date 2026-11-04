@@ -79,6 +79,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Resubmit after correction
     Route::post('/prevention-requests/{dossier}/resubmit', [PreventionRequestController::class, 'resubmit'])->name('prevention-requests.resubmit');
 
+    // Certificate delivery choice (after the RDV passed) — pickup / post / digital(soon)
+    Route::post('/prevention-requests/{dossier}/delivery', [PreventionRequestController::class, 'chooseDelivery'])
+        ->name('prevention-requests.delivery');
+
     // Structures JSON endpoint (kept for edit form)
     Route::get('/prevention-requests/structures', [PreventionRequestController::class, 'structures'])->name('prevention-requests.structures');
 

@@ -9,12 +9,19 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PreventionDossier extends Model
 {
+    // Delivery methods chosen by the applicant once the RDV is passed.
+    // Digital download is announced but not active yet ("coming soon").
+    public const DELIVERY_DIGITAL = 'digital';
+    public const DELIVERY_PICKUP  = 'pickup';
+    public const DELIVERY_POST    = 'post';
+
     protected $fillable = [
         'user_id', 'current_step', 'status',
         'cin', 'nom_prenom', 'phone', 'governorate_id', 'delegation_id',
         'building_address',
         'building_type_id', 'building_activity_id', 'activity_other',
         'num_demande', 'api_reference', 'reference',
+        'delivery_method', 'post_address',
         'admin_note', 'reviewed_by', 'reviewed_at',
     ];
 
@@ -25,10 +32,12 @@ class PreventionDossier extends Model
         'building_activity_id' => 'integer',
         'current_step'         => 'integer',
         'reviewed_at'          => 'datetime',
+        'delivery_choice_at'   => 'datetime',
     ];
 
     // All possible status values — useful for reference
-    // draft | completed | submitted | under_consultation | needs_correction | approved | cancelled
+    // draft | completed | submitted | under_consultation | needs_correction | approved
+    // waiting_delivery | cancelled
 
     // -----------------------------------------------------------------------
     // Relations
@@ -148,6 +157,24 @@ class PreventionDossier extends Model
         return $this->status === 'cancelled';
     }
 
+    /** Inspection passed — everything is OK, waiting for the certificate delivery */
+    public function isWaitingDelivery(): bool
+    {
+        return $this->status === 'waiting_delivery';
+    }
+
+    /** The applicant already picked how he wants to receive the certificate */
+    public function hasChosenDelivery(): bool
+    {
+        return $this->delivery_method !== null;
+    }
+
+    /** Last RDV that was recorded (passed or failed) — used to show the fail reason */
+    public function lastAppointment(): ?DossierAppointment
+    {
+        return $this->appointments->last();
+    }
+
     public function isUnderReview(): bool
     {
         return in_array($this->status, ['completed', 'submitted', 'under_consultation']);
@@ -178,6 +205,7 @@ class PreventionDossier extends Model
             'under_consultation' => 'Approved — Awaiting RDV',
             'needs_correction'   => 'Needs Correction',
             'approved'           => 'Approved',
+            'waiting_delivery'   => 'All OK — Awaiting Certificate Delivery',
             'cancelled'          => 'Cancelled',
             default              => ucfirst($this->status),
         };

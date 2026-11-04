@@ -7,6 +7,7 @@
     <form method="POST" action="{{ route('admin.governorates.update', $governorate) }}" class="p-6 space-y-5">
         @csrf @method('PUT')
         @include('admin.partials.lang-fields', ['model' => $governorate])
+        @include('admin.partials.office-fields', ['model' => $governorate])
         <div class="flex justify-end"><button type="submit" class="admin-add-button px-6 py-2.5 text-sm">{{ __('action.save') }}</button></div>
     </form>
 </div>

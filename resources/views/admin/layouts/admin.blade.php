@@ -184,34 +184,52 @@
                     </div>
                     @endcan
 
-                    {{-- Prevention Dossiers --}}
+                    {{-- Prevention Dossiers — permission + service assignment --}}
                     @can('view prevention-dossiers')
+                    @if(auth()->user()->hasService(App\Models\Service::SERVICE_PREVENTION))
                     <a href="{{ route('admin.prevention-dossiers.index') }}" data-tooltip="Prevention Dossiers" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.prevention-dossiers.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
                         </svg>
                         <span x-show="!collapsed" class="truncate">Prevention Dossiers</span>
                     </a>
+                    @endif
                     @endcan
 
-                    {{-- Rescue & Relief Certificates --}}
+                    {{-- Rescue & Relief Certificates — permission + service assignment --}}
                     @can('view rescue-certificates')
+                    @if(auth()->user()->hasService(App\Models\Service::SERVICE_RESCUE_CERTIFICATE))
                     <a href="{{ route('admin.rescue-certificates.index') }}" data-tooltip="Rescue Certificates" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.rescue-certificates.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1h-1m1 1h1M4 20h16a1 1 0 001-1V9a1 1 0 00-1-1h-4.586l-2.707-2.707A1 1 0 0012.414 5H4a1 1 0 00-1 1v13a1 1 0 001 1z"/>
                         </svg>
                         <span x-show="!collapsed" class="truncate">Rescue Certificates</span>
                     </a>
+                    @endif
                     @endcan
 
-                    {{-- Preventive Presence --}}
+                    {{-- Preventive Presence — permission + service assignment --}}
                     @can('view preventive-presence')
+                    @if(auth()->user()->hasService(App\Models\Service::SERVICE_PREVENTIVE_PRESENCE))
                     <a href="{{ route('admin.preventive-presence.index') }}" data-tooltip="Preventive Presence" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.preventive-presence.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
                         <span x-show="!collapsed" class="truncate">Preventive Presence</span>
                     </a>
+                    @endif
+                    @endcan
+
+                    {{-- Works Notifications — permission + service assignment --}}
+                    @can('view works-notifications')
+                    @if(auth()->user()->hasService(App\Models\Service::SERVICE_WORKS_NOTIFICATION))
+                    <a href="{{ route('admin.works-notifications.index') }}" data-tooltip="Works Notifications" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.works-notifications.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.35 2.25h3.3c1.227 0 2.317.59 3 1.501l3.449 4.598c.343.457.674 1.155.674 1.949v7.452c0 1.138-.586 2.408-1.677 3.14A4.482 4.482 0 0016.5 15h-9a4.5 4.5 0 00-2.595.82C3.814 15.088 3.228 13.818 3.228 12.68V5.228c0-1.138.586-2.408 1.677-3.14z"/>
+                        </svg>
+                        <span x-show="!collapsed" class="truncate">Works Notifications</span>
+                    </a>
+                    @endif
                     @endcan
 
                     @can('view delegations')

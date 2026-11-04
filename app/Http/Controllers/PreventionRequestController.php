@@ -32,9 +32,9 @@ class PreventionRequestController extends Controller
             ->latest()
             ->get();
 
-        // Submitted / completed / under_consultation / needs_correction / approved / cancelled dossiers
+        // Submitted dossiers in the review/Delivery pipeline
         $submitted = PreventionDossier::where('user_id', auth()->id())
-            ->whereIn('status', ['completed', 'submitted', 'under_consultation', 'needs_correction', 'approved', 'cancelled'])
+            ->whereIn('status', ['completed', 'submitted', 'under_consultation', 'needs_correction', 'approved', 'waiting_delivery', 'cancelled'])
             ->with(['governorate', 'delegation', 'buildingType', 'appointments', 'events', 'certificate.governorate', 'certificate.delegation'])
             ->latest()
             ->get();
@@ -248,8 +248,9 @@ class PreventionRequestController extends Controller
             ->values();
 
         // Load any already-uploaded documents for this dossier, grouped by document type
-        // (several files may be attached to the same type)
+        // (several files may be attached to the same type — archived versions excluded)
         $uploadedDocs = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->active()
             ->orderBy('created_at')
             ->get()
             ->groupBy('document_type_id');
@@ -382,13 +383,65 @@ class PreventionRequestController extends Controller
             ->filter(fn (DocumentType $t) => $t->appliesToBuildingType($dossier->building_type_id))
             ->values();
 
-        // Documents réellement transmis, groupés par type (plusieurs fichiers possibles).
+        // Documents actifs, groupés par type (plusieurs fichiers possibles).
+        // Les versions archivées (corrections précédentes) sont séparées —
+        // elles restent consultables dans l'historique du dossier.
         $documents = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->active()
             ->orderBy('created_at')
             ->get()
             ->groupBy('document_type_id');
 
-        return view('prevention-requests.show', compact('dossier', 'documentTypes', 'documents'));
+        $archivedDocuments = DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->where('status', 'archived')
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy('document_type_id');
+
+        return view('prevention-requests.show', compact(
+            'dossier', 'documentTypes', 'documents', 'archivedDocuments',
+        ));
+    }
+
+    // =========================================================================
+    // Choose delivery — how the applicant wants to receive the certificate.
+    // Available once the inspection (RDV) passed (status waiting_delivery):
+    //   - digital : NOT ACTIVE YET ("coming soon")
+    //   - pickup  : at the delegation / gouvernorat office
+    //   - post    : sent via Poste Tunisienne (B3, registered mail)
+    // =========================================================================
+
+    public function chooseDelivery(Request $request, PreventionDossier $dossier): RedirectResponse
+    {
+        if ($dossier->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (! $dossier->isWaitingDelivery()) {
+            return redirect()->route('prevention-requests.show', $dossier)
+                ->withErrors(['delivery_method' => __('prevention_request.delivery_not_available_yet')]);
+        }
+
+        $validated = $request->validate([
+            'delivery_method' => ['required', 'in:pickup,post'],
+            'post_address'    => ['required_if:delivery_method,post', 'nullable', 'string', 'max:500'],
+        ]);
+
+        $deliveryMethod = $validated['delivery_method'];
+
+        $dossier->update([
+            'delivery_method'   => $deliveryMethod,
+            'post_address'      => $deliveryMethod === 'post' ? $validated['post_address'] : null,
+            'delivery_choice_at' => now(),
+        ]);
+
+        $dossier->logEvent('delivery_chosen', null, [
+            'method'  => $deliveryMethod,
+            'address' => $deliveryMethod === 'post' ? $validated['post_address'] : null,
+        ]);
+
+        return redirect()->route('prevention-requests.show', $dossier)
+            ->with('success', __('prevention_request.delivery_saved'));
     }
 
     // =========================================================================
@@ -462,14 +515,47 @@ class PreventionRequestController extends Controller
                 ->withErrors(['status' => 'This dossier cannot be resubmitted right now.']);
         }
 
+        // ── Historique complet : snapshot the previous version of the demande ──
+        // Old parameters, old data and old uploads are preserved:
+        //   1. the previous field values go into the "resubmitted" event data,
+        //   2. all previously uploaded documents are ARCHIVED (kept on disk,
+        //      status = archived) so the user fixes/uploads fresh versions
+        //      while the older ones remain reachable from this timeline.
+        $oldParams = [
+            'cin'                 => $dossier->cin,
+            'nom_prenom'          => $dossier->nom_prenom,
+            'phone'               => $dossier->phone,
+            'governorate'         => $dossier->governorate?->name_fr ?? $dossier->governorate?->name_ar,
+            'delegation'          => $dossier->delegation?->name_fr ?? $dossier->delegation?->name_ar,
+            'building_address'    => $dossier->building_address,
+            'building_type'       => $dossier->buildingType?->name,
+            'building_activity'   => $dossier->buildingActivity?->name ?? $dossier->activity_other,
+            'admin_note'          => $dossier->admin_note,
+        ];
+
+        $oldDocs = $dossier->documents->map(fn (DossierDocument $doc) => [
+            'type'         => $doc->documentType?->name,
+            'file'         => $doc->original_name,
+            'size'         => $doc->size,
+            'uploaded_at'  => $doc->created_at?->format('d/m/Y H:i'),
+        ])->all();
+
+        $dossier->logEvent('resubmitted', null, [
+            'previous' => $oldParams,
+            'archived_files' => $oldDocs,
+        ]);
+
+        // Archive (never delete) the previous uploads
+        DossierDocument::where('prevention_dossier_id', $dossier->id)
+            ->where('status', '!=', 'archived')
+            ->update(['status' => 'archived']);
+
         // Re-open to step 3 so user can upload corrected documents
         $dossier->update([
             'status'       => 'draft',
             'current_step' => 2,   // bring them back to step 3 (step 2 completed, step 3 open)
             'admin_note'   => null,
         ]);
-
-        $dossier->logEvent('resubmitted');
 
         return redirect()
             ->route('prevention-requests.step3.show', $dossier)

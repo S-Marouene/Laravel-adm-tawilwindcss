@@ -7,6 +7,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PreventionCertificate extends Model
 {
+    // Delivery methods (mirrors PreventionDossier::DELIVERY_* — digital is
+    // announced but not active yet).
+    public const DELIVERY_DIGITAL = 'digital';
+    public const DELIVERY_PICKUP  = 'pickup';
+    public const DELIVERY_POST    = 'post';
+
+    // State:
+    // ready           — waiting (at the office for pickup / being prepared for post)
+    // post_sent       — handed to Poste Tunisienne (B3), tracking available
+    // post_delivered  — received by the applicant
+    // collected       — picked up at the office by the applicant
+    public const STATUS_READY         = 'ready';
+    public const STATUS_POST_SENT     = 'post_sent';
+    public const STATUS_POST_DELIVERED = 'post_delivered';
+    public const STATUS_COLLECTED     = 'collected';
+
     protected $fillable = [
         'prevention_dossier_id',
         'reference',
@@ -16,17 +32,24 @@ class PreventionCertificate extends Model
         'governorate_id',
         'delegation_id',
         'status',
+        'delivery_method',
+        'post_recipient',
+        'post_phone',
+        'post_address',
+        'post_tracking',
+        'post_sent_at',
+        'post_delivered_at',
         'collected_at',
         'note',
     ];
 
     protected $casts = [
-        'issued_at'    => 'date',
-        'valid_until'  => 'date',
-        'collected_at' => 'datetime',
+        'issued_at'         => 'date',
+        'valid_until'       => 'date',
+        'collected_at'      => 'datetime',
+        'post_sent_at'      => 'datetime',
+        'post_delivered_at' => 'datetime',
     ];
-
-    // State: ready | collected
 
     // -----------------------------------------------------------------------
     // Relations
@@ -56,12 +79,27 @@ class PreventionCertificate extends Model
     // Helpers
     // -----------------------------------------------------------------------
 
-    public function isReady(): bool     { return $this->status === 'ready'; }
-    public function isCollected(): bool { return $this->status === 'collected'; }
+    public function isReady(): bool         { return $this->status === self::STATUS_READY; }
+    public function isCollected(): bool     { return $this->status === self::STATUS_COLLECTED; }
+    public function isPost(): bool          { return $this->delivery_method === self::DELIVERY_POST; }
+    public function isPickup(): bool        { return $this->delivery_method === self::DELIVERY_PICKUP; }
+    public function isPostSent(): bool      { return $this->status === self::STATUS_POST_SENT; }
+    public function isPostDelivered(): bool { return $this->status === self::STATUS_POST_DELIVERED; }
 
     public function statusLabel(): string
     {
-        return $this->isCollected() ? 'Collected' : 'Ready for pickup';
+        return match ($this->status) {
+            self::STATUS_POST_SENT     => 'Sent by post (B3)',
+            self::STATUS_POST_DELIVERED => 'Delivered by post',
+            self::STATUS_COLLECTED     => 'Collected',
+            default                    => 'Ready',
+        };
+    }
+
+    /** The office (delegation or gouvernorat bureau) where pickup happens */
+    public function pickupOffice(): ?Model
+    {
+        return $this->delegation ?? $this->governorate;
     }
 
     /**

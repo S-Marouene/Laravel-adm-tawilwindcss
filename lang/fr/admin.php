@@ -88,6 +88,13 @@ return [
     'delegations' => 'Délégations',
     'delegations_desc' => 'Gérer les délégations par gouvernorat',
 
+    // Pickup office details (certificate delivery)
+    'office_details' => 'Infos du bureau de retrait (certificat)',
+    'office_details_desc' => 'Affichées au demandeur lorsqu\'il choisit le retrait au bureau du certificat de prévention.',
+    'office_address' => 'Adresse du bureau',
+    'office_phone'   => 'Téléphone du bureau',
+    'office_hours'   => 'Horaires d\'ouverture',
+
     // Building types
     'building_types' => 'Types de bâtiments',
     'building_types_desc' => 'Gérer les types de bâtiments utilisés dans les dossiers',

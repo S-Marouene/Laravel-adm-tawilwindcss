@@ -270,9 +270,33 @@ class PreventionDossierController extends Controller
             ]
         );
 
-        $msg = $validated['status'] === 'passed'
-            ? 'Visit marked as passed. The applicant has been notified.'
-            : 'Visit marked as failed with notes. The applicant has been notified.';
+        if ($validated['status'] === 'passed') {
+            // ── Everything is OK: the applicant is now waiting for the
+            // certificate delivery (he will pick a delivery method). ──
+            $preventionDossier->update([
+                'status'      => 'waiting_delivery',
+                'admin_note'  => null,
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
+
+            $preventionDossier->logEvent('waiting_delivery');
+
+            $msg = 'Visit marked as passed — the applicant can now choose how to receive the certificate (pickup / post).';
+        } else {
+            // ── Inspection failed: if no visit ever passed, the dossier goes
+            // back to "awaiting RDV" with the failure note. The applicant must
+            // fix the building issues and a new RDV will be scheduled. ──
+            if (! $preventionDossier->hasPassedAppointment() && $preventionDossier->status !== 'under_consultation') {
+                $preventionDossier->update([
+                    'status'      => 'under_consultation',
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now(),
+                ]);
+            }
+
+            $msg = 'Visit marked as failed with notes. The applicant has been notified — schedule a new RDV once he fixes the issues.';
+        }
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
             ->with('success', $msg);
@@ -312,7 +336,9 @@ class PreventionDossierController extends Controller
 
     // =========================================================================
     // Certificate — issue (affect) the prevention certificate
-    // Only allowed after at least one visit (RDV) was marked as passed
+    // Only allowed after at least one visit (RDV) was marked as passed.
+    // Delivery: pickup at an office, or post (B3 — Poste Tunisienne).
+    // Digital download is "coming soon" and cannot be selected yet.
     // =========================================================================
 
     public function issueCertificate(Request $request, PreventionDossier $preventionDossier): RedirectResponse
@@ -333,34 +359,60 @@ class PreventionDossierController extends Controller
             return back()->withErrors(['status' => 'This dossier already has a certificate.']);
         }
 
+        // The applicant's delivery choice is applied by default (prefilled form),
+        // but the issuing administrator can adjust it before confirming.
         $validated = $request->validate([
-            'governorate_id' => ['required', 'integer', 'exists:governorates,id'],
-            'delegation_id'  => ['nullable', 'integer', 'exists:delegations,id'],
-            'valid_until'    => ['nullable', 'date', 'after_or_equal:today'],
-            'note'           => ['nullable', 'string', 'max:2000'],
+            'delivery_method' => ['required', 'in:' . PreventionCertificate::DELIVERY_PICKUP . ',' . PreventionCertificate::DELIVERY_POST],
+            'governorate_id'  => ['nullable', 'integer', 'exists:governorates,id'],
+            'delegation_id'   => ['nullable', 'integer', 'exists:delegations,id'],
+            'post_recipient'  => ['required_if:delivery_method,post', 'nullable', 'string', 'max:255'],
+            'post_phone'      => ['nullable', 'string', 'max:40'],
+            'post_address'    => ['required_if:delivery_method,post', 'nullable', 'string', 'max:500'],
+            'post_tracking'   => ['nullable', 'string', 'max:60'],
+            'valid_until'     => ['nullable', 'date', 'after_or_equal:today'],
+            'note'            => ['nullable', 'string', 'max:2000'],
         ]);
 
-        // Scoped administrators can only assign a pickup location inside
-        // their own territory (delegation scope is clamped automatically).
-        $user = auth()->user();
-        if (in_array($user->adminScope(), ['governorate', 'delegation'])) {
-            if ((int) $validated['governorate_id'] !== (int) $user->governorate_id) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'governorate_id' => 'The pickup governorate must be inside your territory.',
-                ]);
+        $deliveryMethod = $validated['delivery_method'];
+        $certificateStatus = PreventionCertificate::STATUS_READY;
+
+        if ($deliveryMethod === PreventionCertificate::DELIVERY_POST) {
+            // Post (B3): recipient data comes pre-filled from the applicant's choice
+            $validated['post_recipient'] ??= $preventionDossier->nom_prenom;
+            $validated['post_phone']     ??= $preventionDossier->phone;
+            $validated['post_address']   ??= $preventionDossier->post_address;
+
+            if (empty($validated['post_address'])) {
+                return back()->withErrors(['post_address' => 'A postal address is required for the Poste Tunisienne (B3) delivery.']);
+            }
+        } else {
+            // Pickup: an office to collect the certificate from is required
+            if (empty($validated['governorate_id'])) {
+                return back()->withErrors(['governorate_id' => 'A pickup gouvernorat office is required.']);
             }
 
-            if ($user->adminScope() === 'delegation') {
-                $validated['delegation_id'] = $user->delegation_id;
+            // Scoped administrators can only assign a pickup location inside
+            // their own territory (delegation scope is clamped automatically).
+            $user = auth()->user();
+            if (in_array($user->adminScope(), ['governorate', 'delegation'])) {
+                if ((int) $validated['governorate_id'] !== (int) $user->governorate_id) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'governorate_id' => 'The pickup governorate must be inside your territory.',
+                    ]);
+                }
+
+                if ($user->adminScope() === 'delegation') {
+                    $validated['delegation_id'] = $user->delegation_id;
+                }
             }
-        }
 
-        $governorate = \App\Models\Governorate::find($validated['governorate_id']);
-        $delegation  = $validated['delegation_id'] ? \App\Models\Delegation::find($validated['delegation_id']) : null;
+            $governorate = \App\Models\Governorate::find($validated['governorate_id']);
+            $delegation  = $validated['delegation_id'] ? \App\Models\Delegation::find($validated['delegation_id']) : null;
 
-        // If a delegation is selected, it must belong to the selected governorate
-        if ($delegation && (int) $delegation->governorate_id !== (int) $governorate->id) {
-            return back()->withErrors(['delegation_id' => 'The selected delegation does not belong to the selected governorate.']);
+            // If a delegation is selected, it must belong to the selected governorate
+            if ($delegation && (int) $delegation->governorate_id !== (int) $governorate->id) {
+                return back()->withErrors(['delegation_id' => 'The selected delegation does not belong to the selected governorate.']);
+            }
         }
 
         $certificate = PreventionCertificate::create([
@@ -369,24 +421,37 @@ class PreventionDossierController extends Controller
             'issued_by'             => auth()->id(),
             'issued_at'             => now()->toDateString(),
             'valid_until'           => $validated['valid_until'] ?? null,
-            'governorate_id'        => $validated['governorate_id'],
+            'governorate_id'        => $validated['governorate_id'] ?? null,
             'delegation_id'         => $validated['delegation_id'] ?? null,
-            'status'                => 'ready',
+            'status'                => $certificateStatus,
+            'delivery_method'       => $deliveryMethod,
+            'post_recipient'        => $validated['post_recipient'] ?? null,
+            'post_phone'            => $validated['post_phone'] ?? null,
+            'post_address'          => $validated['post_address'] ?? null,
+            'post_tracking'         => $validated['post_tracking'] ?? null,
             'note'                  => $validated['note'] ?? null,
         ]);
 
         $preventionDossier->logEvent('certificate_issued', $validated['note'] ?? null, [
             'reference'   => $certificate->reference,
-            'governorate' => $governorate->name_fr ?? $governorate->name_ar,
-            'delegation'  => $delegation?->name_fr ?? $delegation?->name_ar,
+            'method'      => $deliveryMethod,
+            'governorate' => ($governorate ?? null)?->name_fr ?? ($governorate ?? null)?->name_ar,
+            'delegation'  => ($delegation ?? null)?->name_fr ?? ($delegation ?? null)?->name_ar,
         ]);
 
+        $successMessage = match ($deliveryMethod) {
+            PreventionCertificate::DELIVERY_POST => "Certificate {$certificate->reference} issued — it will be sent via Poste Tunisienne (B3) to the applicant's address.",
+            default => "Certificate {$certificate->reference} issued — the applicant can now collect it at the selected office.",
+        };
+
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', "Certificate {$certificate->reference} issued. The applicant can now collect it at the selected delegation.");
+            ->with('success', $successMessage);
     }
 
     // =========================================================================
-    // Certificate — update state (ready ↔ collected)
+    // Certificate — update state
+    //   pickup : ready ↔ collected (picked up at the office)
+    //   post   : ready → sent (B3 + tracking) → delivered
     // =========================================================================
 
     public function updateCertificate(Request $request, PreventionDossier $preventionDossier): RedirectResponse
@@ -396,7 +461,8 @@ class PreventionDossierController extends Controller
         AdminScope::authorize($preventionDossier);
 
         $validated = $request->validate([
-            'action' => ['required', 'in:collected,ready'],
+            'action'        => ['required', 'in:collected,ready,sent,delivered'],
+            'post_tracking' => ['nullable', 'string', 'max:60'],
         ]);
 
         $certificate = $preventionDossier->certificate;
@@ -405,23 +471,70 @@ class PreventionDossierController extends Controller
             return back()->withErrors(['status' => 'This dossier has no certificate to update.']);
         }
 
-        $certificate->update([
-            'status'       => $validated['action'],
-            'collected_at' => $validated['action'] === 'collected' ? now() : null,
-        ]);
+        if (in_array($validated['action'], ['collected', 'ready']) && $certificate->isPost()) {
+            return back()->withErrors(['action' => 'This certificate is delivered by post — use the "sent / delivered" actions.']);
+        }
 
-        if ($validated['action'] === 'collected') {
-            $preventionDossier->logEvent('certificate_collected', null, [
-                'reference'   => $certificate->reference,
-                'governorate' => $certificate->governorate?->name_fr ?? $certificate->governorate?->name_ar,
-                'delegation'  => $certificate->delegation?->name_fr ?? $certificate->delegation?->name_ar,
-            ]);
+        switch ($validated['action']) {
+            case 'collected':
+                $certificate->update([
+                    'status'       => PreventionCertificate::STATUS_COLLECTED,
+                    'collected_at' => now(),
+                ]);
+                $preventionDossier->logEvent('certificate_collected', null, [
+                    'reference'   => $certificate->reference,
+                    'governorate' => $certificate->governorate?->name_fr ?? $certificate->governorate?->name_ar,
+                    'delegation'  => $certificate->delegation?->name_fr ?? $certificate->delegation?->name_ar,
+                ]);
+                $msg = 'Certificate marked as collected.';
+                break;
+
+            case 'sent':
+                if ($validated['post_tracking']) {
+                    $certificate->update(['post_tracking' => $validated['post_tracking']]);
+                    $certificate->refresh();
+                }
+                if (empty($certificate->post_tracking)) {
+                    return back()->withErrors(['post_tracking' => 'A tracking number is required to mark the certificate as sent.']);
+                }
+                $certificate->update([
+                    'status'       => PreventionCertificate::STATUS_POST_SENT,
+                    'post_sent_at' => now(),
+                    'collected_at' => null,
+                ]);
+                $preventionDossier->logEvent('certificate_post_sent', null, [
+                    'reference' => $certificate->reference,
+                    'tracking'  => $certificate->post_tracking,
+                ]);
+                $msg = "Certificate registered at Poste Tunisienne (B3) — tracking {$certificate->post_tracking}.";
+                break;
+
+            case 'delivered':
+                $certificate->update([
+                    'status'           => PreventionCertificate::STATUS_POST_DELIVERED,
+                    'post_delivered_at' => now(),
+                ]);
+                $preventionDossier->logEvent('certificate_post_delivered', null, [
+                    'reference' => $certificate->reference,
+                    'tracking'  => $certificate->post_tracking,
+                ]);
+                $msg = 'Post delivery confirmed — the applicant received the certificate.';
+                break;
+
+            case 'ready':
+            default:
+                $certificate->update([
+                    'status'            => PreventionCertificate::STATUS_READY,
+                    'collected_at'      => null,
+                    'post_sent_at'      => null,
+                    'post_delivered_at' => null,
+                ]);
+                $msg = 'Certificate marked as ready.';
+                break;
         }
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', $validated['action'] === 'collected'
-                ? 'Certificate marked as collected.'
-                : 'Certificate marked as ready for pickup.');
+            ->with('success', $msg);
     }
 
     // =========================================================================

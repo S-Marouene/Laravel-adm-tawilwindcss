@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Governorate extends Model
 {
-    protected $fillable = ['id', 'name_ar', 'name_fr', 'name_en'];
+    protected $fillable = ['id', 'name_ar', 'name_fr', 'name_en', 'office_address', 'office_phone', 'office_hours'];
 
     // Prevent auto-increment so our explicit 1–24 IDs are preserved
     public $incrementing = false;
@@ -60,6 +60,23 @@ class Governorate extends Model
         return static::orderBy('id')
             ->pluck($col, 'id')
             ->toArray();
+    }
+
+    /**
+     * Pickup-office details maintained by the administration, used on the
+     * applicant's certificate card when the delivery method is "pickup".
+     */
+    public function officeDetails(): ?array
+    {
+        if (! $this->office_address && ! $this->office_phone && ! $this->office_hours) {
+            return null;
+        }
+
+        return [
+            'address'   => $this->office_address,
+            'phone'     => $this->office_phone,
+            'hours'     => $this->office_hours,
+        ];
     }
 
     /**
