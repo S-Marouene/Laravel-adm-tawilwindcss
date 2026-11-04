@@ -14,7 +14,7 @@
             <div class="p-6 border-b border-surface-dim dark:border-gray-700 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <span class="admin-badge inline-flex items-center px-3 py-1 text-sm font-medium {{ $activityLog->badgeColor() }}">
-                        {{ ucfirst($activityLog->type) }}
+                        {{ $activityLog->typeLabel() }}
                     </span>
                     <span class="text-sm text-secondary dark:text-gray-400">{{ $activityLog->created_at->format('F j, Y \\a\\t g:i A') }}</span>
                 </div>
@@ -53,7 +53,7 @@
                     <div>
                         <h3 class="text-sm font-medium text-secondary dark:text-gray-400 mb-1">Type</h3>
                         <span class="admin-badge inline-flex items-center px-2.5 py-0.5 text-xs font-medium {{ $activityLog->badgeColor() }}">
-                            {{ ucfirst($activityLog->type) }}
+                            {{ $activityLog->typeLabel() }}
                         </span>
                     </div>
 

@@ -30,8 +30,18 @@
                     <label for="type" class="block text-xs font-medium text-secondary dark:text-gray-400 mb-1">Type</label>
                     <select name="type" id="type" class="w-full px-3 py-2 border border-surface-dim/90 dark:border-gray-600/90 rounded-xl text-sm dark:bg-gray-900/55 dark:text-gray-100 hover:border-gov-300 dark:hover:border-gov-700 focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 transition-all">
                         <option value="">All Types</option>
+                        @php
+                            $typeLabels = [
+                                'login' => 'Login', 'logout' => 'Logout',
+                                'create' => 'Create', 'update' => 'Update',
+                                'delete' => 'Delete', 'export' => 'Export',
+                                'prevention_create' => 'Prevention — Create',
+                                'prevention_update' => 'Prevention — Update',
+                                'prevention_delete' => 'Prevention — Delete',
+                            ];
+                        @endphp
                         @foreach($types as $t)
-                            <option value="{{ $t }}" {{ request('type') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
+                            <option value="{{ $t }}" {{ request('type') === $t ? 'selected' : '' }}>{{ $typeLabels[$t] ?? ucfirst($t) }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -112,7 +122,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="admin-badge inline-flex items-center px-2.5 py-0.5 text-xs font-medium {{ $log->badgeColor() }}">
-                                    {{ ucfirst($log->type) }}
+                                    {{ $log->typeLabel() }}
                                 </span>
                             </td>
                             <td class="px-6 py-4">

@@ -35,8 +35,25 @@ return new class extends Migration
                   ->constrained('delegations')
                   ->nullOnDelete();
 
+            // Governorate where the certificate is available
+            $table->unsignedTinyInteger('governorate_id')->nullable();
+            $table->foreign('governorate_id')
+                  ->references('id')
+                  ->on('governorates')
+                  ->nullOnDelete();
+
             // State: ready (waiting at the delegation) | collected (picked up)
             $table->string('status', 20)->default('ready');
+
+            // Delivery metadata (post / B3 — Poste Tunisienne)
+            $table->string('delivery_method', 20)->nullable();
+            $table->string('post_recipient')->nullable();
+            $table->string('post_phone', 40)->nullable();
+            $table->text('post_address')->nullable();
+            $table->string('post_tracking', 60)->nullable();
+            $table->timestamp('post_sent_at')->nullable();
+            $table->timestamp('post_delivered_at')->nullable();
+
             $table->timestamp('collected_at')->nullable();
 
             // Optional internal note

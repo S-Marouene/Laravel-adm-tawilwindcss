@@ -910,8 +910,8 @@
                     </div>
                 @endif
 
-                {{-- All recorded events, in chronological order --}}
-                @foreach ($preventionDossier->events as $event)
+                {{-- All recorded events, newest first --}}
+                @foreach ($preventionDossier->events->reverse()->values() as $event)
                     @if (! $loop->first)
                         <div class="ms-[3px] my-1.5 w-0.5 h-5 bg-gray-200 dark:bg-gray-600"></div>
                     @endif

@@ -10,6 +10,7 @@ use App\Models\Governorate;
 use App\Models\PreventionCertificate;
 use App\Models\PreventionDossier;
 use App\Models\Service;
+use App\Services\ActivityLogger;
 use App\Support\AdminScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -111,6 +112,11 @@ class PreventionDossierController extends Controller
 
         $preventionDossier->logEvent('advanced_to_consultation');
 
+        ActivityLogger::log('prevention_update', "Prevention — Dossier #{$preventionDossier->id} advanced to consultation by " . auth()->user()->name, $preventionDossier, [
+            'applicant' => $preventionDossier->nom_prenom,
+            'reference' => $preventionDossier->reference,
+        ]);
+
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
             ->with('success', 'Dossier approved — awaiting RDV. You can now schedule a visit (RDV) from the sidebar.');
     }
@@ -192,6 +198,14 @@ class PreventionDossierController extends Controller
             'archived_files' => $archivedDocsMeta,
         ]);
 
+        ActivityLogger::log('prevention_update', "Prevention — Correction requested for dossier #{$preventionDossier->id} by " . auth()->user()->name . " (fields: " . implode(', ', $fieldsToFix) . ")", $preventionDossier, [
+            'admin'      => auth()->user()->name,
+            'applicant'  => $preventionDossier->nom_prenom,
+            'fields'     => $fieldsToFix,
+            'docs'       => $docsToFix,
+            'note'       => $validated['admin_note'],
+        ]);
+
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
             ->with('success', 'Correction requested — the applicant will see exactly which fields and documents to fix.');
     }
@@ -218,6 +232,11 @@ class PreventionDossierController extends Controller
         ]);
 
         $preventionDossier->logEvent('approved');
+
+        ActivityLogger::log('prevention_update', "Prevention — Dossier #{$preventionDossier->id} approved by " . auth()->user()->name, $preventionDossier, [
+            'admin'      => auth()->user()->name,
+            'applicant'  => $preventionDossier->nom_prenom,
+        ]);
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
             ->with('success', 'Dossier approved successfully.');
@@ -250,6 +269,12 @@ class PreventionDossierController extends Controller
 
         $preventionDossier->logEvent('cancelled', $validated['admin_note']);
 
+        ActivityLogger::log('prevention_update', "Prevention — Dossier #{$preventionDossier->id} cancelled by " . auth()->user()->name, $preventionDossier, [
+            'admin'      => auth()->user()->name,
+            'applicant'  => $preventionDossier->nom_prenom,
+            'reason'     => $validated['admin_note'],
+        ]);
+
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
             ->with('success', 'Dossier cancelled. The applicant has been notified.');
     }
@@ -280,6 +305,13 @@ class PreventionDossierController extends Controller
         ]);
 
         $preventionDossier->logEvent('appointment_scheduled', null, [
+            'visit_date' => $validated['visit_date'],
+            'visit_time' => $validated['visit_time'],
+        ]);
+
+        ActivityLogger::log('prevention_create', "Prevention — RDV scheduled for dossier #{$preventionDossier->id} on {$validated['visit_date']} at {$validated['visit_time']} by " . auth()->user()->name, $preventionDossier, [
+            'admin'      => auth()->user()->name,
+            'applicant'  => $preventionDossier->nom_prenom,
             'visit_date' => $validated['visit_date'],
             'visit_time' => $validated['visit_time'],
         ]);
@@ -326,6 +358,15 @@ class PreventionDossierController extends Controller
             ]
         );
 
+        ActivityLogger::log('prevention_update', "Prevention — RDV marked as {$validated['status']} for dossier #{$preventionDossier->id} by " . auth()->user()->name, $preventionDossier, [
+            'admin'      => auth()->user()->name,
+            'applicant'  => $preventionDossier->nom_prenom,
+            'status'     => $validated['status'],
+            'visit_date' => $appointment->visit_date,
+            'visit_time' => $appointment->visit_time,
+            'note'       => $validated['note'] ?? null,
+        ]);
+
         if ($validated['status'] === 'passed') {
             // ── Everything is OK: the applicant is now waiting for the
             // certificate delivery (he will pick a delivery method). ──
@@ -337,6 +378,11 @@ class PreventionDossierController extends Controller
             ]);
 
             $preventionDossier->logEvent('waiting_delivery');
+
+            ActivityLogger::log('prevention_update', "Prevention — Dossier #{$preventionDossier->id} moved to waiting_delivery by " . auth()->user()->name, $preventionDossier, [
+                'admin'     => auth()->user()->name,
+                'applicant' => $preventionDossier->nom_prenom,
+            ]);
 
             $msg = 'Visit marked as passed — the applicant can now choose how to receive the certificate (pickup / post).';
         } else {
@@ -385,6 +431,13 @@ class PreventionDossierController extends Controller
         $appointment->delete();
 
         $preventionDossier->logEvent('appointment_deleted', null, $rdvDetails);
+
+        ActivityLogger::log('prevention_delete', "Prevention — RDV deleted for dossier #{$preventionDossier->id} (was: {$rdvDetails['visit_date']} {$rdvDetails['visit_time']}) by " . auth()->user()->name, $preventionDossier, [
+            'admin'      => auth()->user()->name,
+            'applicant'  => $preventionDossier->nom_prenom,
+            'visit_date' => $rdvDetails['visit_date'],
+            'visit_time' => $rdvDetails['visit_time'],
+        ]);
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
             ->with('success', 'Appointment removed.');
@@ -495,6 +548,13 @@ class PreventionDossierController extends Controller
             'delegation'  => ($delegation ?? null)?->name_fr ?? ($delegation ?? null)?->name_ar,
         ]);
 
+        ActivityLogger::log('prevention_create', "Prevention — Certificate {$certificate->reference} issued for dossier #{$preventionDossier->id} ({$deliveryMethod}) by " . auth()->user()->name, $preventionDossier, [
+            'admin'      => auth()->user()->name,
+            'applicant'  => $preventionDossier->nom_prenom,
+            'reference'  => $certificate->reference,
+            'method'     => $deliveryMethod,
+        ]);
+
         $successMessage = match ($deliveryMethod) {
             PreventionCertificate::DELIVERY_POST => "Certificate {$certificate->reference} issued — it will be sent via Poste Tunisienne (B3) to the applicant's address.",
             default => "Certificate {$certificate->reference} issued — the applicant can now collect it at the selected office.",
@@ -542,6 +602,9 @@ class PreventionDossierController extends Controller
                     'governorate' => $certificate->governorate?->name_fr ?? $certificate->governorate?->name_ar,
                     'delegation'  => $certificate->delegation?->name_fr ?? $certificate->delegation?->name_ar,
                 ]);
+                ActivityLogger::log('prevention_update', "Prevention — Certificate {$certificate->reference} collected for dossier #{$preventionDossier->id} by " . auth()->user()->name, $preventionDossier, [
+                    'admin' => auth()->user()->name, 'reference' => $certificate->reference,
+                ]);
                 $msg = 'Certificate marked as collected.';
                 break;
 
@@ -562,6 +625,9 @@ class PreventionDossierController extends Controller
                     'reference' => $certificate->reference,
                     'tracking'  => $certificate->post_tracking,
                 ]);
+                ActivityLogger::log('prevention_update', "Prevention — Certificate {$certificate->reference} sent by post (tracking: {$certificate->post_tracking}) for dossier #{$preventionDossier->id} by " . auth()->user()->name, $preventionDossier, [
+                    'admin' => auth()->user()->name, 'reference' => $certificate->reference, 'tracking' => $certificate->post_tracking,
+                ]);
                 $msg = "Certificate registered at Poste Tunisienne (B3) — tracking {$certificate->post_tracking}.";
                 break;
 
@@ -573,6 +639,9 @@ class PreventionDossierController extends Controller
                 $preventionDossier->logEvent('certificate_post_delivered', null, [
                     'reference' => $certificate->reference,
                     'tracking'  => $certificate->post_tracking,
+                ]);
+                ActivityLogger::log('prevention_update', "Prevention — Certificate {$certificate->reference} delivered by post for dossier #{$preventionDossier->id} by " . auth()->user()->name, $preventionDossier, [
+                    'admin' => auth()->user()->name, 'reference' => $certificate->reference,
                 ]);
                 $msg = 'Post delivery confirmed — the applicant received the certificate.';
                 break;
@@ -587,6 +656,9 @@ class PreventionDossierController extends Controller
                 ]);
                 $preventionDossier->logEvent('certificate_reset', null, [
                     'reference' => $certificate->reference,
+                ]);
+                ActivityLogger::log('prevention_update', "Prevention — Certificate {$certificate->reference} reset to ready for dossier #{$preventionDossier->id} by " . auth()->user()->name, $preventionDossier, [
+                    'admin' => auth()->user()->name, 'reference' => $certificate->reference,
                 ]);
                 $msg = 'Certificate marked as ready.';
                 break;
@@ -626,6 +698,12 @@ class PreventionDossierController extends Controller
             'reference'   => $reference,
             'governorate' => $governorate,
             'delegation'  => $delegation,
+        ]);
+
+        ActivityLogger::log('prevention_delete', "Prevention — Certificate {$reference} revoked from dossier #{$preventionDossier->id} by " . auth()->user()->name, $preventionDossier, [
+            'admin'     => auth()->user()->name,
+            'applicant' => $preventionDossier->nom_prenom,
+            'reference' => $reference,
         ]);
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)

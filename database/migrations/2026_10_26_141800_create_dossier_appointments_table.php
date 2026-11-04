@@ -25,8 +25,8 @@ return new class extends Migration
             $table->date('visit_date');
             $table->time('visit_time');
 
-            // Optional address / location note
-            $table->string('location', 500)->nullable();
+            // The visit happens at the building, whose address lives on the
+            // dossier (prevention_dossiers.building_address) — no location column here.
 
             // Status: pending | passed | failed
             $table->string('status', 20)->default('pending');

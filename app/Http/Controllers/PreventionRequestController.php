@@ -7,6 +7,7 @@ use App\Models\DocumentType;
 use App\Models\DossierDocument;
 use App\Models\Governorate;
 use App\Models\PreventionDossier;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -140,7 +141,13 @@ class PreventionRequestController extends Controller
             'building_address' => $validated['building_address'],
         ]);
 
-        $dossier->logEvent('step1_updated');
+        ActivityLogger::log('prevention_update', "Prevention — Step 1 (identity) updated for dossier #{$dossier->id} by {$dossier->nom_prenom}", $dossier, [
+            'cin'        => $dossier->cin,
+            'nom_prenom' => $dossier->nom_prenom,
+            'phone'      => $dossier->phone,
+            'governorate'=> $dossier->governorate?->name,
+            'delegation' => $dossier->delegation?->name,
+        ]);
 
         // Return the user to the step they came from (default: step 2 in editing mode)
         if ($request->input('return_to') === 'step3') {
@@ -177,7 +184,14 @@ class PreventionRequestController extends Controller
             'building_address' => $validated['building_address'],
         ]);
 
-        $dossier->logEvent('draft_created');
+        ActivityLogger::log('prevention_create', "Prevention — Draft created by {$dossier->nom_prenom} (CIN: {$dossier->cin}, Gov: {$dossier->governorate?->name})", $dossier, [
+            'applicant'  => $dossier->nom_prenom,
+            'cin'        => $dossier->cin,
+            'phone'      => $dossier->phone,
+            'governorate'=> $dossier->governorate?->name,
+            'delegation' => $dossier->delegation?->name,
+            'address'    => $dossier->building_address,
+        ]);
 
         return redirect()->route('prevention-requests.step2.show', $dossier);
     }
@@ -248,7 +262,9 @@ class PreventionRequestController extends Controller
             'current_step'         => 2,
         ]);
 
-        $dossier->logEvent('step2_saved', null, [
+        $dossier->load('buildingType', 'buildingActivity');
+
+        ActivityLogger::log('prevention_update', "Prevention — Step 2 (building type) saved for dossier #{$dossier->id} by {$dossier->nom_prenom}", $dossier, [
             'building_type'     => $dossier->buildingType?->name,
             'building_activity' => $dossier->buildingActivity?->name ?? $dossier->activity_other,
         ]);
@@ -364,12 +380,12 @@ class PreventionRequestController extends Controller
             }
         }
 
-        // Log the document upload(s) before marking the dossier as completed
+        // Log the document upload(s) to the global activity log
         $uploadedCount = DossierDocument::where('prevention_dossier_id', $dossier->id)
             ->where('status', 'uploaded')
             ->count();
         if ($uploadedCount > 0) {
-            $dossier->logEvent('document_uploaded', null, ['count' => $uploadedCount]);
+            ActivityLogger::log('prevention_create', "Prevention — {$uploadedCount} document(s) uploaded for dossier #{$dossier->id} by {$dossier->nom_prenom}", $dossier, ['count' => $uploadedCount]);
         }
 
         // Mark dossier as completed + assign the citizen-facing reference (PRV26-0001)
@@ -401,6 +417,18 @@ class PreventionRequestController extends Controller
         } else {
             $dossier->logEvent('submitted');
         }
+
+        // Log to the global activity log
+        ActivityLogger::log('prevention_update', "Prevention — Dossier " . ($isResubmission ? 'resubmitted' : 'submitted') . " (ref: {$dossier->reference}, by: {$dossier->nom_prenom}, CIN: {$dossier->cin})", $dossier, [
+            'reference'        => $dossier->reference,
+            'applicant'        => $dossier->nom_prenom,
+            'cin'              => $dossier->cin,
+            'governorate'      => $dossier->governorate?->name,
+            'delegation'       => $dossier->delegation?->name,
+            'building_type'    => $dossier->buildingType?->name,
+            'building_activity'=> $dossier->buildingActivity?->name ?? $dossier->activity_other,
+            'resubmission'     => $isResubmission,
+        ]);
 
         // Attempt to push to external API if configured
         if ($this->hasPreventionApiBaseUrl()) {
@@ -545,6 +573,12 @@ class PreventionRequestController extends Controller
             'address' => $deliveryMethod === 'post' ? $validated['post_address'] : null,
         ]);
 
+        ActivityLogger::log('prevention_update', "Prevention — Delivery method chosen: {$deliveryMethod} for dossier ref {$dossier->reference} by {$dossier->nom_prenom}", $dossier, [
+            'method'   => $deliveryMethod,
+            'applicant'=> $dossier->nom_prenom,
+            'reference'=> $dossier->reference,
+        ]);
+
         return redirect()->route('prevention-requests.show', $dossier)
             ->with('success', __('prevention_request.delivery_saved'));
     }
@@ -602,7 +636,7 @@ class PreventionRequestController extends Controller
         Storage::disk('local')->delete($document->file_path);
         $document->delete();
 
-        $dossier->logEvent('document_deleted', null, [
+        ActivityLogger::log('prevention_delete', "Prevention — Document '{$docName}' deleted from dossier #{$dossier->id} by {$dossier->nom_prenom}", $dossier, [
             'document' => $docName,
             'type'      => $docType,
         ]);
@@ -816,6 +850,13 @@ class PreventionRequestController extends Controller
             'docs_fixed'   => $docsToFix,
         ]);
 
+        ActivityLogger::log('prevention_update', "Prevention — Correction submitted for dossier ref {$dossier->reference} by {$dossier->nom_prenom} (fields: " . implode(', ', $fieldsToFix) . ")", $dossier, [
+            'applicant'    => $dossier->nom_prenom,
+            'reference'     => $dossier->reference,
+            'fields_fixed'  => $fieldsToFix,
+            'docs_fixed'    => $docsToFix,
+        ]);
+
         return redirect()
             ->route('prevention-requests.show', $dossier)
             ->with('success', __('prevention_request.correction_submitted_success'));
@@ -857,7 +898,7 @@ class PreventionRequestController extends Controller
             'nom_prenom'     => ['required', 'string', 'max:255'],
             'code_structure' => ['required', 'integer', 'between:1,24'],
             'delegation'     => ['required', 'string', 'max:100'],
-            'num_demande'    => ['required', 'numeric'],
+            'num_demande'    => ['required', 'string', 'max:50'], // PRV format (e.g. PRV26-0001), not a plain number
         ]));
 
         try {

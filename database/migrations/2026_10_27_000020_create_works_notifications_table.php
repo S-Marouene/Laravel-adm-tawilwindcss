@@ -12,14 +12,18 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->unsignedTinyInteger('current_step')->default(1);
+
+            // Citizen-facing reference (TRV26-0001) — assigned once, on submission
+            $table->string('reference', 32)->nullable()->unique();
+
             $table->string('status')->default('draft');
 
             // Owner (مالك البناية) — natural person or legal entity
-            $table->string('owner_type', 20)->default('natural'); // natural | moral
-            $table->string('owner_name')->nullable();             // owner's name (natural person)
-            $table->string('owner_cin', 20)->nullable();          // CIN of owner / legal representative
-            $table->string('company_name')->nullable();           // legal entity name
-            $table->string('jort_reference', 100)->nullable();    // reference of the legal incorporation notice (dcmān)
+            $table->string('owner_type', 20)->default('natural');
+            $table->string('owner_name')->nullable();
+            $table->string('owner_cin', 20)->nullable();
+            $table->string('company_name')->nullable();
+            $table->string('jort_reference', 100)->nullable();
             $table->string('phone', 20)->nullable();
 
             // Building location (مكان الأشغال)
@@ -28,7 +32,7 @@ return new class extends Migration
             $table->string('property_address', 500)->nullable();
 
             // Works details (الأشغال)
-            $table->string('works_type', 100)->nullable();        // nature of the works
+            $table->string('works_type', 100)->nullable();
             $table->date('works_start_date')->nullable();
             $table->text('works_description')->nullable();
             $table->text('notes')->nullable();

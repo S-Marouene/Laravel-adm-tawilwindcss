@@ -215,7 +215,7 @@
                                         </p>
                                         {{-- Timeline — admin style (dots + connector dashes) --}}
                                         <div class="mt-3 px-2">
-                                            @foreach ($dossier->events as $event)
+                                            @foreach ($dossier->events->reverse()->values() as $event)
                                                 @php
                                                     $isFailedEvent = str_contains($event->type, 'failed') || str_contains($event->type, 'cancelled');
                                                 @endphp
@@ -229,7 +229,7 @@
                                                             {{ __('prevention_request.timeline_' . $event->type) }}
                                                         </p>
                                                         <p class="text-[11px] text-outline dark:text-gray-500">
-                                                            {{ in_array($event->type, ['submitted', 'resubmitted', 'delivery_chosen', 'draft_created', 'step1_updated', 'step2_saved', 'document_uploaded', 'document_deleted']) ? __('prevention_request.timeline_actor_you') : __('prevention_request.timeline_actor_admin') }}
+                                                            {{ in_array($event->type, ['submitted', 'resubmitted']) ? __('prevention_request.timeline_actor_you') : __('prevention_request.timeline_actor_admin') }}
                                                             · {{ $event->created_at->format('d/m/Y H:i') }}
                                                         </p>
 

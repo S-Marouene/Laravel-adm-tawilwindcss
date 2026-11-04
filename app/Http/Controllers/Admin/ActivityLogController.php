@@ -12,7 +12,7 @@ class ActivityLogController extends Controller
     public function index(Request $request)
     {
         $this->authorize('view activity-logs');
-        $query = ActivityLog::with('user')->latest();
+        $query = ActivityLog::with('user')->latest()->latest('id');
 
         // Filter by type
         if ($request->filled('type')) {

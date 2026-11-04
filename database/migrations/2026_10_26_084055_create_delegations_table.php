@@ -14,6 +14,12 @@ return new class extends Migration
             $table->string('name_ar');
             $table->string('name_fr');
             $table->string('name_en');
+
+            // Pickup-office details shown to the applicant when he chooses "pickup"
+            $table->string('office_address')->nullable();
+            $table->string('office_phone', 40)->nullable();
+            $table->string('office_hours')->nullable();
+
             $table->timestamps();
 
             $table->foreign('governorate_id')

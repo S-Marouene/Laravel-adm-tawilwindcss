@@ -12,6 +12,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->unsignedTinyInteger('current_step')->default(1);
+
+            // Citizen-facing reference (PRS26-0001) — assigned once, on submission
+            $table->string('reference', 32)->nullable()->unique();
+
             $table->string('status')->default('draft');
 
             // Applicant identity
@@ -25,21 +29,21 @@ return new class extends Migration
             $table->string('event_address', 500)->nullable();
 
             // Event details (التظاهر/التظاهرات)
-            $table->string('event_title', 300)->nullable();        // nature/theme of the event
-            $table->date('event_date')->nullable();               // first day
-            $table->date('event_end_date')->nullable();           // last day (multi-day events)
-            $table->time('event_time')->nullable();               // start time
+            $table->string('event_title', 300)->nullable();
+            $table->date('event_date')->nullable();
+            $table->date('event_end_date')->nullable();
+            $table->time('event_time')->nullable();
             $table->unsignedInteger('expected_attendance')->nullable();
-            $table->text('notes')->nullable();                    // free description of the service requested
+            $table->text('notes')->nullable();
 
-            // Payment (بمقابل — وسيطة الإثبات: وصل) — recorded by the administration
+            // Payment (بمقابل — وسيطة الإثبات: وصل)
             $table->decimal('fee_amount', 10, 3)->nullable();
-            $table->string('receipt_number', 50)->nullable();     // رقم وصل أداء المعاليم
+            $table->string('receipt_number', 50)->nullable();
             $table->timestamp('paid_at')->nullable();
 
-            // Service performed (إسداء الخدمة) — recorded by the administration
+            // Service performed (إسداء الخدمة)
             $table->date('service_date')->nullable();
-            $table->string('service_team', 255)->nullable();      // assigned unit / أمر
+            $table->string('service_team', 255)->nullable();
             $table->unsignedSmallInteger('service_agents')->nullable();
             $table->text('service_note')->nullable();
             $table->timestamp('served_at')->nullable();

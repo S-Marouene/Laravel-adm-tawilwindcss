@@ -52,7 +52,7 @@
 
                         <div>
                             <label for="num_demande" class="block text-sm font-semibold text-on-surface dark:text-gray-200">{{ __('prevention_request.num_demande') }}</label>
-                            <input id="num_demande" name="num_demande" type="number" min="0" value="{{ old('num_demande', $requestItem['num_demande'] ?? '') }}" class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">
+                            <input id="num_demande" name="num_demande" type="text" maxlength="50" value="{{ old('num_demande', $requestItem['num_demande'] ?? '') }}" class="mt-2 block w-full rounded-lg border-surface-dim text-sm shadow-sm focus:border-gov-500 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">
                         </div>
 
                         <div>

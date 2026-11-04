@@ -13,15 +13,14 @@ return new class extends Migration
             $table->id();
             $table->string('key')->unique();
             $table->text('value')->nullable();
-            $table->string('type')->default('string'); // string, text, boolean, image, email, url
-            $table->string('group')->default('general'); // general, contact, appearance, seo
-            $table->string('label')->nullable(); // Human-readable label
-            $table->text('description')->nullable(); // Help text
-            $table->boolean('is_public')->default(false); // Whether it can be exposed publicly
+            $table->string('type')->default('string'); // string, text, boolean, image, email, url, password, select, integer
+            $table->string('group')->default('general'); // general, contact, appearance, seo, mail
+            $table->string('label')->nullable();
+            $table->text('description')->nullable();
+            $table->boolean('is_public')->default(false);
             $table->timestamps();
         });
 
-        // Insert default settings
         $settings = [
             // General
             ['key' => 'app_name', 'value' => 'Office national de la protection civile', 'type' => 'string', 'group' => 'general', 'label' => 'Application Name', 'description' => 'The name of the application displayed throughout the site.'],
@@ -40,6 +39,16 @@ return new class extends Migration
             // SEO
             ['key' => 'seo_keywords', 'value' => 'administration, Tunisie, services publics, démarches en ligne', 'type' => 'text', 'group' => 'seo', 'label' => 'Meta Keywords', 'description' => 'Comma-separated keywords for SEO.'],
             ['key' => 'seo_og_image', 'value' => '', 'type' => 'image', 'group' => 'seo', 'label' => 'Open Graph Image (1200x630)', 'description' => 'Default OG image shared on social media.'],
+
+            // Mail Configuration
+            ['key' => 'mail_mailer', 'value' => 'smtp', 'type' => 'select', 'group' => 'mail', 'label' => 'Mail Driver', 'description' => 'Email transport driver (smtp, sendmail, mailgun, ses, postmark, log).'],
+            ['key' => 'mail_host', 'value' => '127.0.0.1', 'type' => 'string', 'group' => 'mail', 'label' => 'SMTP Host', 'description' => 'SMTP server hostname or IP address.'],
+            ['key' => 'mail_port', 'value' => '587', 'type' => 'integer', 'group' => 'mail', 'label' => 'SMTP Port', 'description' => 'SMTP server port (587 for TLS, 465 for SSL, 25 for plain).'],
+            ['key' => 'mail_username', 'value' => '', 'type' => 'string', 'group' => 'mail', 'label' => 'SMTP Username', 'description' => 'SMTP authentication username.'],
+            ['key' => 'mail_password', 'value' => '', 'type' => 'password', 'group' => 'mail', 'label' => 'SMTP Password', 'description' => 'SMTP authentication password. Leave empty to keep current.'],
+            ['key' => 'mail_encryption', 'value' => 'tls', 'type' => 'select', 'group' => 'mail', 'label' => 'SMTP Encryption', 'description' => 'Encryption protocol (tls, ssl, or empty for none).'],
+            ['key' => 'mail_from_address', 'value' => 'noreply@onpc.tn', 'type' => 'email', 'group' => 'mail', 'label' => 'From Address', 'description' => 'Default "from" email address for all outgoing emails.'],
+            ['key' => 'mail_from_name', 'value' => 'Office national de la protection civile', 'type' => 'string', 'group' => 'mail', 'label' => 'From Name', 'description' => 'Default "from" name for all outgoing emails.'],
         ];
 
         foreach ($settings as $setting) {

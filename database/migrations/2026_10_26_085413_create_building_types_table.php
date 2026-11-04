@@ -15,6 +15,8 @@ return new class extends Migration
             $table->string('name_en');
             // Whether this type has a sub-activity dropdown or not
             $table->boolean('has_activities')->default(true);
+            // Fee (in TND) the applicant pays to receive the prevention certificate
+            $table->decimal('certificate_fee', 8, 3)->default(0);
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
         });

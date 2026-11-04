@@ -69,7 +69,7 @@
             => ['bg-indigo-600 text-white', 'local_shipping', __('prevention_request.chip_delivery'), 'bg-indigo-100 text-indigo-800'],
         in_array($type, ['certificate_post_sent', 'certificate_post_delivered'])
             => ['bg-amber-600 text-white', 'local_shipping', __('prevention_request.chip_post'), 'bg-emerald-100 text-emerald-800'],
-        $type === 'certificate_collected'
+        in_array($type, ['certificate_collected', 'certificate_reset'])
             => ['bg-amber-600 text-white', 'handshake', __('prevention_request.chip_done'), 'bg-amber-100 text-amber-900'],
         // default: correction_requested, cancelled, appointment_failed, certificate_deleted
         default
@@ -851,7 +851,7 @@
                                 <div x-show="open" x-cloak class="p-5 md:p-6 pt-5">
                                     {{-- Chronologie linéaire haute densité --}}
                                     <div class="relative ps-6 sm:ps-8 space-y-6 before:absolute before:start-3 sm:before:start-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-surface-dim">
-                                        @foreach ($dossier->events as $event)
+                                        @foreach ($dossier->events->reverse()->values() as $event)
                                             @php [$dot, $icon, $chip, $chipCls] = $eventChip($event->type); @endphp
                                             <div class="relative">
                                                 {{-- Pastille --}}
@@ -865,7 +865,7 @@
                                                     <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                                                         <div class="flex items-center gap-2">
                                                             <span class="text-xs font-bold {{ $chipCls }} px-2 py-0.5 rounded uppercase">{{ $chip }}</span>
-                                                            <span class="text-xs font-semibold text-on-surface">{{ in_array($event->type, ['submitted', 'resubmitted', 'delivery_chosen', 'draft_created', 'step1_updated', 'step2_saved', 'document_uploaded', 'document_deleted']) ? __('prevention_request.timeline_actor_you') : __('prevention_request.timeline_actor_admin') }}</span>
+                                                            <span class="text-xs font-semibold text-on-surface">{{ in_array($event->type, ['submitted', 'resubmitted', 'delivery_chosen']) ? __('prevention_request.timeline_actor_you') : __('prevention_request.timeline_actor_admin') }}</span>
                                                         </div>
                                                         <time class="text-xs font-mono font-medium text-secondary" dir="ltr">{{ $event->created_at->format('d/m/Y H:i') }}</time>
                                                     </div>

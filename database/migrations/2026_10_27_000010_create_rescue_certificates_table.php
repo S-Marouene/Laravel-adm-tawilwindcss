@@ -12,28 +12,32 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->unsignedTinyInteger('current_step')->default(1);
+
+            // Citizen-facing reference (SEC26-0001) — assigned once, on submission
+            $table->string('reference', 32)->nullable()->unique();
+
             $table->string('status')->default('draft');
 
             // Victim identity (المتضرر)
-            $table->string('cin', 20)->nullable();              // CIN of the victim
-            $table->string('nom_prenom')->nullable();           // full name of the victim
-            $table->boolean('victim_is_minor')->default(false); // victim under 18
-            $table->string('parent_name')->nullable();          // father/mother (when victim is a minor)
-            $table->string('parent_cin', 20)->nullable();       // CIN of father/mother
-            $table->boolean('spouse_case')->default(false);     // certificate for the spouse (harâm/muthakka)
-            $table->string('phone', 20)->nullable();            // applicant phone (notification by phone)
+            $table->string('cin', 20)->nullable();
+            $table->string('nom_prenom')->nullable();
+            $table->boolean('victim_is_minor')->default(false);
+            $table->string('parent_name')->nullable();
+            $table->string('parent_cin', 20)->nullable();
+            $table->boolean('spouse_case')->default(false);
+            $table->string('phone', 20)->nullable();
 
-            // Place + details of the rescue operation (عملية النجدة والإنقاذ)
+            // Place + details of the rescue operation
             $table->unsignedTinyInteger('governorate_id')->nullable();
             $table->foreignId('delegation_id')->nullable()->constrained('delegations')->nullOnDelete();
             $table->string('incident_address', 500)->nullable();
-            $table->string('incident_type', 40)->nullable();    // person_rescue | fire | property | other
+            $table->string('incident_type', 40)->nullable();
             $table->date('incident_date')->nullable();
             $table->time('incident_time')->nullable();
             $table->text('incident_description')->nullable();
             $table->text('notes')->nullable();
 
-            // Certificate delivery (تسليم الشهادة) — recorded by the administration. Free procedure — no fees.
+            // Certificate delivery
             $table->string('certificate_number', 50)->nullable();
             $table->date('delivery_date')->nullable();
             $table->text('delivery_note')->nullable();

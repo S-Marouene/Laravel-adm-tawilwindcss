@@ -12,11 +12,15 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     *
+     * Order matters: governorates & delegations must exist before
+     * RolePermissionSeeder (which links admin users to a territory), and
+     * building types must exist before DocumentTypeSeeder (which links
+     * document types to building types).
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Citizen / demo accounts (no territory needed)
         User::updateOrCreate(
             ['email' => 'test@example.com'],
             [
@@ -34,10 +38,11 @@ class DatabaseSeeder extends Seeder
         );
 
         $this->call([
-            RolePermissionSeeder::class,
-            GovernorateSeeder::class,
-            BuildingTypeSeeder::class,
-            DocumentTypeSeeder::class,
+            GovernorateSeeder::class,        // governorates + delegations (no deps)
+            BuildingTypeSeeder::class,       // building types + activities (no deps)
+            RolePermissionSeeder::class,     // roles, permissions, services, admin users
+                                            // (needs governorates/delegations for territory)
+            DocumentTypeSeeder::class,       // prevention document types (needs building types)
             PreventivePresenceDocumentTypeSeeder::class,
             RescueDocumentTypeSeeder::class,
             WorksDocumentTypeSeeder::class,
