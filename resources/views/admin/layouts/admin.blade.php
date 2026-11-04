@@ -430,7 +430,7 @@
                                                     <div class="notification-item">
                                                         <div class="notification-icon" :class="{
                                                             'bg-primary/10 text-gov-600 dark:text-gov-400': notification.type === 'info',
-                                                            'bg-success/10 text-green-600 dark:text-green-400': notification.type === 'success',
+                                                            'bg-success/10 text-success': notification.type === 'success',
                                                             'bg-warning/10 text-amber-600 dark:text-amber-400': notification.type === 'warning',
                                                             'bg-danger/10 text-red-600 dark:text-red-400': notification.type === 'error'
                                                         }">
@@ -656,15 +656,6 @@
 
                 <!-- Main Content -->
                 <main class="flex-1 p-4 sm:p-6 lg:p-8 min-w-0">
-                    @if (session('success'))
-                        <div class="mb-6 p-3.5 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded shadow-sm">
-                            <div class="flex items-center gap-2 text-body-sm">
-                                <span class="material-symbols-outlined text-emerald-600 text-xl" aria-hidden="true">check_circle</span>
-                                <span class="font-medium text-emerald-800 dark:text-emerald-300">{{ session('success') }}</span>
-                            </div>
-                        </div>
-                    @endif
-
                     @if (session('error'))
                         <div class="mb-6 p-3.5 bg-error-container/70 dark:bg-error-container/20 border border-error/40 rounded shadow-sm">
                             <div class="flex items-center gap-2 text-body-sm">

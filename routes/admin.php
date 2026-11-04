@@ -73,11 +73,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     // Appointments (RDV)
     Route::post('prevention-dossiers/{preventionDossier}/appointments',                              [PreventionDossierController::class, 'scheduleAppointment'])->name('prevention-dossiers.appointments.store');
     Route::put('prevention-dossiers/{preventionDossier}/appointments/{appointment}',                 [PreventionDossierController::class, 'updateAppointment'])->name('prevention-dossiers.appointments.update');
-    Route::delete('prevention-dossiers/{preventionDossier}/appointments/{appointment}',              [PreventionDossierController::class, 'deleteAppointment'])->name('prevention-dossiers.appointments.destroy');
+    Route::post('prevention-dossiers/{preventionDossier}/appointments/{appointment}/cancel',          [PreventionDossierController::class, 'cancelAppointment'])->name('prevention-dossiers.appointments.cancel');
     // Prevention certificate (issued after a passed RDV — the applicant picks it up at a delegation)
     Route::post('prevention-dossiers/{preventionDossier}/certificate',   [PreventionDossierController::class, 'issueCertificate'])->name('prevention-dossiers.certificate.store');
     Route::put('prevention-dossiers/{preventionDossier}/certificate',    [PreventionDossierController::class, 'updateCertificate'])->name('prevention-dossiers.certificate.update');
     Route::delete('prevention-dossiers/{preventionDossier}/certificate', [PreventionDossierController::class, 'revokeCertificate'])->name('prevention-dossiers.certificate.destroy');
+    Route::get('prevention-dossiers/documents/{document}/download', [PreventionDossierController::class, 'downloadDocument'])->name('prevention-dossiers.documents.download');
     Route::resource('prevention-dossiers', PreventionDossierController::class)->only(['index', 'show']);
 
     // Preventive Presence (الحضور الوقائي) workflow actions

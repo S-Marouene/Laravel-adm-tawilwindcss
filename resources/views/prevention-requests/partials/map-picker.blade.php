@@ -67,7 +67,7 @@
         </div>
         <p class="text-xs text-secondary dark:text-gray-400 mt-0.5 truncate">{{ __('prevention_request.map_pin_hint') }}</p>
         @if ($hasCoords)
-            <p class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-1 font-mono" dir="ltr">
+            <p id="{{ $mapId }}-toggle-coords" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-1 font-mono" dir="ltr">
                 ✅ {{ number_format((float)$initialLat, 5) }}, {{ number_format((float)$initialLng, 5) }}
             </p>
         @endif
@@ -233,6 +233,7 @@
         var recenterBtn = document.getElementById(mapId + '-recenter');
         var hintDiv     = document.getElementById(mapId + '-hint');
         var dragHintDiv = document.getElementById(mapId + '-drag-hint');
+        var toggleCoords = document.getElementById(mapId + '-toggle-coords');
 
         var map = null, marker = null, searchTimer = null;
 
@@ -340,6 +341,27 @@
             dragHintDiv.classList.remove('hidden');
         }
 
+        // ─── Default (no position yet) styling for the toggle card ───
+        var TOGGLE_DEFAULT = {
+            remove: ['border-emerald-300', 'bg-emerald-50/50', 'dark:border-emerald-700', 'dark:bg-emerald-900/15'],
+            add:    ['border-surface-dim', 'bg-surface-container-lowest', 'hover:border-primary/40', 'hover:bg-surface-container',
+                     'dark:border-gray-600', 'dark:bg-gray-800', 'dark:hover:border-gov-400/40', 'dark:hover:bg-gray-700/60'],
+        };
+
+        // Reset the toggle card from the green "saved" state back to the neutral state
+        function resetToggleState() {
+            toggleBtn.classList.remove.apply(toggleBtn.classList, TOGGLE_DEFAULT.remove);
+            toggleBtn.classList.add.apply(toggleBtn.classList, TOGGLE_DEFAULT.add);
+            var iconSpan = toggleBtn.querySelector('.material-symbols-outlined');
+            if (iconSpan) iconSpan.textContent = 'location_on';
+            var iconWrap = toggleBtn.querySelector('span.w-10');
+            if (iconWrap) {
+                iconWrap.classList.remove('bg-emerald-100', 'text-emerald-600', 'dark:bg-emerald-900/30', 'dark:text-emerald-400');
+                iconWrap.classList.add('bg-primary/10', 'text-primary', 'dark:bg-gov-400/15', 'dark:text-gov-400');
+            }
+            if (toggleCoords) toggleCoords.classList.add('hidden');
+        }
+
         function clearCoords() {
             latInput.value = '';
             lngInput.value = '';
@@ -351,6 +373,7 @@
             if (marker) { map.removeLayer(marker); marker = null; }
             resultsDiv.classList.add('hidden');
             resultsDiv.innerHTML = '';
+            resetToggleState();  // remove the green outline/highlight
         }
 
         clearBtn.addEventListener('click', clearCoords);

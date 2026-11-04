@@ -117,8 +117,7 @@ class PreventionDossierController extends Controller
             'reference' => $preventionDossier->reference,
         ]);
 
-        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', 'Dossier approved — awaiting RDV. You can now schedule a visit (RDV) from the sidebar.');
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
 
     // =========================================================================
@@ -208,8 +207,7 @@ class PreventionDossierController extends Controller
             'note'       => $validated['admin_note'],
         ]);
 
-        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', 'Correction requested — the applicant will see exactly which fields and documents to fix.');
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
 
     // =========================================================================
@@ -240,8 +238,7 @@ class PreventionDossierController extends Controller
             'applicant'  => $preventionDossier->nom_prenom,
         ]);
 
-        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', 'Dossier approved successfully.');
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
 
     // =========================================================================
@@ -277,8 +274,7 @@ class PreventionDossierController extends Controller
             'reason'     => $validated['admin_note'],
         ]);
 
-        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', 'Dossier cancelled. The applicant has been notified.');
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
 
     // =========================================================================
@@ -294,6 +290,7 @@ class PreventionDossierController extends Controller
         $validated = $request->validate([
             'visit_date' => ['required', 'date', 'after_or_equal:today'],
             'visit_time' => ['required', 'date_format:H:i'],
+            'note'       => ['nullable', 'string', 'max:2000'],
         ]);
 
         // No location here: the visit takes place at the building whose
@@ -303,10 +300,11 @@ class PreventionDossierController extends Controller
             'scheduled_by'          => auth()->id(),
             'visit_date'            => $validated['visit_date'],
             'visit_time'            => $validated['visit_time'],
+            'note'                  => $validated['note'] ?? null,
             'status'                => 'pending',
         ]);
 
-        $preventionDossier->logEvent('appointment_scheduled', null, [
+        $preventionDossier->logEvent('appointment_scheduled', $validated['note'] ?? null, [
             'visit_date' => $validated['visit_date'],
             'visit_time' => $validated['visit_time'],
         ]);
@@ -318,8 +316,7 @@ class PreventionDossierController extends Controller
             'visit_time' => $validated['visit_time'],
         ]);
 
-        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', 'Rendez-vous scheduled successfully. The applicant can see the appointment.');
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
 
     // =========================================================================
@@ -355,7 +352,7 @@ class PreventionDossierController extends Controller
             $validated['status'] === 'passed' ? 'appointment_passed' : 'appointment_failed',
             $validated['note'] ?? null,
             [
-                'visit_date' => $appointment->visit_date,
+                'visit_date' => $appointment->visit_date->toDateString(),
                 'visit_time' => $appointment->visit_time,
             ]
         );
@@ -364,7 +361,7 @@ class PreventionDossierController extends Controller
             'admin'      => auth()->user()->name,
             'applicant'  => $preventionDossier->nom_prenom,
             'status'     => $validated['status'],
-            'visit_date' => $appointment->visit_date,
+            'visit_date' => $appointment->visit_date->toDateString(),
             'visit_time' => $appointment->visit_time,
             'note'       => $validated['note'] ?? null,
         ]);
@@ -385,8 +382,6 @@ class PreventionDossierController extends Controller
                 'admin'     => auth()->user()->name,
                 'applicant' => $preventionDossier->nom_prenom,
             ]);
-
-            $msg = 'Visit marked as passed — the applicant can now choose how to receive the certificate (pickup / post).';
         } else {
             // ── Inspection failed: if no visit ever passed, the dossier goes
             // back to "awaiting RDV" with the failure note. The applicant must
@@ -398,19 +393,17 @@ class PreventionDossierController extends Controller
                     'reviewed_at' => now(),
                 ]);
             }
-
-            $msg = 'Visit marked as failed with notes. The applicant has been notified — schedule a new RDV once he fixes the issues.';
         }
 
-        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', $msg);
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
 
     // =========================================================================
-    // Appointments — Delete a pending RDV
+    // Appointments — Cancel a pending RDV (with a required note — no deletion:
+    // the RDV record always stays in the history).
     // =========================================================================
 
-    public function deleteAppointment(PreventionDossier $preventionDossier, DossierAppointment $appointment): RedirectResponse
+    public function cancelAppointment(Request $request, PreventionDossier $preventionDossier, DossierAppointment $appointment): RedirectResponse
     {
         $this->authorize('manage prevention-dossiers');
         AdminScope::authorizeService(Service::SERVICE_PREVENTION);
@@ -421,28 +414,37 @@ class PreventionDossierController extends Controller
         }
 
         if (! $appointment->isPending()) {
-            return back()->withErrors(['status' => 'Only pending appointments can be deleted.']);
+            return back()->withErrors(['status' => 'Only pending appointments can be cancelled.']);
         }
 
-        // Capture details before deletion so the timeline keeps a record
+        $validated = $request->validate([
+            'note' => ['required', 'string', 'max:2000'],
+        ]);
+
+        // Capture details before the update so the event keeps the full record.
         $rdvDetails = [
-            'visit_date' => $appointment->visit_date,
+            'visit_date' => $appointment->visit_date->toDateString(),
             'visit_time' => $appointment->visit_time,
         ];
 
-        $appointment->delete();
+        // The RDV is never deleted: its row keeps the cancellation reason,
+        // so the timeline and the RDV list always show what happened.
+        $appointment->update([
+            'status' => 'cancelled',
+            'note'   => $validated['note'],
+        ]);
 
-        $preventionDossier->logEvent('appointment_deleted', null, $rdvDetails);
+        $preventionDossier->logEvent('appointment_cancelled', $validated['note'], $rdvDetails);
 
-        ActivityLogger::log('prevention_delete', "Prevention — RDV deleted for dossier #{$preventionDossier->id} (was: {$rdvDetails['visit_date']} {$rdvDetails['visit_time']}) by " . auth()->user()->name, $preventionDossier, [
+        ActivityLogger::log('prevention_update', "Prevention — RDV cancelled for dossier #{$preventionDossier->id} (was: {$rdvDetails['visit_date']} {$rdvDetails['visit_time']}) by " . auth()->user()->name, $preventionDossier, [
             'admin'      => auth()->user()->name,
             'applicant'  => $preventionDossier->nom_prenom,
+            'note'       => $validated['note'],
             'visit_date' => $rdvDetails['visit_date'],
             'visit_time' => $rdvDetails['visit_time'],
         ]);
 
-        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', 'Appointment removed.');
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
 
     // =========================================================================
@@ -518,7 +520,7 @@ class PreventionDossierController extends Controller
             }
 
             $governorate = \App\Models\Governorate::find($validated['governorate_id']);
-            $delegation  = $validated['delegation_id'] ? \App\Models\Delegation::find($validated['delegation_id']) : null;
+            $delegation  = !empty($validated['delegation_id']) ? \App\Models\Delegation::find($validated['delegation_id']) : null;
 
             // If a delegation is selected, it must belong to the selected governorate
             if ($delegation && (int) $delegation->governorate_id !== (int) $governorate->id) {
@@ -557,13 +559,7 @@ class PreventionDossierController extends Controller
             'method'     => $deliveryMethod,
         ]);
 
-        $successMessage = match ($deliveryMethod) {
-            PreventionCertificate::DELIVERY_POST => "Certificate {$certificate->reference} issued — it will be sent via Poste Tunisienne (B3) to the applicant's address.",
-            default => "Certificate {$certificate->reference} issued — the applicant can now collect it at the selected office.",
-        };
-
-        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', $successMessage);
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
 
     // =========================================================================
@@ -589,8 +585,14 @@ class PreventionDossierController extends Controller
             return back()->withErrors(['status' => 'This dossier has no certificate to update.']);
         }
 
-        if (in_array($validated['action'], ['collected', 'ready']) && $certificate->isPost()) {
-            return back()->withErrors(['action' => 'This certificate is delivered by post — use the "sent / delivered" actions.']);
+        // Illegal state moves per delivery method:
+        //   post   : collected is never legal (it goes ready → sent → delivered)
+        //   pickup : sent/delivered are never legal (it goes ready ↔ collected)
+        if ($certificate->isPost() && $validated['action'] === 'collected') {
+            return back()->withErrors(['action' => 'This certificate is sent by post — use the "sent / delivered" actions.']);
+        }
+        if ($certificate->isPickup() && in_array($validated['action'], ['sent', 'delivered'])) {
+            return back()->withErrors(['action' => 'This certificate is collected at the office — use the "collected" action.']);
         }
 
         switch ($validated['action']) {
@@ -611,8 +613,9 @@ class PreventionDossierController extends Controller
                 break;
 
             case 'sent':
-                if ($validated['post_tracking']) {
-                    $certificate->update(['post_tracking' => $validated['post_tracking']]);
+                $tracking = $validated['post_tracking'] ?? null;
+                if ($tracking) {
+                    $certificate->update(['post_tracking' => $tracking]);
                     $certificate->refresh();
                 }
                 if (empty($certificate->post_tracking)) {
@@ -655,6 +658,7 @@ class PreventionDossierController extends Controller
                     'collected_at'      => null,
                     'post_sent_at'      => null,
                     'post_delivered_at' => null,
+                    'post_tracking'     => null,
                 ]);
                 $preventionDossier->logEvent('certificate_reset', null, [
                     'reference' => $certificate->reference,
@@ -666,8 +670,7 @@ class PreventionDossierController extends Controller
                 break;
         }
 
-        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', $msg);
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
 
     // =========================================================================
@@ -708,7 +711,21 @@ class PreventionDossierController extends Controller
             'reference' => $reference,
         ]);
 
-        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier)
-            ->with('success', 'Certificate ' . $reference . ' revoked. You can issue a new one at any time.');
+        return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
+    }
+
+    // =========================================================================
+    // Download an uploaded document (active or archived)
+    // =========================================================================
+
+    public function downloadDocument(DossierDocument $document)
+    {
+        $this->authorize('view prevention-dossiers');
+        AdminScope::authorizeService(Service::SERVICE_PREVENTION);
+        AdminScope::authorize($document->dossier);
+
+        abort_unless(\Storage::disk('local')->exists($document->file_path), 404);
+
+        return \Storage::disk('local')->download($document->file_path, $document->original_name);
     }
 }

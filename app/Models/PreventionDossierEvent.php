@@ -20,7 +20,7 @@ class PreventionDossierEvent extends Model
     // submitted | resubmitted | advanced_to_consultation | correction_requested
     // history_snapshot (legacy fallback: old version frozen at resubmit time)
     // approved | cancelled | appointment_scheduled | appointment_passed
-    // appointment_failed | appointment_deleted
+    // appointment_failed | appointment_deleted | appointment_cancelled
     // certificate_issued | certificate_collected | certificate_deleted
     // certificate_reset | draft_created | step1_updated | step2_saved
     // document_uploaded | document_deleted
@@ -53,6 +53,7 @@ class PreventionDossierEvent extends Model
             'history_snapshot'          => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
             'approved', 'certificate_issued' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
             'cancelled', 'certificate_deleted', 'appointment_deleted' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
+            'appointment_cancelled'     => 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
             'appointment_scheduled'     => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
             'appointment_passed', 'certificate_collected' => 'M5 13l4 4L19 7',
             'appointment_failed'        => 'M6 18L18 6M6 6l12 12',
@@ -78,6 +79,7 @@ class PreventionDossierEvent extends Model
             'appointment_passed'        => 'Visit marked as passed',
             'appointment_failed'        => 'Visit marked as failed',
             'appointment_deleted'       => 'RDV removed',
+            'appointment_cancelled'     => 'RDV cancelled',
             'waiting_delivery'          => 'Inspection passed — awaiting certificate delivery',
             'delivery_chosen'           => 'Certificate delivery method chosen',
             'certificate_issued'        => 'Prevention certificate issued',
@@ -109,6 +111,7 @@ class PreventionDossierEvent extends Model
             'appointment_passed'         => 'bg-emerald-500',
             'appointment_failed'         => 'bg-red-500',
             'appointment_deleted'        => 'bg-gray-400',
+            'appointment_cancelled'      => 'bg-gray-400',
             'waiting_delivery'           => 'bg-amber-500',
             'delivery_chosen'            => 'bg-indigo-500',
             'certificate_issued'         => 'bg-emerald-500',

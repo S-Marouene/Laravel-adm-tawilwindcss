@@ -38,16 +38,18 @@ class DossierAppointment extends Model
     // Status helpers
     // -----------------------------------------------------------------------
 
-    public function isPending(): bool  { return $this->status === 'pending'; }
-    public function isPassed(): bool   { return $this->status === 'passed'; }
-    public function isFailed(): bool   { return $this->status === 'failed'; }
+    public function isPending(): bool    { return $this->status === 'pending'; }
+    public function isPassed(): bool     { return $this->status === 'passed'; }
+    public function isFailed(): bool     { return $this->status === 'failed'; }
+    public function isCancelled(): bool  { return $this->status === 'cancelled'; }
 
     public function statusLabel(): string
     {
         return match($this->status) {
-            'passed'  => 'Passed',
-            'failed'  => 'Failed',
-            default   => 'Pending',
+            'passed'    => 'Passed',
+            'failed'    => 'Failed',
+            'cancelled' => 'Cancelled',
+            default     => 'Pending',
         };
     }
 

@@ -294,20 +294,21 @@
                                         @endif
                                         <div class="space-y-3">
                                             @foreach ($dossier->appointments as $i => $appt)
-                                                <div class="rounded-xl border px-4 py-3
-                                                    {{ $appt->isPassed() ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800/30 dark:bg-emerald-900/10' : '' }}
+                                                <div class="rounded-xl border px-4 py-3 {{ $appt->isCancelled() ? 'border-surface-dim bg-surface-container opacity-75' : '' }}
+                                                    {{ $appt->isPassed() ? 'border-amber-200 bg-amber-50 dark:border-amber-800/30 dark:bg-amber-900/10' : '' }}
                                                     {{ $appt->isFailed() ? 'border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10' : '' }}
                                                     {{ $appt->isPending() ? 'border-blue-200 bg-blue-50 dark:border-blue-800/30 dark:bg-blue-900/10' : '' }}">
                                                     <div class="flex items-center justify-between gap-2 flex-wrap">
                                                         <span class="text-xs font-semibold
                                                             {{ $appt->isPassed() ? 'text-on-surface dark:text-gray-200' : '' }}
                                                             {{ $appt->isFailed() ? 'text-on-surface dark:text-gray-200' : '' }}
-                                                            {{ $appt->isPending() ? 'text-on-surface dark:text-gray-200' : '' }}">
+                                                            {{ $appt->isPending() ? 'text-on-surface dark:text-gray-200' : '' }}
+                                                            {{ $appt->isCancelled() ? 'text-secondary dark:text-gray-400' : '' }}">
                                                             {{ __('prevention_request.appointment_visit_number', ['num' => $i + 1]) }}
                                                             — {{ $appt->visit_date->format('d M Y') }} {{ __('at') }} {{ substr($appt->visit_time, 0, 5) }}
                                                         </span>
                                                         @if ($appt->isPassed())
-                                                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                                            <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                                                                 <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                                                                 {{ __('prevention_request.appointment_passed') }}
                                                             </span>
@@ -315,6 +316,11 @@
                                                             <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">
                                                                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                                                                 {{ __('prevention_request.appointment_failed') }}
+                                                            </span>
+                                                        @elseif ($appt->isCancelled())
+                                                            <span class="inline-flex items-center gap-1 rounded-full bg-surface-dim px-2 py-0.5 text-xs font-semibold text-secondary dark:text-gray-300">
+                                                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                                {{ __('prevention_request.appointment_cancelled') }}
                                                             </span>
                                                         @else
                                                             <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">

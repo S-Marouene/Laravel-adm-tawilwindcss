@@ -2,1024 +2,1867 @@
 @section('title', 'Prevention Dossier #' . $preventionDossier->id)
 
 @php
-    $status = $preventionDossier->status;
-    $statusConfig = [
-        'completed'          => ['label' => 'Under Review',       'dot' => 'bg-blue-500',    'badge' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'],
-        'submitted'          => ['label' => 'Submitted',          'dot' => 'bg-teal-500',    'badge' => 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'],
-        'under_consultation' => ['label' => 'Approved — Awaiting RDV', 'dot' => 'bg-purple-500',  'badge' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'],
-        'needs_correction'   => ['label' => 'Needs Correction',   'dot' => 'bg-red-500',     'badge' => 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'],
-        'approved'           => ['label' => 'Approved',           'dot' => 'bg-emerald-500', 'badge' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
-        'waiting_delivery'   => ['label' => 'All OK — Awaiting Delivery', 'dot' => 'bg-emerald-500', 'badge' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
-        'cancelled'          => ['label' => 'Cancelled',          'dot' => 'bg-gray-400',    'badge' => 'bg-surface-container text-secondary dark:bg-gray-700 dark:text-gray-400'],
-    ];
-    $sc = $statusConfig[$status] ?? ['label' => ucfirst($status), 'dot' => 'bg-gray-400', 'badge' => 'bg-surface-container text-secondary'];
+    $d = $preventionDossier;
+    $status = $d->status;
+
+    // ── Référence affichée : officielle > stockée > provisoire ──
+    $viewRef = $d->num_demande ?: ($d->reference ?: ('PREV-' . str_pad($d->id, 6, '0', STR_PAD_LEFT)));
+
+    $pendingAppointment = $d->appointments->first(fn ($a) => $a->isPending());
+    $lastFailedAppointment = $d->appointments->last(fn ($a) => $a->isFailed());
+    $lastPassedAppointment = $d->appointments->last(fn ($a) => $a->isPassed());
+
+    /* ── Stepper 4 étapes : dépôt → étude → inspection → certificat ── */
+    $currentStep = match ($status) {
+        'draft'                  => 1,
+        'completed', 'submitted' => 2,
+        'under_consultation'     => 3,
+        'approved'               => 4,
+        'waiting_delivery'       => 4,
+        'needs_correction'       => 2,
+        default                  => null,
+    };
+    if ($d->certificate) {
+        $currentStep = 5; // finalisé
+    }
+
+    $stepDates = [];
+    $stepDates[1] = $d->created_at;
+    $stepDates[2] = $d->reviewed_at;
+    $stepDates[3] = $d->appointments->last(fn ($a) => $a->isPassed())?->visit_date ?? $pendingAppointment->visit_date ?? null;
+    $stepDates[4] = $d->certificate?->issued_at;
+
+    $steps = [];
+    foreach ([1, 2, 3, 4] as $i) {
+        if ($currentStep === 5 || $i < $currentStep) $state = 'done';
+        elseif ($i === $currentStep)                 $state = $status === 'needs_correction' ? 'error' : 'current';
+        else                                         $state = 'pending';
+
+        $sub = match (true) {
+            $state === 'done'    => 'Completed',
+            $state === 'pending' => 'Pending',
+            $status === 'needs_correction' && $state === 'error' => 'Correction required',
+            $i === 2             => 'Administrative review of documents',
+            $i === 3 && $pendingAppointment => 'Visit scheduled ' . $pendingAppointment->visit_date->format('d/m/Y'),
+            $i === 3             => 'On-site inspection awaiting',
+            $i === 4             => $d->certificate ? 'Delivered' : 'Certificate to be issued',
+            default              => 'In progress',
+        };
+
+        $steps[] = ['num' => $i, 'state' => $state, 'sub' => $sub];
+    }
+    $doneSteps = collect($steps)->where('state', 'done')->count();
+    $progress  = $currentStep === 5 ? 100 : (int) round($doneSteps / 4 * 100);
+    $phaseNum  = $currentStep ? min($currentStep, 4) : 1;
+
+    /* ── Timeline « journal d'audit » : pastilles + chips ──
+       ● amber = validé / officiel    ● red ONPC = convocation / incident
+       ● slate = dépôt, transfert interne    ● violet = consultation    ● indigo = livraison */
+    $eventChip = fn ($type) => match (true) {
+        in_array($type, ['submitted', 'resubmitted', 'draft_created', 'step1_updated', 'step2_saved', 'document_uploaded'])
+            => ['bg-secondary-container text-on-secondary-container', 'post_add', 'Deposit', 'bg-surface-dim text-secondary'],
+        $type === 'appointment_scheduled'
+            => ['bg-primary text-on-primary', 'campaign', 'Convocation', 'bg-primary text-on-primary'],
+        in_array($type, ['advanced_to_consultation', 'appointment_deleted'])
+            => ['bg-violet-600 text-white', 'sync_alt', 'Phase', 'bg-surface-dim text-secondary'],
+        $type === 'correction_requested'
+            => ['bg-amber-500 text-white', 'edit_note', 'Correction', 'bg-amber-100 text-amber-800'],
+        in_array($type, ['approved', 'appointment_passed', 'waiting_delivery', 'certificate_issued'])
+            => ['bg-amber-600 text-white', 'task_alt', 'Favorable', 'bg-amber-100 text-amber-800'],
+        $type === 'delivery_chosen'
+            => ['bg-indigo-600 text-white', 'local_shipping', 'Delivery', 'bg-indigo-100 text-indigo-800'],
+        $type === 'certificate_post_sent'
+            => ['bg-blue-600 text-white', 'local_post_office', 'B3 sent', 'bg-blue-100 text-blue-800'],
+        $type === 'certificate_post_delivered'
+            => ['bg-cyan-600 text-white', 'mark_email_read', 'Delivered', 'bg-cyan-100 text-cyan-800'],
+        $type === 'certificate_collected'
+            => ['bg-amber-600 text-white', 'handshake', 'Collected', 'bg-amber-100 text-amber-800'],
+        $type === 'certificate_reset'
+            => ['bg-indigo-500 text-white', 'undo', 'Reset', 'bg-indigo-100 text-indigo-800'],
+        $type === 'history_snapshot' || $type === 'document_deleted'
+            => ['bg-slate-400 text-white', 'inventory_2', 'Archive', 'bg-surface-dim text-secondary'],
+        // default: cancelled, appointment_failed, certificate_deleted
+        default
+            => ['bg-red-600 text-white', 'error', 'Alert', 'bg-red-100 text-red-700'],
+    };
+
+    /* RDV annulé — participe à l'archive de l'historique (pas un incident) */
+    $eventChip = function ($type) use ($eventChip) {
+        if ($type === 'appointment_cancelled') {
+            return ['bg-slate-400 text-white', 'event_busy', 'Cancelled', 'bg-surface-dim text-secondary'];
+        }
+        return $eventChip($type);
+    };
+
+    /* ── Pastille de statut (héros) ── */
+    $statusPill = match ($status) {
+        'draft', 'completed'  => ['bg-surface-container-high text-secondary', 'edit_note'],
+        'submitted'           => ['bg-secondary-container text-on-secondary-container', 'schedule_send'],
+        'under_consultation'  => ['bg-blue-100 text-blue-800', 'manage_search'],
+        'needs_correction'    => ['bg-error-container text-error', 'error'],
+        'approved'            => ['bg-amber-100 text-amber-900', 'task_alt'],
+        'waiting_delivery'    => ['bg-indigo-100 text-indigo-800', 'verified'],
+        'cancelled'           => ['bg-surface-dim text-secondary', 'cancel'],
+        default               => ['bg-surface-container-high text-secondary', 'info'],
+    };
+    [$statusPillCls, $statusPillIcon] = $statusPill;
+
+    /* ── Bandeau d'état du héros (contextuel) ── */
+    $heroAlert = match (true) {
+        $status === 'draft'               => 'draft',
+        $status === 'needs_correction'    => 'error',
+        $pendingAppointment !== null      => 'visit',
+        $status === 'waiting_delivery' && ! $d->certificate => 'delivery',
+        $status === 'under_consultation' && $lastFailedAppointment => 'visit_failed',
+        $status === 'under_consultation'  => 'info',
+        $status === 'approved' && ! $d->certificate => 'info',
+        in_array($status, ['cancelled'])  => 'neutral',
+        default                           => null,
+    };
+
+    /* ── Documents : complétude ── */
+    $uploadedTypes = $uploadedDocs->filter(fn ($doc) => $documentTypes->contains('id', $doc->document_type_id))->count();
+    $fmtSize = fn ($b) => $b >= 1048576 ? number_format($b / 1048576, 1) . ' Mo' : number_format($b / 1024, 0) . ' Ko';
+    $isDocComplete = $documentTypes->count() > 0 && $uploadedTypes >= $documentTypes->count();
+    $docPct = $documentTypes->count() > 0 ? (int) round(min($uploadedTypes, $documentTypes->count()) / $documentTypes->count() * 100) : 0;
+
+    /* ── Certificat : libellés + statuses (palette froide) ── */
+    $cert = $d->certificate;
+    $certStatusCfg = $cert ? match ($cert->status) {
+        \App\Models\PreventionCertificate::STATUS_READY           => ['Ready',              'bg-amber-500 text-white'],
+        \App\Models\PreventionCertificate::STATUS_POST_SENT       => ['Sent (B3)',          'bg-blue-100 text-blue-800'],
+        \App\Models\PreventionCertificate::STATUS_POST_DELIVERED  => ['Delivered by post',  'bg-cyan-100 text-cyan-800'],
+        \App\Models\PreventionCertificate::STATUS_COLLECTED       => ['Collected',          'bg-violet-100 text-violet-800'],
+        default => [ucfirst($cert->status), 'bg-surface-dim text-secondary'],
+    } : null;
+
+    /* ── Fiche impression : édité aujourd'hui ── */
+    $printDate = now()->isoFormat('dddd D MMMM YYYY, HH:mm');
 @endphp
 
+<style>
+    /* ═══════════════════════════════════════════════════════════════════
+       FICHE DU DOSSIER — impression professionnelle (A4)
+       Le contenu écran (.dossier-screen) est masqué ; seule la fiche
+       (.print-sheet) est imprimée. Palette fixe noire / rouge ONPC.
+       ═══════════════════════════════════════════════════════════════════ */
+    .print-sheet { display: none; }
+
+    @media print {
+        @page { size: A4; margin: 11mm 11mm 14mm; }
+
+        header, footer, .no-print { display: none !important; }
+
+        html, body {
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .print-sheet { display: block !important; }
+    }
+
+    /* — Structure de la fiche (rendu uniquement à l'impression) — */
+    .fiche {
+        font-family: var(--font-sans, 'Roboto', Arial, sans-serif);
+        font-size: 11.5px;
+        line-height: 1.5;
+        color: #1a1d29;
+        background: #ffffff;
+    }
+
+    .fiche-band {
+        background: #9e001f;
+        color: #ffffff;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        border-radius: 3px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .fiche-band-logo  { width: 46px; height: 46px; object-fit: contain; border-radius: 4px; background: #fff; padding: 3px; }
+    .fiche-band-org   { font-size: 14.5px; font-weight: 800; letter-spacing: .02em; line-height: 1.25; }
+    .fiche-band-sub   { font-size: 10px; opacity: .92; font-weight: 400; }
+    .fiche-band-ref   { text-align: end; line-height: 1.3; }
+    .fiche-band-ref-label { font-size: 9px; text-transform: uppercase; letter-spacing: .14em; opacity: .85; font-weight: 600; }
+    .fiche-band-ref-value { font-family: 'Roboto Mono', Menlo, Consolas, monospace; font-size: 15px; font-weight: 700; letter-spacing: .03em; }
+
+    .fiche-title-row {
+        display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+        margin: 14px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #1a1d29;
+    }
+    .fiche-title   { font-size: 15px; font-weight: 800; letter-spacing: .01em; }
+    .fiche-printed { font-size: 10px; color: #4b5563; font-weight: 500; white-space: nowrap; }
+
+    .fiche-h2 {
+        font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
+        margin: 0 0 6px; padding-inline-start: 8px;
+        border-inline-start: 3.5px solid #9e001f; color: #1a1d29;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .fiche-sec { break-inside: avoid; margin-bottom: 16px; }
+
+    .fiche-table { width: 100%; border-collapse: collapse; }
+    .fiche-table th, .fiche-table td {
+        border: 1px solid #c7cad1;
+        padding: 4.5px 9px;
+        text-align: start;
+        vertical-align: top;
+        font-size: 10.5px;
+    }
+    .fiche-table th { background: #f4f4f7; font-weight: 700; color: #1a1d29; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .fiche-kv th:first-child  { width: 37%; }
+    .fiche-kv-4 th { width: 17.5%; }
+    .fiche-table td { color: #24273a; }
+    .fiche-mono     { font-family: 'Roboto Mono', Menlo, Consolas, monospace; letter-spacing: .02em; }
+
+    .fiche-table-dark thead th { background: #1a1d29; color: #fff; }
+    .fiche-dim      { color: #6b7280; }
+    .fiche-missing  { color: #9ca3af; font-style: italic; }
+
+    .fiche-cert {
+        border: 1.5px solid #b45309; border-radius: 3px; padding: 8px 12px;
+        background: #fffbeb; margin-bottom: 16px;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .fiche-cert-title { font-weight: 800; font-size: 11px; color: #92400e; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
+
+    .fiche-foot {
+        margin-top: 10px; padding-top: 7px; border-top: 1px solid #c7cad1;
+        display: flex; justify-content: space-between; gap: 12px;
+        font-size: 9px; color: #6b7280;
+    }
+</style>
+
 @section('content')
-<div class="mb-6 flex items-center justify-between gap-4">
-    <div>
-        <h1 class="text-2xl font-bold text-on-surface dark:text-gray-100">Dossier #{{ $preventionDossier->id }}</h1>
-        <p class="text-sm text-secondary dark:text-gray-400 mt-1">Prevention certificate request — {{ $preventionDossier->created_at->format('d M Y') }}</p>
-    </div>
-    <a href="{{ route('admin.prevention-dossiers.index') }}"
-       class="inline-flex items-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-2 text-sm font-medium text-on-surface transition hover:bg-surface-container dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-        Back to list
-    </a>
-</div>
+<div class="max-w-7xl mx-auto">
 
-@if (session('success'))
-    <div class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200">
-        {{ session('success') }}
-    </div>
-@endif
+    {{-- ══════════════ CONTENU ÉCRAN ══════════════ --}}
+    <div class="dossier-screen no-print space-y-6">
 
-@if ($errors->any())
-    <div class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
-        @foreach ($errors->all() as $error)<p>{{ $error }}</p>@endforeach
-    </div>
-@endif
-
-<div class="grid gap-6 lg:grid-cols-[1fr,340px]">
-
-    {{-- ─── Left column ─── --}}
-    <div class="space-y-6">
-
-        {{-- Current status card --}}
-        <div class="overflow-hidden rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-surface-container-high dark:border-gray-700/60">
-                <div class="flex items-center gap-3">
-                    <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold {{ $sc['badge'] }}">
-                        <span class="h-2 w-2 rounded-full {{ $sc['dot'] }}"></span>
-                        {{ $sc['label'] }}
-                    </span>
-                    @if ($preventionDossier->reviewed_at)
-                        <span class="text-xs text-outline dark:text-gray-500">
-                            by {{ $preventionDossier->reviewer?->name ?? 'Admin' }} · {{ $preventionDossier->reviewed_at->format('d M Y, H:i') }}
-                        </span>
-                    @endif
+        @if ($errors->any())
+            <div class="bg-surface-container-lowest border border-rounded border-red-200 rounded-lg text-body-sm text-red-800 px-4 py-3 shadow-sm flex items-start gap-2.5 border-s-4 border-s-red-600" role="alert">
+                <span class="material-symbols-outlined text-red-600 text-base mt-px" aria-hidden="true">error</span>
+                <div>
+                    @foreach ($errors->all() as $error)<p>{{ $error }}</p>@endforeach
                 </div>
             </div>
-
-            {{-- Admin note display (needs_correction / cancelled) --}}
-            @if ($preventionDossier->admin_note)
-                <div class="px-6 py-4 {{ $status === 'needs_correction' ? 'bg-red-50 dark:bg-red-900/10' : ($status === 'cancelled' ? 'bg-surface-container dark:bg-gray-700/20' : '') }}">
-                    <p class="text-xs font-semibold uppercase tracking-wide {{ $status === 'needs_correction' ? 'text-red-600 dark:text-red-400' : 'text-secondary dark:text-gray-400' }} mb-2">
-                        Admin Note (visible to applicant)
-                    </p>
-                    <p class="text-sm text-on-surface dark:text-gray-200 whitespace-pre-line">{{ $preventionDossier->admin_note }}</p>
-                </div>
-            @endif
-
-            {{-- Under consultation phone highlight --}}
-            @if ($status === 'under_consultation')
-                <div class="flex items-center gap-3 px-6 py-3 bg-purple-50 dark:bg-purple-900/10">
-                    <svg class="h-4 w-4 text-purple-500 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                    </svg>
-                    <span class="text-sm text-purple-700 dark:text-purple-300">
-                        Applicant's phone: <strong class="font-mono num-ltr">{{ $preventionDossier->phone ?? 'Not provided' }}</strong>
-                        <span class="ms-2 text-xs text-purple-500">– Keep this available</span>
-                    </span>
-                </div>
-            @endif
-
-            {{-- Inspection passed — delivery step (certificate to be delivered) --}}
-            @if ($status === 'waiting_delivery')
-                <div class="flex flex-wrap items-center gap-3 px-6 py-3 bg-emerald-50 dark:bg-emerald-900/10">
-                    <svg class="h-4 w-4 text-emerald-500 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                    </svg>
-                    <span class="text-sm text-emerald-700 dark:text-emerald-300">
-                        All inspections <strong>passed</strong> — everything is OK. Waiting for the certificate to be delivered.
-                    </span>
-                    <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold
-                        {{ $preventionDossier->delivery_method ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' }}">
-                        Delivery: {{ $preventionDossier->delivery_method ? ucfirst($preventionDossier->delivery_method) : 'not chosen yet' }}
-                    </span>
-                </div>
-            @endif
-        </div>
-
-        {{-- Applicant info --}}
-        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-surface-dim px-6 py-4 dark:border-gray-700">
-                <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">Applicant Information</h2>
-            </div>
-            <div class="grid gap-4 px-6 py-5 sm:grid-cols-2">
-                <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Full Name</p>
-                    <p class="mt-1 text-sm font-semibold text-on-surface dark:text-gray-100">{{ $preventionDossier->nom_prenom }}</p>
-                </div>
-                <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">CIN</p>
-                    <p class="mt-1 text-sm font-mono text-on-surface dark:text-gray-100">{{ $preventionDossier->cin }}</p>
-                </div>
-                <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Phone</p>
-                    <p class="mt-1 text-sm font-semibold text-on-surface dark:text-gray-100"><span class="num-ltr">{{ $preventionDossier->phone ?? '—' }}</span></p>
-                </div>
-                <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Account Email</p>
-                    <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $preventionDossier->user?->email }}</p>
-                </div>
-                <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Governorate</p>
-                    <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $preventionDossier->governorate?->name_fr ?? $preventionDossier->governorate?->name_ar ?? '—' }}</p>
-                </div>
-                <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Delegation</p>
-                    <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $preventionDossier->delegation?->name_fr ?? $preventionDossier->delegation?->name_ar ?? '—' }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Building info --}}
-        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-surface-dim px-6 py-4 dark:border-gray-700">
-                <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">Building Information</h2>
-            </div>
-            <div class="grid gap-4 px-6 py-5 sm:grid-cols-2">
-                <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Building Type</p>
-                    <p class="mt-1 text-sm text-on-surface dark:text-gray-100">{{ $preventionDossier->buildingType?->name ?? '—' }}</p>
-                    @if ($preventionDossier->buildingType && (float) $preventionDossier->buildingType->certificate_fee > 0)
-                        <p class="mt-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                            Certificate fee: <span class="font-mono">{{ number_format((float) $preventionDossier->buildingType->certificate_fee, 3) }} TND</span>
-                        </p>
-                    @endif
-                </div>
-                <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Activity</p>
-                    <p class="mt-1 text-sm text-on-surface dark:text-gray-100">
-                        {{ $preventionDossier->buildingActivity?->name ?? $preventionDossier->activity_other ?? '—' }}
-                    </p>
-                </div>
-                @if ($preventionDossier->num_demande)
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Request Number</p>
-                        <p class="mt-1 text-sm font-mono text-on-surface dark:text-gray-100">{{ $preventionDossier->num_demande }}</p>
-                    </div>
-                @endif
-                @if ($preventionDossier->api_reference)
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">API Reference</p>
-                        <p class="mt-1 text-sm font-mono text-on-surface dark:text-gray-100">{{ $preventionDossier->api_reference }}</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        {{-- Documents --}}
-        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-surface-dim px-6 py-4 dark:border-gray-700">
-                <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">Uploaded Documents</h2>
-                <p class="mt-0.5 text-xs text-secondary dark:text-gray-400">{{ $uploadedDocs->count() }} / {{ $documentTypes->count() }} uploaded</p>
-            </div>
-            <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
-                @forelse ($documentTypes as $docType)
-                    @php $doc = $uploadedDocs->get($docType->id); @endphp
-                    <div class="flex items-center justify-between gap-4 px-6 py-3">
-                        <div class="flex items-center gap-3">
-                            <span class="flex h-8 w-8 flex-none items-center justify-center rounded-full {{ $doc ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500' }}">
-                                @if ($doc)
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                @else
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                @endif
-                            </span>
-                            <div>
-                                <p class="text-sm font-medium text-on-surface dark:text-gray-100">{{ $docType->name }}</p>
-                                @if ($doc)
-                                    <p class="text-xs text-secondary dark:text-gray-400">{{ $doc->original_name }} ({{ number_format($doc->size / 1024, 0) }} KB) — {{ $doc->updated_at->format('d M Y') }}</p>
-                                @else
-                                    <p class="text-xs text-red-400 dark:text-red-500">Not uploaded</p>
-                                @endif
-                            </div>
-                        </div>
-                        @if ($docType->is_conditional)
-                            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Conditional</span>
-                        @endif
-                    </div>
-                @empty
-                    <div class="px-6 py-6 text-center text-sm text-outline">No document types configured.</div>
-                @endforelse
-            </div>
-        </div>
-
-        {{-- Appointments / RDV --}}
-        @if ($preventionDossier->appointments->isNotEmpty() || $preventionDossier->status === 'approved')
-        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-surface-dim px-6 py-4 dark:border-gray-700 flex items-center justify-between">
-                <div>
-                    <h2 class="text-base font-semibold text-on-surface dark:text-gray-100">Site Visits (Rendez-vous)</h2>
-                    <p class="mt-0.5 text-xs text-secondary dark:text-gray-400">
-                        {{ $preventionDossier->appointments->count() }} visit(s) scheduled
-                        @if ($preventionDossier->building_address)
-                            · Visit at: <span class="font-semibold text-on-surface dark:text-gray-300">{{ $preventionDossier->building_address }}</span>
-                        @endif
-                    </p>
-                </div>
-            </div>
-
-            @if ($preventionDossier->appointments->isEmpty())
-                <div class="px-6 py-8 text-center">
-                    <svg class="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    <p class="text-sm text-outline">No visits scheduled yet. Use the panel on the right to schedule the first one.</p>
-                </div>
-            @else
-                <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
-                    @foreach ($preventionDossier->appointments as $i => $appt)
-                        <div class="px-6 py-4">
-                            <div class="flex items-start justify-between gap-4">
-                                <div class="flex items-start gap-3 min-w-0 flex-1">
-                                    {{-- Visit number + status icon --}}
-                                    <div class="flex-none flex flex-col items-center gap-1">
-                                        <span class="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold
-                                            {{ $appt->isPassed() ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : '' }}
-                                            {{ $appt->isFailed() ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : '' }}
-                                            {{ $appt->isPending() ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : '' }}">
-                                            #{{ $i + 1 }}
-                                        </span>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        {{-- Status badge + datetime --}}
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            @if ($appt->isPassed())
-                                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                                                    <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                                    Passed
-                                                </span>
-                                            @elseif ($appt->isFailed())
-                                                <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">
-                                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                    Failed
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                                                    <span class="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                                                    Scheduled
-                                                </span>
-                                            @endif
-                                            <span class="text-sm font-semibold text-on-surface dark:text-gray-100">
-                                                {{ $appt->visit_date->format('d M Y') }} at {{ substr($appt->visit_time, 0, 5) }}
-                                            </span>
-                                        </div>
-
-                                        @if ($appt->scheduler)
-                                            <p class="mt-1 text-xs text-outline dark:text-gray-500">Scheduled by {{ $appt->scheduler->name }}</p>
-                                        @endif
-
-                                        {{-- Inspector note (failed visits) --}}
-                                        @if ($appt->note)
-                                            <div class="mt-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10 px-3 py-2">
-                                                <p class="text-xs font-semibold text-red-600 dark:text-red-400 mb-0.5">Inspector note:</p>
-                                                <p class="text-xs text-red-800 dark:text-red-200 whitespace-pre-line">{{ $appt->note }}</p>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                {{-- Actions: update result or delete --}}
-                                @can('manage prevention-dossiers')
-                                <div class="flex-none" x-data="{ openResult: false }">
-                                    @if ($appt->isPending())
-                                        <div class="flex items-center gap-2">
-                                            <button type="button" @click="openResult = !openResult"
-                                                class="inline-flex items-center gap-1 rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
-                                                Record Result
-                                                <svg class="h-3 w-3 transition-transform" :class="openResult ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                                            </button>
-                                            <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.destroy', [$preventionDossier, $appt]) }}"
-                                                  onsubmit="return confirm('Remove this appointment?')">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-                                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                                </button>
-                                            </form>
-                                        </div>
-                                        {{-- Result form --}}
-                                        <div x-show="openResult"
-                                             x-transition:enter="transition ease-out duration-150"
-                                             x-transition:enter-start="opacity-0 -translate-y-1"
-                                             x-transition:enter-end="opacity-100 translate-y-0"
-                                             class="mt-3 w-64">
-                                            <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.update', [$preventionDossier, $appt]) }}">
-                                                @csrf @method('PUT')
-                                                <div class="flex gap-2 mb-2">
-                                                    <label class="flex-1 flex items-center gap-1.5 cursor-pointer rounded-lg border border-emerald-300 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300 has-[:checked]:bg-emerald-50 dark:has-[:checked]:bg-emerald-900/20">
-                                                        <input type="radio" name="status" value="passed" class="sr-only" required>
-                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                        Passed
-                                                    </label>
-                                                    <label class="flex-1 flex items-center gap-1.5 cursor-pointer rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-300 has-[:checked]:bg-red-50 dark:has-[:checked]:bg-red-900/20">
-                                                        <input type="radio" name="status" value="failed" class="sr-only" required>
-                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                        Failed
-                                                    </label>
-                                                </div>
-                                                <textarea name="note" rows="3" placeholder="Inspector note (required if failed)..." class="text-xs"></textarea>
-                                                <button type="submit" class="mt-2 w-full rounded-lg bg-gov-600 px-3 py-2 text-xs font-semibold text-white hover:bg-gov-700">
-                                                    Save Result
-                                                </button>
-                                            </form>
-                                        </div>
-                                    @endif
-                                </div>
-                                @endcan
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </div>
         @endif
 
-    </div>
+        {{-- ══════════════════════════════════════════════════════════════════════
+             BANDES D'ACTION ADMINITSTRATIVES — contextuelles, en tête de page.
+             Chaque bande correspond au PROCHAIN ACTE POSSIBLE du processus :
+             étude → consultation (RDV) → visite → certificat.
+        ══════════════════════════════════════════════════════════════════════════ --}}
 
-    {{-- ─── Right sidebar: actions + timeline ─── --}}
-    <div class="space-y-5">
-
-        {{-- Schedule Rendez-vous (available once the dossier is approved via consultation) --}}
+        {{-- ── ACTE 1 : Étude — avancer / correction / annulation (avant consultation) ── --}}
         @can('manage prevention-dossiers')
-        @if (in_array($status, ['under_consultation', 'approved']))
-        <div class="rounded-2xl border border-emerald-200 bg-surface-container-lowest shadow-sm dark:border-emerald-800/40 dark:bg-gray-800" x-data="{ open: {{ $preventionDossier->appointments->isEmpty() ? 'true' : 'false' }} }">
-            <div class="border-b border-emerald-100 dark:border-emerald-800/30 px-5 py-4 flex items-center justify-between cursor-pointer" @click="open = !open">
-                <div class="flex items-center gap-2">
-                    <svg class="h-4 w-4 text-emerald-600 dark:text-emerald-400 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    <h3 class="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Schedule a Visit (RDV)</h3>
-                </div>
-                <svg class="h-4 w-4 text-emerald-500 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-            </div>
-            <div x-show="open"
-                 x-transition:enter="transition ease-out duration-150"
-                 x-transition:enter-start="opacity-0"
-                 x-transition:enter-end="opacity-100"
-                 class="px-5 py-4">
-                <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.store', $preventionDossier) }}">
-                    @csrf
-                    <div class="space-y-3">
-                        {{-- The visit happens at the building — address comes from the dossier --}}
-                        <div class="flex items-start gap-1.5 text-xs text-emerald-700 dark:text-emerald-300">
-                            <svg class="h-3.5 w-3.5 flex-none mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            <span class="flex items-start gap-1">
-                                Visit takes place at the building:
-                                <strong class="font-semibold break-all">{{ $preventionDossier->building_address ?? '—' }}</strong>
-                            </span>
-                        </div>
-
-                        {{-- ── Map: show pinned building location (if coordinates were provided) ── --}}
-                        @if ($preventionDossier->latitude && $preventionDossier->longitude)
-                            @include('prevention-requests.partials.map-display', [
-                                'lat'   => $preventionDossier->latitude,
-                                'lng'   => $preventionDossier->longitude,
-                                'mapId' => 'map-admin',
-                            ])
-                        @endif
-                        <div>
-                            <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Visit Date <span class="text-red-500">*</span></label>
-                            <input type="date" name="visit_date" required
-                                min="{{ date('Y-m-d') }}"
-                                value="{{ old('visit_date') }}"
-                                class="w-full text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Visit Time <span class="text-red-500">*</span></label>
-                            <input type="time" name="visit_time" required
-                                value="{{ old('visit_time') }}"
-                                class="w-full text-sm">
-                        </div>
-                        <button type="submit"
-                            class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            Schedule Visit
-                        </button>
+        @if (in_array($status, ['completed', 'submitted', 'needs_correction']))
+        <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden" x-data="{ fixOpen: false, cancelOpen: false }">
+            <div class="border-s-4 border-s-primary p-5">
+                <div class="flex flex-wrap items-start gap-3.5 mb-4">
+                    <div class="w-10 h-10 rounded bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">fact_check</span>
                     </div>
-                </form>
-            </div>
-        </div>
-        @endif
-        @endcan
-
-        {{-- Prevention certificate (issued after a passed RDV) --}}
-        @can('manage prevention-dossiers')
-        @if ($preventionDossier->hasPassedAppointment() || $preventionDossier->certificate)
-        <div class="rounded-2xl border border-emerald-200 bg-surface-container-lowest shadow-sm dark:border-emerald-800/40 dark:bg-gray-800"
-            x-data="{ open: false }">
-
-            <div class="border-b border-emerald-100 dark:border-emerald-800/30 px-5 py-4 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                    <svg class="h-4 w-4 text-emerald-600 dark:text-emerald-400 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M7 3h10a2 2 0 012 2v16l-7-3-7 3V5a2 2 0 012-2z"/>
-                    </svg>
-                    <h3 class="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Prevention Certificate</h3>
-                </div>
-                @if ($preventionDossier->certificate)
-                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold
-                        {{ $preventionDossier->certificate->status === \App\Models\PreventionCertificate::STATUS_READY ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : ($preventionDossier->certificate->status === \App\Models\PreventionCertificate::STATUS_POST_SENT ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300') }}">
-                        {{ $preventionDossier->certificate->statusLabel() }}
-                    </span>
-                @endif
-            </div>
-
-            @if ($preventionDossier->certificate)
-                @php $cert = $preventionDossier->certificate; @endphp
-                <div class="px-5 py-4 space-y-3">
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-outline dark:text-gray-500">Reference</p>
-                        <p class="text-sm font-mono font-bold text-emerald-700 dark:text-emerald-300">{{ $cert->reference }}</p>
-                    </div>
-                    <dl class="space-y-2 text-xs">
-                        <div class="flex justify-between gap-2">
-                            <dt class="text-secondary dark:text-gray-400">Delivery</dt>
-                            <dd class="text-end font-semibold text-on-surface dark:text-gray-100 capitalize">
-                                @if ($cert->isPost())
-                                    Poste Tunisienne (B3)
-                                @elseif ($cert->isPickup())
-                                    Pickup at office
-                                @else
-                                    —
-                                @endif
-                            </dd>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">Administrative review</h2>
+                            <span class="text-[10px] bg-primary text-on-primary font-bold px-2 py-0.5 rounded whitespace-nowrap">Action required</span>
                         </div>
-                        @if ($cert->isPost())
-                            <div class="flex justify-between gap-2">
-                                <dt class="text-secondary dark:text-gray-400">Recipient</dt>
-                                <dd class="text-end font-semibold text-on-surface dark:text-gray-100">{{ $cert->post_recipient ?? '—' }}</dd>
-                            </div>
-                            <div class="flex justify-between gap-2">
-                                <dt class="text-secondary dark:text-gray-400">Phone</dt>
-                                <dd class="font-semibold num-ltr text-on-surface dark:text-gray-100">{{ $cert->post_phone ?? '—' }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-secondary dark:text-gray-400">Postal address</dt>
-                                <dd class="mt-1 rounded-lg bg-surface-container dark:bg-gray-700/30 px-2.5 py-2 text-[11px] leading-relaxed text-on-surface dark:text-gray-200 break-words">{{ $cert->post_address ?? '—' }}</dd>
-                            </div>
-                            <div class="flex justify-between gap-2">
-                                <dt class="text-secondary dark:text-gray-400">Tracking (B3)</dt>
-                                <dd class="text-end font-mono font-semibold text-on-surface dark:text-gray-100">{{ $cert->post_tracking ?? '—' }}</dd>
-                            </div>
-                            @if ($cert->post_sent_at)
-                                <div class="flex justify-between gap-2">
-                                    <dt class="text-secondary dark:text-gray-400">Sent on</dt>
-                                    <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->post_sent_at->format('d M Y, H:i') }}</dd>
-                                </div>
-                            @endif
-                            @if ($cert->post_delivered_at)
-                                <div class="flex justify-between gap-2">
-                                    <dt class="text-secondary dark:text-gray-400">Delivered on</dt>
-                                    <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->post_delivered_at->format('d M Y, H:i') }}</dd>
-                                </div>
-                            @endif
-                        @else
-                            <div class="flex justify-between gap-2">
-                                <dt class="text-secondary dark:text-gray-400">Issued</dt>
-                                <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->issued_at->format('d M Y') }}</dd>
-                            </div>
-                            <div class="flex justify-between gap-2">
-                                <dt class="text-secondary dark:text-gray-400">Valid until</dt>
-                                <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->valid_until ? $cert->valid_until->format('d M Y') : '—' }}</dd>
-                            </div>
-                            <div class="flex justify-between gap-2">
-                                <dt class="text-secondary dark:text-gray-400">Pickup gouvernorat</dt>
-                                <dd class="text-end font-semibold text-on-surface dark:text-gray-100">
-                                    {{ $cert->governorate?->name_fr ?? $cert->governorate?->name_ar ?? '—' }}
-                                </dd>
-                            </div>
-                            <div class="flex justify-between gap-2">
-                                <dt class="text-secondary dark:text-gray-400">Pickup delegation</dt>
-                                <dd class="text-end font-semibold text-on-surface dark:text-gray-100">
-                                    {{ $cert->delegation?->name_fr ?? $cert->delegation?->name_ar ?? '— All delegations —' }}
-                                </dd>
-                            </div>
-                            @if ($cert->collected_at)
-                                <div class="flex justify-between gap-2">
-                                    <dt class="text-secondary dark:text-gray-400">Collected on</dt>
-                                    <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $cert->collected_at->format('d M Y, H:i') }}</dd>
-                                </div>
-                            @endif
-                        @endif
-                    </dl>
-
-                    @if ($cert->note)
-                        <div class="rounded-lg border border-surface-dim bg-surface-container dark:border-gray-600 dark:bg-gray-700/30 px-2.5 py-2">
-                            <p class="text-xs font-semibold text-secondary dark:text-gray-400 mb-0.5">Internal note</p>
-                            <p class="text-xs text-secondary dark:text-gray-300 whitespace-pre-line">{{ $cert->note }}</p>
-                        </div>
-                    @endif
-
-                    <div class="space-y-2 pt-1">
-                        @if ($cert->isPost())
-                            {{-- Post (B3) actions: register → confirm delivery --}}
-                            @if ($cert->isReady())
-                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
-                                    @csrf @method('PUT')
-                                    <input type="hidden" name="action" value="sent">
-                                    <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Tracking number (B3) <span class="text-red-500">*</span></label>
-                                    <input type="text" name="post_tracking" required maxlength="60"
-                                        value="{{ old('post_tracking', $cert->post_tracking) }}"
-                                        placeholder="e.g. 3029 8765 4321" class="w-full text-sm">
-                                    <button type="submit"
-                                        class="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                                        Register at Poste Tunisienne
-                                    </button>
-                                </form>
-                            @elseif ($cert->isPostSent())
-                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
-                                    @csrf @method('PUT')
-                                    <input type="hidden" name="action" value="delivered">
-                                    <button type="submit"
-                                        class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500/40">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                        Confirm Post Delivery
-                                    </button>
-                                </form>
-                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
-                                    @csrf @method('PUT')
-                                    <input type="hidden" name="action" value="ready">
-                                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-4 py-2 text-xs font-semibold text-secondary hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
-                                        Roll back to ready (un-send)
-                                    </button>
-                                </form>
-                            @else
-                                <p class="text-xs text-teal-700 dark:text-teal-300 flex items-center gap-1.5">
-                                    <svg class="h-4 w-4 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                    Post delivery confirmed — nothing left to do.
-                                </p>
-                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
-                                    @csrf @method('PUT')
-                                    <input type="hidden" name="action" value="ready">
-                                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-surface-dim bg-surface-container-lowest px-4 py-2 text-xs font-semibold text-secondary hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
-                                        Reopen (roll back to ready)
-                                    </button>
-                                </form>
-                            @endif
-                        @else
-                            {{-- Pickup actions: mark collected ↔ ready --}}
-                            @if ($cert->isReady())
-                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
-                                    @csrf @method('PUT')
-                                    <input type="hidden" name="action" value="collected">
-                                    <button type="submit"
-                                        class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                        Mark as Collected
-                                    </button>
-                                </form>
-                            @else
-                                <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $preventionDossier) }}">
-                                    @csrf @method('PUT')
-                                    <input type="hidden" name="action" value="ready">
-                                    <button type="submit"
-                                        class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-teal-300 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700 transition hover:bg-teal-100 dark:border-teal-700 dark:bg-teal-900/20 dark:text-teal-300">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
-                                        Mark as Ready (un-collect)
-                                    </button>
-                                </form>
-                            @endif
-                        @endif
+                        <p class="text-body-sm text-secondary mt-1">Check the documents and details below, then advance the dossier to consultation — or request a correction from the applicant.</p>
                     </div>
                 </div>
-            @else
-                <div class="px-5 py-4">
-                    @if ($preventionDossier->delivery_method)
-                        <div class="mb-3 flex items-start gap-1.5 text-xs text-indigo-700 dark:text-indigo-300">
-                            <svg class="h-3.5 w-3.5 flex-none mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <span>The applicant chose <strong>{{ ucfirst($preventionDossier->delivery_method) }}</strong> as the delivery method — it is pre-selected below. @if ($preventionDossier->delivery_method === 'post')His postal address is pre-filled. @endif</span>
-                        </div>
-                    @else
-                        <div class="mb-3 flex items-start gap-1.5 text-xs text-emerald-700 dark:text-emerald-300">
-                            <svg class="h-3.5 w-3.5 flex-none mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <span>A visit was marked as <strong>passed</strong>. Choose the delivery method, then issue the certificate.</span>
-                        </div>
-                    @endif
-                    <button type="button" @click="open = !open"
-                        class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        Issue Certificate
-                    </button>
-                    <div x-show="open"
-                         x-transition:enter="transition ease-out duration-150"
-                         x-transition:enter-start="opacity-0 -translate-y-1"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         class="mt-4">
-                        <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.store', $preventionDossier) }}">
-                            @csrf
-                            <div class="space-y-3"
-                                 x-data="{
-                                    method: '{{ old('delivery_method', $preventionDossier->delivery_method ?? 'pickup') }}',
-                                    gov: {{ old('governorate_id', $preventionDossier->governorate_id) ?? 'null' }},
-                                    del: {{ old('delegation_id') ? old('delegation_id') : 'null' }},
-                                    map: {{ \Illuminate\Support\Js::from($governorates
-                                        ->mapWithKeys(fn ($g) => [
-                                            $g->id => ['name' => $g->name_fr ?? $g->name_ar, 'delegations' => $g->delegations->map(fn ($d) => ['id' => $d->id, 'name' => $d->name_fr ?? $d->name_ar])->values()->all()],
-                                        ])
-                                        ->toArray()) }}
-                                 }">
 
-                                {{-- Delivery method — digital is announced but NOT active yet --}}
-                                <div class="rounded-lg border border-surface-dim dark:border-gray-600 overflow-hidden">
-                                    <p class="px-3 pt-2.5 pb-1.5 text-xs font-semibold text-secondary dark:text-gray-400">Delivery method</p>
-                                    <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container dark:hover:bg-gray-700/40"
-                                           :class="method === 'pickup' ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''">
-                                        <input type="radio" name="delivery_method" value="pickup" x-model="method" required class="text-emerald-600">
-                                        <span class="flex-1 text-sm font-semibold text-on-surface dark:text-gray-200">Pickup at office</span>
-                                    </label>
-                                    <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container dark:hover:bg-gray-700/40 border-t border-surface-dim dark:border-gray-600"
-                                           :class="method === 'post' ? 'bg-blue-50 dark:bg-blue-900/20' : ''">
-                                        <input type="radio" name="delivery_method" value="post" x-model="method" class="text-blue-600">
-                                        <span class="flex-1 text-sm font-semibold text-on-surface dark:text-gray-200">Poste Tunisienne (B3)</span>
-                                        <span class="text-[10px] rounded-full bg-blue-100 px-2 py-0.5 font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">Registered</span>
-                                    </label>
-                                    <div class="flex items-center gap-2.5 px-3 py-2 border-t border-surface-dim dark:border-gray-600 opacity-50 select-none">
-                                        <input type="radio" disabled class="text-gray-400">
-                                        <span class="flex-1 text-sm font-semibold text-outline dark:text-gray-500">Digital download</span>
-                                        <span class="text-[10px] rounded-full bg-amber-100 px-2 py-0.5 font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">Coming soon</span>
-                                    </div>
-                                </div>
-
-                                {{-- Pickup: gouvernorat + delegation selection --}}
-                                <div x-show="method === 'pickup'" x-cloak>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Gouvernorat <span class="text-red-500">*</span></label>
-                                        <select name="governorate_id" :required="method === 'pickup'" x-model="gov"
-                                            class="w-full text-sm">
-                                            <option value="">Select gouvernorat…</option>
-                                            <template x-for="(entry, govId) in map" :key="govId">
-                                                <option :value="govId" x-text="entry.name"></option>
-                                            </template>
-                                        </select>
-                                    </div>
-                                    <div class="mt-3">
-                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Pickup delegation <span class="text-outline font-normal">(optional)</span></label>
-                                        <select name="delegation_id" x-model="del" class="w-full text-sm">
-                                            <option value="">— All delegations —</option>
-                                            <template x-for="d in (map[gov] ? map[gov].delegations : [])" :key="d.id">
-                                                <option :value="d.id" x-text="d.name"></option>
-                                            </template>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {{-- Post: B3 recipient data --}}
-                                <div x-show="method === 'post'" x-cloak class="space-y-3 rounded-lg border border-blue-200 dark:border-blue-800/40 p-3">
-                                    <p class="text-[11px] text-blue-700 dark:text-blue-300 font-semibold flex items-center gap-1">
-                                        <svg class="h-3.5 w-3.5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                                        Certified mail (B3) — sent to the applicant's mailbox
-                                    </p>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Recipient <span class="text-red-500">*</span></label>
-                                        <input type="text" name="post_recipient" :required="method === 'post'" maxlength="255"
-                                            value="{{ old('post_recipient', $preventionDossier->delivery_method === 'post' ? $preventionDossier->nom_prenom : '') }}"
-                                            class="w-full text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Phone</label>
-                                        <input type="text" name="post_phone" maxlength="40"
-                                            value="{{ old('post_phone', $preventionDossier->delivery_method === 'post' ? $preventionDossier->phone : '') }}"
-                                            class="w-full text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Postal address <span class="text-red-500">*</span></label>
-                                        <textarea name="post_address" rows="3" :required="method === 'post'" maxlength="500"
-                                            placeholder="Street, building, postal code, city...">{{ old('post_address', $preventionDossier->delivery_method === 'post' ? $preventionDossier->post_address : '') }}</textarea>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Tracking number (optional — can be added when sent)</label>
-                                        <input type="text" name="post_tracking" maxlength="60"
-                                            value="{{ old('post_tracking') }}" placeholder="e.g. 3029 8765 4321" class="w-full text-sm">
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Valid until (optional)</label>
-                                    <input type="date" name="valid_until" min="{{ date('Y-m-d') }}" value="{{ old('valid_until') }}" class="w-full text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1">Internal note (optional)</label>
-                                    <textarea name="note" rows="2" maxlength="2000" placeholder="Internal note (not visible to the applicant)..." class="text-xs">{{ old('note') }}</textarea>
-                                </div>
-                                <button type="submit"
-                                    class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                    Confirm &amp; Issue
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            @endif
-        </div>
-        @endif
-        @endcan
-
-        {{-- Actions --}}
-        @can('manage prevention-dossiers')
-        @if ($preventionDossier->isActionable())
-        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-surface-dim px-5 py-4 dark:border-gray-700">
-                <h3 class="text-sm font-semibold text-on-surface dark:text-gray-100">Actions</h3>
-                <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">Move this dossier to the next step</p>
-            </div>
-            <div class="px-5 py-4 space-y-3">
-
-                {{-- Advance to Consultation --}}
-                @if (in_array($status, ['completed', 'submitted', 'needs_correction']))
-                    <form method="POST" action="{{ route('admin.prevention-dossiers.advance', $preventionDossier) }}"
-                          onsubmit="return confirm('Advance to consultation? This validates the dossier as approved — the applicant is notified and you can then schedule an RDV.')">
+                <div class="flex flex-col lg:flex-row gap-3">
+                    {{-- Advance to consultation — the only forward move in this phase --}}
+                    <form method="POST" action="{{ route('admin.prevention-dossiers.advance', $d) }}" class="flex-1"
+                          onsubmit="return confirm('Advance to consultation? This validates the dossier — the applicant is notified and a RDV can then be scheduled.')">
                         @csrf
-                        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            Advance to Consultation
+                        <button type="submit" class="inline-flex w-full lg:w-auto items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-6 rounded transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">nav_circle_right</span>
+                            Advance to consultation
                         </button>
                     </form>
-                @endif
 
-                {{-- Request Correction — only before consultation phase --}}
-                @if (in_array($status, ['completed', 'submitted', 'needs_correction']))
-                <div x-data="{ open: false }">
-                    <button type="button" @click="open = !open"
-                        class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300 dark:hover:bg-amber-900/40 focus:outline-none">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                        <span x-text="open ? 'Hide' : 'Request Correction'">Request Correction</span>
-                        <svg class="h-3.5 w-3.5 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    {{-- Request correction (collapsed amber panel) --}}
+                    <button type="button" @click="fixOpen = !fixOpen; cancelOpen = false"
+                        class="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                        <span class="material-symbols-outlined text-base" aria-hidden="true">edit_note</span>
+                        <span x-text="fixOpen ? 'Hide correction form' : 'Request correction'">Request correction</span>
                     </button>
-                    <div x-show="open"
-                         x-transition:enter="transition ease-out duration-150"
-                         x-transition:enter-start="opacity-0 -translate-y-1"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         x-transition:leave="transition ease-in duration-100"
-                         x-transition:leave-start="opacity-100"
-                         x-transition:leave-end="opacity-0"
-                         class="mt-3">
-                        <form method="POST" action="{{ route('admin.prevention-dossiers.correction', $preventionDossier) }}">
-                            @csrf
 
-                            {{-- Admin note ─────────────────────────────────── --}}
-                            <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1.5">
-                                Note to applicant <span class="text-red-500">*</span>
-                            </label>
-                            <textarea name="admin_note" rows="4" required maxlength="2000"
-                                class="text-xs"
-                                placeholder="Explain clearly what needs to be corrected…">{{ old('admin_note') }}</textarea>
+                    {{-- Cancel (collapsed danger panel) --}}
+                    <button type="button" @click="cancelOpen = !cancelOpen; fixOpen = false"
+                        class="inline-flex items-center justify-center gap-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold py-2.5 px-5 rounded transition-colors dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+                        <span class="material-symbols-outlined text-base" aria-hidden="true">cancel</span>
+                        <span x-text="cancelOpen ? 'Hide cancellation' : 'Cancel dossier'">Cancel dossier</span>
+                    </button>
+                </div>
 
-                            {{-- Field checkboxes ─────────────────────────── --}}
-                            <p class="mt-3 mb-1.5 text-xs font-semibold text-secondary dark:text-gray-400">
-                                Fields to fix <span class="font-normal text-outline">(select all that apply)</span>
+                {{-- Correction form ───────────────────────────────────────────── --}}
+                <div x-show="fixOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-900/10 p-4">
+                    <form method="POST" action="{{ route('admin.prevention-dossiers.correction', $d) }}">
+                        @csrf
+                        <label class="block text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 mb-1.5">
+                            Note to applicant <span class="text-red-500">*</span>
+                        </label>
+                        <textarea name="admin_note" rows="4" required maxlength="2000" class="text-xs"
+                            placeholder="Explain clearly what needs to be corrected…">{{ old('admin_note') }}</textarea>
+
+                        <p class="mt-3 mb-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                            Fields to fix <span class="font-normal normal-case">(select all that apply)</span>
+                        </p>
+                        @php
+                            $fixableFields = [
+                                'nom_prenom'           => 'Full name',
+                                'cin'                  => 'National ID (CIN)',
+                                'phone'                => 'Phone number',
+                                'governorate_id'       => 'Governorate',
+                                'delegation_id'        => 'Delegation',
+                                'building_address'     => 'Building address',
+                                'building_type_id'     => 'Building type',
+                                'building_activity_id' => 'Activity',
+                            ];
+                        @endphp
+                        <div class="rounded-lg border border-surface-dim dark:border-gray-600 divide-y divide-surface-dim dark:divide-gray-700 overflow-hidden bg-surface-container-lowest">
+                            @foreach ($fixableFields as $fieldKey => $fieldLabel)
+                                <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container text-xs text-on-surface">
+                                    <input type="checkbox" name="fields_to_fix[]" value="{{ $fieldKey }}"
+                                           class="rounded border-surface-dim text-amber-500 focus:ring-amber-500/30"
+                                           {{ in_array($fieldKey, old('fields_to_fix', [])) ? 'checked' : '' }}>
+                                    <span class="flex-1">{{ $fieldLabel }}</span>
+                                    @php
+                                        $currentVal = match($fieldKey) {
+                                            'nom_prenom'           => $d->nom_prenom,
+                                            'cin'                  => $d->cin,
+                                            'phone'                => $d->phone,
+                                            'governorate_id'       => $d->governorate?->name_fr ?? $d->governorate?->name_ar,
+                                            'delegation_id'        => $d->delegation?->name_fr ?? $d->delegation?->name_ar,
+                                            'building_address'     => $d->building_address,
+                                            'building_type_id'     => $d->buildingType?->name,
+                                            'building_activity_id' => $d->buildingActivity?->name ?? $d->activity_other,
+                                            default                => null,
+                                        };
+                                    @endphp
+                                    @if ($currentVal)
+                                        <span class="text-outline truncate max-w-28 text-end" title="{{ $currentVal }}">{{ $currentVal }}</span>
+                                    @endif
+                                </label>
+                            @endforeach
+                        </div>
+
+                        @php
+                            $corrDocTypes = \App\Models\DocumentType::service(\App\Models\DocumentType::SERVICE_PREVENTION)
+                                ->with('buildingTypes')->orderBy('sort_order')->get()
+                                ->filter(fn ($t) => $t->appliesToBuildingType($d->building_type_id));
+                        @endphp
+                        @if ($corrDocTypes->isNotEmpty())
+                            <p class="mt-3 mb-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                                Documents to re-upload <span class="font-normal normal-case">(select which files need replacement)</span>
                             </p>
-                            @php
-                                $fixableFields = [
-                                    'nom_prenom'         => 'Full name',
-                                    'cin'                => 'National ID (CIN)',
-                                    'phone'              => 'Phone number',
-                                    'governorate_id'     => 'Governorate',
-                                    'delegation_id'      => 'Delegation',
-                                    'building_address'   => 'Building address',
-                                    'building_type_id'   => 'Building type',
-                                    'building_activity_id' => 'Activity',
-                                ];
-                            @endphp
-                            <div class="rounded-lg border border-surface-dim dark:border-gray-600 divide-y divide-surface-dim dark:divide-gray-700 overflow-hidden">
-                                @foreach ($fixableFields as $fieldKey => $fieldLabel)
-                                    <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container dark:hover:bg-gray-700/40 text-xs text-on-surface dark:text-gray-200">
-                                        <input type="checkbox" name="fields_to_fix[]" value="{{ $fieldKey }}"
+                            <div class="rounded-lg border border-surface-dim dark:border-gray-600 divide-y divide-surface-dim dark:divide-gray-700 overflow-hidden bg-surface-container-lowest">
+                                @foreach ($corrDocTypes as $docType)
+                                    <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container text-xs text-on-surface">
+                                        <input type="checkbox" name="docs_to_fix[]" value="{{ $docType->id }}"
                                                class="rounded border-surface-dim text-amber-500 focus:ring-amber-500/30"
-                                               {{ in_array($fieldKey, old('fields_to_fix', [])) ? 'checked' : '' }}>
-                                        <span class="flex-1">{{ $fieldLabel }}</span>
-                                        @php
-                                            $currentVal = match($fieldKey) {
-                                                'nom_prenom'         => $preventionDossier->nom_prenom,
-                                                'cin'                => $preventionDossier->cin,
-                                                'phone'              => $preventionDossier->phone,
-                                                'governorate_id'     => $preventionDossier->governorate?->name_fr ?? $preventionDossier->governorate?->name_ar,
-                                                'delegation_id'      => $preventionDossier->delegation?->name_fr ?? $preventionDossier->delegation?->name_ar,
-                                                'building_address'   => $preventionDossier->building_address,
-                                                'latitude'            => $preventionDossier->latitude,
-                                                'longitude'           => $preventionDossier->longitude,
-                                                'building_type_id'   => $preventionDossier->buildingType?->name,
-                                                'building_activity_id' => $preventionDossier->buildingActivity?->name ?? $preventionDossier->activity_other,
-                                                default              => null,
-                                            };
-                                        @endphp
-                                        @if ($currentVal)
-                                            <span class="text-outline dark:text-gray-500 truncate max-w-28 text-end" title="{{ $currentVal }}">{{ $currentVal }}</span>
+                                               {{ in_array($docType->id, old('docs_to_fix', [])) ? 'checked' : '' }}>
+                                        <span class="flex-1">{{ $docType->name }}</span>
+                                        @if ($uploadedDocs->has($docType->id))
+                                            <span class="text-[10px] rounded-full bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-blue-700 dark:text-blue-300 font-bold whitespace-nowrap">uploaded</span>
+                                        @else
+                                            <span class="text-[10px] rounded-full bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 text-red-600 dark:text-red-400 font-bold whitespace-nowrap">missing</span>
                                         @endif
                                     </label>
                                 @endforeach
                             </div>
+                        @endif
 
-                            {{-- Document type checkboxes ────────────────── --}}
-                            @php
-                                $corrDocTypes = \App\Models\DocumentType::service(\App\Models\DocumentType::SERVICE_PREVENTION)
-                                    ->with('buildingTypes')
-                                    ->orderBy('sort_order')
-                                    ->get()
-                                    ->filter(fn ($t) => $t->appliesToBuildingType($preventionDossier->building_type_id));
-                            @endphp
-                            @if ($corrDocTypes->isNotEmpty())
-                                <p class="mt-3 mb-1.5 text-xs font-semibold text-secondary dark:text-gray-400">
-                                    Documents to re-upload <span class="font-normal text-outline">(select which files need replacement)</span>
-                                </p>
-                                <div class="rounded-lg border border-surface-dim dark:border-gray-600 divide-y divide-surface-dim dark:divide-gray-700 overflow-hidden">
-                                    @foreach ($corrDocTypes as $docType)
-                                        @php
-                                            $hasDoc = $uploadedDocs->has($docType->id);
-                                        @endphp
-                                        <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container dark:hover:bg-gray-700/40 text-xs text-on-surface dark:text-gray-200">
-                                            <input type="checkbox" name="docs_to_fix[]" value="{{ $docType->id }}"
-                                                   class="rounded border-surface-dim text-amber-500 focus:ring-amber-500/30"
-                                                   {{ in_array($docType->id, old('docs_to_fix', [])) ? 'checked' : '' }}>
-                                            <span class="flex-1">{{ $docType->name }}</span>
-                                            @if ($hasDoc)
-                                                <span class="text-[10px] rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-400 font-bold whitespace-nowrap">uploaded</span>
-                                            @else
-                                                <span class="text-[10px] rounded-full bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 text-red-600 dark:text-red-400 font-bold whitespace-nowrap">missing</span>
-                                            @endif
-                                        </label>
-                                    @endforeach
-                                </div>
-                            @endif
-
-                            <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500/40">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                                Send Correction Request
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                @endif
-
-                {{-- Cancel --}}
-                <div x-data="{ open: false }">
-                    <button type="button" @click="open = !open"
-                        class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/40 focus:outline-none">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span x-text="open ? 'Hide' : 'Cancel Dossier'">Cancel Dossier</span>
-                        <svg class="h-3.5 w-3.5 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <div x-show="open"
-                         x-transition:enter="transition ease-out duration-150"
-                         x-transition:enter-start="opacity-0 -translate-y-1"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         x-transition:leave="transition ease-in duration-100"
-                         x-transition:leave-start="opacity-100"
-                         x-transition:leave-end="opacity-0"
-                         class="mt-3">
-                        <form method="POST" action="{{ route('admin.prevention-dossiers.cancel', $preventionDossier) }}"
-                              onsubmit="return confirm('Cancel this dossier? The applicant will be notified.')">
-                            @csrf
-                            <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1.5">Cancellation reason <span class="text-red-500">*</span></label>
-                            <textarea name="admin_note" rows="4" required maxlength="2000"
-                                placeholder="Explain why this dossier is being cancelled...">{{ old('admin_note') }}</textarea>
-                            <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/40">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                Confirm Cancellation
-                            </button>
-                        </form>
-                    </div>
+                        <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">send</span>
+                            Send correction request
+                        </button>
+                    </form>
                 </div>
 
+                {{-- Cancellation form ────────────────────────────────────────── --}}
+                <div x-show="cancelOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/10 p-4">
+                    <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-300 mb-2 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
+                        Danger zone — cancellation closes the dossier definitively
+                    </p>
+                    <form method="POST" action="{{ route('admin.prevention-dossiers.cancel', $d) }}"
+                          onsubmit="return confirm('Cancel this dossier? The applicant will be notified.')">
+                        @csrf
+                        <label class="block text-xs font-semibold text-red-800 dark:text-red-200 mb-1.5">Cancellation reason <span class="text-red-500">*</span></label>
+                        <textarea name="admin_note" rows="4" required maxlength="2000"
+                            placeholder="Explain why this dossier is being cancelled...">{{ old('admin_note') }}</textarea>
+                        <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">cancel</span>
+                            Confirm cancellation
+                        </button>
+                    </form>
+                </div>
             </div>
-        </div>
-        @elseif ($status === 'approved')
-            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-900/10 px-5 py-4 text-center">
-                <svg class="h-8 w-8 text-emerald-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <p class="text-sm font-semibold text-emerald-800 dark:text-emerald-200">Dossier Approved</p>
-                <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">No further actions needed.</p>
-            </div>
-        @elseif ($status === 'cancelled')
-            <div class="rounded-2xl border border-surface-dim bg-surface-container dark:border-gray-700 dark:bg-gray-700/20 px-5 py-4 text-center">
-                <svg class="h-8 w-8 text-outline mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <p class="text-sm font-semibold text-on-surface dark:text-gray-300">Dossier Cancelled</p>
-                <p class="text-xs text-secondary dark:text-gray-400 mt-1">This dossier has been closed.</p>
-            </div>
+        </section>
         @endif
         @endcan
 
-        {{-- Timeline — full audit history (corrections, approvals, RDV, etc.) --}}
-        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="border-b border-surface-dim px-5 py-4 dark:border-gray-700">
-                <h3 class="text-sm font-semibold text-on-surface dark:text-gray-100">Timeline</h3>
-                <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">Complete history of this dossier</p>
+        {{-- ── ACTE 2 : Correction demandée — rappel de la note envoyée ── --}}
+        @if ($status === 'needs_correction' && $d->admin_note)
+        <section class="bg-surface-container-lowest border border-red-200 dark:border-red-800/40 rounded-lg shadow-sm overflow-hidden">
+            <div class="border-s-4 border-s-red-600 p-5">
+                <div class="flex items-start gap-3.5 mb-3">
+                    <div class="w-10 h-10 rounded bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">assignment_late</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">Correction requested — waiting for the applicant</h2>
+                            <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded">Alert</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rounded border border-red-200 bg-red-50 dark:bg-red-900/10 px-4 py-3">
+                    <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>
+                        Note visible to the applicant
+                    </p>
+                    <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $d->admin_note }}</p>
+                </div>
             </div>
-            <div class="px-5 py-4">
-                {{-- Legacy fallback: dossiers created before the events table — show their origin from created_at --}}
-                @if ($preventionDossier->events->isEmpty())
-                    <div class="flex items-start gap-3">
-                        <span class="mt-1 flex-none h-2 w-2 rounded-full bg-teal-500"></span>
-                        <div>
-                            <p class="text-xs font-semibold text-on-surface dark:text-gray-100">Submitted by applicant</p>
-                            <p class="text-xs text-secondary dark:text-gray-400">{{ $preventionDossier->created_at->format('d M Y, H:i') }}</p>
+        </section>
+        @endif
+
+        {{-- ── ACTE 3 : Consultation — programmer la visite (RDV)
+             Affiché uniquement pour une PREMIÈRE programmation : si une visite
+             a échoué, la bande "visite échouée" ci-dessous porte le nouveau RDV ;
+             si un RDV est déjà programmé, c'est la bande "RDV programmé". ── --}}
+        @if ($status === 'under_consultation' && ! $pendingAppointment && ! $lastFailedAppointment)
+        <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden">
+            <div class="border-s-4 border-s-primary p-5">
+                <div class="flex items-start gap-3.5 mb-4">
+                    <div class="w-10 h-10 rounded bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">event_available</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">Consultation phase — schedule the on-site visit</h2>
+                            <span class="text-[10px] bg-primary text-on-primary font-bold px-2 py-0.5 rounded whitespace-nowrap">Action required</span>
+                        </div>
+                        <p class="text-body-sm text-secondary mt-1">The dossier was approved for consultation. Schedule the inspection at the declared address; the applicant is notified with the visit instructions.</p>
+                    </div>
+                </div>
+
+                {{-- Contact strip — applicant's phone for the convocation --}}
+                <div class="flex flex-wrap items-center gap-3 mb-4 rounded-lg border border-surface-dim bg-surface-container-low px-4 py-2.5 text-xs">
+                    <span class="material-symbols-outlined text-blue-600 text-base" aria-hidden="true">call</span>
+                    <span class="text-secondary">Applicant's phone (convocation):</span>
+                    <strong class="font-mono num-ltr text-on-surface" dir="ltr">{{ $d->phone ?? 'not provided' }}</strong>
+                </div>
+
+                @can('manage prevention-dossiers')
+                <div x-data="{ fixOpen: false, cancelOpen: false }">
+                    <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.store', $d) }}" class="grid grid-cols-1 sm:grid-cols-[1fr,1fr,auto] items-end gap-3">
+                    @csrf
+                    <div>
+                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">Visit date <span class="text-red-500">*</span></label>
+                        <input type="date" name="visit_date" required min="{{ date('Y-m-d') }}" value="{{ old('visit_date') }}" class="w-full text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">Visit time <span class="text-red-500">*</span></label>
+                        <input type="time" name="visit_time" required value="{{ old('visit_time') }}" class="w-full text-sm">
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">Note for the applicant <span class="font-normal normal-case">(optional — shown with the convocation)</span></label>
+                        <textarea name="note" rows="2" maxlength="2000" placeholder="Instructions for the visit…">{{ old('note') }}</textarea>
+                    </div>
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                        <span class="material-symbols-outlined text-base" aria-hidden="true">event_add</span>
+                        Schedule visit
+                    </button>
+                    <p class="sm:col-span-3 text-[11px] text-secondary flex items-start gap-1.5">
+                        <span class="material-symbols-outlined text-sm mt-px" aria-hidden="true">location_on</span>
+                        <span>Visit takes place at the building: <strong class="font-semibold break-all">{{ $d->building_address ?? '—' }}</strong></span>
+                    </p>
+                    </form>
+
+                    {{-- Mouvements latéraux restants légaux en phase de consultation : correction, annulation --}}
+                    <div class="flex flex-wrap gap-2 pt-3 mt-3 border-t border-surface-dim">
+                        <button type="button" @click="fixOpen = !fixOpen; cancelOpen = false"
+                            class="inline-flex items-center gap-2 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                            <span class="material-symbols-outlined text-sm" aria-hidden="true">edit_note</span>
+                            <span x-text="fixOpen ? 'Hide correction form' : 'Request correction instead'">Request correction instead</span>
+                        </button>
+                        <button type="button" @click="cancelOpen = !cancelOpen; fixOpen = false"
+                            class="inline-flex items-center gap-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+                            <span class="material-symbols-outlined text-sm" aria-hidden="true">cancel</span>
+                            <span x-text="cancelOpen ? 'Hide cancellation' : 'Cancel dossier instead'">Cancel dossier instead</span>
+                        </button>
+                    </div>
+
+                    {{-- Correction (légal : isActionable) ─────────────────────────── --}}
+                    <div x-show="fixOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-3 rounded-lg border border-amber-200 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-900/10 p-4">
+                        <form method="POST" action="{{ route('admin.prevention-dossiers.correction', $d) }}">
+                            @csrf
+                            <label class="block text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 mb-1.5">
+                                Note to applicant <span class="text-red-500">*</span>
+                            </label>
+                            <textarea name="admin_note" rows="4" required maxlength="2000" class="text-xs"
+                                placeholder="Explain clearly what needs to be corrected…">{{ old('admin_note') }}</textarea>
+                            <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">send</span>
+                                Send correction request
+                            </button>
+                        </form>
+                    </div>
+
+                    {{-- Annulation (légal : isActionable) ─────────────────────────── --}}
+                    <div x-show="cancelOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/10 p-4">
+                        <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-300 mb-2 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
+                            Danger zone — cancellation closes the dossier definitively
+                        </p>
+                        <form method="POST" action="{{ route('admin.prevention-dossiers.cancel', $d) }}"
+                              onsubmit="return confirm('Cancel this dossier? The applicant will be notified.')">
+                            @csrf
+                            <label class="block text-xs font-semibold text-red-800 dark:text-red-200 mb-1.5">Cancellation reason <span class="text-red-500">*</span></label>
+                            <textarea name="admin_note" rows="4" required maxlength="2000"
+                                placeholder="Explain why this dossier is being cancelled...">{{ old('admin_note') }}</textarea>
+                            <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">cancel</span>
+                                Confirm cancellation
+                            </button>
+                        </form>
+                    </div>
+                    </div>
+                @endcan
+            </div>
+        </section>
+        @endif
+
+        {{-- ── RDV programmé — consignes de visite (avi inspécteur) ── --}}
+        @if ($pendingAppointment)
+        <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print">
+            <div class="border-s-4 border-s-primary p-5">
+                <div class="flex items-start gap-3.5 mb-4">
+                    <div class="w-10 h-10 rounded bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">assignment_late</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">
+                                Next visit — {{ $pendingAppointment->visit_date->format('d/m/Y') }} at {{ substr($pendingAppointment->visit_time, 0, 5) }}
+                            </h2>
+                            <span class="text-[10px] bg-primary text-on-primary font-bold px-2 py-0.5 rounded whitespace-nowrap">Convocation sent</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                    <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
+                        <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">person_check</span>
+                        <div><span class="font-bold text-on-surface block">Applicant presence</span><span class="text-secondary text-[11px]">{{ $d->nom_prenom }} must be on site</span></div>
+                    </div>
+                    <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
+                        <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">menu_book</span>
+                        <div><span class="font-bold text-on-surface block">Registre &amp; plans</span><span class="text-secondary text-[11px]">Official documents available on site</span></div>
+                    </div>
+                    <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
+                        <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">door_front</span>
+                        <div><span class="font-bold text-on-surface block">Accessibility</span><span class="text-secondary text-[11px]">Emergency exits accessible</span></div>
+                    </div>
+                    <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
+                        <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">water_drop</span>
+                        <div><span class="font-bold text-on-surface block">Fire safety</span><span class="text-secondary text-[11px]">Water point &amp; extinguishers check</span></div>
+                    </div>
+                </div>
+                @if ($pendingAppointment->note)
+                <div class="mt-4 rounded border border-amber-200 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-900/10 p-3">
+                    <p class="text-[11px] font-bold text-amber-900 dark:text-amber-300 mb-0.5 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">event_note</span>Note
+                    </p>
+                    <p class="text-xs text-amber-900 dark:text-amber-200 whitespace-pre-line leading-relaxed">{{ $pendingAppointment->note }}</p>
+                </div>
+                @endif
+            </div>
+        </section>
+        @endif
+
+        {{-- ── Visite échouée : le record (passé/échoué + note) vit DANS cette
+             bande, et quand la visite n'est pas bonne, un nouveau RDV se
+             programme directement ici. Pas de "toast" séparé. ── --}}
+        @if ($lastFailedAppointment && ! in_array($status, ['cancelled', 'draft']))
+        <section class="bg-surface-container-lowest border border-red-200 dark:border-red-800/40 rounded-lg shadow-sm overflow-hidden no-print">
+            <div class="border-s-4 border-s-red-600 p-5">
+                <div class="flex items-start gap-3.5 mb-3">
+                    <div class="w-10 h-10 rounded bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">report</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">Visit failed — {{ $lastFailedAppointment->visit_date->format('d/m/Y') }} at {{ substr($lastFailedAppointment->visit_time, 0, 5) }}</h2>
+                            <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">Alert</span>
+                        </div>
+                        <p class="text-body-sm text-secondary mt-1">The inspection record above is negative. The applicant must fix the issues, then a new visit (RDV) can be scheduled.</p>
+                    </div>
+                </div>
+                @if ($lastFailedAppointment->note)
+                <div class="rounded border border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10 px-4 py-3">
+                    <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>Inspector note
+                    </p>
+                    <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $lastFailedAppointment->note }}</p>
+                </div>
+                @endif
+
+                {{-- Nouveau RDV directement dans la bande, tant qu'aucun n'est programmé --}}
+                @if (! $pendingAppointment)
+                    @can('manage prevention-dossiers')
+                    <div class="mt-4 rounded-lg border border-red-200 dark:border-red-800/40 bg-surface-container-low/60 p-4">
+                        <p class="text-[11px] font-extrabold uppercase tracking-wider text-secondary mb-3 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">event_available</span>
+                            Schedule the new visit (RDV)
+                        </p>
+                        <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.store', $d) }}" class="grid grid-cols-1 sm:grid-cols-[1fr,1fr] gap-3">
+                            @csrf
+                            <div>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">New visit date <span class="text-red-500">*</span></label>
+                                <input type="date" name="visit_date" required min="{{ date('Y-m-d') }}" value="{{ old('visit_date') }}" class="w-full text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">New visit time <span class="text-red-500">*</span></label>
+                                <input type="time" name="visit_time" required value="{{ old('visit_time') }}" class="w-full text-sm">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">Note for the applicant <span class="font-normal normal-case">(optional)</span></label>
+                                <textarea name="note" rows="2" maxlength="2000" placeholder="Instructions for the new visit…">{{ old('note') }}</textarea>
+                            </div>
+                            <p class="sm:col-span-2 text-[11px] text-secondary flex items-start gap-1.5">
+                                <span class="material-symbols-outlined text-sm mt-px" aria-hidden="true">location_on</span>
+                                <span>Visit takes place at the building: <strong class="font-semibold break-all">{{ $d->building_address ?? '—' }}</strong> · applicant's phone: <strong class="font-mono" dir="ltr">{{ $d->phone ?? '—' }}</strong></span>
+                            </p>
+                            <div class="sm:col-span-2">
+                                <button type="submit" class="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                                    <span class="material-symbols-outlined text-base" aria-hidden="true">event_add</span>
+                                    Schedule new visit
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    @endcan
+                @else
+                    <p class="mt-3 text-xs font-semibold text-secondary flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">event_available</span>
+                        A new visit is already scheduled — {{ $pendingAppointment->visit_date->format('d/m/Y') }} at {{ substr($pendingAppointment->visit_time, 0, 5) }}.
+                    </p>
+                @endif
+            </div>
+        </section>
+        @endif
+
+        {{-- ══════════════ CYCLE DE VIE — Stepper + progression ══════════════ --}}
+        <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden">
+            <div class="p-5 md:px-6">
+                {{-- En-tête : titre + phase + barre de progression --}}
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-surface-dim">
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">route</span>
+                        Dossier lifecycle
+                    </h3>
+                    <div class="flex items-center gap-3 flex-1 sm:flex-none sm:min-w-64">
+                        <span class="text-xs font-bold text-primary bg-primary-fixed/40 px-2 py-0.5 rounded whitespace-nowrap">
+                            Phase {{ $phaseNum }} / 4
+                        </span>
+                        <div class="hidden sm:flex-1 h-1.5 bg-surface-dim/50 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-primary-container to-amber-500 rounded-full transition-all duration-500" style="width: {{ $progress }}%"></div>
+                        </div>
+                        <span class="text-[11px] font-mono font-bold text-secondary hidden sm:inline" dir="ltr">{{ $progress }}%</span>
+                    </div>
+                </div>
+
+                {{-- Étapes reliées par une ligne de conduite --}}
+                <div class="relative grid grid-cols-1 md:grid-cols-4 gap-5 md:gap-3">
+                    <div class="hidden md:block absolute top-5 [inset-inline-start:12%] [inset-inline-end:12%] h-0.5 bg-surface-dim" aria-hidden="true"></div>
+
+                    @foreach ($steps as $idx => $step)
+                        <div class="relative flex md:flex-col items-start md:items-center gap-3 md:gap-2 md:text-center">
+                            @if ($step['state'] === 'done')
+                                <span class="relative z-10 w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center shadow-sm ring-4 ring-amber-100 dark:ring-amber-900/40">
+                                    <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check</span>
+                                </span>
+                            @elseif ($step['state'] === 'current')
+                                <span class="relative z-10 w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center text-sm font-black shadow-sm ring-4 ring-primary-fixed/70">
+                                    {{ $step['num'] }}
+                                </span>
+                            @elseif ($step['state'] === 'error')
+                                <span class="relative z-10 w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shadow-sm ring-4 ring-red-100 dark:ring-red-900/40">
+                                    <span class="material-symbols-outlined text-lg" aria-hidden="true">priority_high</span>
+                                </span>
+                            @else
+                                <span class="relative z-10 w-10 h-10 rounded-full bg-surface-container text-secondary flex items-center justify-center text-sm font-bold border border-surface-dim dark:bg-gray-700">
+                                    {{ $step['num'] }}
+                                </span>
+                            @endif
+
+                            <div class="min-w-0 md:px-1">
+                                <div class="flex md:justify-center items-center gap-2">
+                                    <h4 class="text-xs font-bold {{ $step['state'] === 'pending' ? 'text-secondary' : 'text-on-surface' }}">
+                                        {{ ['Submission', 'Study & approval', 'On-site inspection', 'Certificate delivery'][$idx] }}
+                                    </h4>
+                                    @if ($step['state'] === 'current')
+                                        <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true"></span>
+                                    @elseif ($step['state'] === 'error')
+                                        <span class="text-[10px] uppercase font-black text-red-800 bg-red-100 dark:bg-red-900/40 px-1.5 py-px rounded">Alert</span>
+                                    @endif
+                                </div>
+                                <p class="text-[11px] mt-0.5 leading-snug {{ $step['state'] === 'error' ? 'text-red-800 dark:text-red-400 font-medium' : ($step['state'] === 'current' ? 'text-primary font-medium' : 'text-secondary') }}">
+                                    {{ $step['sub'] }}
+                                </p>
+                                <p class="text-[10px] mt-1 font-semibold {{ $step['state'] === 'done' ? 'text-amber-800 dark:text-amber-400' : 'text-secondary' }}" dir="ltr">
+                                    @if ($stepDates[$step['num']] ?? null)
+                                        {{ \Illuminate\Support\Carbon::parse($stepDates[$step['num']])->format('d/m/Y') }}
+                                        @if ($step['num'] === 3 && $pendingAppointment && $pendingAppointment->visit_date->isSameDay(\Illuminate\Support\Carbon::parse($stepDates[3])))
+                                            <span class="text-secondary">• {{ substr($pendingAppointment->visit_time, 0, 5) }}</span>
+                                        @endif
+                                    @elseif ($step['state'] !== 'done')
+                                        <span class="text-surface-dim font-normal">—</span>
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+
+        {{-- ══════════════ HÉROS — Fiche identity du dossier ══════════════ --}}
+        <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden">
+            <div class="h-1 bg-gradient-to-r from-primary via-primary-container/70 to-transparent" aria-hidden="true"></div>
+
+            <div class="p-5 md:p-6">
+                {{-- Ligne haute : titre + actions --}}
+                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                    <div class="min-w-0">
+                        <h1 class="text-headline-md font-headline-md text-on-surface tracking-tight leading-tight" dir="ltr">
+                            Prevention dossier <span class="font-mono">{{ $viewRef }}</span>
+                        </h1>
+                        <p class="text-xs text-secondary mt-1 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-xs" aria-hidden="true">calendar_today</span>
+                            Deposited on {{ $d->created_at->isoFormat('D MMMM YYYY') }}
+                            @if ($d->reviewed_at && $d->reviewer)
+                                • last review by {{ $d->reviewer->name }} on {{ $d->reviewed_at->format('d/m/Y') }}
+                            @endif
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2.5 shrink-0">
+                        <span class="inline-flex items-center gap-1.5 text-label-caps font-label-caps px-2.5 py-1 rounded font-bold {{ $statusPillCls }}">
+                            <span class="material-symbols-outlined text-xs" aria-hidden="true">{{ $statusPillIcon }}</span>
+                            {{ ucfirst(str_replace('_', ' ', $status)) }}
+                        </span>
+                        <a href="{{ route('admin.prevention-dossiers.index') }}"
+                            class="flex items-center gap-2 bg-surface-container-lowest hover:bg-surface-container text-on-surface border border-surface-dim text-xs font-semibold py-2 px-2.5 rounded transition-colors">
+                            <span class="material-symbols-outlined text-base text-secondary rtl:rotate-180" aria-hidden="true">arrow_back</span>
+                        </a>
+                        <button type="button" onclick="window.print()"
+                            class="flex items-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2 px-3.5 rounded transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">print</span>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Faits clés — détails complets du dossier --}}
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">badge</span>
+                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-secondary">Applicant &amp; building details</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                    <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
+                        <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">badge</span>
+                        <div class="min-w-0">
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Full name</span>
+                            <span class="block text-xs font-bold text-on-surface truncate" title="{{ $d->nom_prenom ?? '' }}">{{ $d->nom_prenom ?? '—' }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
+                        <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">fingerprint</span>
+                        <div class="min-w-0">
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">CIN</span>
+                            <span class="block text-xs font-bold text-on-surface truncate font-mono" dir="ltr" title="{{ $d->cin ?? '' }}">{{ $d->cin ?? '—' }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
+                        <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">call</span>
+                        <div class="min-w-0">
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Phone</span>
+                            <span class="block text-xs font-bold text-on-surface truncate font-mono num-ltr" dir="ltr" title="{{ $d->phone ?? '' }}">{{ $d->phone ?? '—' }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
+                        <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">mail</span>
+                        <div class="min-w-0">
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Email</span>
+                            <span class="block text-xs font-bold text-on-surface truncate" dir="ltr" title="{{ $d->user?->email ?? '' }}">{{ $d->user?->email ?? '—' }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
+                        <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">account_balance</span>
+                        <div class="min-w-0">
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Governorate</span>
+                            <span class="block text-xs font-bold text-on-surface truncate">{{ $d->governorate?->name_fr ?? $d->governorate?->name_ar ?? '—' }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
+                        <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">location_city</span>
+                        <div class="min-w-0">
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Delegation</span>
+                            <span class="block text-xs font-bold text-on-surface truncate">{{ $d->delegation?->name_fr ?? $d->delegation?->name_ar ?? '—' }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
+                        <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">apartment</span>
+                        <div class="min-w-0">
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Building type</span>
+                            <span class="block text-xs font-bold text-on-surface truncate">{{ $d->buildingType?->name ?? '—' }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
+                        <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">domain</span>
+                        <div class="min-w-0">
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Activity</span>
+                            <span class="block text-xs font-bold text-on-surface truncate">{{ $d->buildingActivity?->name ?? $d->activity_other ?? '—' }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
+                        <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">place</span>
+                        <div class="min-w-0">
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Building address</span>
+                            <span class="block text-xs font-bold text-on-surface truncate" title="{{ $d->building_address ?? '' }}">{{ $d->building_address ?? '—' }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
+                        <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">local_shipping</span>
+                        <div class="min-w-0">
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Delivery chosen</span>
+                            <span class="block text-xs font-bold text-on-surface truncate">
+                                @if ($d->delivery_method)
+                                    {{ ['pickup' => 'Pickup at office', 'post' => 'Post (B3)', 'digital' => 'Digital download'][$d->delivery_method] ?? ucfirst($d->delivery_method) }}
+                                @else
+                                    <span class="font-medium text-secondary">Not chosen yet</span>
+                                @endif
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- ── Map: pinned building location (if coordinates were provided) ── --}}
+                @if ($d->latitude && $d->longitude)
+                    <div class="mt-3">
+                        @include('prevention-requests.partials.map-display', [
+                            'lat'   => $d->latitude,
+                            'lng'   => $d->longitude,
+                            'mapId' => 'map-admin-show',
+                        ])
+                    </div>
+                @endif
+
+                {{-- Note de l'administration (conservée après correction) --}}
+                @if ($d->admin_note && $status !== 'needs_correction')
+                <div class="mt-4 rounded-lg border border-surface-dim bg-surface-container-low px-4 py-3">
+                    <p class="text-[11px] font-extrabold uppercase tracking-wider text-secondary mb-1 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">sticky_note_2</span>
+                        Administrative note (visible to the applicant)
+                    </p>
+                    <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $d->admin_note }}</p>
+                </div>
+                @endif
+
+                {{-- Alerte d'état opérationnel — contextuelle --}}
+                @if ($heroAlert === 'delivery')
+                    <div class="mt-3 flex items-start gap-2.5 bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-300 dark:border-indigo-800/40 rounded px-3.5 py-2.5 text-xs">
+                        <span class="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-base mt-px" aria-hidden="true">verified</span>
+                        <div class="font-bold text-indigo-900 dark:text-indigo-200 leading-relaxed">
+                            All inspections passed — everything is OK.
+                            <span class="block font-normal text-indigo-700 dark:text-indigo-300 mt-0.5">
+                                @if ($lastPassedAppointment)
+                                    Visit passed on {{ $lastPassedAppointment->visit_date->format('d/m/Y') }} at {{ substr($lastPassedAppointment->visit_time, 0, 5) }}@if ($lastPassedAppointment->note) — note: {{ $lastPassedAppointment->note }}@endif.
+                                @endif
+                                Deliver the prevention certificate below (issue →
+                                @if ($d->delivery_method === 'post')
+                                    B3 send → delivered
+                                @else
+                                    pickup marked as collected
+                                @endif
+                                ).
+                            </span>
+                        </div>
+                    </div>
+                @elseif ($heroAlert === 'info')
+                    <div class="mt-3 flex items-start gap-2.5 bg-amber-50 dark:bg-amber-900/10 border border-amber-300 dark:border-amber-800/40 rounded px-3.5 py-2.5 text-xs">
+                        <span class="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base mt-px" aria-hidden="true">hourglass_bottom</span>
+                        <div class="font-bold text-amber-900 dark:text-amber-200 leading-relaxed">
+                            {{ $status === 'under_consultation' ? 'Dossier approved — awaiting RDV.' : 'Dossier approved — waiting for the next administrative act.' }}
+                        </div>
+                    </div>
+                @elseif ($heroAlert === 'neutral' && $status === 'cancelled')
+                    <div class="mt-3 flex items-start gap-2.5 bg-surface-container-low border border-surface-dim rounded px-3.5 py-2.5 text-xs">
+                        <span class="material-symbols-outlined text-secondary text-base mt-px" aria-hidden="true">cancel</span>
+                        <div class="font-bold text-on-surface leading-relaxed">
+                            Dossier cancelled<span class="font-normal text-secondary"> — closed by the administration.</span>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </section>
+
+        {{-- ══════════════ GRILLE 8/4 ══════════════ --}}
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            {{-- ══════ COLONNE GAUCHE (8 colonnes) ══════ --}}
+            <div class="lg:col-span-8 space-y-6">
+
+                {{-- ══════ VISITES — gestion des RDV ══════ --}}
+                <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden"
+                     x-data="{ open: {{ $pendingAppointment ? 'true' : 'false' }} }">
+                    <button type="button" @click="open = !open"
+                            class="w-full flex flex-wrap items-center justify-between gap-3 p-5 border-b border-surface-dim hover:bg-surface-container transition-colors text-start">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-8 h-8 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">event_repeat</span>
+                            </span>
+                            <div>
+                                <h3 class="text-headline-sm font-headline-sm text-on-surface flex items-center gap-2">Site visits (RDV)</h3>
+                                <p class="text-xs text-secondary mt-0.5">
+                                    {{ $d->appointments->count() }} visit(s) · at <strong class="font-semibold text-on-surface">{{ $d->building_address ?? '—' }}</strong>
+                                </p>
+                            </div>
+                        </div>
+                        <svg class="w-4 h-4 text-secondary transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+
+                    <div x-show="open" x-cloak class="p-5 pt-4">
+                        @if ($d->appointments->isEmpty())
+                            <div class="p-6 text-center border border-dashed border-surface-dim rounded-lg">
+                                <span class="material-symbols-outlined text-3xl text-outline" aria-hidden="true">event_busy</span>
+                                <p class="text-sm text-outline mt-2">No visits scheduled yet
+                                    @if ($status === 'under_consultation')
+                                        — use the action band above to schedule the first one
+                                    @endif
+                                    .
+                                </p>
+                            </div>
+                        @else
+                            <div class="relative ps-7 space-y-4 before:absolute before:start-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-surface-dim">
+                                @foreach ($d->appointments as $i => $appt)
+                                    <div class="relative">
+                                        {{-- Pastille schematic --}}
+                                        <div class="absolute -start-7 top-1 w-6 flex items-center justify-center">
+                                            <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ring-4 ring-surface-container-lowest
+                                                {{ $appt->isPassed() ? 'bg-amber-500 text-white' : ($appt->isFailed() ? 'bg-red-600 text-white' : ($appt->isCancelled() ? 'bg-slate-400 text-white' : 'bg-blue-500 text-white animate-pulse')) }}">
+                                                @if ($appt->isPassed())✓@elseif ($appt->isFailed())✕@elseif ($appt->isCancelled())<span class="material-symbols-outlined text-[10px]" aria-hidden="true">event_busy</span>@else{{$i + 1}}@endif
+                                            </span>
+                                        </div>
+
+                                        <div class="bg-surface-container-low/60 border border-surface-dim rounded-lg p-4 transition-all hover:border-primary/40 {{ $appt->isCancelled() ? 'opacity-75' : '' }}">
+                                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase
+                                                        {{ $appt->isPassed() ? 'bg-amber-100 text-amber-800' : ($appt->isFailed() ? 'bg-red-100 text-red-700' : ($appt->isCancelled() ? 'bg-surface-dim text-secondary' : 'bg-blue-100 text-blue-700')) }}">
+                                                        {{ $appt->isPassed() ? 'Passed' : ($appt->isFailed() ? 'Failed' : ($appt->isCancelled() ? 'Cancelled' : 'Scheduled')) }}
+                                                    </span>
+                                                    <span class="text-xs font-mono font-bold text-on-surface {{ $appt->isCancelled() ? 'line-through decoration-1' : '' }}" dir="ltr">
+                                                        {{ $appt->visit_date->format('d/m/Y') }} • {{ substr($appt->visit_time, 0, 5) }}
+                                                    </span>
+                                                    @if ($appt->scheduler)
+                                                        <span class="text-[10px] text-outline">by {{ $appt->scheduler->name }}</span>
+                                                    @endif
+                                                </div>
+
+                                                @can('manage prevention-dossiers')
+                                                <div x-data="{ openResult: false, cancelOpen: false }" class="flex items-center gap-2">
+                                                    @if ($appt->isPending())
+                                                        <button type="button" @click="openResult = !openResult; cancelOpen = false"
+                                                            class="inline-flex items-center gap-1 rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-1.5 text-[11px] font-bold text-on-surface hover:bg-surface-container">
+                                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">fact_check</span> Record result
+                                                        </button>
+                                                        <button type="button" @click="cancelOpen = !cancelOpen; openResult = false"
+                                                            class="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                                                            title="Cancel this appointment (a note is required)">
+                                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">cancel</span> Cancel appointment
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                                @endcan
+                                            </div>
+
+                                            {{-- Note : rouge = rapport d'inspection (échoué) · neutre = consigne ou motif d'annulation --}}
+                                            @if ($appt->note)
+                                                <div class="mt-2 rounded-lg border px-3 py-2
+                                                    {{ $appt->isFailed()
+                                                        ? 'border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10'
+                                                        : 'border-surface-dim bg-surface-container dark:bg-gray-700/30' }}">
+                                                    <p class="text-[11px] font-bold mb-0.5 flex items-center gap-1.5
+                                                        {{ $appt->isFailed() ? 'text-red-700 dark:text-red-400' : 'text-secondary' }}">
+                                                        <span class="material-symbols-outlined text-sm" aria-hidden="true">{{ $appt->isFailed() ? 'rate_review' : 'event_note' }}</span>
+                                                        {{ $appt->isFailed() ? 'Inspector note' : ($appt->isCancelled() ? 'Cancellation reason' : 'Note') }}
+                                                    </p>
+                                                    <p class="text-xs whitespace-pre-line leading-relaxed {{ $appt->isFailed() ? 'text-red-800 dark:text-red-200' : 'text-secondary' }}">{{ $appt->note }}</p>
+                                                </div>
+                                            @endif
+
+                                            @if ($appt->isPending())
+                                            {{-- Résultat de visite --}}
+                                            <div x-show="openResult" x-cloak class="mt-3 rounded-lg border border-surface-dim bg-surface-container-lowest p-3">
+                                                <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.update', [$d, $appt]) }}">
+                                                    @csrf @method('PUT')
+                                                    <div class="flex gap-2 mb-2">
+                                                        <label class="flex-1 flex items-center gap-1.5 cursor-pointer rounded-lg border border-amber-300 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-300 has-[:checked]:bg-amber-50 dark:has-[:checked]:bg-amber-900/20">
+                                                            <input type="radio" name="status" value="passed" class="sr-only" required>
+                                                            <span class="material-symbols-outlined" aria-hidden="true">task_alt</span> Passed
+                                                        </label>
+                                                        <label class="flex-1 flex items-center gap-1.5 cursor-pointer rounded-lg border border-red-300 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-300 has-[:checked]:bg-red-50 dark:has-[:checked]:bg-red-900/20">
+                                                            <input type="radio" name="status" value="failed" class="sr-only" required>
+                                                            <span class="material-symbols-outlined" aria-hidden="true">cancel</span> Failed
+                                                        </label>
+                                                    </div>
+                                                    <textarea name="note" rows="3" placeholder="Inspector note (required if failed)..." class="text-xs"></textarea>
+                                                    <button type="submit" class="mt-2 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
+                                                        <span class="material-symbols-outlined text-sm" aria-hidden="true">save</span> Save result
+                                                    </button>
+                                                </form>
+                                            </div>
+
+                                            {{-- Annulation — avec motif obligatoire (le RDV n'est jamais supprimé) --}}
+                                            <div x-show="cancelOpen" x-cloak class="mt-3 rounded-lg border border-red-200 dark:border-red-800/30 bg-red-50 dark:bg-red-900/10 p-3">
+                                                <p class="text-[11px] font-bold text-red-700 dark:text-red-400 mb-1.5 flex items-center gap-1.5">
+                                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
+                                                    Cancel this appointment — the RDV stays in the history
+                                                </p>
+                                                <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.cancel', [$d, $appt]) }}"
+                                                      onsubmit="return confirm('Cancel this appointment? The applicant will be notified.')">
+                                                    @csrf
+                                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1">Cancellation reason <span class="text-red-500">*</span></label>
+                                                    <textarea name="note" rows="3" required maxlength="2000" placeholder="Why is this appointment cancelled?…">{{ old('note') }}</textarea>
+                                                    <button type="submit" class="mt-2 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
+                                                        <span class="material-symbols-outlined text-sm" aria-hidden="true">cancel</span> Confirm cancellation
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- ══════ CERTIFICAT DE PRÉVENTION — bande dorée + panel process ══════ --}}
+                @if ($d->hasPassedAppointment() || $cert)
+                @can('manage prevention-dossiers')
+                <div class="bg-surface-container-lowest border rounded-lg shadow-sm overflow-hidden
+                            {{ $cert ? ($cert->isCollected() || $cert->isPostDelivered() ? 'border-violet-200 dark:border-violet-800/40' : 'border-amber-200 dark:border-amber-700/40') : 'border-amber-200 dark:border-amber-700/40' }}"
+                     x-data="{ open: {{ $cert ? ($cert->isCollected() || $cert->isPostDelivered() ? 'true' : 'true') : 'true' }}, revokeOpen: false }">
+
+                    <button type="button" @click="open = !open"
+                            class="w-full flex flex-wrap items-center justify-between gap-3 p-5 border-b border-amber-100 dark:border-amber-800/30 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-colors text-start">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-10 h-10 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">workspace_premium</span>
+                            </span>
+                            <div class="min-w-0">
+                                <h3 class="text-headline-sm font-headline-sm text-on-surface">Prevention certificate @if ($cert)— <span class="font-mono" dir="ltr">{{ $cert->reference }}</span>@endif</h3>
+                                <p class="text-xs text-secondary mt-0.5">
+                                    @if ($cert)
+                                        @if ($cert->isPickup()) Pickup workflow — ready ↔ collected
+                                        @elseif ($cert->isPost()) Post (B3) workflow — ready → sent → delivered
+                                        @endif · issued {{ $cert->issued_at->format('d/m/Y') }}
+                                    @else
+                                        Not issued yet — the on-site visit was passed
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            @if ($cert)
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary">
+                                    {{ $cert->isPickup() ? 'Pickup' : 'Poste (B3)' }}
+                                </span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded {{ $certStatusCfg[1] }}">{{ $certStatusCfg[0] }}</span>
+                            @endif
+                            <svg class="w-4 h-4 text-secondary transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </button>
+
+                    <div x-show="open" x-cloak>
+
+                        {{-- ── Certificat existant ── --}}
+                        @if ($cert)
+                        <div class="p-5 space-y-4">
+                            @php
+                                $certSteps = $cert->isPickup()
+                                    ? [['Ready at the office', 'schedule_send', $cert->issued_at],
+                                       ['Collected by applicant', 'check', $cert->collected_at]]
+                                    : [['Ready — prepared', 'schedule_send', $cert->issued_at],
+                                       ['Sent — Poste Tunisienne (B3)', 'local_post_office', $cert->post_sent_at],
+                                       ['Delivered', 'mark_email_read', $cert->post_delivered_at]];
+                                $stepIdx = $cert->isPickup()
+                                    ? ($cert->isCollected() ? 1 : 0)
+                                    : match ($cert->status) {
+                                        \App\Models\PreventionCertificate::STATUS_POST_SENT      => 1,
+                                        \App\Models\PreventionCertificate::STATUS_POST_DELIVERED => 2,
+                                        default => 0,
+                                    };
+                            @endphp
+
+                            {{-- 1. Pipeline de livraison (ordre strict du processus) --}}
+                            <div class="rounded-lg border border-surface-dim bg-surface-container-low/60 p-3.5">
+                                <p class="mb-2.5 text-[10px] font-extrabold uppercase tracking-wider text-secondary">
+                                    @if ($cert->isPickup())
+                                        Pickup workflow — legal moves: ready <span aria-hidden="true">↔</span> collected
+                                    @else
+                                        Post (B3) workflow — strict order: ready <span aria-hidden="true">→</span> sent (tracking required) <span aria-hidden="true">→</span> delivered
+                                    @endif
+                                </p>
+                                <ol class="flex flex-col gap-2.5 sm:flex-row sm:items-stretch">
+                                    @foreach ($certSteps as $i => $step)
+                                        @php $done = $i < $stepIdx; $current = $i === $stepIdx; @endphp
+                                        <li class="flex flex-1 items-start gap-2.5 sm:flex-col sm:items-start" aria-current="{{ $current ? 'step' : 'false' }}">
+                                            <span class="flex h-7 w-7 flex-none items-center justify-center rounded-full text-[11px] font-black
+                                                {{ $done ? 'bg-amber-600 text-white ring-4 ring-amber-100 dark:ring-amber-900/40' : ($current ? 'bg-primary text-on-primary ring-4 ring-primary-fixed/70' : 'bg-surface-container text-outline border border-surface-dim dark:bg-gray-700') }}">
+                                                @if ($done)
+                                                    <span class="material-symbols-outlined text-base" aria-hidden="true">check</span>
+                                                @elseif ($current)
+                                                    {{ $i + 1 }}
+                                                @else
+                                                    <span class="material-symbols-outlined text-xs" aria-hidden="true">circle</span>
+                                                @endif
+                                            </span>
+                                            <div class="min-w-0">
+                                                <p class="text-[11px] font-bold leading-tight {{ $done ? 'text-amber-800 dark:text-amber-400' : ($current ? 'text-primary' : 'text-outline dark:text-gray-500') }}">
+                                                    {{ $step[0] }}
+                                                </p>
+                                                <p class="mt-0.5 font-mono text-[10px] text-secondary" dir="ltr">
+                                                    {{ ($done || $current) && $step[2] ? $step[2]->format('d/m/Y') : '— pending —' }}
+                                                </p>
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                </ol>
+                            </div>
+
+                            {{-- 2. Détails livraison --}}
+                            <dl class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+                                <div>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Reference</dt>
+                                    <dd class="font-mono font-bold text-on-surface" dir="ltr">{{ $cert->reference }}</dd>
+                                </div>
+                                <div class="text-end">
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Delivery</dt>
+                                    <dd class="font-semibold text-on-surface">
+                                        @if ($cert->isPost()) Poste Tunisienne (B3)
+                                        @elseif ($cert->isPickup()) Pickup at office
+                                        @else — @endif
+                                    </dd>
+                                </div>
+
+                                @if ($cert->isPickup())
+                                    <div>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Pickup gouvernorat</dt>
+                                        <dd class="text-end font-semibold text-on-surface">{{ $cert->governorate?->name_fr ?? $cert->governorate?->name_ar ?? '—' }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Pickup delegation</dt>
+                                        <dd class="text-end font-semibold text-on-surface">{{ $cert->delegation?->name_fr ?? $cert->delegation?->name_ar ?? '— All delegations —' }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Issued</dt>
+                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->issued_at->format('d/m/Y') }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Valid until</dt>
+                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->valid_until ? $cert->valid_until->format('d/m/Y') : '—' }}</dd>
+                                    </div>
+                                    @if ($cert->collected_at)
+                                    <div class="col-span-2">
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Collected on</dt>
+                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->collected_at->format('d/m/Y, H:i') }}</dd>
+                                    </div>
+                                    @endif
+                                @else
+                                    <div>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Recipient</dt>
+                                        <dd class="text-end font-semibold text-on-surface">{{ $cert->post_recipient ?? '—' }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Phone</dt>
+                                        <dd class="text-end font-semibold font-mono num-ltr text-on-surface" dir="ltr">{{ $cert->post_phone ?? '—' }}</dd>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Postal address</dt>
+                                        <dd class="mt-1 rounded-lg bg-surface-container px-2.5 py-2 text-[11px] leading-relaxed break-words text-on-surface dark:bg-gray-700/30">{{ $cert->post_address ?? '—' }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Tracking (B3)</dt>
+                                        <dd class="text-end font-mono font-semibold text-on-surface" dir="ltr">{{ $cert->post_tracking ?? '—' }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Issued / valid until</dt>
+                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->issued_at->format('d/m/Y') }} / {{ $cert->valid_until ? $cert->valid_until->format('d/m/Y') : '—' }}</dd>
+                                    </div>
+                                    @if ($cert->post_sent_at)
+                                    <div>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Sent on</dt>
+                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->post_sent_at->format('d/m/Y, H:i') }}</dd>
+                                    </div>
+                                    @endif
+                                    @if ($cert->post_delivered_at)
+                                    <div>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Delivered on</dt>
+                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->post_delivered_at->format('d/m/Y, H:i') }}</dd>
+                                    </div>
+                                    @endif
+                                @endif
+                            </dl>
+
+                            @if ($cert->note)
+                                <div class="rounded-lg border border-surface-dim bg-surface-container px-2.5 py-2 dark:bg-gray-700/30">
+                                    <p class="mb-0.5 text-[10px] uppercase tracking-wider font-bold text-secondary">Internal note (not visible to the applicant)</p>
+                                    <p class="whitespace-pre-line text-xs text-secondary dark:text-gray-300">{{ $cert->note }}</p>
+                                </div>
+                            @endif
+
+                            {{-- 3. Actions — uniquement les mouvements légaux de l'état actuel --}}
+                            <div class="space-y-2 pt-1">
+                                @if ($cert->isPickup() && $cert->isReady())
+                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="action" value="collected">
+                                        <button type="submit"
+                                            class="inline-flex w-full items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                                            <span class="material-symbols-outlined text-base" aria-hidden="true">handshake</span>
+                                            Mark as collected
+                                        </button>
+                                    </form>
+                                @elseif ($cert->isPickup())
+                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="action" value="ready">
+                                        <button type="submit"
+                                            class="inline-flex w-full items-center justify-center gap-2 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold py-2 px-4 rounded transition-colors dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">undo</span>
+                                            Mark as ready (un-collect)
+                                        </button>
+                                    </form>
+                                @elseif ($cert->isPost() && $cert->isReady())
+                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="action" value="sent">
+                                        <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Tracking number (B3) <span class="text-red-500">*</span></label>
+                                        <input type="text" name="post_tracking" required maxlength="60"
+                                            value="{{ old('post_tracking', $cert->post_tracking) }}"
+                                            placeholder="e.g. 3029 8765 4321" class="w-full text-sm">
+                                        <button type="submit"
+                                            class="mt-2 inline-flex w-full items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                                            <span class="material-symbols-outlined text-base" aria-hidden="true">local_post_office</span>
+                                            Register at Poste Tunisienne
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="action" value="ready">
+                                        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 border border-surface-dim bg-surface-container-lowest hover:bg-surface-container text-secondary text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">undo</span>
+                                            Internal re-edit (stays ready)
+                                        </button>
+                                    </form>
+                                @elseif ($cert->isPostSent())
+                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="action" value="delivered">
+                                        <button type="submit"
+                                            class="inline-flex w-full items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                                            <span class="material-symbols-outlined text-base" aria-hidden="true">mark_email_read</span>
+                                            Confirm post delivery
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="action" value="ready">
+                                        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 border border-surface-dim bg-surface-container-lowest hover:bg-surface-container text-secondary text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">undo</span>
+                                            Not sent yet — roll back to ready
+                                        </button>
+                                    </form>
+                                @else
+                                    <p class="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-400">
+                                        <span class="material-symbols-outlined text-base" aria-hidden="true">verified</span>
+                                        Delivery confirmed — the applicant received the certificate.
+                                    </p>
+                                @endif
+                            </div>
+
+                            {{-- 4. Révocation — zone dangereuse, verrouillée une fois collecté --}}
+                            @if (! $cert->isCollected() && $cert->status !== \App\Models\PreventionCertificate::STATUS_POST_DELIVERED)
+                                <div class="border-t border-surface-dim pt-3" x-data="{ revokeOpen: false }">
+                                    <button type="button" @click="revokeOpen = !revokeOpen"
+                                            class="flex w-full items-center justify-between text-start" :aria-expanded="revokeOpen" aria-controls="cert-revoke">
+                                        <span class="flex items-center gap-1.5 text-xs font-bold text-red-700 dark:text-red-400">
+                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
+                                            Revoke this certificate
+                                        </span>
+                                        <svg class="h-3.5 w-3.5 text-red-400 transition-transform" :class="revokeOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                    <div x-show="revokeOpen" x-cloak id="cert-revoke" class="mt-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 p-3">
+                                        <p class="text-[11px] leading-relaxed text-red-800 dark:text-red-300">
+                                            Deleting removes the certificate <strong class="font-mono">{{ $cert->reference }}</strong>; its history entry stays in the timeline. A new certificate can be issued afterwards.
+                                        </p>
+                                        <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.destroy', $d) }}"
+                                              onsubmit="return confirm('Revoke certificate {{ $cert->reference }}? This action cannot be undone.')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit"
+                                                    class="mt-2 inline-flex w-full items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
+                                                <span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span>
+                                                Confirm revoke
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @else
+                                <p class="flex items-center gap-1.5 border-t border-surface-dim pt-3 text-[11px] font-bold text-secondary">
+                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">lock</span>
+                                    Finalised certificate — locked. It cannot be revoked (regulatory archive).
+                                </p>
+                            @endif
+                        </div>
+
+                        {{-- ── Pas encore émis : formulaire guidé ── --}}
+                        @else
+                        <div class="p-5">
+                            @if ($d->delivery_method)
+                                <div class="mb-3 flex items-start gap-2 rounded-lg border border-surface-dim bg-surface-container-low px-3 py-2 text-xs text-secondary">
+                                    <span class="material-symbols-outlined text-base text-primary mt-px shrink-0" aria-hidden="true">touch_app</span>
+                                    <span>The applicant chose <strong class="text-on-surface">{{ ['pickup' => 'pickup at office', 'post' => 'Poste Tunisienne (B3)', 'digital' => 'digital download'][$d->delivery_method] ?? ucfirst($d->delivery_method) }}</strong> — it is pre-selected below. @if ($d->delivery_method === 'post') The postal address is pre-filled. @endif</span>
+                                </div>
+                            @endif
+
+                            <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.store', $d) }}">
+                                @csrf
+                                <div class="space-y-3"
+                                     x-data="{
+                                        method: '{{ old('delivery_method', $d->delivery_method ?? 'pickup') }}',
+                                        gov: {{ old('governorate_id', $d->governorate_id) ?? 'null' }},
+                                        del: {{ old('delegation_id') ? old('delegation_id') : 'null' }},
+                                        map: {{ \Illuminate\Support\Js::from($governorates
+                                            ->mapWithKeys(fn ($g) => [
+                                                $g->id => ['name' => $g->name_fr ?? $g->name_ar, 'delegations' => $g->delegations->map(fn ($del) => ['id' => $del->id, 'name' => $del->name_fr ?? $del->name_ar])->values()->all()],
+                                            ])
+                                            ->toArray()) }}
+                                     }">
+
+                                    {{-- Mode de remise — digital annoncé mais pas actif --}}
+                                    <div class="overflow-hidden rounded-lg border border-surface-dim dark:border-gray-600">
+                                        <p class="px-3 pb-1.5 pt-2.5 text-[10px] font-extrabold uppercase tracking-wider text-secondary">Delivery method</p>
+                                        <label class="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-surface-container dark:hover:bg-gray-700/40"
+                                               :class="method === 'pickup' ? 'bg-amber-50 dark:bg-amber-900/20' : ''">
+                                            <input type="radio" name="delivery_method" value="pickup" x-model="method" required class="text-amber-600">
+                                            <span class="material-symbols-outlined text-amber-600 dark:text-amber-400" aria-hidden="true">storefront</span>
+                                            <span class="flex-1 text-sm font-bold text-on-surface">Pickup at office</span>
+                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-600 text-white">Available</span>
+                                        </label>
+                                        <label class="flex cursor-pointer items-center gap-2.5 border-t border-surface-dim px-3 py-2 hover:bg-surface-container dark:border-gray-600 dark:hover:bg-gray-700/40"
+                                               :class="method === 'post' ? 'bg-blue-50 dark:bg-blue-900/20' : ''">
+                                            <input type="radio" name="delivery_method" value="post" x-model="method" class="text-blue-600">
+                                            <span class="material-symbols-outlined text-blue-600 dark:text-blue-400" aria-hidden="true">local_shipping</span>
+                                            <span class="flex-1 text-sm font-bold text-on-surface">Poste Tunisienne (B3)</span>
+                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">Registered</span>
+                                        </label>
+                                        <div class="flex select-none items-center gap-2.5 border-t border-surface-dim px-3 py-2 opacity-55 dark:border-gray-600">
+                                            <input type="radio" disabled class="text-gray-400">
+                                            <span class="material-symbols-outlined text-secondary" aria-hidden="true">download</span>
+                                            <span class="flex-1 text-sm font-bold text-outline dark:text-gray-500">Digital download</span>
+                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Coming soon</span>
+                                        </div>
+                                    </div>
+
+                                    {{-- Pickup : gouvernorat + délégation --}}
+                                    <div x-show="method === 'pickup'" x-cloak>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Gouvernorat <span class="text-red-500">*</span></label>
+                                            <select name="governorate_id" :required="method === 'pickup'" x-model="gov" class="w-full text-sm">
+                                                <option value="">Select gouvernorat…</option>
+                                                <template x-for="(entry, govId) in map" :key="govId">
+                                                    <option :value="govId" x-text="entry.name"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                        <div class="mt-3">
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Pickup delegation <span class="font-normal normal-case">(optional)</span></label>
+                                            <select name="delegation_id" x-model="del" class="w-full text-sm">
+                                                <option value="">— All delegations —</option>
+                                                <template x-for="dele in (map[gov] ? map[gov].delegations : [])" :key="dele.id">
+                                                    <option :value="dele.id" x-text="dele.name"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {{-- Post : données destinataire B3 --}}
+                                    <div x-show="method === 'post'" x-cloak class="space-y-3 rounded-lg border border-blue-200 p-3 dark:border-blue-800/40">
+                                        <p class="flex items-center gap-1.5 text-[11px] font-bold text-blue-700 dark:text-blue-300">
+                                            <span class="material-symbols-outlined flex-none text-sm" aria-hidden="true">local_post_office</span>
+                                            Certified mail (B3) — sent to the applicant's mailbox
+                                        </p>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Recipient <span class="text-red-500">*</span></label>
+                                            <input type="text" name="post_recipient" :required="method === 'post'" maxlength="255"
+                                                value="{{ old('post_recipient', $d->delivery_method === 'post' ? $d->nom_prenom : '') }}" class="w-full text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Phone</label>
+                                            <input type="text" name="post_phone" maxlength="40"
+                                                value="{{ old('post_phone', $d->delivery_method === 'post' ? $d->phone : '') }}" class="w-full text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Postal address <span class="text-red-500">*</span></label>
+                                            <textarea name="post_address" rows="3" :required="method === 'post'" maxlength="500"
+                                                placeholder="Street, building, postal code, city...">{{ old('post_address', $d->delivery_method === 'post' ? $d->post_address : '') }}</textarea>
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Tracking number <span class="font-normal normal-case">(optional — added when sent)</span></label>
+                                            <input type="text" name="post_tracking" maxlength="60" value="{{ old('post_tracking') }}" placeholder="e.g. 3029 8765 4321" class="w-full text-sm">
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Valid until <span class="font-normal normal-case">(optional)</span></label>
+                                            <input type="date" name="valid_until" min="{{ date('Y-m-d') }}" value="{{ old('valid_until') }}" class="w-full text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Internal note <span class="font-normal normal-case">(not visible to applicant)</span></label>
+                                            <textarea name="note" rows="2" maxlength="2000" placeholder="Internal note..." class="text-xs">{{ old('note') }}</textarea>
+                                        </div>
+                                    </div>
+                                    <button type="submit"
+                                        class="inline-flex w-full items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-4 rounded transition-colors shadow-sm">
+                                        <span class="material-symbols-outlined text-base" aria-hidden="true">workspace_premium</span>
+                                        Confirm &amp; issue certificate
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endcan
+                @endif
+
+                {{-- ══════ TIMELINE — Historique & Journal d'audit ══════ --}}
+                @if ($d->events->isNotEmpty())
+                <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print"
+                     x-data="{ open: false }">
+                    <button type="button" @click="open = !open"
+                            class="w-full flex flex-wrap items-center justify-between gap-3 p-5 border-b border-surface-dim hover:bg-surface-container transition-colors text-start">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-8 h-8 rounded bg-primary-fixed/50 text-primary flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">history</span>
+                            </span>
+                            <div>
+                                <h3 class="text-headline-sm font-headline-sm text-on-surface">Timeline — audit journal</h3>
+                                <p class="text-xs text-secondary mt-0.5">Complete history of every administrative act</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-[11px] text-secondary font-semibold flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">receipt_long</span>
+                                {{ $d->events->count() }} events
+                            </span>
+                            <svg class="w-4 h-4 text-secondary transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </button>
+
+                    <div x-show="open" x-cloak class="p-5 pt-4">
+                        {{-- Chronologie linéaire haute densité --}}
+                        <div class="relative ps-6 sm:ps-8 space-y-5 before:absolute before:start-3 sm:before:start-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-surface-dim">
+                            @foreach ($d->events->reverse()->values() as $event)
+                                @php [$dot, $icon, $chip, $chipCls] = $eventChip($event->type); @endphp
+                                <div class="relative">
+                                    {{-- Pastille --}}
+                                    <div class="absolute -start-6 sm:-start-8 top-0 w-6 sm:w-8 flex items-center justify-center">
+                                        <div class="w-5 h-5 rounded-full {{ $dot }} flex items-center justify-center ring-4 ring-surface-container-lowest shadow-xs">
+                                            <span class="material-symbols-outlined text-xs" aria-hidden="true">{{ $icon }}</span>
+                                        </div>
+                                    </div>
+                                    {{-- Carte de contenu --}}
+                                    <div class="bg-surface-container-low/60 border border-surface-dim rounded-lg p-4 transition-all hover:border-primary/40">
+                                        <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[10px] font-bold {{ $chipCls }} px-2 py-0.5 rounded uppercase">{{ $chip }}</span>
+                                                <span class="text-xs font-semibold text-on-surface">
+                                                    @if ($event->actor)
+                                                        {{ $event->actor->name }}
+                                                    @else
+                                                        <span class="italic text-secondary">System</span>
+                                                    @endif
+                                                </span>
+                                                @if ($event->actor)
+                                                    @php
+                                                        $actorRole = $event->actor->roles->first()?->name;
+                                                        $isApplicant = $event->actor->roles->isEmpty();
+                                                    @endphp
+                                                    <span class="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded {{ $isApplicant ? 'bg-surface-dim text-secondary' : 'bg-secondary-container text-on-secondary-container' }}">
+                                                        {{ $isApplicant ? 'Applicant' : ucfirst(str_replace('-', ' ', $actorRole ?? 'Admin')) }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <time class="text-xs font-mono font-medium text-secondary" dir="ltr">{{ $event->created_at->format('d/m/Y H:i') }}</time>
+                                        </div>
+                                        <h5 class="text-xs font-bold text-on-surface mb-1">{{ $event->typeLabel() }}</h5>
+
+                                        @if ($event->detailsText())
+                                            <p class="text-xs inline-flex items-center gap-1 rounded bg-surface-dim px-2 py-0.5 font-semibold text-on-surface mb-1.5">
+                                                <span class="material-symbols-outlined text-[13px]" aria-hidden="true">info</span>
+                                                {{ $event->detailsText() }}
+                                            </p>
+                                        @endif
+
+                                        @if ($event->note)
+                                            <p class="text-body-sm font-body-sm text-secondary">
+                                                <span class="font-bold text-on-surface">Note:</span>
+                                                <span class="whitespace-pre-line">{{ $event->note }}</span>
+                                            </p>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- ══════ HISTORIQUE DES CORRECTIONS ══════ --}}
+                @if (!empty($allCorrectionRounds))
+                <div class="bg-surface-container-lowest border border-amber-200 dark:border-amber-700/40 rounded-lg shadow-sm overflow-hidden no-print"
+                     x-data="{ open: false }">
+                    <button type="button" @click="open = !open"
+                            class="w-full flex items-center gap-2 p-5 border-b border-amber-100 dark:border-amber-800/30 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-colors text-start">
+                        <span class="w-8 h-8 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">manage_history</span>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">Correction history</h3>
+                            <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+                                {{ count($allCorrectionRounds) }} correction round(s) — all previous versions are consultable below
+                            </p>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300" dir="ltr">{{ count($allCorrectionRounds) }}</span>
+                        <svg class="w-4 h-4 text-amber-700 dark:text-amber-400 transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak class="p-5">
+                        @include('prevention-requests.partials.correction-history', [
+                            'allCorrectionRounds' => $allCorrectionRounds,
+                            'archivedDocuments'   => $archivedDocuments,
+                            'documentTypes'       => $documentTypes,
+                        ])
+                    </div>
+                </div>
+                @endif
+
+            </div>{{-- /colonne gauche --}}
+
+            {{-- ══════ COLONNE DROITE (4 colonnes) ══════ --}}
+            <div class="lg:col-span-4 space-y-6">
+
+                {{-- ENCADRÉ 1 : Pièces justificatives versées --}}
+                <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden"
+                     x-data="{ open: true }">
+                    <button type="button" @click="open = !open"
+                            class="w-full flex items-center gap-2 p-5 hover:bg-surface-container transition-colors text-start border-b border-surface-dim">
+                        <span class="w-8 h-8 rounded bg-primary-fixed/50 text-primary flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">attach_file</span>
+                        </span>
+                        <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">Supporting documents</h3>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap {{ $isDocComplete ? 'text-amber-900 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300' : 'text-secondary bg-surface-dim' }}" dir="ltr">{{ $uploadedTypes }}/{{ $documentTypes->count() }}</span>
+                        <svg class="w-4 h-4 text-secondary transition-transform shrink-0 ms-1" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+
+                    <div x-show="open" x-cloak class="p-5">
+                        {{-- Barre de complétude --}}
+                        <div class="h-2 bg-surface-dim/50 rounded-full overflow-hidden mb-1" role="progressbar" aria-valuenow="{{ $docPct }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="h-full rounded-full transition-all duration-500 {{ $isDocComplete ? 'bg-amber-500' : 'bg-primary' }}" style="width: {{ $docPct }}%"></div>
+                        </div>
+                        <p class="text-[10px] font-semibold mb-4 {{ $isDocComplete ? 'text-amber-800 dark:text-amber-400' : 'text-secondary' }}">
+                            {{ $isDocComplete ? 'Checklist complete' : 'Checklist: ' . $uploadedTypes . ' / ' . $documentTypes->count() . ' uploaded' }}
+                        </p>
+
+                        <div class="space-y-2.5">
+                            @forelse ($documentTypes as $docType)
+                                @php $doc = $uploadedDocs->get($docType->id); @endphp
+                                @if ($doc)
+                                    <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5 group hover:border-primary/40 transition-colors">
+                                        <div class="flex items-start gap-2.5 min-w-0">
+                                            <span class="material-symbols-outlined text-red-600 text-lg mt-0.5 shrink-0" aria-hidden="true">{{ str_contains((string) $doc->mime_type, 'pdf') ? 'picture_as_pdf' : 'description' }}</span>
+                                            <div class="min-w-0">
+                                                <h4 class="text-xs font-bold text-on-surface leading-snug">{{ $docType->name }}</h4>
+                                                <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap" dir="ltr">
+                                                    <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
+                                                    <span class="text-surface-dim">•</span>
+                                                    <span>{{ $doc->updated_at->format('d/m/Y') }}</span>
+                                                    @if ($doc->original_name)
+                                                        <span class="truncate max-w-36 text-secondary/80" title="{{ $doc->original_name }}">— {{ $doc->original_name }}</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <a href="{{ route('admin.prevention-dossiers.documents.download', ['document' => $doc]) }}"
+                                           class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors"
+                                           title="Download {{ $doc->original_name }}">
+                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
+                                        </a>
+                                    </div>
+                                @else
+                                    <div class="p-3 border border-dashed border-surface-dim rounded flex items-start justify-between gap-2.5">
+                                        <div class="flex items-start gap-2.5 min-w-0">
+                                            <span class="w-7 h-7 rounded bg-surface-dim/40 text-outline flex items-center justify-center shrink-0" aria-hidden="true">
+                                                <span class="material-symbols-outlined text-sm">{{ $docType->is_conditional ? 'help_outline' : 'error_outline' }}</span>
+                                            </span>
+                                            <div class="min-w-0">
+                                                <h4 class="text-xs font-bold {{ $docType->is_conditional ? 'text-secondary' : 'text-on-surface font-semibold' }}">{{ $docType->name }}</h4>
+                                                <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap">
+                                                    @if ($docType->is_conditional)
+                                                        <span class="font-semibold text-amber-900 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/40 px-1.5 rounded">Conditional</span>
+                                                    @endif
+                                                    <span>Missing</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @empty
+                                <div class="p-4 text-center">
+                                    <span class="material-symbols-outlined text-2xl text-outline" aria-hidden="true">folder_off</span>
+                                    <p class="text-xs text-secondary mt-1">No document types configured</p>
+                                </div>
+                            @endforelse
+                        </div>
+
+                        {{-- Fichiers transmis hors checklist --}}
+                        @php $orphanDocs = $uploadedDocs->filter(fn ($doc) => ! $documentTypes->contains('id', $doc->document_type_id)); @endphp
+                        @if ($orphanDocs->isNotEmpty())
+                            <div class="pt-3 mt-2 border-t border-surface-dim/60">
+                                <p class="text-[11px] font-bold text-secondary flex items-center gap-1.5 mb-2">
+                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">attachment</span>
+                                    Other files ({{ $orphanDocs->count() }})
+                                </p>
+                                <div class="space-y-2.5">
+                                    @foreach ($orphanDocs as $doc)
+                                        <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5">
+                                            <div class="flex items-start gap-2.5 min-w-0">
+                                                <span class="material-symbols-outlined text-red-600 text-lg mt-0.5 shrink-0" aria-hidden="true">{{ str_contains((string) $doc->mime_type, 'pdf') ? 'picture_as_pdf' : 'description' }}</span>
+                                                <div class="min-w-0">
+                                                    <h4 class="text-xs font-bold text-on-surface truncate" title="{{ $doc->original_name }}">{{ $doc->original_name ?? 'Document' }}</h4>
+                                                    <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5" dir="ltr">
+                                                        <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
+                                                        <span class="text-surface-dim">•</span>
+                                                        <span>{{ $doc->created_at->format('d/m/Y') }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <a href="{{ route('admin.prevention-dossiers.documents.download', ['document' => $doc]) }}"
+                                               class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors" title="Download">
+                                                <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
+                                            </a>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- ENCADRÉ 2 : Fichiers archivés (corrections précédentes) --}}
+                @if ($archivedDocuments->isNotEmpty())
+                    <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden" x-data="{ openArchive: false }">
+                        <div class="p-5">
+                            <button type="button" @click="openArchive = !openArchive" class="w-full text-start">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="w-8 h-8 rounded bg-surface-dim/60 text-secondary flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-base" aria-hidden="true">inventory_2</span>
+                                    </span>
+                                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">Archived files</h3>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary" dir="ltr">{{ $archivedDocuments->count() }}</span>
+                                    <svg class="w-4 h-4 text-secondary transition-transform" :class="openArchive ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
+                                <p class="text-[11px] text-secondary leading-relaxed">Kept on disk for history — documents replaced after correction rounds</p>
+                            </button>
+
+                            <div x-show="openArchive" x-cloak class="pt-4 space-y-2.5">
+                                @foreach ($archivedDocuments as $doc)
+                                    <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5">
+                                        <div class="flex items-start gap-2.5 min-w-0">
+                                            <span class="material-symbols-outlined text-outline text-lg mt-0.5 shrink-0" aria-hidden="true">inventory_2</span>
+                                            <div class="min-w-0">
+                                                <h4 class="text-xs font-bold text-secondary leading-snug">{{ $doc->documentType?->name ?? 'Document' }}</h4>
+                                                <div class="flex items-center gap-2 text-[11px] text-secondary/80 mt-0.5 flex-wrap" dir="ltr">
+                                                    <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
+                                                    <span class="text-surface-dim">•</span>
+                                                    <span>{{ $doc->created_at->format('d/m/Y') }}</span>
+                                                    @if ($doc->original_name)
+                                                        <span class="truncate max-w-36" title="{{ $doc->original_name }}">— {{ $doc->original_name }}</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <a href="{{ route('admin.prevention-dossiers.documents.download', ['document' => $doc]) }}"
+                                           class="w-7 h-7 rounded bg-surface-container text-secondary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors" title="Download">
+                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
+                                        </a>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
                 @endif
 
-                {{-- All recorded events, newest first --}}
-                @foreach ($preventionDossier->events->reverse()->values() as $event)
-                    @if (! $loop->first)
-                        <div class="ms-[3px] my-1.5 w-0.5 h-5 bg-gray-200 dark:bg-gray-600"></div>
-                    @endif
-                    <div class="flex items-start gap-3">
-                        <span class="mt-1 flex-none h-2 w-2 rounded-full {{ $event->typeDot() }}"></span>
-                        <div class="min-w-0">
-                            <p class="text-xs font-semibold text-on-surface dark:text-gray-100">{{ $event->typeLabel() }}</p>
-                            <p class="text-xs text-secondary dark:text-gray-400 flex flex-wrap items-center gap-1.5">
-                                @if ($event->actor)
-                                    <span class="font-semibold text-on-surface dark:text-gray-200">{{ $event->actor->name }}</span>
-                                    @php
-                                        $actorRole = $event->actor->roles->first()?->name;
-                                        $isApplicant = $event->actor->roles->isEmpty();
-                                    @endphp
-                                    @if ($actorRole)
-                                        <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide {{ $isApplicant ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' }}">
-                                            {{ $isApplicant ? 'Applicant' : ucfirst(str_replace('-', ' ', $actorRole)) }}
-                                        </span>
-                                    @elseif ($isApplicant)
-                                        <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">Applicant</span>
-                                    @else
-                                        <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">Admin</span>
-                                    @endif
-                                @else
-                                    <span class="italic text-secondary dark:text-gray-500">System</span>
-                                @endif
-                                <span class="text-secondary dark:text-gray-400">·</span>
-                                <span class="font-mono">{{ $event->created_at->format('d M Y, H:i') }}</span>
-                            </p>
+            </div>{{-- /colonne droite --}}
+        </div>{{-- /grille 8/4 --}}
+    </div>
 
-                            {{-- RDV details (date / time / location) --}}
-                            @if ($event->detailsText())
-                                <p class="mt-1 text-xs inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
-                                    <svg class="h-3 w-3 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    {{ $event->detailsText() }}
-                                </p>
-                            @endif
-
-                            {{-- Note attached to the event (correction note, fail reason, cancellation reason...) --}}
-                            @if ($event->note)
-                                <div class="mt-1.5 rounded-lg border bg-surface-container px-2.5 py-2 dark:bg-gray-700/30 {{ str_contains($event->type, 'failed') || str_contains($event->type, 'cancelled') ? 'border-red-200 dark:border-red-800/30' : 'border-surface-dim dark:border-gray-600' }}">
-                                    <p class="text-xs font-semibold text-secondary dark:text-gray-400 mb-0.5">Note</p>
-                                    <p class="text-xs text-secondary dark:text-gray-300 whitespace-pre-line">{{ $event->note }}</p>
-                                </div>
-                            @endif
-                        </div>
+    {{-- ═════════════════════════════════════════════════════════════════
+        FICHE IMPRIMABLE — feuille professionnelle du dossier (A4)
+        Masquée à l'écran, seule visible sous @media print.
+    ═════════════════════════════════════════════════════════════════ --}}
+    <div class="print-sheet" aria-hidden="true">
+        <div class="fiche">
+            {{-- Bandeau institutionnel --}}
+            <div class="fiche-band">
+                <div style="display:flex; align-items:center; gap:14px; min-width:0;">
+                    <img src="/images/logo.png" alt="" class="fiche-band-logo">
+                    <div style="min-width:0;">
+                        <div class="fiche-band-org">{{ setting('app_name', 'ONPC — Office National de la Protection Civile') }}</div>
+                        <div class="fiche-band-sub">Prevention service — {{ $d->governorate?->name_fr ?? $d->governorate?->name_ar ?? '—' }}</div>
                     </div>
-                @endforeach
-            </div>
-        </div>
-
-        {{-- Correction history — old vs new, all rounds, with archived documents --}}
-        @if (!empty($allCorrectionRounds))
-        <div class="rounded-2xl border border-amber-200 dark:border-amber-800/40 bg-surface-container-lowest shadow-sm dark:bg-gray-800">
-            <div class="border-b border-amber-100 dark:border-amber-800/30 px-5 py-4 flex items-center gap-2">
-                <svg class="h-4 w-4 text-amber-600 dark:text-amber-400 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <div>
-                    <h3 class="text-sm font-semibold text-amber-900 dark:text-amber-300">Correction History</h3>
-                    <p class="text-xs text-amber-700 dark:text-amber-400 mt-0.5">{{ count($allCorrectionRounds) }} correction round(s) — all previous versions are consultable below</p>
+                </div>
+                <div class="fiche-band-ref">
+                    <div class="fiche-band-ref-label">Dossier</div>
+                    <div class="fiche-band-ref-value" dir="ltr">{{ $viewRef }}</div>
                 </div>
             </div>
-            <div class="px-5 py-4">
-                @include('prevention-requests.partials.correction-history', [
-                    'allCorrectionRounds' => $allCorrectionRounds,
-                    'archivedDocuments'   => $archivedDocuments,
-                    'documentTypes'       => $documentTypes,
-                ])
+
+            {{-- Titre + date d'édition --}}
+            <div class="fiche-title-row">
+                <div class="fiche-title">PREVENTION DOSSIER — ADMINISTRATIVE SHEET</div>
+                <div class="fiche-printed" dir="ltr">Printed: {{ $printDate }}</div>
+            </div>
+
+            {{-- Bloc jumelé : demandeur • bâtiment --}}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                <section class="fiche-sec">
+                    <h2 class="fiche-h2">Applicant</h2>
+                    <table class="fiche-table fiche-kv">
+                        <tr><th>Full name</th><td style="font-weight:700;">{{ $d->nom_prenom }}</td></tr>
+                        <tr><th>CIN</th><td class="fiche-mono" dir="ltr">{{ $d->cin }}</td></tr>
+                        <tr><th>Phone</th><td class="fiche-mono" dir="ltr">{{ $d->phone ?? '—' }}</td></tr>
+                        <tr><th>Email</th><td dir="ltr">{{ $d->user?->email ?? '—' }}</td></tr>
+                    </table>
+                </section>
+                <section class="fiche-sec">
+                    <h2 class="fiche-h2">Building</h2>
+                    <table class="fiche-table fiche-kv">
+                        <tr><th>Building type</th><td>{{ $d->buildingType?->name ?? '—' }}</td></tr>
+                        <tr><th>Activity</th><td>{{ $d->buildingActivity?->name ?? $d->activity_other ?? '—' }}</td></tr>
+                        <tr><th>Delegation</th><td>{{ $d->delegation?->name_fr ?? $d->delegation?->name_ar ?? '—' }}</td></tr>
+                        <tr><th>Address</th><td>{{ $d->building_address ?? '—' }}</td></tr>
+                        @if ($d->latitude && $d->longitude)
+                        <tr><th>Coordinates</th><td class="fiche-mono" dir="ltr">{{ number_format((float)$d->latitude, 5) }}, {{ number_format((float)$d->longitude, 5) }}</td></tr>
+                        @endif
+                    </table>
+                </section>
+            </div>
+
+            {{-- Références administratives --}}
+            <section class="fiche-sec">
+                <h2 class="fiche-h2">Administrative references</h2>
+                <table class="fiche-table fiche-kv-4">
+                    <tr>
+                        <th>Request no.</th>
+                        <td class="fiche-mono" dir="ltr">{{ $d->num_demande ?: '—' }}</td>
+                        <th>Internal ref.</th>
+                        <td class="fiche-mono" dir="ltr">{{ $d->api_reference ?: $d->reference ?: '—' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Deposited on</th>
+                        <td class="fiche-mono" dir="ltr">{{ $d->created_at->format('d/m/Y') }}</td>
+                        <th>Office</th>
+                        <td>{{ $d->governorate?->name_fr ?? $d->governorate?->name_ar ?? '—' }}</td>
+                    </tr>
+                </table>
+            </section>
+
+            {{-- Certificat (si émis) --}}
+            @if ($cert)
+            <section class="fiche-sec">
+                <div class="fiche-cert">
+                    <div class="fiche-cert-title">Prevention certificate</div>
+                    Reference <strong class="fiche-mono">{{ $cert->reference }}</strong>
+                    — Delivery: {{ $cert->isPickup() ? 'pickup at office' : 'Poste Tunisienne (B3)' }}
+                    — Status: {{ $certStatusCfg[0] }}
+                    — Issued: {{ $cert->issued_at->format('d/m/Y') }}
+                    @if ($cert->valid_until) — Valid until: {{ $cert->valid_until->format('d/m/Y') }}@endif
+                    @if ($cert->post_tracking) — Tracking: <span class="fiche-mono">{{ $cert->post_tracking }}</span>@endif
+                </div>
+            </section>
+            @endif
+
+            {{-- Documents versés au dossier --}}
+            <section class="fiche-sec">
+                <h2 class="fiche-h2">
+                    Supporting documents
+                    <span dir="ltr" style="font-weight:700;">— {{ $uploadedTypes }}/{{ $documentTypes->count() }}</span>
+                </h2>
+                <table class="fiche-table fiche-table-dark">
+                    <thead>
+                        <tr>
+                            <th style="width:6%;">No.</th>
+                            <th>Document</th>
+                            <th>File</th>
+                            <th style="width:11%;">Size</th>
+                            <th style="width:13%;">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php $docNo = 0; @endphp
+                        @forelse ($documentTypes as $docType)
+                            @php $doc = $uploadedDocs->get($docType->id); @endphp
+                            @php $docNo++; @endphp
+                            <tr>
+                                <td class="fiche-mono" dir="ltr" style="text-align:center;">{{ str_pad($docNo, 2, '0', STR_PAD_LEFT) }}</td>
+                                <td>{{ $docType->name }}</td>
+                                @if ($doc)
+                                    <td dir="ltr">{{ $doc->original_name ?: '—' }}</td>
+                                    <td class="fiche-mono" dir="ltr">{{ $fmtSize($doc->size) }}</td>
+                                    <td class="fiche-mono" dir="ltr">{{ $doc->updated_at->format('d/m/Y') }}</td>
+                                @else
+                                    <td class="fiche-missing">missing{{ $docType->is_conditional ? '' : ' (required)' }}</td>
+                                    <td class="fiche-dim">—</td>
+                                    <td class="fiche-dim">—</td>
+                                @endif
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="fiche-dim" style="text-align:center;">—</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </section>
+
+            {{-- Pied de fiche --}}
+            <div class="fiche-foot">
+                <div>Internal administrative sheet — {{ $d->hasPassedAppointment() ? 'inspection passed' : 'inspection not completed' }}</div>
+                <div>{{ $viewRef }} · {{ $d->id }}</div>
             </div>
         </div>
-        @endif
-
-        {{-- Quick info --}}
-        <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800 px-5 py-4">
-            <h3 class="text-sm font-semibold text-on-surface dark:text-gray-100 mb-3">Quick Info</h3>
-            <dl class="space-y-2 text-xs">
-                <div class="flex justify-between">
-                    <dt class="text-secondary dark:text-gray-400">Dossier ID</dt>
-                    <dd class="font-mono font-semibold text-on-surface dark:text-gray-100">#{{ $preventionDossier->id }}</dd>
-                </div>
-                <div class="flex justify-between">
-                    <dt class="text-secondary dark:text-gray-400">Step reached</dt>
-                    <dd class="font-semibold text-on-surface dark:text-gray-100">Step {{ $preventionDossier->current_step }}</dd>
-                </div>
-                <div class="flex justify-between">
-                    <dt class="text-secondary dark:text-gray-400">Docs uploaded</dt>
-                    <dd class="font-semibold text-on-surface dark:text-gray-100">{{ $uploadedDocs->count() }} / {{ $documentTypes->count() }}</dd>
-                </div>
-                <div class="flex justify-between">
-                    <dt class="text-secondary dark:text-gray-400">Submitted</dt>
-                    <dd class="text-on-surface dark:text-gray-300">{{ $preventionDossier->created_at->diffForHumans() }}</dd>
-                </div>
-            </dl>
-        </div>
-
-    </div>{{-- /right sidebar --}}
-
-</div>
+    </div>
 @endsection

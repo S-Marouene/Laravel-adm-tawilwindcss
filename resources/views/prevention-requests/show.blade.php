@@ -3,7 +3,7 @@
     // ── Référence affichée : reçu officiel > référence stockée > provisoire ──
     $viewRef = $dossier->num_demande ?: ($dossier->reference ?: \App\Support\Reference::provisional('prevention'));
 
-    $pendingAppointment = $dossier->appointments->first(fn ($a) => ! $a->isPassed() && ! $a->isFailed());
+    $pendingAppointment = $dossier->appointments->first(fn ($a) => $a->isPending());
     $lastAppointment = $dossier->appointments->last();
     $lastFailedAppointment = $dossier->appointments->last(fn ($a) => $a->isFailed());
 
@@ -883,7 +883,7 @@
                                                     <h5 class="text-xs font-bold text-on-surface mb-1">
                                                         {{ __('prevention_request.timeline_' . $event->type) }}
                                                     </h5>
-                                                    @if (in_array($event->type, ['appointment_scheduled', 'appointment_passed', 'appointment_failed', 'appointment_deleted']) && is_array($event->data) && ! empty($event->data['visit_date']))
+                                                    @if (in_array($event->type, ['appointment_scheduled', 'appointment_passed', 'appointment_failed', 'appointment_deleted', 'appointment_cancelled']) && is_array($event->data) && ! empty($event->data['visit_date']))
                                                         <p class="text-xs inline-flex items-center gap-1 rounded bg-surface-dim px-2 py-0.5 font-semibold text-on-surface mb-1.5" dir="ltr">
                                                             <span class="material-symbols-outlined text-[13px]" aria-hidden="true">event</span>
                                                             {{ \Illuminate\Support\Carbon::parse($event->data['visit_date'])->format('d/m/Y') }} @if (! empty($event->data['visit_time'])) • {{ substr((string) $event->data['visit_time'], 0, 5) }} @endif
