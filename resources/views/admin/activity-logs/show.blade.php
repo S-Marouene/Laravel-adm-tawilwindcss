@@ -18,7 +18,8 @@
                     </span>
                     <span class="text-sm text-secondary dark:text-gray-400">{{ $activityLog->created_at->format('F j, Y \\a\\t g:i A') }}</span>
                 </div>
-                <form action="{{ route('admin.activity-logs.destroy', $activityLog) }}" method="POST" onsubmit="return confirm('Delete this log entry?')">
+                <form action="{{ route('admin.activity-logs.destroy', $activityLog) }}" method="POST"
+                      data-confirm data-confirm-style="danger">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="admin-danger-link text-sm">Delete</button>

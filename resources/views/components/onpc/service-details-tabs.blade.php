@@ -86,7 +86,7 @@
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
                             <form method="POST" action="{{ route('prevention-requests.destroy', $draft->id) }}"
-                                  onsubmit="return confirm('{{ __('prevention_request.delete_confirm') }}')">
+                                  data-confirm data-confirm-style="danger">
                                 @csrf
                                 @method('DELETE')
                                 <input type="hidden" name="back" value="wizard">

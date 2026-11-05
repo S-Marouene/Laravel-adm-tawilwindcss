@@ -165,7 +165,7 @@
                                                                     <p class="text-[11px] text-outline">{{ number_format($uploaded->size / 1024, 0) }} KB</p>
                                                                 </div>
                                                                 <form method="POST" action="{{ route('prevention-requests.documents.delete', [$dossier, $uploaded]) }}"
-                                                                      onsubmit="return confirm('{{ __('prevention_request.document_delete_confirm') }}')" class="flex-none">
+                                                                      data-confirm data-confirm-style="danger" class="flex-none">
                                                                     @csrf
                                                                     @method('DELETE')
                                                                     <button type="submit"

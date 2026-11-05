@@ -30,7 +30,9 @@
             {{ __('prevention.cancel_panel_title') }}
         </p>
         <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.cancel', [$d, $appt]) }}"
-              onsubmit="return confirm('Cancel this appointment? The applicant will be notified.')">
+              data-confirm data-confirm-style="danger"
+              data-confirm-title="{{ __('prevention.cancel_panel_title') }}"
+              data-confirm-focus-cancel="false">
             @csrf
             <label class="block text-[10px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1">Cancellation reason <span class="text-red-500">*</span></label>
             <textarea name="note" rows="3" required maxlength="2000" placeholder="{{ __('prevention.cancel_panel_placeholder') }}">{{ old('note') }}</textarea>

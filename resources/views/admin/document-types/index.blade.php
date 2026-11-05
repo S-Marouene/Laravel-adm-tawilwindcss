@@ -76,7 +76,8 @@
                     </td>
                     <td class="px-6 py-4 text-right text-sm font-medium">
                         <a href="{{ route('admin.document-types.edit', $doc) }}" class="admin-action-link mr-3">{{ __('action.edit') }}</a>
-                        <form action="{{ route('admin.document-types.destroy', $doc) }}" method="POST" class="inline" onsubmit="return confirm('{{ __('admin.confirm_delete') }}')">
+                        <form action="{{ route('admin.document-types.destroy', $doc) }}" method="POST" class="inline"
+                              data-confirm data-confirm-style="danger">
                             @csrf @method('DELETE')<button type="submit" class="admin-danger-link">{{ __('action.delete') }}</button>
                         </form>
                     </td>

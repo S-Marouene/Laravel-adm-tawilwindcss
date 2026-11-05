@@ -249,7 +249,7 @@
                                         <span x-text="item.status === 'draft' ? '{{ __('demandes.complete_process') }}' : '{{ __('demandes.view_details') }}'"></span>
                                     </a>
                                     <form x-show="item.destroyUrl" method="POST" x-bind:action="item.destroyUrl"
-                                          @submit.prevent="if (confirm(item.confirmText)) $el.submit();">
+                                          @submit.prevent="AppConfirm({ style: 'danger', text: item.confirmText }).then(r => { if (r.isConfirmed) { $el.dataset.swalConfirmed = 'true'; $el.submit(); } })">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"

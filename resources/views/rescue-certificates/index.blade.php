@@ -278,7 +278,8 @@
                                     <a href="{{ route('rescue-certificates.step2.show', $draft) }}" class="inline-flex items-center gap-1 rounded-lg border border-gov-300 bg-gov-50 px-3 py-1.5 text-xs font-semibold text-gov-700 transition hover:bg-gov-100 dark:border-gov-700 dark:bg-gov-900/30 dark:text-gov-300">
                                         {{ __('rescue_certificate.continue') }} &rarr;
                                     </a>
-                                    <form method="POST" action="{{ route('rescue-certificates.destroy', $draft) }}" onsubmit="return confirm('{{ __('rescue_certificate.delete_confirm') }}')">
+                                    <form method="POST" action="{{ route('rescue-certificates.destroy', $draft) }}"
+                                          data-confirm data-confirm-style="danger">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
                                             {{ __('action.delete') }}

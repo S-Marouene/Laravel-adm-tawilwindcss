@@ -9,7 +9,11 @@
             <p class="text-sm text-secondary dark:text-gray-400 mt-1">Track user actions and system events.</p>
         </div>
         <div class="flex items-center space-x-3">
-            <form action="{{ route('admin.activity-logs.clear') }}" method="POST" onsubmit="return confirm('Are you sure you want to clear all activity logs? This cannot be undone.')">
+            <form action="{{ route('admin.activity-logs.clear') }}" method="POST"
+                  data-confirm data-confirm-style="danger"
+                  data-confirm-title="Vider tous les journaux ?"
+                  data-confirm-text="Cette action est irréversible."
+                  data-confirm-ok="Oui, tout supprimer">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="inline-flex items-center px-3 py-2 text-sm font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 hover:-translate-y-0.5 transition-all">
@@ -133,7 +137,8 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary dark:text-gray-400 font-mono">{{ $log->ip_address ?? '—' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <a href="{{ route('admin.activity-logs.show', $log) }}" class="admin-action-link mr-3">View</a>
-                                <form action="{{ route('admin.activity-logs.destroy', $log) }}" method="POST" class="inline" onsubmit="return confirm('Delete this log entry?')">
+                                <form action="{{ route('admin.activity-logs.destroy', $log) }}" method="POST" class="inline"
+                                      data-confirm data-confirm-style="danger">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="admin-danger-link">Delete</button>

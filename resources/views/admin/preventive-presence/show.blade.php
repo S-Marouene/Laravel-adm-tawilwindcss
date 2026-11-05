@@ -356,7 +356,10 @@
                         Record the fee receipt before marking the service as performed.
                     </div>
                 @else
-                    <form method="POST" action="{{ route('admin.preventive-presence.serve', $requestItem) }}" onsubmit="return confirm('Mark the preventive presence service as performed? The applicant will see the details.')">
+                    <form method="POST" action="{{ route('admin.preventive-presence.serve', $requestItem) }}"
+                          data-confirm data-confirm-style="success"
+                          data-confirm-title="Marquer le service comme effectué ?"
+                          data-confirm-ok="Oui, confirmer">
                         @csrf
                         <div class="space-y-3">
                             <div>
@@ -408,7 +411,9 @@
                 {{-- Advance to Processing --}}
                 @if (in_array($status, ['completed', 'needs_correction']))
                     <form method="POST" action="{{ route('admin.preventive-presence.advance', $requestItem) }}"
-                          onsubmit="return confirm('Advance this request to processing? The applicant will see a notice to keep their phone available.')">
+                          data-confirm data-confirm-style="info"
+                          data-confirm-title="Avancer la demande vers le traitement ?"
+                          data-confirm-ok="Oui, avancer">
                         @csrf
                         <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -420,7 +425,9 @@
                 {{-- Approve --}}
                 @if (in_array($status, ['completed', 'under_consultation']))
                     <form method="POST" action="{{ route('admin.preventive-presence.approve', $requestItem) }}"
-                          onsubmit="return confirm('Approve this request? Next step: record the fee receipt, then mark the service as performed.')">
+                          data-confirm data-confirm-style="success"
+                          data-confirm-title="Approuver la demande ?"
+                          data-confirm-ok="Oui, approuver">
                         @csrf
                         <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -476,7 +483,9 @@
                          x-transition:leave-end="opacity-0"
                          class="mt-3">
                         <form method="POST" action="{{ route('admin.preventive-presence.cancel', $requestItem) }}"
-                              onsubmit="return confirm('Cancel this request? The applicant will be notified.')">
+                              data-confirm data-confirm-style="danger"
+                              data-confirm-title="Annuler la demande ?"
+                              data-confirm-focus-cancel="false">
                             @csrf
                             <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1.5">Cancellation reason <span class="text-red-500">*</span></label>
                             <textarea name="admin_note" rows="4" required maxlength="2000"

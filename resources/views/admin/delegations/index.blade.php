@@ -40,7 +40,8 @@
                     <td class="px-6 py-4 text-sm text-secondary dark:text-gray-300">{{ $del->name_en }}</td>
                     <td class="px-6 py-4 text-right text-sm font-medium">
                         <a href="{{ route('admin.delegations.edit', $del) }}" class="admin-action-link mr-3">{{ __('action.edit') }}</a>
-                        <form action="{{ route('admin.delegations.destroy', $del) }}" method="POST" class="inline" onsubmit="return confirm('{{ __('admin.confirm_delete') }}')">
+                        <form action="{{ route('admin.delegations.destroy', $del) }}" method="POST" class="inline"
+                              data-confirm data-confirm-style="danger">
                             @csrf @method('DELETE')<button type="submit" class="admin-danger-link">{{ __('action.delete') }}</button>
                         </form>
                     </td>

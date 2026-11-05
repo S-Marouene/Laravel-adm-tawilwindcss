@@ -383,7 +383,8 @@
                                             {{ __('prevention_request.continue') }} &rarr;
                                         </a>
                                     @endif
-                                    <form method="POST" action="{{ route('prevention-requests.destroy', $draft->id) }}" onsubmit="return confirm('{{ __('prevention_request.delete_confirm') }}')">
+                                    <form method="POST" action="{{ route('prevention-requests.destroy', $draft->id) }}"
+                                          data-confirm data-confirm-style="danger">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
                                             {{ __('prevention_request.delete') }}

@@ -105,7 +105,9 @@
                                         @if($setting->value)
                                             <div class="flex-shrink-0">
                                                 <img src="{{ Storage::url($setting->value) }}" alt="{{ $setting->label }}" class="border border-surface-dim dark:border-gray-600 rounded-lg {{ $setting->key === 'app_favicon' ? 'w-8 h-8' : 'w-20 h-20' }} object-cover">
-                                                <a href="{{ route('admin.settings.remove-image', $setting->key) }}" class="mt-1 inline-flex items-center text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300" onclick="return confirm('{{ __('admin.confirm_remove_image') }}')">
+                                                <a href="{{ route('admin.settings.remove-image', $setting->key) }}"
+                                                   class="mt-1 inline-flex items-center text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                                   data-confirm data-confirm-style="danger">
                                                     {{ __('admin.remove') }}
                                                 </a>
                                             </div>

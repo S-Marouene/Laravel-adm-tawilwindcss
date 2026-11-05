@@ -289,7 +289,8 @@
                 <div class="flex flex-col lg:flex-row gap-3">
                     {{-- Advance to consultation — the only forward move in this phase --}}
                     <form method="POST" action="{{ route('admin.prevention-dossiers.advance', $d) }}" class="flex-1"
-                          onsubmit="return confirm('{{ __('prevention.confirm_advance') }}')">
+                          data-confirm data-confirm-style="info"
+                          data-confirm-title="{{ __('prevention.confirm_advance') }}">
                         @csrf
                         <button type="submit" class="inline-flex w-full lg:w-auto items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-6 rounded transition-colors shadow-sm">
                             <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_circle_right</span>
@@ -1243,7 +1244,8 @@
                                             {{ __('prevention.revoke_warning', ['ref' => $cert->reference]) }}
                                         </p>
                                         <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.destroy', $d) }}"
-                                              onsubmit="return confirm('{{ __('prevention.confirm_revoke', ['ref' => $cert->reference]) }}')">
+                                              data-confirm data-confirm-style="danger"
+                                              data-confirm-title="{{ __('prevention.confirm_revoke', ['ref' => $cert->reference]) }}">
                                             @csrf @method('DELETE')
                                             <button type="submit"
                                                     class="mt-2 inline-flex w-full items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
@@ -1682,7 +1684,9 @@
         <div x-show="cancelOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
              class="border-t border-red-200 dark:border-red-800/40 p-5">
             <form method="POST" action="{{ route('admin.prevention-dossiers.cancel', $d) }}"
-                  onsubmit="return confirm('{{ __('prevention.confirm_cancel_dossier') }}')">
+                  data-confirm data-confirm-style="danger"
+                  data-confirm-title="{{ __('prevention.confirm_cancel_dossier') }}"
+                  data-confirm-focus-cancel="false">
                 @csrf
                 <label class="block text-xs font-semibold text-red-800 dark:text-red-200 mb-1.5">{{ __('prevention.cancellation_reason') }} <span class="text-red-500">*</span></label>
                 <textarea name="admin_note" rows="4" required maxlength="2000"

@@ -57,7 +57,8 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary dark:text-gray-400">{{ $role->created_at->format('M d, Y') }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <a href="{{ route('admin.roles.edit', $role) }}" class="admin-action-link mr-3">Edit</a>
-                                <form action="{{ route('admin.roles.destroy', $role) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this role?')">
+                                <form action="{{ route('admin.roles.destroy', $role) }}" method="POST" class="inline"
+                                      data-confirm data-confirm-style="danger">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="admin-danger-link">Delete</button>

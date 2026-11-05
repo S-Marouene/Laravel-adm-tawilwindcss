@@ -838,6 +838,7 @@ Alpine.data('confirmManager', () => ({
             style: form.dataset.confirmStyle,
             ok: form.dataset.confirmOk,
             cancel: form.dataset.cancelBtn,
+            focusCancel: form.dataset.confirmFocusCancel !== 'false',
         }).then((result) => {
             if (result.isConfirmed) {
                 form.dataset.swalConfirmed = 'true';
@@ -858,6 +859,7 @@ Alpine.data('confirmManager', () => ({
             style: link.dataset.confirmStyle,
             ok: link.dataset.confirmOk,
             cancel: link.dataset.cancelBtn,
+            focusCancel: link.dataset.confirmFocusCancel !== 'false',
         }).then((result) => {
             if (result.isConfirmed) window.location.href = link.href;
         });
