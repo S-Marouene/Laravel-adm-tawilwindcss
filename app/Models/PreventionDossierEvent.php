@@ -68,31 +68,31 @@ class PreventionDossierEvent extends Model
     public function typeLabel(): string
     {
         return match ($this->type) {
-            'submitted'                 => 'Submitted by applicant',
-            'resubmitted'               => 'Dossier resubmitted after correction',
-            'advanced_to_consultation'  => 'Dossier approved — awaiting RDV',
-            'correction_requested'      => 'Correction requested',
-            'history_snapshot'          => 'Old version archived in history',
-            'approved'                  => 'Dossier approved',
-            'cancelled'                 => 'Dossier cancelled',
-            'appointment_scheduled'     => 'RDV (visit) scheduled',
-            'appointment_passed'        => 'Visit marked as passed',
-            'appointment_failed'        => 'Visit marked as failed',
-            'appointment_deleted'       => 'RDV removed',
-            'appointment_cancelled'     => 'RDV cancelled',
-            'waiting_delivery'          => 'Inspection passed — awaiting certificate delivery',
-            'delivery_chosen'           => 'Certificate delivery method chosen',
-            'certificate_issued'        => 'Prevention certificate issued',
-            'certificate_post_sent'     => 'Certificate sent via Poste Tunisienne (B3)',
-            'certificate_post_delivered' => 'Certificate delivered by post',
-            'certificate_collected'     => 'Certificate collected by applicant',
-            'certificate_deleted'       => 'Prevention certificate deleted',
-            'certificate_reset'         => 'Certificate reset to ready',
-            'draft_created'             => 'Draft dossier created',
-            'step1_updated'             => 'Step 1 (identity) updated',
-            'step2_saved'               => 'Step 2 (building type) saved',
-            'document_uploaded'         => 'Document(s) uploaded',
-            'document_deleted'          => 'Document deleted',
+            'submitted'                 => __('prevention.evt_submitted'),
+            'resubmitted'               => __('prevention.evt_resubmitted'),
+            'advanced_to_consultation'  => __('prevention.evt_advanced'),
+            'correction_requested'      => __('prevention.evt_correction_requested'),
+            'history_snapshot'          => __('prevention.evt_history_snapshot'),
+            'approved'                  => __('prevention.evt_approved'),
+            'cancelled'                 => __('prevention.evt_cancelled'),
+            'appointment_scheduled'     => __('prevention.evt_rdv_scheduled'),
+            'appointment_passed'        => __('prevention.evt_rdv_passed'),
+            'appointment_failed'        => __('prevention.evt_rdv_failed'),
+            'appointment_deleted'       => __('prevention.evt_rdv_deleted'),
+            'appointment_cancelled'     => __('prevention.evt_rdv_cancelled'),
+            'waiting_delivery'          => __('prevention.evt_waiting_delivery'),
+            'delivery_chosen'           => __('prevention.evt_delivery_chosen'),
+            'certificate_issued'        => __('prevention.evt_cert_issued'),
+            'certificate_post_sent'     => __('prevention.evt_cert_post_sent'),
+            'certificate_post_delivered' => __('prevention.evt_cert_post_delivered'),
+            'certificate_collected'     => __('prevention.evt_cert_collected'),
+            'certificate_deleted'       => __('prevention.evt_cert_deleted'),
+            'certificate_reset'         => __('prevention.evt_cert_reset'),
+            'draft_created'             => __('prevention.evt_draft_created'),
+            'step1_updated'             => __('prevention.evt_step1_updated'),
+            'step2_saved'               => __('prevention.evt_step2_saved'),
+            'document_uploaded'         => __('prevention.evt_doc_uploaded'),
+            'document_deleted'          => __('prevention.evt_doc_deleted'),
             default                     => ucfirst(str_replace('_', ' ', $this->type)),
         };
     }
@@ -141,17 +141,17 @@ class PreventionDossierEvent extends Model
         // Correction-history events: summarize the old → new versions and the
         // number of files that were archived for that round.
         if (! empty($data['previous'])) {
-            $text = 'Old version snapshot';
+            $text = __('prevention.evt_old_version');
 
             if (! empty($data['archived_files']) && is_array($data['archived_files'])) {
-                $text .= ' · ' . count($data['archived_files']) . ' file(s) archived';
+                $text .= ' · ' . __('prevention.evt_files_archived', ['count' => count($data['archived_files'])]);
             }
 
             return $text;
         }
 
         if (! empty($data['updated'])) {
-            $text = 'New version saved';
+            $text = __('prevention.evt_new_version');
 
             $changed = collect($data['updated'])->filter(fn ($v, $k) => filled($v));
 
@@ -165,22 +165,22 @@ class PreventionDossierEvent extends Model
 
         // Document upload/delete events
         if (! empty($data['count'])) {
-            return $data['count'] . ' file(s) uploaded';
+            return __('prevention.evt_files_uploaded', ['count' => $data['count']]);
         }
 
         if (! empty($data['document'])) {
-            $text = 'File: ' . $data['document'];
+            $text = __('prevention.evt_file_label', ['name' => $data['document']]);
             if (! empty($data['type'])) {
-                $text .= ' · Type: ' . $data['type'];
+                $text .= ' · ' . __('prevention.evt_type_label', ['type' => $data['type']]);
             }
             return $text;
         }
 
         // Step 2 saved — show the building type chosen
         if (! empty($data['building_type'])) {
-            $text = 'Building: ' . $data['building_type'];
+            $text = __('prevention.evt_building_label', ['name' => $data['building_type']]);
             if (! empty($data['building_activity'])) {
-                $text .= ' · Activity: ' . $data['building_activity'];
+                $text .= ' · ' . __('prevention.evt_activity_label', ['name' => $data['building_activity']]);
             }
             return $text;
         }
@@ -191,11 +191,11 @@ class PreventionDossierEvent extends Model
 
         // Delivery-protocol events: show the certificate tracking / method
         if (! empty($data['tracking'])) {
-            return 'Tracking: ' . $data['tracking'];
+            return __('prevention.evt_tracking_label', ['value' => $data['tracking']]);
         }
 
         if (! empty($data['method'])) {
-            $text = 'Delivery: ' . $data['method'];
+            $text = __('prevention.evt_delivery_label', ['value' => $data['method']]);
 
             if (! empty($data['address'])) {
                 $text .= ' · ' . $data['address'];
@@ -206,25 +206,27 @@ class PreventionDossierEvent extends Model
 
         // Certificate events: show reference + pickup governorate / delegation
         if (! empty($data['reference'])) {
-            $text = 'Certificate: ' . $data['reference'];
+            $text = __('prevention.evt_certificate_label', ['ref' => $data['reference']]);
 
             if (! empty($data['delegation'])) {
-                $text .= ' · Delegation: ' . $data['delegation'];
+                $text .= ' · ' . __('prevention.evt_delegation_label', ['value' => $data['delegation']]);
             } elseif (! empty($data['governorate'])) {
-                $text .= ' · Governorate: ' . $data['governorate'];
+                $text .= ' · ' . __('prevention.evt_governorate_label', ['value' => $data['governorate']]);
             }
 
             return $text;
         }
 
-        $text = 'Visit: ' . Carbon::parse($data['visit_date'])->format('d M Y')
-            . ' at ' . substr((string) ($data['visit_time'] ?? ''), 0, 5);
+        $text = __('prevention.evt_visit_label', [
+                'date' => Carbon::parse($data['visit_date'])->format('d M Y'),
+                'time' => substr((string) ($data['visit_time'] ?? ''), 0, 5),
+            ]);
 
         // The visit takes place at the building — location comes from the dossier
         $address = $this->dossier?->building_address;
 
         if ($address) {
-            $text .= ' · Location: ' . $address;
+            $text .= ' · ' . __('prevention.evt_location_label', ['value' => $address]);
         }
 
         return $text;

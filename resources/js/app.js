@@ -1,6 +1,9 @@
 import Alpine from 'alpinejs';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 import 'boxicons/css/boxicons.min.css';
 
+window.Swal = Swal;
 window.Alpine = Alpine;
 
 /**
@@ -730,5 +733,136 @@ Alpine.data('confirmManager', () => ({
         window.dispatchEvent(toastEvent);
     }
 }));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SWEETALERT2 — moteur d'alertes global (admin + espace demandeur)
+   ─────────────────────────────────────────────────────────────────────────
+   1. Toasts flottants auto-destructibles : tout message flash de session
+      (success / error / warning / info) apparaît en haut à droite et
+      disparaît seul — voir <x-app-alerts> et #app-alerts.
+   2. Boîtes de confirmation professionnelles : tout <form data-confirm>
+      ou <a data-confirm> passe par SweetAlert2 au lieu du confirm() natif.
+      Attributs optionnels : data-confirm-text, data-confirm-title,
+      data-confirm-ok, data-cancel-btn, data-confirm-style (danger|warning|
+      success|info|question), data-confirm-focus-cancel.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(() => {
+    const defaults = () => document.getElementById('app-alerts');
+    const rtl = () => document.documentElement.getAttribute('dir') === 'rtl';
+
+    /* Styles des boutons de confirmation par intention */
+    const STYLES = {
+        danger:   { confirm: '#DC2626', cancel: '#64748B', icon: 'warning' },
+        warning:  { confirm: '#D97706', cancel: '#64748B', icon: 'warning' },
+        success:  { confirm: '#059669', cancel: '#64748B', icon: 'question' },
+        info:     { confirm: '#2563EB', cancel: '#64748B', icon: 'question' },
+        question: { confirm: '#9E001F', cancel: '#64748B', icon: 'question' },
+    };
+
+    /* ── 1. Toasts (haut-droite, auto-destruction, pause au survol) ── */
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 4500,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.onmouseenter = Swal.stopTimer;
+            toast.onmouseleave = Swal.resumeTimer;
+        },
+    });
+
+    const AppToast = (type, message) => Toast.fire({ icon: type, title: message });
+    window.AppToast = AppToast;
+
+    function fireFlashToasts() {
+        const node = document.getElementById('app-flash-json');
+        if (!node) return;
+        try {
+            const flash = JSON.parse(node.textContent);
+            const delay = 350; // léger décalage pour laisser la page s'afficher
+            Object.entries(flash).forEach(([type, message], i) => {
+                if (['success', 'error', 'warning', 'info'].includes(type) && message) {
+                    setTimeout(() => AppToast(type, message), delay + i * 450);
+                }
+            });
+        } catch (e) { /* JSON corrompu : on ignore silencieusement */ }
+    }
+
+    if (document.readyState !== 'loading') fireFlashToasts();
+    else document.addEventListener('DOMContentLoaded', fireFlashToasts);
+
+    /* ── 2. Boîte de confirmation professionnelle ── */
+    function confirmDialog(opts = {}) {
+        const host = defaults();
+        const style = STYLES[opts.style] || STYLES.info;
+        const isDelete = opts.style === 'danger';
+
+        return Swal.fire({
+            title: opts.title || (isDelete
+                ? (host?.dataset.deleteTitle || 'Confirmer la suppression')
+                : (host?.dataset.confirmTitle || 'Êtes-vous sûr ?')),
+            text: opts.text || '',
+            icon: opts.icon || style.icon,
+            iconColor: style.confirm,
+            showCancelButton: true,
+            confirmButtonText: opts.ok || (isDelete
+                ? (host?.dataset.deleteOk || 'Oui, supprimer')
+                : (host?.dataset.confirmOk || 'Oui, continuer')),
+            cancelButtonText: opts.cancel || (host?.dataset.confirmCancel || 'Annuler'),
+            confirmButtonColor: style.confirm,
+            cancelButtonColor: style.cancel,
+            focusCancel: opts.focusCancel ?? true,
+            buttonsStyling: true,
+            reverseButtons: rtl(),
+            allowOutsideClick: !opts.important,
+            allowEscapeKey: !opts.important,
+            customClass: { title: 'swal-title-fs' },
+        });
+    }
+    window.AppConfirm = confirmDialog;
+
+    /* ── 3. Délégation globale : forms + liens avec data-confirm ── */
+    document.addEventListener('submit', (e) => {
+        const form = e.target.closest('form[data-confirm]');
+        if (!form) return;
+        if (form.dataset.swalConfirmed === 'true') {
+            form.dataset.swalConfirmed = 'false'; // reset pour la navigation suivante
+            return; // confirmation déjà donnée → laisser le submit passer
+        }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        confirmDialog({
+            text: form.dataset.confirmText,
+            title: form.dataset.confirmTitle,
+            style: form.dataset.confirmStyle,
+            ok: form.dataset.confirmOk,
+            cancel: form.dataset.cancelBtn,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.dataset.swalConfirmed = 'true';
+                form.submit();
+            }
+        });
+        return false;
+    }, true); // capture : intercepter avant tout handler Alpine
+
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a[data-confirm]');
+        if (!link) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        confirmDialog({
+            text: link.dataset.confirmText,
+            title: link.dataset.confirmTitle,
+            style: link.dataset.confirmStyle,
+            ok: link.dataset.confirmOk,
+            cancel: link.dataset.cancelBtn,
+        }).then((result) => {
+            if (result.isConfirmed) window.location.href = link.href;
+        });
+        return false;
+    }, true);
+})();
 
 Alpine.start();

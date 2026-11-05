@@ -144,6 +144,12 @@ class PreventionDossierController extends Controller
             return back()->withErrors(['status' => 'Cannot request correction for this dossier.']);
         }
 
+        // Un RDV en attente : la phase RDV est ouverte — la correction n'est plus
+        // possible, le résultat de la visite (passé/échoué) décide de la suite.
+        if ($preventionDossier->appointments->contains(fn ($a) => $a->isPending())) {
+            return back()->withErrors(['status' => 'A visit (RDV) is already scheduled — record its result instead of requesting a correction.']);
+        }
+
         $fieldsToFix = $validated['fields_to_fix'] ?? [];
         $docsToFix   = array_map('intval', $validated['docs_to_fix'] ?? []);
 

@@ -1,32 +1,32 @@
 @extends('admin.layouts.admin')
-@section('title', 'Prevention Dossiers')
+@section('title', __('prevention.idx_title'))
 
 @section('content')
 <div class="mb-6 flex items-center justify-between">
     <div>
-        <h1 class="text-2xl font-bold text-on-surface dark:text-gray-100">Prevention Dossiers</h1>
-        <p class="text-sm text-secondary dark:text-gray-400 mt-1">Review and manage submitted prevention certificate requests.</p>
+        <h1 class="text-2xl font-bold text-on-surface dark:text-gray-100">{{ __('prevention.idx_title') }}</h1>
+        <p class="text-sm text-secondary dark:text-gray-400 mt-1">{{ __('prevention.idx_sub') }}</p>
     </div>
 </div>
 
-{{-- Filters --}}
+{{-- Filtres --}}
 <form method="GET" class="mb-5 flex flex-wrap gap-3">
     <input type="text" name="q" value="{{ request('q') }}"
-        placeholder="Search by name, CIN or phone..."
+        placeholder="{{ __('prevention.idx_search_placeholder') }}"
         class="flex-1 min-w-48 px-4 py-2 text-sm bg-surface-container-lowest dark:bg-gray-900/50 border border-surface-dim dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 dark:text-gray-100">
     <select name="status" class="px-4 py-2 text-sm bg-surface-container-lowest dark:bg-gray-900/50 border border-surface-dim dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 dark:text-gray-100">
-        <option value="">All statuses</option>
-        <option value="completed"          {{ request('status') === 'completed'          ? 'selected' : '' }}>Under Review</option>
-        <option value="submitted"          {{ request('status') === 'submitted'          ? 'selected' : '' }}>Submitted to API</option>
-        <option value="under_consultation" {{ request('status') === 'under_consultation' ? 'selected' : '' }}>Approved — Awaiting RDV</option>
-        <option value="needs_correction"   {{ request('status') === 'needs_correction'   ? 'selected' : '' }}>Needs Correction</option>
-        <option value="waiting_delivery"   {{ request('status') === 'waiting_delivery'   ? 'selected' : '' }}>All OK — Awaiting Delivery</option>
-        <option value="approved"           {{ request('status') === 'approved'           ? 'selected' : '' }}>Approved</option>
-        <option value="cancelled"          {{ request('status') === 'cancelled'          ? 'selected' : '' }}>Cancelled</option>
+        <option value="">{{ __('prevention.idx_all_statuses') }}</option>
+        <option value="completed"          {{ request('status') === 'completed'          ? 'selected' : '' }}>{{ __('prevention.idx_status_under_review') }}</option>
+        <option value="submitted"          {{ request('status') === 'submitted'          ? 'selected' : '' }}>{{ __('prevention.idx_status_submitted_api') }}</option>
+        <option value="under_consultation" {{ request('status') === 'under_consultation' ? 'selected' : '' }}>{{ __('prevention.idx_status_await_rdv') }}</option>
+        <option value="needs_correction"   {{ request('status') === 'needs_correction'   ? 'selected' : '' }}>{{ __('prevention.st_needs_correction') }}</option>
+        <option value="waiting_delivery"   {{ request('status') === 'waiting_delivery'   ? 'selected' : '' }}>{{ __('prevention.idx_status_all_ok') }}</option>
+        <option value="approved"           {{ request('status') === 'approved'           ? 'selected' : '' }}>{{ __('prevention.st_approved') }}</option>
+        <option value="cancelled"          {{ request('status') === 'cancelled'          ? 'selected' : '' }}>{{ __('prevention.st_cancelled') }}</option>
     </select>
-    <button type="submit" class="px-4 py-2 text-sm font-semibold bg-gov-600 text-white rounded-xl hover:bg-gov-700">Search</button>
+    <button type="submit" class="px-4 py-2 text-sm font-semibold bg-gov-600 text-white rounded-xl hover:bg-gov-700">{{ __('prevention.idx_search') }}</button>
     @if(request('q') || request('status'))
-        <a href="{{ route('admin.prevention-dossiers.index') }}" class="px-4 py-2 text-sm font-semibold border border-surface-dim dark:border-gray-600 rounded-xl text-secondary dark:text-gray-300 hover:bg-surface-container dark:hover:bg-gray-700">Reset</a>
+        <a href="{{ route('admin.prevention-dossiers.index') }}" class="px-4 py-2 text-sm font-semibold border border-surface-dim dark:border-gray-600 rounded-xl text-secondary dark:text-gray-300 hover:bg-surface-container dark:hover:bg-gray-700">{{ __('prevention.idx_reset') }}</a>
     @endif
 </form>
 
@@ -41,26 +41,26 @@
         <table class="w-full">
             <thead>
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Applicant</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">CIN</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Phone</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Location</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Submitted</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('prevention.idx_applicant') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('prevention.f_cin') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('prevention.idx_phone') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('prevention.idx_location') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('prevention.idx_status') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('prevention.idx_submitted') }}</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('prevention.idx_actions') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                 @forelse ($dossiers as $dossier)
                     @php
                         $badgeConfig = match($dossier->status) {
-                            'under_consultation' => ['dot' => 'bg-purple-500',  'text' => 'Approved — Awaiting RDV', 'cls' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'],
-                            'submitted'          => ['dot' => 'bg-teal-500',    'text' => 'Submitted',          'cls' => 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'],
-                            'needs_correction'   => ['dot' => 'bg-amber-500',   'text' => 'Needs Correction',   'cls' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'],
-                            'approved'           => ['dot' => 'bg-emerald-500', 'text' => 'Approved',           'cls' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
-                            'waiting_delivery'   => ['dot' => 'bg-emerald-500', 'text' => 'All OK — Awaiting Delivery', 'cls' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
-                            'cancelled'          => ['dot' => 'bg-gray-400',    'text' => 'Cancelled',          'cls' => 'bg-surface-container text-secondary dark:bg-gray-700 dark:text-gray-400'],
-                            default              => ['dot' => 'bg-blue-500',    'text' => 'Under Review',       'cls' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'],
+                            'under_consultation' => ['dot' => 'bg-purple-500',  'text' => __('prevention.idx_status_await_rdv'), 'cls' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'],
+                            'submitted'          => ['dot' => 'bg-teal-500',    'text' => __('prevention.st_submitted'),         'cls' => 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'],
+                            'needs_correction'   => ['dot' => 'bg-amber-500',   'text' => __('prevention.st_needs_correction'),  'cls' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'],
+                            'approved'           => ['dot' => 'bg-emerald-500', 'text' => __('prevention.st_approved'),          'cls' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
+                            'waiting_delivery'   => ['dot' => 'bg-emerald-500', 'text' => __('prevention.idx_status_all_ok'),    'cls' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
+                            'cancelled'          => ['dot' => 'bg-gray-400',    'text' => __('prevention.st_cancelled'),         'cls' => 'bg-surface-container text-secondary dark:bg-gray-700 dark:text-gray-400'],
+                            default              => ['dot' => 'bg-blue-500',    'text' => __('prevention.idx_status_under_review'), 'cls' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'],
                         };
                     @endphp
                     <tr class="hover:bg-surface-container dark:hover:bg-gray-700/30 transition-colors">
@@ -94,12 +94,12 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
                             <a href="{{ route('admin.prevention-dossiers.show', $dossier) }}"
-                               class="admin-action-link">View</a>
+                               class="admin-action-link">{{ __('prevention.idx_view') }}</a>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-12 text-center text-secondary dark:text-gray-400">No dossiers found.</td>
+                        <td colspan="7" class="px-6 py-12 text-center text-secondary dark:text-gray-400">{{ __('prevention.idx_none') }}</td>
                     </tr>
                 @endforelse
             </tbody>

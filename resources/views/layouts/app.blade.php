@@ -54,6 +54,7 @@
         @stack('styles')
     </head>
     <body class="font-sans antialiased bg-background text-on-surface min-h-screen flex flex-col selection:bg-primary selection:text-on-primary">
+        <x-app-alerts />
         <!-- Skip Link for Accessibility -->
         <a href="#main-content" class="skip-link no-print">
             {{ app()->getLocale() === 'ar' ? 'الانتقال إلى المحتوى الرئيسي' : 'Aller au contenu principal' }}

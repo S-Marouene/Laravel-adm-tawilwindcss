@@ -43,6 +43,7 @@
         </script>
     </head>
     <body class="font-sans antialiased text-on-surface bg-background min-h-screen flex flex-col">
+        <x-app-alerts />
         <div class="min-h-screen flex flex-col lg:flex-row">
             <!-- Left/Brand Panel — vitrine institutionnelle bleu nuit (garde le contraste
                  en mode sombre : le contenu s'inverse automatiquement via les tokens) -->

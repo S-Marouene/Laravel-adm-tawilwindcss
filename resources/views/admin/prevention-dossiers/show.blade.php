@@ -1,5 +1,5 @@
 @extends('admin.layouts.admin')
-@section('title', 'Prevention Dossier #' . $preventionDossier->id)
+@section('title', __('prevention.page_title', ['id' => $preventionDossier->id]))
 
 @php
     $d = $preventionDossier;
@@ -39,14 +39,14 @@
         else                                         $state = 'pending';
 
         $sub = match (true) {
-            $state === 'done'    => 'Completed',
-            $state === 'pending' => 'Pending',
-            $status === 'needs_correction' && $state === 'error' => 'Correction required',
-            $i === 2             => 'Administrative review of documents',
-            $i === 3 && $pendingAppointment => 'Visit scheduled ' . $pendingAppointment->visit_date->format('d/m/Y'),
-            $i === 3             => 'On-site inspection awaiting',
-            $i === 4             => $d->certificate ? 'Delivered' : 'Certificate to be issued',
-            default              => 'In progress',
+            $state === 'done'    => __('prevention.step_done'),
+            $state === 'pending' => __('prevention.step_pending'),
+            $status === 'needs_correction' && $state === 'error' => __('prevention.step_correction_required'),
+            $i === 2             => __('prevention.step2_sub'),
+            $i === 3 && $pendingAppointment => __('prevention.step_visit_scheduled', ['date' => $pendingAppointment->visit_date->format('d/m/Y')]),
+            $i === 3             => __('prevention.step3_sub'),
+            $i === 4             => $d->certificate ? __('prevention.step_delivered') : __('prevention.step_cert_to_issue'),
+            default              => __('prevention.step_in_progress'),
         };
 
         $steps[] = ['num' => $i, 'state' => $state, 'sub' => $sub];
@@ -60,36 +60,36 @@
        ● slate = dépôt, transfert interne    ● violet = consultation    ● indigo = livraison */
     $eventChip = fn ($type) => match (true) {
         in_array($type, ['submitted', 'resubmitted', 'draft_created', 'step1_updated', 'step2_saved', 'document_uploaded'])
-            => ['bg-secondary-container text-on-secondary-container', 'post_add', 'Deposit', 'bg-surface-dim text-secondary'],
+            => ['bg-secondary-container text-on-secondary-container', 'post_add', __('prevention.tl_deposit'), 'bg-surface-dim text-secondary'],
         $type === 'appointment_scheduled'
-            => ['bg-primary text-on-primary', 'campaign', 'Convocation', 'bg-primary text-on-primary'],
+            => ['bg-primary text-on-primary', 'campaign', __('prevention.tl_convocation'), 'bg-primary text-on-primary'],
         in_array($type, ['advanced_to_consultation', 'appointment_deleted'])
-            => ['bg-violet-600 text-white', 'sync_alt', 'Phase', 'bg-surface-dim text-secondary'],
+            => ['bg-violet-600 text-white', 'sync_alt', __('prevention.tl_phase'), 'bg-surface-dim text-secondary'],
         $type === 'correction_requested'
-            => ['bg-amber-500 text-white', 'edit_note', 'Correction', 'bg-amber-100 text-amber-800'],
+            => ['bg-amber-500 text-white', 'edit_note', __('prevention.tl_correction'), 'bg-amber-100 text-amber-800'],
         in_array($type, ['approved', 'appointment_passed', 'waiting_delivery', 'certificate_issued'])
-            => ['bg-amber-600 text-white', 'task_alt', 'Favorable', 'bg-amber-100 text-amber-800'],
+            => ['bg-amber-600 text-white', 'task_alt', __('prevention.tl_favorable'), 'bg-amber-100 text-amber-800'],
         $type === 'delivery_chosen'
-            => ['bg-indigo-600 text-white', 'local_shipping', 'Delivery', 'bg-indigo-100 text-indigo-800'],
+            => ['bg-indigo-600 text-white', 'local_shipping', __('prevention.tl_delivery'), 'bg-indigo-100 text-indigo-800'],
         $type === 'certificate_post_sent'
-            => ['bg-blue-600 text-white', 'local_post_office', 'B3 sent', 'bg-blue-100 text-blue-800'],
+            => ['bg-blue-600 text-white', 'local_post_office', __('prevention.tl_b3_sent'), 'bg-blue-100 text-blue-800'],
         $type === 'certificate_post_delivered'
-            => ['bg-cyan-600 text-white', 'mark_email_read', 'Delivered', 'bg-cyan-100 text-cyan-800'],
+            => ['bg-cyan-600 text-white', 'mark_email_read', __('prevention.tl_delivered'), 'bg-cyan-100 text-cyan-800'],
         $type === 'certificate_collected'
-            => ['bg-amber-600 text-white', 'handshake', 'Collected', 'bg-amber-100 text-amber-800'],
+            => ['bg-amber-600 text-white', 'handshake', __('prevention.tl_collected'), 'bg-amber-100 text-amber-800'],
         $type === 'certificate_reset'
-            => ['bg-indigo-500 text-white', 'undo', 'Reset', 'bg-indigo-100 text-indigo-800'],
+            => ['bg-indigo-500 text-white', 'undo', __('prevention.tl_reset'), 'bg-indigo-100 text-indigo-800'],
         $type === 'history_snapshot' || $type === 'document_deleted'
-            => ['bg-slate-400 text-white', 'inventory_2', 'Archive', 'bg-surface-dim text-secondary'],
+            => ['bg-slate-400 text-white', 'inventory_2', __('prevention.tl_archive'), 'bg-surface-dim text-secondary'],
         // default: cancelled, appointment_failed, certificate_deleted
         default
-            => ['bg-red-600 text-white', 'error', 'Alert', 'bg-red-100 text-red-700'],
+            => ['bg-red-600 text-white', 'error', __('prevention.alert_chip'), 'bg-red-100 text-red-700'],
     };
 
     /* RDV annulé — participe à l'archive de l'historique (pas un incident) */
     $eventChip = function ($type) use ($eventChip) {
         if ($type === 'appointment_cancelled') {
-            return ['bg-slate-400 text-white', 'event_busy', 'Cancelled', 'bg-surface-dim text-secondary'];
+            return ['bg-slate-400 text-white', 'event_busy', __('prevention.tl_cancelled'), 'bg-surface-dim text-secondary'];
         }
         return $eventChip($type);
     };
@@ -106,6 +106,16 @@
         default               => ['bg-surface-container-high text-secondary', 'info'],
     };
     [$statusPillCls, $statusPillIcon] = $statusPill;
+    $statusLabel = [
+        'draft'              => __('prevention.st_draft'),
+        'completed'          => __('prevention.st_completed'),
+        'submitted'          => __('prevention.st_submitted'),
+        'under_consultation' => __('prevention.st_under_consultation'),
+        'needs_correction'   => __('prevention.st_needs_correction'),
+        'approved'           => __('prevention.st_approved'),
+        'waiting_delivery'   => __('prevention.st_waiting_delivery'),
+        'cancelled'          => __('prevention.st_cancelled'),
+    ];
 
     /* ── Bandeau d'état du héros (contextuel) ── */
     $heroAlert = match (true) {
@@ -129,15 +139,15 @@
     /* ── Certificat : libellés + statuses (palette froide) ── */
     $cert = $d->certificate;
     $certStatusCfg = $cert ? match ($cert->status) {
-        \App\Models\PreventionCertificate::STATUS_READY           => ['Ready',              'bg-amber-500 text-white'],
-        \App\Models\PreventionCertificate::STATUS_POST_SENT       => ['Sent (B3)',          'bg-blue-100 text-blue-800'],
-        \App\Models\PreventionCertificate::STATUS_POST_DELIVERED  => ['Delivered by post',  'bg-cyan-100 text-cyan-800'],
-        \App\Models\PreventionCertificate::STATUS_COLLECTED       => ['Collected',          'bg-violet-100 text-violet-800'],
+        \App\Models\PreventionCertificate::STATUS_READY           => [__('prevention.cert_ready'),              'bg-amber-500 text-white'],
+        \App\Models\PreventionCertificate::STATUS_POST_SENT       => [__('prevention.tl_b3_sent'),          'bg-blue-100 text-blue-800'],
+        \App\Models\PreventionCertificate::STATUS_POST_DELIVERED  => [__('prevention.cert_post_delivered'),  'bg-cyan-100 text-cyan-800'],
+        \App\Models\PreventionCertificate::STATUS_COLLECTED       => [__('prevention.tl_collected'),          'bg-violet-100 text-violet-800'],
         default => [ucfirst($cert->status), 'bg-surface-dim text-secondary'],
     } : null;
 
     /* ── Fiche impression : édité aujourd'hui ── */
-    $printDate = now()->isoFormat('dddd D MMMM YYYY, HH:mm');
+    $printDate = now()->locale(app()->getLocale())->isoFormat('dddd D MMMM YYYY, HH:mm');
 @endphp
 
 <style>
@@ -261,7 +271,7 @@
         {{-- ── ACTE 1 : Étude — avancer / correction / annulation (avant consultation) ── --}}
         @can('manage prevention-dossiers')
         @if (in_array($status, ['completed', 'submitted', 'needs_correction']))
-        <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden" x-data="{ fixOpen: false, cancelOpen: false }">
+        <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden" x-data="{ fixOpen: false }">
             <div class="border-s-4 border-s-primary p-5">
                 <div class="flex flex-wrap items-start gap-3.5 mb-4">
                     <div class="w-10 h-10 rounded bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
@@ -269,36 +279,30 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">Administrative review</h2>
-                            <span class="text-[10px] bg-primary text-on-primary font-bold px-2 py-0.5 rounded whitespace-nowrap">Action required</span>
+                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('prevention.admin_review') }}</h2>
+                            <span class="text-[10px] bg-primary text-on-primary font-bold px-2 py-0.5 rounded whitespace-nowrap">{{ __('prevention.action_required') }}</span>
                         </div>
-                        <p class="text-body-sm text-secondary mt-1">Check the documents and details below, then advance the dossier to consultation — or request a correction from the applicant.</p>
+                        <p class="text-body-sm text-secondary mt-1">{{ __('prevention.review_intro') }}</p>
                     </div>
                 </div>
 
                 <div class="flex flex-col lg:flex-row gap-3">
                     {{-- Advance to consultation — the only forward move in this phase --}}
                     <form method="POST" action="{{ route('admin.prevention-dossiers.advance', $d) }}" class="flex-1"
-                          onsubmit="return confirm('Advance to consultation? This validates the dossier — the applicant is notified and a RDV can then be scheduled.')">
+                          onsubmit="return confirm('{{ __('prevention.confirm_advance') }}')">
                         @csrf
                         <button type="submit" class="inline-flex w-full lg:w-auto items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-6 rounded transition-colors shadow-sm">
-                            <span class="material-symbols-outlined text-base" aria-hidden="true">nav_circle_right</span>
-                            Advance to consultation
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_circle_right</span>
+                            {{ __('prevention.advance_btn') }}
                         </button>
                     </form>
 
-                    {{-- Request correction (collapsed amber panel) --}}
-                    <button type="button" @click="fixOpen = !fixOpen; cancelOpen = false"
+                    @unless ($pendingAppointment)
+                    {{-- {{ __('prevention.request_correction') }} (collapsed amber panel) — masqué si un RDV est en attente : c'est la visite qui décide --}}
+                    <button type="button" @click="fixOpen = !fixOpen"
                         class="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
                         <span class="material-symbols-outlined text-base" aria-hidden="true">edit_note</span>
-                        <span x-text="fixOpen ? 'Hide correction form' : 'Request correction'">Request correction</span>
-                    </button>
-
-                    {{-- Cancel (collapsed danger panel) --}}
-                    <button type="button" @click="cancelOpen = !cancelOpen; fixOpen = false"
-                        class="inline-flex items-center justify-center gap-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold py-2.5 px-5 rounded transition-colors dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
-                        <span class="material-symbols-outlined text-base" aria-hidden="true">cancel</span>
-                        <span x-text="cancelOpen ? 'Hide cancellation' : 'Cancel dossier'">Cancel dossier</span>
+                        <span x-text="fixOpen ? '{{ __('prevention.hide_correction_form') }}' : '{{ __('prevention.request_correction') }}'">{{ __('prevention.request_correction') }}</span>
                     </button>
                 </div>
 
@@ -307,24 +311,24 @@
                     <form method="POST" action="{{ route('admin.prevention-dossiers.correction', $d) }}">
                         @csrf
                         <label class="block text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 mb-1.5">
-                            Note to applicant <span class="text-red-500">*</span>
+                            {{ __('prevention.note_to_applicant') }} <span class="text-red-500">*</span>
                         </label>
                         <textarea name="admin_note" rows="4" required maxlength="2000" class="text-xs"
-                            placeholder="Explain clearly what needs to be corrected…">{{ old('admin_note') }}</textarea>
+                            placeholder="{{ __('prevention.note_correction_placeholder') }}">{{ old('admin_note') }}</textarea>
 
                         <p class="mt-3 mb-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
-                            Fields to fix <span class="font-normal normal-case">(select all that apply)</span>
+                            {{ __('prevention.fields_to_fix') }} <span class="font-normal normal-case">{{ __('prevention.select_all_apply') }}</span>
                         </p>
                         @php
                             $fixableFields = [
-                                'nom_prenom'           => 'Full name',
-                                'cin'                  => 'National ID (CIN)',
-                                'phone'                => 'Phone number',
-                                'governorate_id'       => 'Governorate',
-                                'delegation_id'        => 'Delegation',
-                                'building_address'     => 'Building address',
-                                'building_type_id'     => 'Building type',
-                                'building_activity_id' => 'Activity',
+                                'nom_prenom'           => __('prevention.f_full_name'),
+                                'cin'                  => __('prevention.f_cin'),
+                                'phone'                => __('prevention.f_phone'),
+                                'governorate_id'       => __('prevention.f_governorate'),
+                                'delegation_id'        => __('prevention.f_delegation'),
+                                'building_address'     => __('prevention.f_building_address'),
+                                'building_type_id'     => __('prevention.f_building_type'),
+                                'building_activity_id' => __('prevention.f_activity'),
                             ];
                         @endphp
                         <div class="rounded-lg border border-surface-dim dark:border-gray-600 divide-y divide-surface-dim dark:divide-gray-700 overflow-hidden bg-surface-container-lowest">
@@ -361,7 +365,7 @@
                         @endphp
                         @if ($corrDocTypes->isNotEmpty())
                             <p class="mt-3 mb-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
-                                Documents to re-upload <span class="font-normal normal-case">(select which files need replacement)</span>
+                                {{ __('prevention.docs_to_reupload') }} <span class="font-normal normal-case">{{ __('prevention.select_replacement') }}</span>
                             </p>
                             <div class="rounded-lg border border-surface-dim dark:border-gray-600 divide-y divide-surface-dim dark:divide-gray-700 overflow-hidden bg-surface-container-lowest">
                                 @foreach ($corrDocTypes as $docType)
@@ -371,9 +375,9 @@
                                                {{ in_array($docType->id, old('docs_to_fix', [])) ? 'checked' : '' }}>
                                         <span class="flex-1">{{ $docType->name }}</span>
                                         @if ($uploadedDocs->has($docType->id))
-                                            <span class="text-[10px] rounded-full bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-blue-700 dark:text-blue-300 font-bold whitespace-nowrap">uploaded</span>
+                                            <span class="text-[10px] rounded-full bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-blue-700 dark:text-blue-300 font-bold whitespace-nowrap">{{ __('prevention.uploaded_chip') }}</span>
                                         @else
-                                            <span class="text-[10px] rounded-full bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 text-red-600 dark:text-red-400 font-bold whitespace-nowrap">missing</span>
+                                            <span class="text-[10px] rounded-full bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 text-red-600 dark:text-red-400 font-bold whitespace-nowrap">{{ __('prevention.missing_chip') }}</span>
                                         @endif
                                     </label>
                                 @endforeach
@@ -382,29 +386,11 @@
 
                         <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
                             <span class="material-symbols-outlined text-base" aria-hidden="true">send</span>
-                            Send correction request
+                            {{ __('prevention.send_correction') }}
                         </button>
                     </form>
                 </div>
-
-                {{-- Cancellation form ────────────────────────────────────────── --}}
-                <div x-show="cancelOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/10 p-4">
-                    <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-300 mb-2 flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
-                        Danger zone — cancellation closes the dossier definitively
-                    </p>
-                    <form method="POST" action="{{ route('admin.prevention-dossiers.cancel', $d) }}"
-                          onsubmit="return confirm('Cancel this dossier? The applicant will be notified.')">
-                        @csrf
-                        <label class="block text-xs font-semibold text-red-800 dark:text-red-200 mb-1.5">Cancellation reason <span class="text-red-500">*</span></label>
-                        <textarea name="admin_note" rows="4" required maxlength="2000"
-                            placeholder="Explain why this dossier is being cancelled...">{{ old('admin_note') }}</textarea>
-                        <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
-                            <span class="material-symbols-outlined text-base" aria-hidden="true">cancel</span>
-                            Confirm cancellation
-                        </button>
-                    </form>
-                </div>
+                @endunless
             </div>
         </section>
         @endif
@@ -420,15 +406,15 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">Correction requested — waiting for the applicant</h2>
-                            <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded">Alert</span>
+                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('prevention.correction_requested_title') }}</h2>
+                            <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded">{{ __('prevention.alert_chip') }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="rounded border border-red-200 bg-red-50 dark:bg-red-900/10 px-4 py-3">
                     <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1 flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>
-                        Note visible to the applicant
+                        {{ __('prevention.note_visible_applicant') }}
                     </p>
                     <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $d->admin_note }}</p>
                 </div>
@@ -449,95 +435,45 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">Consultation phase — schedule the on-site visit</h2>
-                            <span class="text-[10px] bg-primary text-on-primary font-bold px-2 py-0.5 rounded whitespace-nowrap">Action required</span>
+                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('prevention.consultation_phase') }}</h2>
+                            <span class="text-[10px] bg-primary text-on-primary font-bold px-2 py-0.5 rounded whitespace-nowrap">{{ __('prevention.action_required') }}</span>
                         </div>
-                        <p class="text-body-sm text-secondary mt-1">The dossier was approved for consultation. Schedule the inspection at the declared address; the applicant is notified with the visit instructions.</p>
+                        <p class="text-body-sm text-secondary mt-1">{{ __('prevention.consultation_intro') }}</p>
                     </div>
                 </div>
 
                 {{-- Contact strip — applicant's phone for the convocation --}}
                 <div class="flex flex-wrap items-center gap-3 mb-4 rounded-lg border border-surface-dim bg-surface-container-low px-4 py-2.5 text-xs">
                     <span class="material-symbols-outlined text-blue-600 text-base" aria-hidden="true">call</span>
-                    <span class="text-secondary">Applicant's phone (convocation):</span>
-                    <strong class="font-mono num-ltr text-on-surface" dir="ltr">{{ $d->phone ?? 'not provided' }}</strong>
+                    <span class="text-secondary">{{ __('prevention.applicant_phone_convocation') }}</span>
+                    <strong class="font-mono num-ltr text-on-surface" dir="ltr">{{ $d->phone ?? __('prevention.not_provided') }}</strong>
                 </div>
 
                 @can('manage prevention-dossiers')
-                <div x-data="{ fixOpen: false, cancelOpen: false }">
                     <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.store', $d) }}" class="grid grid-cols-1 sm:grid-cols-[1fr,1fr,auto] items-end gap-3">
                     @csrf
                     <div>
-                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">Visit date <span class="text-red-500">*</span></label>
+                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('prevention.visit_date') }} <span class="text-red-500">*</span></label>
                         <input type="date" name="visit_date" required min="{{ date('Y-m-d') }}" value="{{ old('visit_date') }}" class="w-full text-sm">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">Visit time <span class="text-red-500">*</span></label>
+                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('prevention.visit_time') }} <span class="text-red-500">*</span></label>
                         <input type="time" name="visit_time" required value="{{ old('visit_time') }}" class="w-full text-sm">
                     </div>
                     <div class="sm:col-span-3">
-                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">Note for the applicant <span class="font-normal normal-case">(optional — shown with the convocation)</span></label>
-                        <textarea name="note" rows="2" maxlength="2000" placeholder="Instructions for the visit…">{{ old('note') }}</textarea>
+                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('prevention.note_for_applicant') }} <span class="font-normal normal-case">{{ __('prevention.note_optional_convocation') }}</span></label>
+                        <textarea name="note" rows="2" maxlength="2000" placeholder="{{ __('prevention.visit_instructions_placeholder') }}">{{ old('note') }}</textarea>
                     </div>
-                    <button type="submit" class="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
-                        <span class="material-symbols-outlined text-base" aria-hidden="true">event_add</span>
-                        Schedule visit
+                    <button type="submit" class="sm:col-span-3 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                        <span class="material-symbols-outlined text-base" aria-hidden="true">calendar_add_on</span>
+                        {{ __('prevention.schedule_visit') }}
                     </button>
                     <p class="sm:col-span-3 text-[11px] text-secondary flex items-start gap-1.5">
                         <span class="material-symbols-outlined text-sm mt-px" aria-hidden="true">location_on</span>
-                        <span>Visit takes place at the building: <strong class="font-semibold break-all">{{ $d->building_address ?? '—' }}</strong></span>
+                        <span>{{ __('prevention.visit_at_building') }} <strong class="font-semibold break-all">{{ $d->building_address ?? '—' }}</strong></span>
                     </p>
                     </form>
 
-                    {{-- Mouvements latéraux restants légaux en phase de consultation : correction, annulation --}}
-                    <div class="flex flex-wrap gap-2 pt-3 mt-3 border-t border-surface-dim">
-                        <button type="button" @click="fixOpen = !fixOpen; cancelOpen = false"
-                            class="inline-flex items-center gap-2 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
-                            <span class="material-symbols-outlined text-sm" aria-hidden="true">edit_note</span>
-                            <span x-text="fixOpen ? 'Hide correction form' : 'Request correction instead'">Request correction instead</span>
-                        </button>
-                        <button type="button" @click="cancelOpen = !cancelOpen; fixOpen = false"
-                            class="inline-flex items-center gap-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
-                            <span class="material-symbols-outlined text-sm" aria-hidden="true">cancel</span>
-                            <span x-text="cancelOpen ? 'Hide cancellation' : 'Cancel dossier instead'">Cancel dossier instead</span>
-                        </button>
-                    </div>
-
-                    {{-- Correction (légal : isActionable) ─────────────────────────── --}}
-                    <div x-show="fixOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-3 rounded-lg border border-amber-200 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-900/10 p-4">
-                        <form method="POST" action="{{ route('admin.prevention-dossiers.correction', $d) }}">
-                            @csrf
-                            <label class="block text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 mb-1.5">
-                                Note to applicant <span class="text-red-500">*</span>
-                            </label>
-                            <textarea name="admin_note" rows="4" required maxlength="2000" class="text-xs"
-                                placeholder="Explain clearly what needs to be corrected…">{{ old('admin_note') }}</textarea>
-                            <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
-                                <span class="material-symbols-outlined text-base" aria-hidden="true">send</span>
-                                Send correction request
-                            </button>
-                        </form>
-                    </div>
-
-                    {{-- Annulation (légal : isActionable) ─────────────────────────── --}}
-                    <div x-show="cancelOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/10 p-4">
-                        <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-300 mb-2 flex items-center gap-1.5">
-                            <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
-                            Danger zone — cancellation closes the dossier definitively
-                        </p>
-                        <form method="POST" action="{{ route('admin.prevention-dossiers.cancel', $d) }}"
-                              onsubmit="return confirm('Cancel this dossier? The applicant will be notified.')">
-                            @csrf
-                            <label class="block text-xs font-semibold text-red-800 dark:text-red-200 mb-1.5">Cancellation reason <span class="text-red-500">*</span></label>
-                            <textarea name="admin_note" rows="4" required maxlength="2000"
-                                placeholder="Explain why this dossier is being cancelled...">{{ old('admin_note') }}</textarea>
-                            <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
-                                <span class="material-symbols-outlined text-base" aria-hidden="true">cancel</span>
-                                Confirm cancellation
-                            </button>
-                        </form>
-                    </div>
-                    </div>
                 @endcan
             </div>
         </section>
@@ -554,38 +490,61 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">
-                                Next visit — {{ $pendingAppointment->visit_date->format('d/m/Y') }} at {{ substr($pendingAppointment->visit_time, 0, 5) }}
+                                {{ __('prevention.next_visit_at', ['date' => $pendingAppointment->visit_date->format('d/m/Y'), 'time' => substr($pendingAppointment->visit_time, 0, 5)]) }}
                             </h2>
-                            <span class="text-[10px] bg-primary text-on-primary font-bold px-2 py-0.5 rounded whitespace-nowrap">Convocation sent</span>
+                            <span class="text-[10px] bg-primary text-on-primary font-bold px-2 py-0.5 rounded whitespace-nowrap">{{ __('prevention.convocation_sent') }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                     <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
                         <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">person_check</span>
-                        <div><span class="font-bold text-on-surface block">Applicant presence</span><span class="text-secondary text-[11px]">{{ $d->nom_prenom }} must be on site</span></div>
+                        <div><span class="font-bold text-on-surface block">{{ __('prevention.card_presence') }}</span><span class="text-secondary text-[11px]">{{ __('prevention.must_be_on_site', ['name' => $d->nom_prenom]) }}</span></div>
                     </div>
                     <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
                         <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">menu_book</span>
-                        <div><span class="font-bold text-on-surface block">Registre &amp; plans</span><span class="text-secondary text-[11px]">Official documents available on site</span></div>
+                        <div><span class="font-bold text-on-surface block">{{ __('prevention.card_registre') }}</span><span class="text-secondary text-[11px]">{{ __('prevention.card_registre_sub') }}</span></div>
                     </div>
                     <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
                         <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">door_front</span>
-                        <div><span class="font-bold text-on-surface block">Accessibility</span><span class="text-secondary text-[11px]">Emergency exits accessible</span></div>
+                        <div><span class="font-bold text-on-surface block">{{ __('prevention.card_accessibility') }}</span><span class="text-secondary text-[11px]">{{ __('prevention.card_accessibility_sub') }}</span></div>
                     </div>
                     <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
                         <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">water_drop</span>
-                        <div><span class="font-bold text-on-surface block">Fire safety</span><span class="text-secondary text-[11px]">Water point &amp; extinguishers check</span></div>
+                        <div><span class="font-bold text-on-surface block">{{ __('prevention.card_fire') }}</span><span class="text-secondary text-[11px]">{{ __('prevention.card_fire_sub') }}</span></div>
                     </div>
                 </div>
                 @if ($pendingAppointment->note)
                 <div class="mt-4 rounded border border-amber-200 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-900/10 p-3">
                     <p class="text-[11px] font-bold text-amber-900 dark:text-amber-300 mb-0.5 flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm" aria-hidden="true">event_note</span>Note
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">event_note</span>{{ __('prevention.note_label') }}
                     </p>
                     <p class="text-xs text-amber-900 dark:text-amber-200 whitespace-pre-line leading-relaxed">{{ $pendingAppointment->note }}</p>
                 </div>
                 @endif
+
+                @can('manage prevention-dossiers')
+                {{-- Actions admin : enregistrer le résultat ou annuler le RDV courant, directement depuis le bandeau --}}
+                <div x-data="{ openResult: false, cancelOpen: false }" class="mt-4 pt-4 border-t border-surface-dim">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" @click="openResult = !openResult; cancelOpen = false"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary px-3.5 py-2 text-[11px] font-bold transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-sm" aria-hidden="true">fact_check</span>
+                            <span x-text="openResult ? '{{ __('prevention.hide_result_form') }}' : '{{ __('prevention.record_result') }}'"></span>
+                        </button>
+                        <button type="button" @click="cancelOpen = !cancelOpen; openResult = false"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-red-300 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-3.5 py-2 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                            title="{{ __('prevention.cancel_appt_title') }}">
+                            <span class="material-symbols-outlined text-sm" aria-hidden="true">cancel</span>
+                            <span x-text="cancelOpen ? '{{ __('prevention.hide_cancellation') }}' : '{{ __('prevention.cancel_appointment') }}'"></span>
+                        </button>
+                        <span class="text-[11px] text-secondary hidden sm:inline">
+                            {{ __('prevention.hint_record_flow') }}
+                        </span>
+                    </div>
+                    @include('admin.prevention-dossiers.partials.appointment-panels', ['d' => $d, 'appt' => $pendingAppointment])
+                </div>
+                @endcan
             </div>
         </section>
         @endif
@@ -602,16 +561,16 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">Visit failed — {{ $lastFailedAppointment->visit_date->format('d/m/Y') }} at {{ substr($lastFailedAppointment->visit_time, 0, 5) }}</h2>
-                            <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">Alert</span>
+                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('prevention.visit_failed_at', ['date' => $lastFailedAppointment->visit_date->format('d/m/Y'), 'time' => substr($lastFailedAppointment->visit_time, 0, 5)]) }}</h2>
+                            <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">{{ __('prevention.alert_chip') }}</span>
                         </div>
-                        <p class="text-body-sm text-secondary mt-1">The inspection record above is negative. The applicant must fix the issues, then a new visit (RDV) can be scheduled.</p>
+                        <p class="text-body-sm text-secondary mt-1">{{ __('prevention.failed_intro') }}</p>
                     </div>
                 </div>
                 @if ($lastFailedAppointment->note)
                 <div class="rounded border border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10 px-4 py-3">
                     <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1 flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>Inspector note
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>{{ __('prevention.inspector_note') }}
                     </p>
                     <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $lastFailedAppointment->note }}</p>
                 </div>
@@ -623,30 +582,30 @@
                     <div class="mt-4 rounded-lg border border-red-200 dark:border-red-800/40 bg-surface-container-low/60 p-4">
                         <p class="text-[11px] font-extrabold uppercase tracking-wider text-secondary mb-3 flex items-center gap-1.5">
                             <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">event_available</span>
-                            Schedule the new visit (RDV)
+                            {{ __('prevention.schedule_new_rdv_title') }}
                         </p>
                         <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.store', $d) }}" class="grid grid-cols-1 sm:grid-cols-[1fr,1fr] gap-3">
                             @csrf
                             <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">New visit date <span class="text-red-500">*</span></label>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('prevention.new_visit_date') }} <span class="text-red-500">*</span></label>
                                 <input type="date" name="visit_date" required min="{{ date('Y-m-d') }}" value="{{ old('visit_date') }}" class="w-full text-sm">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">New visit time <span class="text-red-500">*</span></label>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('prevention.new_visit_time') }} <span class="text-red-500">*</span></label>
                                 <input type="time" name="visit_time" required value="{{ old('visit_time') }}" class="w-full text-sm">
                             </div>
                             <div class="sm:col-span-2">
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">Note for the applicant <span class="font-normal normal-case">(optional)</span></label>
-                                <textarea name="note" rows="2" maxlength="2000" placeholder="Instructions for the new visit…">{{ old('note') }}</textarea>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('prevention.note_for_applicant') }} <span class="font-normal normal-case">{{ __('prevention.optional') }}</span></label>
+                                <textarea name="note" rows="2" maxlength="2000" placeholder="{{ __('prevention.new_visit_note_placeholder') }}">{{ old('note') }}</textarea>
                             </div>
                             <p class="sm:col-span-2 text-[11px] text-secondary flex items-start gap-1.5">
                                 <span class="material-symbols-outlined text-sm mt-px" aria-hidden="true">location_on</span>
-                                <span>Visit takes place at the building: <strong class="font-semibold break-all">{{ $d->building_address ?? '—' }}</strong> · applicant's phone: <strong class="font-mono" dir="ltr">{{ $d->phone ?? '—' }}</strong></span>
+                                <span>{{ __('prevention.visit_at_building') }} <strong class="font-semibold break-all">{{ $d->building_address ?? '—' }}</strong> · {{ __('prevention.applicant_phone') }} <strong class="font-mono" dir="ltr">{{ $d->phone ?? '—' }}</strong></span>
                             </p>
                             <div class="sm:col-span-2">
                                 <button type="submit" class="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
-                                    <span class="material-symbols-outlined text-base" aria-hidden="true">event_add</span>
-                                    Schedule new visit
+                                    <span class="material-symbols-outlined text-base" aria-hidden="true">calendar_add_on</span>
+                                    {{ __('prevention.schedule_new_visit') }}
                                 </button>
                             </div>
                         </form>
@@ -655,7 +614,7 @@
                 @else
                     <p class="mt-3 text-xs font-semibold text-secondary flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">event_available</span>
-                        A new visit is already scheduled — {{ $pendingAppointment->visit_date->format('d/m/Y') }} at {{ substr($pendingAppointment->visit_time, 0, 5) }}.
+                        {{ __('prevention.next_visit_ready', ['date' => $pendingAppointment->visit_date->format('d/m/Y'), 'time' => substr($pendingAppointment->visit_time, 0, 5)]) }}.
                     </p>
                 @endif
             </div>
@@ -669,11 +628,11 @@
                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-surface-dim">
                     <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">route</span>
-                        Dossier lifecycle
+                        {{ __('prevention.lifecycle') }}
                     </h3>
                     <div class="flex items-center gap-3 flex-1 sm:flex-none sm:min-w-64">
                         <span class="text-xs font-bold text-primary bg-primary-fixed/40 px-2 py-0.5 rounded whitespace-nowrap">
-                            Phase {{ $phaseNum }} / 4
+                            {{ __('prevention.phase_word') }} {{ $phaseNum }} / 4
                         </span>
                         <div class="hidden sm:flex-1 h-1.5 bg-surface-dim/50 rounded-full overflow-hidden">
                             <div class="h-full bg-gradient-to-r from-primary-container to-amber-500 rounded-full transition-all duration-500" style="width: {{ $progress }}%"></div>
@@ -709,12 +668,12 @@
                             <div class="min-w-0 md:px-1">
                                 <div class="flex md:justify-center items-center gap-2">
                                     <h4 class="text-xs font-bold {{ $step['state'] === 'pending' ? 'text-secondary' : 'text-on-surface' }}">
-                                        {{ ['Submission', 'Study & approval', 'On-site inspection', 'Certificate delivery'][$idx] }}
+                                        {{ [__('prevention.step1'), __('prevention.step2'), __('prevention.step3'), __('prevention.step4')][$idx] }}
                                     </h4>
                                     @if ($step['state'] === 'current')
                                         <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true"></span>
                                     @elseif ($step['state'] === 'error')
-                                        <span class="text-[10px] uppercase font-black text-red-800 bg-red-100 dark:bg-red-900/40 px-1.5 py-px rounded">Alert</span>
+                                        <span class="text-[10px] uppercase font-black text-red-800 bg-red-100 dark:bg-red-900/40 px-1.5 py-px rounded">{{ __('prevention.alert_chip') }}</span>
                                     @endif
                                 </div>
                                 <p class="text-[11px] mt-0.5 leading-snug {{ $step['state'] === 'error' ? 'text-red-800 dark:text-red-400 font-medium' : ($step['state'] === 'current' ? 'text-primary font-medium' : 'text-secondary') }}">
@@ -746,13 +705,13 @@
                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
                     <div class="min-w-0">
                         <h1 class="text-headline-md font-headline-md text-on-surface tracking-tight leading-tight" dir="ltr">
-                            Prevention dossier <span class="font-mono">{{ $viewRef }}</span>
+                            {{ __('prevention.prevention_dossier') }} <span class="font-mono">{{ $viewRef }}</span>
                         </h1>
                         <p class="text-xs text-secondary mt-1 flex items-center gap-1.5">
                             <span class="material-symbols-outlined text-xs" aria-hidden="true">calendar_today</span>
-                            Deposited on {{ $d->created_at->isoFormat('D MMMM YYYY') }}
+                            {{ __('prevention.deposited_on', ['date' => $d->created_at->locale(app()->getLocale())->isoFormat('D MMMM YYYY')]) }}
                             @if ($d->reviewed_at && $d->reviewer)
-                                • last review by {{ $d->reviewer->name }} on {{ $d->reviewed_at->format('d/m/Y') }}
+                                • {{ __('prevention.last_review_by_on', ['name' => $d->reviewer->name, 'date' => $d->reviewed_at->format('d/m/Y')]) }}
                             @endif
                         </p>
                     </div>
@@ -760,7 +719,7 @@
                     <div class="flex items-center gap-2.5 shrink-0">
                         <span class="inline-flex items-center gap-1.5 text-label-caps font-label-caps px-2.5 py-1 rounded font-bold {{ $statusPillCls }}">
                             <span class="material-symbols-outlined text-xs" aria-hidden="true">{{ $statusPillIcon }}</span>
-                            {{ ucfirst(str_replace('_', ' ', $status)) }}
+                            {{ $statusLabel[$status] ?? ucfirst(str_replace('_', ' ', $status)) }}
                         </span>
                         <a href="{{ route('admin.prevention-dossiers.index') }}"
                             class="flex items-center gap-2 bg-surface-container-lowest hover:bg-surface-container text-on-surface border border-surface-dim text-xs font-semibold py-2 px-2.5 rounded transition-colors">
@@ -776,81 +735,81 @@
                 {{-- Faits clés — détails complets du dossier --}}
                 <div class="flex items-center gap-2 mb-3">
                     <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">badge</span>
-                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-secondary">Applicant &amp; building details</span>
+                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-secondary">{{ __('prevention.applicant_building') }}</span>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                     <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
                         <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">badge</span>
                         <div class="min-w-0">
-                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Full name</span>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention.f_full_name') }}</span>
                             <span class="block text-xs font-bold text-on-surface truncate" title="{{ $d->nom_prenom ?? '' }}">{{ $d->nom_prenom ?? '—' }}</span>
                         </div>
                     </div>
                     <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
                         <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">fingerprint</span>
                         <div class="min-w-0">
-                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">CIN</span>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention.f_cin') }}</span>
                             <span class="block text-xs font-bold text-on-surface truncate font-mono" dir="ltr" title="{{ $d->cin ?? '' }}">{{ $d->cin ?? '—' }}</span>
                         </div>
                     </div>
                     <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
                         <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">call</span>
                         <div class="min-w-0">
-                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Phone</span>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention.f_phone') }}</span>
                             <span class="block text-xs font-bold text-on-surface truncate font-mono num-ltr" dir="ltr" title="{{ $d->phone ?? '' }}">{{ $d->phone ?? '—' }}</span>
                         </div>
                     </div>
                     <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
                         <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">mail</span>
                         <div class="min-w-0">
-                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Email</span>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention.f_email') }}</span>
                             <span class="block text-xs font-bold text-on-surface truncate" dir="ltr" title="{{ $d->user?->email ?? '' }}">{{ $d->user?->email ?? '—' }}</span>
                         </div>
                     </div>
                     <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
                         <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">account_balance</span>
                         <div class="min-w-0">
-                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Governorate</span>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention.f_governorate') }}</span>
                             <span class="block text-xs font-bold text-on-surface truncate">{{ $d->governorate?->name_fr ?? $d->governorate?->name_ar ?? '—' }}</span>
                         </div>
                     </div>
                     <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
                         <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">location_city</span>
                         <div class="min-w-0">
-                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Delegation</span>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention.f_delegation') }}</span>
                             <span class="block text-xs font-bold text-on-surface truncate">{{ $d->delegation?->name_fr ?? $d->delegation?->name_ar ?? '—' }}</span>
                         </div>
                     </div>
                     <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
                         <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">apartment</span>
                         <div class="min-w-0">
-                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Building type</span>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention.f_building_type') }}</span>
                             <span class="block text-xs font-bold text-on-surface truncate">{{ $d->buildingType?->name ?? '—' }}</span>
                         </div>
                     </div>
                     <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
                         <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">domain</span>
                         <div class="min-w-0">
-                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Activity</span>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention.f_activity') }}</span>
                             <span class="block text-xs font-bold text-on-surface truncate">{{ $d->buildingActivity?->name ?? $d->activity_other ?? '—' }}</span>
                         </div>
                     </div>
                     <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
                         <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">place</span>
                         <div class="min-w-0">
-                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Building address</span>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention.f_building_address') }}</span>
                             <span class="block text-xs font-bold text-on-surface truncate" title="{{ $d->building_address ?? '' }}">{{ $d->building_address ?? '—' }}</span>
                         </div>
                     </div>
                     <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0 dark:bg-gray-900/30">
                         <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">local_shipping</span>
                         <div class="min-w-0">
-                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">Delivery chosen</span>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('prevention.delivery_chosen') }}</span>
                             <span class="block text-xs font-bold text-on-surface truncate">
                                 @if ($d->delivery_method)
-                                    {{ ['pickup' => 'Pickup at office', 'post' => 'Post (B3)', 'digital' => 'Digital download'][$d->delivery_method] ?? ucfirst($d->delivery_method) }}
+                                    {{ ['pickup' => __('prevention.pickup_office'), 'post' => __('prevention.post_b3'), 'digital' => __('prevention.digital_download')][$d->delivery_method] ?? ucfirst($d->delivery_method) }}
                                 @else
-                                    <span class="font-medium text-secondary">Not chosen yet</span>
+                                    <span class="font-medium text-secondary">{{ __('prevention.not_chosen_yet') }}</span>
                                 @endif
                             </span>
                         </div>
@@ -873,7 +832,7 @@
                 <div class="mt-4 rounded-lg border border-surface-dim bg-surface-container-low px-4 py-3">
                     <p class="text-[11px] font-extrabold uppercase tracking-wider text-secondary mb-1 flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-sm" aria-hidden="true">sticky_note_2</span>
-                        Administrative note (visible to the applicant)
+                        {{ __('prevention.admin_note_visible') }}
                     </p>
                     <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $d->admin_note }}</p>
                 </div>
@@ -884,16 +843,16 @@
                     <div class="mt-3 flex items-start gap-2.5 bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-300 dark:border-indigo-800/40 rounded px-3.5 py-2.5 text-xs">
                         <span class="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-base mt-px" aria-hidden="true">verified</span>
                         <div class="font-bold text-indigo-900 dark:text-indigo-200 leading-relaxed">
-                            All inspections passed — everything is OK.
+                            {{ __('prevention.all_passed') }}
                             <span class="block font-normal text-indigo-700 dark:text-indigo-300 mt-0.5">
                                 @if ($lastPassedAppointment)
-                                    Visit passed on {{ $lastPassedAppointment->visit_date->format('d/m/Y') }} at {{ substr($lastPassedAppointment->visit_time, 0, 5) }}@if ($lastPassedAppointment->note) — note: {{ $lastPassedAppointment->note }}@endif.
+                                    {{ __('prevention.visit_passed_on', ['date' => $lastPassedAppointment->visit_date->format('d/m/Y'), 'time' => substr($lastPassedAppointment->visit_time, 0, 5)]) }}@if ($lastPassedAppointment->note) {{ __('prevention.note_prefix') }} {{ $lastPassedAppointment->note }}@endif.
                                 @endif
-                                Deliver the prevention certificate below (issue →
+                                {{ __('prevention.deliver_cert_below') }}
                                 @if ($d->delivery_method === 'post')
-                                    B3 send → delivered
+                                    {{ __('prevention.b3_flow') }}
                                 @else
-                                    pickup marked as collected
+                                    {{ __('prevention.pickup_flow') }}
                                 @endif
                                 ).
                             </span>
@@ -903,14 +862,14 @@
                     <div class="mt-3 flex items-start gap-2.5 bg-amber-50 dark:bg-amber-900/10 border border-amber-300 dark:border-amber-800/40 rounded px-3.5 py-2.5 text-xs">
                         <span class="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base mt-px" aria-hidden="true">hourglass_bottom</span>
                         <div class="font-bold text-amber-900 dark:text-amber-200 leading-relaxed">
-                            {{ $status === 'under_consultation' ? 'Dossier approved — awaiting RDV.' : 'Dossier approved — waiting for the next administrative act.' }}
+                            {{ $status === 'under_consultation' ? __('prevention.approved_await_rdv') : __('prevention.approved_wait_act') }}
                         </div>
                     </div>
                 @elseif ($heroAlert === 'neutral' && $status === 'cancelled')
                     <div class="mt-3 flex items-start gap-2.5 bg-surface-container-low border border-surface-dim rounded px-3.5 py-2.5 text-xs">
                         <span class="material-symbols-outlined text-secondary text-base mt-px" aria-hidden="true">cancel</span>
                         <div class="font-bold text-on-surface leading-relaxed">
-                            Dossier cancelled<span class="font-normal text-secondary"> — closed by the administration.</span>
+                            {{ __('prevention.dossier_cancelled') }}<span class="font-normal text-secondary"> {{ __('prevention.closed_by_admin') }}</span>
                         </div>
                     </div>
                 @endif
@@ -933,9 +892,9 @@
                                 <span class="material-symbols-outlined text-base" aria-hidden="true">event_repeat</span>
                             </span>
                             <div>
-                                <h3 class="text-headline-sm font-headline-sm text-on-surface flex items-center gap-2">Site visits (RDV)</h3>
+                                <h3 class="text-headline-sm font-headline-sm text-on-surface flex items-center gap-2">{{ __('prevention.site_visits') }}</h3>
                                 <p class="text-xs text-secondary mt-0.5">
-                                    {{ $d->appointments->count() }} visit(s) · at <strong class="font-semibold text-on-surface">{{ $d->building_address ?? '—' }}</strong>
+                                    {{ __('prevention.visits_count', ['count' => $d->appointments->count()]) }} <strong class="font-semibold text-on-surface">{{ $d->building_address ?? '—' }}</strong>
                                 </p>
                             </div>
                         </div>
@@ -946,9 +905,9 @@
                         @if ($d->appointments->isEmpty())
                             <div class="p-6 text-center border border-dashed border-surface-dim rounded-lg">
                                 <span class="material-symbols-outlined text-3xl text-outline" aria-hidden="true">event_busy</span>
-                                <p class="text-sm text-outline mt-2">No visits scheduled yet
+                                <p class="text-sm text-outline mt-2">{{ __('prevention.visits_none') }}
                                     @if ($status === 'under_consultation')
-                                        — use the action band above to schedule the first one
+                                        {{ __('prevention.visits_none_hint') }}
                                     @endif
                                     .
                                 </p>
@@ -965,32 +924,32 @@
                                             </span>
                                         </div>
 
-                                        <div class="bg-surface-container-low/60 border border-surface-dim rounded-lg p-4 transition-all hover:border-primary/40 {{ $appt->isCancelled() ? 'opacity-75' : '' }}">
+                                        <div x-data="{ openResult: false, cancelOpen: false }" class="bg-surface-container-low/60 border border-surface-dim rounded-lg p-4 transition-all hover:border-primary/40 {{ $appt->isCancelled() ? 'opacity-75' : '' }}">
                                             <div class="flex flex-wrap items-start justify-between gap-3">
                                                 <div class="flex flex-wrap items-center gap-2">
                                                     <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase
                                                         {{ $appt->isPassed() ? 'bg-amber-100 text-amber-800' : ($appt->isFailed() ? 'bg-red-100 text-red-700' : ($appt->isCancelled() ? 'bg-surface-dim text-secondary' : 'bg-blue-100 text-blue-700')) }}">
-                                                        {{ $appt->isPassed() ? 'Passed' : ($appt->isFailed() ? 'Failed' : ($appt->isCancelled() ? 'Cancelled' : 'Scheduled')) }}
+                                                        {{ $appt->isPassed() ? __('prevention.status_passed') : ($appt->isFailed() ? __('prevention.status_failed') : ($appt->isCancelled() ? __('prevention.status_cancelled') : __('prevention.status_scheduled'))) }}
                                                     </span>
                                                     <span class="text-xs font-mono font-bold text-on-surface {{ $appt->isCancelled() ? 'line-through decoration-1' : '' }}" dir="ltr">
                                                         {{ $appt->visit_date->format('d/m/Y') }} • {{ substr($appt->visit_time, 0, 5) }}
                                                     </span>
                                                     @if ($appt->scheduler)
-                                                        <span class="text-[10px] text-outline">by {{ $appt->scheduler->name }}</span>
+                                                        <span class="text-[10px] text-outline">{{ __('prevention.by_name', ['name' => $appt->scheduler->name]) }}</span>
                                                     @endif
                                                 </div>
 
                                                 @can('manage prevention-dossiers')
-                                                <div x-data="{ openResult: false, cancelOpen: false }" class="flex items-center gap-2">
+                                                <div class="flex items-center gap-2">
                                                     @if ($appt->isPending())
                                                         <button type="button" @click="openResult = !openResult; cancelOpen = false"
                                                             class="inline-flex items-center gap-1 rounded-lg border border-surface-dim bg-surface-container-lowest px-3 py-1.5 text-[11px] font-bold text-on-surface hover:bg-surface-container">
-                                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">fact_check</span> Record result
+                                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">fact_check</span> {{ __('prevention.record_result') }}
                                                         </button>
                                                         <button type="button" @click="cancelOpen = !cancelOpen; openResult = false"
                                                             class="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-                                                            title="Cancel this appointment (a note is required)">
-                                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">cancel</span> Cancel appointment
+                                                            title="{{ __('prevention.cancel_appt_title') }}">
+                                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">cancel</span> {{ __('prevention.cancel_appointment') }}
                                                         </button>
                                                     @endif
                                                 </div>
@@ -1006,50 +965,14 @@
                                                     <p class="text-[11px] font-bold mb-0.5 flex items-center gap-1.5
                                                         {{ $appt->isFailed() ? 'text-red-700 dark:text-red-400' : 'text-secondary' }}">
                                                         <span class="material-symbols-outlined text-sm" aria-hidden="true">{{ $appt->isFailed() ? 'rate_review' : 'event_note' }}</span>
-                                                        {{ $appt->isFailed() ? 'Inspector note' : ($appt->isCancelled() ? 'Cancellation reason' : 'Note') }}
+                                                        {{ $appt->isFailed() ? __('prevention.inspector_note') : ($appt->isCancelled() ? __('prevention.cancellation_reason') : __('prevention.note_label')) }}
                                                     </p>
                                                     <p class="text-xs whitespace-pre-line leading-relaxed {{ $appt->isFailed() ? 'text-red-800 dark:text-red-200' : 'text-secondary' }}">{{ $appt->note }}</p>
                                                 </div>
                                             @endif
 
                                             @if ($appt->isPending())
-                                            {{-- Résultat de visite --}}
-                                            <div x-show="openResult" x-cloak class="mt-3 rounded-lg border border-surface-dim bg-surface-container-lowest p-3">
-                                                <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.update', [$d, $appt]) }}">
-                                                    @csrf @method('PUT')
-                                                    <div class="flex gap-2 mb-2">
-                                                        <label class="flex-1 flex items-center gap-1.5 cursor-pointer rounded-lg border border-amber-300 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-300 has-[:checked]:bg-amber-50 dark:has-[:checked]:bg-amber-900/20">
-                                                            <input type="radio" name="status" value="passed" class="sr-only" required>
-                                                            <span class="material-symbols-outlined" aria-hidden="true">task_alt</span> Passed
-                                                        </label>
-                                                        <label class="flex-1 flex items-center gap-1.5 cursor-pointer rounded-lg border border-red-300 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-300 has-[:checked]:bg-red-50 dark:has-[:checked]:bg-red-900/20">
-                                                            <input type="radio" name="status" value="failed" class="sr-only" required>
-                                                            <span class="material-symbols-outlined" aria-hidden="true">cancel</span> Failed
-                                                        </label>
-                                                    </div>
-                                                    <textarea name="note" rows="3" placeholder="Inspector note (required if failed)..." class="text-xs"></textarea>
-                                                    <button type="submit" class="mt-2 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
-                                                        <span class="material-symbols-outlined text-sm" aria-hidden="true">save</span> Save result
-                                                    </button>
-                                                </form>
-                                            </div>
-
-                                            {{-- Annulation — avec motif obligatoire (le RDV n'est jamais supprimé) --}}
-                                            <div x-show="cancelOpen" x-cloak class="mt-3 rounded-lg border border-red-200 dark:border-red-800/30 bg-red-50 dark:bg-red-900/10 p-3">
-                                                <p class="text-[11px] font-bold text-red-700 dark:text-red-400 mb-1.5 flex items-center gap-1.5">
-                                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
-                                                    Cancel this appointment — the RDV stays in the history
-                                                </p>
-                                                <form method="POST" action="{{ route('admin.prevention-dossiers.appointments.cancel', [$d, $appt]) }}"
-                                                      onsubmit="return confirm('Cancel this appointment? The applicant will be notified.')">
-                                                    @csrf
-                                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1">Cancellation reason <span class="text-red-500">*</span></label>
-                                                    <textarea name="note" rows="3" required maxlength="2000" placeholder="Why is this appointment cancelled?…">{{ old('note') }}</textarea>
-                                                    <button type="submit" class="mt-2 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
-                                                        <span class="material-symbols-outlined text-sm" aria-hidden="true">cancel</span> Confirm cancellation
-                                                    </button>
-                                                </form>
-                                            </div>
+                                                @include('admin.prevention-dossiers.partials.appointment-panels', ['d' => $d, 'appt' => $appt])
                                             @endif
                                         </div>
                                     </div>
@@ -1073,14 +996,14 @@
                                 <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">workspace_premium</span>
                             </span>
                             <div class="min-w-0">
-                                <h3 class="text-headline-sm font-headline-sm text-on-surface">Prevention certificate @if ($cert)— <span class="font-mono" dir="ltr">{{ $cert->reference }}</span>@endif</h3>
+                                <h3 class="text-headline-sm font-headline-sm text-on-surface">{{ __('prevention.cert_title') }} @if ($cert)— <span class="font-mono" dir="ltr">{{ $cert->reference }}</span>@endif</h3>
                                 <p class="text-xs text-secondary mt-0.5">
                                     @if ($cert)
-                                        @if ($cert->isPickup()) Pickup workflow — ready ↔ collected
-                                        @elseif ($cert->isPost()) Post (B3) workflow — ready → sent → delivered
-                                        @endif · issued {{ $cert->issued_at->format('d/m/Y') }}
+                                        @if ($cert->isPickup()) {{ __('prevention.pickup_workflow_short') }}
+                                        @elseif ($cert->isPost()) {{ __('prevention.post_workflow_short') }}
+                                        @endif {{ __('prevention.issued_on', ['date' => $cert->issued_at->format('d/m/Y')]) }}
                                     @else
-                                        Not issued yet — the on-site visit was passed
+                                        {{ __('prevention.not_issued_yet') }}
                                     @endif
                                 </p>
                             </div>
@@ -1088,7 +1011,7 @@
                         <div class="flex items-center gap-2.5">
                             @if ($cert)
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary">
-                                    {{ $cert->isPickup() ? 'Pickup' : 'Poste (B3)' }}
+                                    {{ $cert->isPickup() ? __('prevention.pickup_chip') : __('prevention.poste_tunisienne') }}
                                 </span>
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded {{ $certStatusCfg[1] }}">{{ $certStatusCfg[0] }}</span>
                             @endif
@@ -1103,11 +1026,11 @@
                         <div class="p-5 space-y-4">
                             @php
                                 $certSteps = $cert->isPickup()
-                                    ? [['Ready at the office', 'schedule_send', $cert->issued_at],
-                                       ['Collected by applicant', 'check', $cert->collected_at]]
-                                    : [['Ready — prepared', 'schedule_send', $cert->issued_at],
-                                       ['Sent — Poste Tunisienne (B3)', 'local_post_office', $cert->post_sent_at],
-                                       ['Delivered', 'mark_email_read', $cert->post_delivered_at]];
+                                    ? [[__('prevention.cs_ready_office'), 'schedule_send', $cert->issued_at],
+                                       [__('prevention.cs_collected'), 'check', $cert->collected_at]]
+                                    : [[__('prevention.cs_ready'), 'schedule_send', $cert->issued_at],
+                                       [__('prevention.cs_sent_b3'), 'local_post_office', $cert->post_sent_at],
+                                       [__('prevention.cs_delivered'), 'mark_email_read', $cert->post_delivered_at]];
                                 $stepIdx = $cert->isPickup()
                                     ? ($cert->isCollected() ? 1 : 0)
                                     : match ($cert->status) {
@@ -1121,9 +1044,9 @@
                             <div class="rounded-lg border border-surface-dim bg-surface-container-low/60 p-3.5">
                                 <p class="mb-2.5 text-[10px] font-extrabold uppercase tracking-wider text-secondary">
                                     @if ($cert->isPickup())
-                                        Pickup workflow — legal moves: ready <span aria-hidden="true">↔</span> collected
+                                        {{ __('prevention.pickup_workflow_short') }}
                                     @else
-                                        Post (B3) workflow — strict order: ready <span aria-hidden="true">→</span> sent (tracking required) <span aria-hidden="true">→</span> delivered
+                                        {{ __('prevention.post_workflow_strict') }}
                                     @endif
                                 </p>
                                 <ol class="flex flex-col gap-2.5 sm:flex-row sm:items-stretch">
@@ -1145,7 +1068,7 @@
                                                     {{ $step[0] }}
                                                 </p>
                                                 <p class="mt-0.5 font-mono text-[10px] text-secondary" dir="ltr">
-                                                    {{ ($done || $current) && $step[2] ? $step[2]->format('d/m/Y') : '— pending —' }}
+                                                    {{ ($done || $current) && $step[2] ? $step[2]->format('d/m/Y') : __('prevention.pending_dots') }}
                                                 </p>
                                             </div>
                                         </li>
@@ -1156,11 +1079,11 @@
                             {{-- 2. Détails livraison --}}
                             <dl class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
                                 <div>
-                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Reference</dt>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.cert_ref') }}</dt>
                                     <dd class="font-mono font-bold text-on-surface" dir="ltr">{{ $cert->reference }}</dd>
                                 </div>
                                 <div class="text-end">
-                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Delivery</dt>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.delivery') }}</dt>
                                     <dd class="font-semibold text-on-surface">
                                         @if ($cert->isPost()) Poste Tunisienne (B3)
                                         @elseif ($cert->isPickup()) Pickup at office
@@ -1170,57 +1093,57 @@
 
                                 @if ($cert->isPickup())
                                     <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Pickup gouvernorat</dt>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.pickup_gov') }}</dt>
                                         <dd class="text-end font-semibold text-on-surface">{{ $cert->governorate?->name_fr ?? $cert->governorate?->name_ar ?? '—' }}</dd>
                                     </div>
                                     <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Pickup delegation</dt>
-                                        <dd class="text-end font-semibold text-on-surface">{{ $cert->delegation?->name_fr ?? $cert->delegation?->name_ar ?? '— All delegations —' }}</dd>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.pickup_delegation') }}</dt>
+                                        <dd class="text-end font-semibold text-on-surface">{{ $cert->delegation?->name_fr ?? $cert->delegation?->name_ar ?? __('prevention.all_delegations') }}</dd>
                                     </div>
                                     <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Issued</dt>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issued_dt') }}</dt>
                                         <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->issued_at->format('d/m/Y') }}</dd>
                                     </div>
                                     <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Valid until</dt>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.valid_until') }}</dt>
                                         <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->valid_until ? $cert->valid_until->format('d/m/Y') : '—' }}</dd>
                                     </div>
                                     @if ($cert->collected_at)
                                     <div class="col-span-2">
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Collected on</dt>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.collected_on') }}</dt>
                                         <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->collected_at->format('d/m/Y, H:i') }}</dd>
                                     </div>
                                     @endif
                                 @else
                                     <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Recipient</dt>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.recipient') }}</dt>
                                         <dd class="text-end font-semibold text-on-surface">{{ $cert->post_recipient ?? '—' }}</dd>
                                     </div>
                                     <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Phone</dt>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.f_phone') }}</dt>
                                         <dd class="text-end font-semibold font-mono num-ltr text-on-surface" dir="ltr">{{ $cert->post_phone ?? '—' }}</dd>
                                     </div>
                                     <div class="col-span-2">
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Postal address</dt>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.postal_address') }}</dt>
                                         <dd class="mt-1 rounded-lg bg-surface-container px-2.5 py-2 text-[11px] leading-relaxed break-words text-on-surface dark:bg-gray-700/30">{{ $cert->post_address ?? '—' }}</dd>
                                     </div>
                                     <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Tracking (B3)</dt>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.tracking_b3') }}</dt>
                                         <dd class="text-end font-mono font-semibold text-on-surface" dir="ltr">{{ $cert->post_tracking ?? '—' }}</dd>
                                     </div>
                                     <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Issued / valid until</dt>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issued_valid_until') }}</dt>
                                         <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->issued_at->format('d/m/Y') }} / {{ $cert->valid_until ? $cert->valid_until->format('d/m/Y') : '—' }}</dd>
                                     </div>
                                     @if ($cert->post_sent_at)
                                     <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Sent on</dt>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.sent_on') }}</dt>
                                         <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->post_sent_at->format('d/m/Y, H:i') }}</dd>
                                     </div>
                                     @endif
                                     @if ($cert->post_delivered_at)
                                     <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">Delivered on</dt>
+                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.delivered_on') }}</dt>
                                         <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->post_delivered_at->format('d/m/Y, H:i') }}</dd>
                                     </div>
                                     @endif
@@ -1229,7 +1152,7 @@
 
                             @if ($cert->note)
                                 <div class="rounded-lg border border-surface-dim bg-surface-container px-2.5 py-2 dark:bg-gray-700/30">
-                                    <p class="mb-0.5 text-[10px] uppercase tracking-wider font-bold text-secondary">Internal note (not visible to the applicant)</p>
+                                    <p class="mb-0.5 text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.internal_note_not_visible') }}</p>
                                     <p class="whitespace-pre-line text-xs text-secondary dark:text-gray-300">{{ $cert->note }}</p>
                                 </div>
                             @endif
@@ -1243,7 +1166,7 @@
                                         <button type="submit"
                                             class="inline-flex w-full items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
                                             <span class="material-symbols-outlined text-base" aria-hidden="true">handshake</span>
-                                            Mark as collected
+                                            {{ __('prevention.mark_collected') }}
                                         </button>
                                     </form>
                                 @elseif ($cert->isPickup())
@@ -1253,21 +1176,21 @@
                                         <button type="submit"
                                             class="inline-flex w-full items-center justify-center gap-2 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold py-2 px-4 rounded transition-colors dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
                                             <span class="material-symbols-outlined text-sm" aria-hidden="true">undo</span>
-                                            Mark as ready (un-collect)
+                                            {{ __('prevention.mark_ready_uncollect') }}
                                         </button>
                                     </form>
                                 @elseif ($cert->isPost() && $cert->isReady())
                                     <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
                                         @csrf @method('PUT')
                                         <input type="hidden" name="action" value="sent">
-                                        <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Tracking number (B3) <span class="text-red-500">*</span></label>
+                                        <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.tracking_b3') }} <span class="text-red-500">*</span></label>
                                         <input type="text" name="post_tracking" required maxlength="60"
                                             value="{{ old('post_tracking', $cert->post_tracking) }}"
-                                            placeholder="e.g. 3029 8765 4321" class="w-full text-sm">
+                                            placeholder="{{ __('prevention.tracking_placeholder') }}" class="w-full text-sm">
                                         <button type="submit"
                                             class="mt-2 inline-flex w-full items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
                                             <span class="material-symbols-outlined text-base" aria-hidden="true">local_post_office</span>
-                                            Register at Poste Tunisienne
+                                            {{ __('prevention.register_post') }}
                                         </button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
@@ -1275,7 +1198,7 @@
                                         <input type="hidden" name="action" value="ready">
                                         <button type="submit" class="inline-flex w-full items-center justify-center gap-2 border border-surface-dim bg-surface-container-lowest hover:bg-surface-container text-secondary text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
                                             <span class="material-symbols-outlined text-sm" aria-hidden="true">undo</span>
-                                            Internal re-edit (stays ready)
+                                            {{ __('prevention.reedit_stays_ready') }}
                                         </button>
                                     </form>
                                 @elseif ($cert->isPostSent())
@@ -1285,7 +1208,7 @@
                                         <button type="submit"
                                             class="inline-flex w-full items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
                                             <span class="material-symbols-outlined text-base" aria-hidden="true">mark_email_read</span>
-                                            Confirm post delivery
+                                            {{ __('prevention.confirm_post_delivery') }}
                                         </button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
@@ -1293,13 +1216,13 @@
                                         <input type="hidden" name="action" value="ready">
                                         <button type="submit" class="inline-flex w-full items-center justify-center gap-2 border border-surface-dim bg-surface-container-lowest hover:bg-surface-container text-secondary text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
                                             <span class="material-symbols-outlined text-sm" aria-hidden="true">undo</span>
-                                            Not sent yet — roll back to ready
+                                            {{ __('prevention.not_sent_rollback') }}
                                         </button>
                                     </form>
                                 @else
                                     <p class="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-400">
                                         <span class="material-symbols-outlined text-base" aria-hidden="true">verified</span>
-                                        Delivery confirmed — the applicant received the certificate.
+                                        {{ __('prevention.delivery_confirmed') }}
                                     </p>
                                 @endif
                             </div>
@@ -1311,21 +1234,21 @@
                                             class="flex w-full items-center justify-between text-start" :aria-expanded="revokeOpen" aria-controls="cert-revoke">
                                         <span class="flex items-center gap-1.5 text-xs font-bold text-red-700 dark:text-red-400">
                                             <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
-                                            Revoke this certificate
+                                            {{ __('prevention.revoke_cert') }}
                                         </span>
                                         <svg class="h-3.5 w-3.5 text-red-400 transition-transform" :class="revokeOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
                                     <div x-show="revokeOpen" x-cloak id="cert-revoke" class="mt-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 p-3">
                                         <p class="text-[11px] leading-relaxed text-red-800 dark:text-red-300">
-                                            Deleting removes the certificate <strong class="font-mono">{{ $cert->reference }}</strong>; its history entry stays in the timeline. A new certificate can be issued afterwards.
+                                            {{ __('prevention.revoke_warning', ['ref' => $cert->reference]) }}
                                         </p>
                                         <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.destroy', $d) }}"
-                                              onsubmit="return confirm('Revoke certificate {{ $cert->reference }}? This action cannot be undone.')">
+                                              onsubmit="return confirm('{{ __('prevention.confirm_revoke', ['ref' => $cert->reference]) }}')">
                                             @csrf @method('DELETE')
                                             <button type="submit"
                                                     class="mt-2 inline-flex w-full items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
                                                 <span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span>
-                                                Confirm revoke
+                                                {{ __('prevention.confirm_revoke_btn') }}
                                             </button>
                                         </form>
                                     </div>
@@ -1333,7 +1256,7 @@
                             @else
                                 <p class="flex items-center gap-1.5 border-t border-surface-dim pt-3 text-[11px] font-bold text-secondary">
                                     <span class="material-symbols-outlined text-sm" aria-hidden="true">lock</span>
-                                    Finalised certificate — locked. It cannot be revoked (regulatory archive).
+                                    {{ __('prevention.locked_cert') }}
                                 </p>
                             @endif
                         </div>
@@ -1344,7 +1267,7 @@
                             @if ($d->delivery_method)
                                 <div class="mb-3 flex items-start gap-2 rounded-lg border border-surface-dim bg-surface-container-low px-3 py-2 text-xs text-secondary">
                                     <span class="material-symbols-outlined text-base text-primary mt-px shrink-0" aria-hidden="true">touch_app</span>
-                                    <span>The applicant chose <strong class="text-on-surface">{{ ['pickup' => 'pickup at office', 'post' => 'Poste Tunisienne (B3)', 'digital' => 'digital download'][$d->delivery_method] ?? ucfirst($d->delivery_method) }}</strong> — it is pre-selected below. @if ($d->delivery_method === 'post') The postal address is pre-filled. @endif</span>
+                                    <span>{{ __('prevention.applicant_chose') }} <strong class="text-on-surface">{{ ['pickup' => __('prevention.pickup_office'), 'post' => __('prevention.poste_tunisienne'), 'digital' => __('prevention.digital_download')][$d->delivery_method] ?? ucfirst($d->delivery_method) }}</strong> {{ __('prevention.pre_selected_below') }} @if ($d->delivery_method === 'post') {{ __('prevention.postal_prefilled') }} @endif</span>
                                 </div>
                             @endif
 
@@ -1364,44 +1287,44 @@
 
                                     {{-- Mode de remise — digital annoncé mais pas actif --}}
                                     <div class="overflow-hidden rounded-lg border border-surface-dim dark:border-gray-600">
-                                        <p class="px-3 pb-1.5 pt-2.5 text-[10px] font-extrabold uppercase tracking-wider text-secondary">Delivery method</p>
+                                        <p class="px-3 pb-1.5 pt-2.5 text-[10px] font-extrabold uppercase tracking-wider text-secondary">{{ __('prevention.delivery_method') }}</p>
                                         <label class="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-surface-container dark:hover:bg-gray-700/40"
                                                :class="method === 'pickup' ? 'bg-amber-50 dark:bg-amber-900/20' : ''">
                                             <input type="radio" name="delivery_method" value="pickup" x-model="method" required class="text-amber-600">
                                             <span class="material-symbols-outlined text-amber-600 dark:text-amber-400" aria-hidden="true">storefront</span>
-                                            <span class="flex-1 text-sm font-bold text-on-surface">Pickup at office</span>
-                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-600 text-white">Available</span>
+                                            <span class="flex-1 text-sm font-bold text-on-surface">{{ __('prevention.pickup_office') }}</span>
+                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-600 text-white">{{ __('prevention.available') }}</span>
                                         </label>
                                         <label class="flex cursor-pointer items-center gap-2.5 border-t border-surface-dim px-3 py-2 hover:bg-surface-container dark:border-gray-600 dark:hover:bg-gray-700/40"
                                                :class="method === 'post' ? 'bg-blue-50 dark:bg-blue-900/20' : ''">
                                             <input type="radio" name="delivery_method" value="post" x-model="method" class="text-blue-600">
                                             <span class="material-symbols-outlined text-blue-600 dark:text-blue-400" aria-hidden="true">local_shipping</span>
-                                            <span class="flex-1 text-sm font-bold text-on-surface">Poste Tunisienne (B3)</span>
-                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">Registered</span>
+                                            <span class="flex-1 text-sm font-bold text-on-surface">{{ __('prevention.poste_tunisienne') }}</span>
+                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">{{ __('prevention.registered') }}</span>
                                         </label>
                                         <div class="flex select-none items-center gap-2.5 border-t border-surface-dim px-3 py-2 opacity-55 dark:border-gray-600">
                                             <input type="radio" disabled class="text-gray-400">
                                             <span class="material-symbols-outlined text-secondary" aria-hidden="true">download</span>
-                                            <span class="flex-1 text-sm font-bold text-outline dark:text-gray-500">Digital download</span>
-                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Coming soon</span>
+                                            <span class="flex-1 text-sm font-bold text-outline dark:text-gray-500">{{ __('prevention.digital_download') }}</span>
+                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">{{ __('prevention.coming_soon') }}</span>
                                         </div>
                                     </div>
 
                                     {{-- Pickup : gouvernorat + délégation --}}
                                     <div x-show="method === 'pickup'" x-cloak>
                                         <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Gouvernorat <span class="text-red-500">*</span></label>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.gouvernorat') }} <span class="text-red-500">*</span></label>
                                             <select name="governorate_id" :required="method === 'pickup'" x-model="gov" class="w-full text-sm">
-                                                <option value="">Select gouvernorat…</option>
+                                                <option value="">{{ __('prevention.select_gouvernorat') }}</option>
                                                 <template x-for="(entry, govId) in map" :key="govId">
                                                     <option :value="govId" x-text="entry.name"></option>
                                                 </template>
                                             </select>
                                         </div>
                                         <div class="mt-3">
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Pickup delegation <span class="font-normal normal-case">(optional)</span></label>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.pickup_delegation') }} <span class="font-normal normal-case">{{ __('prevention.optional') }}</span></label>
                                             <select name="delegation_id" x-model="del" class="w-full text-sm">
-                                                <option value="">— All delegations —</option>
+                                                <option value="">{{ __('prevention.all_delegations') }}</option>
                                                 <template x-for="dele in (map[gov] ? map[gov].delegations : [])" :key="dele.id">
                                                     <option :value="dele.id" x-text="dele.name"></option>
                                                 </template>
@@ -1413,10 +1336,10 @@
                                     <div x-show="method === 'post'" x-cloak class="space-y-3 rounded-lg border border-blue-200 p-3 dark:border-blue-800/40">
                                         <p class="flex items-center gap-1.5 text-[11px] font-bold text-blue-700 dark:text-blue-300">
                                             <span class="material-symbols-outlined flex-none text-sm" aria-hidden="true">local_post_office</span>
-                                            Certified mail (B3) — sent to the applicant's mailbox
+                                            {{ __('prevention.b3_intro') }}
                                         </p>
                                         <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Recipient <span class="text-red-500">*</span></label>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.recipient') }} <span class="text-red-500">*</span></label>
                                             <input type="text" name="post_recipient" :required="method === 'post'" maxlength="255"
                                                 value="{{ old('post_recipient', $d->delivery_method === 'post' ? $d->nom_prenom : '') }}" class="w-full text-sm">
                                         </div>
@@ -1426,30 +1349,30 @@
                                                 value="{{ old('post_phone', $d->delivery_method === 'post' ? $d->phone : '') }}" class="w-full text-sm">
                                         </div>
                                         <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Postal address <span class="text-red-500">*</span></label>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.postal_address') }} <span class="text-red-500">*</span></label>
                                             <textarea name="post_address" rows="3" :required="method === 'post'" maxlength="500"
-                                                placeholder="Street, building, postal code, city...">{{ old('post_address', $d->delivery_method === 'post' ? $d->post_address : '') }}</textarea>
+                                                placeholder="{{ __('prevention.postal_address_placeholder') }}">{{ old('post_address', $d->delivery_method === 'post' ? $d->post_address : '') }}</textarea>
                                         </div>
                                         <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Tracking number <span class="font-normal normal-case">(optional — added when sent)</span></label>
-                                            <input type="text" name="post_tracking" maxlength="60" value="{{ old('post_tracking') }}" placeholder="e.g. 3029 8765 4321" class="w-full text-sm">
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.tracking_b3') }} <span class="font-normal normal-case">{{ __('prevention.tracking_optional_lot') }}</span></label>
+                                            <input type="text" name="post_tracking" maxlength="60" value="{{ old('post_tracking') }}" placeholder="{{ __('prevention.tracking_placeholder') }}" class="w-full text-sm">
                                         </div>
                                     </div>
 
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Valid until <span class="font-normal normal-case">(optional)</span></label>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.valid_until') }} <span class="font-normal normal-case">{{ __('prevention.optional') }}</span></label>
                                             <input type="date" name="valid_until" min="{{ date('Y-m-d') }}" value="{{ old('valid_until') }}" class="w-full text-sm">
                                         </div>
                                         <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Internal note <span class="font-normal normal-case">(not visible to applicant)</span></label>
-                                            <textarea name="note" rows="2" maxlength="2000" placeholder="Internal note..." class="text-xs">{{ old('note') }}</textarea>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.internal_note') }} <span class="font-normal normal-case">{{ __('prevention.not_visible_short') }}</span></label>
+                                            <textarea name="note" rows="2" maxlength="2000" placeholder="{{ __('prevention.internal_note') }}..." class="text-xs">{{ old('note') }}</textarea>
                                         </div>
                                     </div>
                                     <button type="submit"
                                         class="inline-flex w-full items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-4 rounded transition-colors shadow-sm">
                                         <span class="material-symbols-outlined text-base" aria-hidden="true">workspace_premium</span>
-                                        Confirm &amp; issue certificate
+                                        {{ __('prevention.confirm_issue') }}
                                     </button>
                                 </div>
                             </form>
@@ -1471,14 +1394,14 @@
                                 <span class="material-symbols-outlined text-base" aria-hidden="true">history</span>
                             </span>
                             <div>
-                                <h3 class="text-headline-sm font-headline-sm text-on-surface">Timeline — audit journal</h3>
-                                <p class="text-xs text-secondary mt-0.5">Complete history of every administrative act</p>
+                                <h3 class="text-headline-sm font-headline-sm text-on-surface">{{ __('prevention.timeline_title') }}</h3>
+                                <p class="text-xs text-secondary mt-0.5">{{ __('prevention.timeline_sub') }}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="text-[11px] text-secondary font-semibold flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm" aria-hidden="true">receipt_long</span>
-                                {{ $d->events->count() }} events
+                                {{ __('prevention.events_count', ['count' => $d->events->count()]) }}
                             </span>
                             <svg class="w-4 h-4 text-secondary transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
@@ -1505,7 +1428,7 @@
                                                     @if ($event->actor)
                                                         {{ $event->actor->name }}
                                                     @else
-                                                        <span class="italic text-secondary">System</span>
+                                                        <span class="italic text-secondary">{{ __('prevention.system') }}</span>
                                                     @endif
                                                 </span>
                                                 @if ($event->actor)
@@ -1514,7 +1437,7 @@
                                                         $isApplicant = $event->actor->roles->isEmpty();
                                                     @endphp
                                                     <span class="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded {{ $isApplicant ? 'bg-surface-dim text-secondary' : 'bg-secondary-container text-on-secondary-container' }}">
-                                                        {{ $isApplicant ? 'Applicant' : ucfirst(str_replace('-', ' ', $actorRole ?? 'Admin')) }}
+                                                        {{ $isApplicant ? __('prevention.applicant_role') : ucfirst(str_replace('-', ' ', $actorRole ?? 'Admin')) }}
                                                     </span>
                                                 @endif
                                             </div>
@@ -1531,7 +1454,7 @@
 
                                         @if ($event->note)
                                             <p class="text-body-sm font-body-sm text-secondary">
-                                                <span class="font-bold text-on-surface">Note:</span>
+                                                <span class="font-bold text-on-surface">{{ __('prevention.note_colon') }}</span>
                                                 <span class="whitespace-pre-line">{{ $event->note }}</span>
                                             </p>
                                         @endif
@@ -1553,9 +1476,9 @@
                             <span class="material-symbols-outlined text-base" aria-hidden="true">manage_history</span>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">Correction history</h3>
+                            <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">{{ __('prevention.correction_history') }}</h3>
                             <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
-                                {{ count($allCorrectionRounds) }} correction round(s) — all previous versions are consultable below
+                                {{ __('prevention.rounds', ['count' => count($allCorrectionRounds)]) }}
                             </p>
                         </div>
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300" dir="ltr">{{ count($allCorrectionRounds) }}</span>
@@ -1578,13 +1501,13 @@
 
                 {{-- ENCADRÉ 1 : Pièces justificatives versées --}}
                 <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden"
-                     x-data="{ open: true }">
+                     x-data="{ open: false }">
                     <button type="button" @click="open = !open"
                             class="w-full flex items-center gap-2 p-5 hover:bg-surface-container transition-colors text-start border-b border-surface-dim">
                         <span class="w-8 h-8 rounded bg-primary-fixed/50 text-primary flex items-center justify-center shrink-0">
                             <span class="material-symbols-outlined text-base" aria-hidden="true">attach_file</span>
                         </span>
-                        <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">Supporting documents</h3>
+                        <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">{{ __('prevention.supporting_docs') }}</h3>
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap {{ $isDocComplete ? 'text-amber-900 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300' : 'text-secondary bg-surface-dim' }}" dir="ltr">{{ $uploadedTypes }}/{{ $documentTypes->count() }}</span>
                         <svg class="w-4 h-4 text-secondary transition-transform shrink-0 ms-1" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
@@ -1595,7 +1518,7 @@
                             <div class="h-full rounded-full transition-all duration-500 {{ $isDocComplete ? 'bg-amber-500' : 'bg-primary' }}" style="width: {{ $docPct }}%"></div>
                         </div>
                         <p class="text-[10px] font-semibold mb-4 {{ $isDocComplete ? 'text-amber-800 dark:text-amber-400' : 'text-secondary' }}">
-                            {{ $isDocComplete ? 'Checklist complete' : 'Checklist: ' . $uploadedTypes . ' / ' . $documentTypes->count() . ' uploaded' }}
+                            {{ $isDocComplete ? __('prevention.checklist_complete') : __('prevention.checklist_progress', ['uploaded' => $uploadedTypes, 'total' => $documentTypes->count()]) }}
                         </p>
 
                         <div class="space-y-2.5">
@@ -1619,7 +1542,7 @@
                                         </div>
                                         <a href="{{ route('admin.prevention-dossiers.documents.download', ['document' => $doc]) }}"
                                            class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors"
-                                           title="Download {{ $doc->original_name }}">
+                                           title="{{ __('prevention.title_download', ['name' => $doc->original_name]) }}">
                                             <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
                                         </a>
                                     </div>
@@ -1633,9 +1556,9 @@
                                                 <h4 class="text-xs font-bold {{ $docType->is_conditional ? 'text-secondary' : 'text-on-surface font-semibold' }}">{{ $docType->name }}</h4>
                                                 <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap">
                                                     @if ($docType->is_conditional)
-                                                        <span class="font-semibold text-amber-900 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/40 px-1.5 rounded">Conditional</span>
+                                                        <span class="font-semibold text-amber-900 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/40 px-1.5 rounded">{{ __('prevention.conditional') }}</span>
                                                     @endif
-                                                    <span>Missing</span>
+                                                    <span>{{ __('prevention.missing_doc') }}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1644,7 +1567,7 @@
                             @empty
                                 <div class="p-4 text-center">
                                     <span class="material-symbols-outlined text-2xl text-outline" aria-hidden="true">folder_off</span>
-                                    <p class="text-xs text-secondary mt-1">No document types configured</p>
+                                    <p class="text-xs text-secondary mt-1">{{ __('prevention.configured_none') }}</p>
                                 </div>
                             @endforelse
                         </div>
@@ -1655,7 +1578,7 @@
                             <div class="pt-3 mt-2 border-t border-surface-dim/60">
                                 <p class="text-[11px] font-bold text-secondary flex items-center gap-1.5 mb-2">
                                     <span class="material-symbols-outlined text-sm" aria-hidden="true">attachment</span>
-                                    Other files ({{ $orphanDocs->count() }})
+                                    {{ __('prevention.other_files', ['count' => $orphanDocs->count()]) }}
                                 </p>
                                 <div class="space-y-2.5">
                                     @foreach ($orphanDocs as $doc)
@@ -1663,7 +1586,7 @@
                                             <div class="flex items-start gap-2.5 min-w-0">
                                                 <span class="material-symbols-outlined text-red-600 text-lg mt-0.5 shrink-0" aria-hidden="true">{{ str_contains((string) $doc->mime_type, 'pdf') ? 'picture_as_pdf' : 'description' }}</span>
                                                 <div class="min-w-0">
-                                                    <h4 class="text-xs font-bold text-on-surface truncate" title="{{ $doc->original_name }}">{{ $doc->original_name ?? 'Document' }}</h4>
+                                                    <h4 class="text-xs font-bold text-on-surface truncate" title="{{ $doc->original_name }}">{{ $doc->original_name ?? __('prevention.document_fallback') }}</h4>
                                                     <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5" dir="ltr">
                                                         <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
                                                         <span class="text-surface-dim">•</span>
@@ -1672,7 +1595,7 @@
                                                 </div>
                                             </div>
                                             <a href="{{ route('admin.prevention-dossiers.documents.download', ['document' => $doc]) }}"
-                                               class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors" title="Download">
+                                               class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors" title="{{ __('prevention.download') }}">
                                                 <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
                                             </a>
                                         </div>
@@ -1692,11 +1615,11 @@
                                     <span class="w-8 h-8 rounded bg-surface-dim/60 text-secondary flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-base" aria-hidden="true">inventory_2</span>
                                     </span>
-                                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">Archived files</h3>
+                                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">{{ __('prevention.archived_files') }}</h3>
                                     <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary" dir="ltr">{{ $archivedDocuments->count() }}</span>
                                     <svg class="w-4 h-4 text-secondary transition-transform" :class="openArchive ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                 </div>
-                                <p class="text-[11px] text-secondary leading-relaxed">Kept on disk for history — documents replaced after correction rounds</p>
+                                <p class="text-[11px] text-secondary leading-relaxed">{{ __('prevention.archived_hint') }}</p>
                             </button>
 
                             <div x-show="openArchive" x-cloak class="pt-4 space-y-2.5">
@@ -1705,7 +1628,7 @@
                                         <div class="flex items-start gap-2.5 min-w-0">
                                             <span class="material-symbols-outlined text-outline text-lg mt-0.5 shrink-0" aria-hidden="true">inventory_2</span>
                                             <div class="min-w-0">
-                                                <h4 class="text-xs font-bold text-secondary leading-snug">{{ $doc->documentType?->name ?? 'Document' }}</h4>
+                                                <h4 class="text-xs font-bold text-secondary leading-snug">{{ $doc->documentType?->name ?? __('prevention.document_fallback') }}</h4>
                                                 <div class="flex items-center gap-2 text-[11px] text-secondary/80 mt-0.5 flex-wrap" dir="ltr">
                                                     <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
                                                     <span class="text-surface-dim">•</span>
@@ -1717,7 +1640,7 @@
                                             </div>
                                         </div>
                                         <a href="{{ route('admin.prevention-dossiers.documents.download', ['document' => $doc]) }}"
-                                           class="w-7 h-7 rounded bg-surface-container text-secondary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors" title="Download">
+                                           class="w-7 h-7 rounded bg-surface-container text-secondary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors" title="{{ __('prevention.download') }}">
                                             <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
                                         </a>
                                     </div>
@@ -1731,6 +1654,49 @@
         </div>{{-- /grille 8/4 --}}
     </div>
 
+    {{-- ══════════════════════════════════════════════════════════════════════
+         ZONE DANGEREUSE — annulation définitive du dossier (bas de page).
+         Un seul point d'annulation dans toute la page, toujours en dernier.
+    ══════════════════════════════════════════════════════════════════════════ --}}
+    @can('manage prevention-dossiers')
+    @if ($d->isActionable())
+    <section class="mt-6 border border-red-300 dark:border-red-800/50 rounded-lg bg-red-50/40 dark:bg-red-900/5 overflow-hidden" x-data="{ cancelOpen: false }">
+        <div class="p-5 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0 dark:bg-red-900/30 dark:text-red-300">
+                    <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">warning</span>
+                </div>
+                <div class="min-w-0">
+                    <h2 class="text-sm font-extrabold text-red-700 dark:text-red-300 uppercase tracking-wide">{{ __('prevention.danger_zone_title') }}</h2>
+                    <p class="text-xs text-secondary mt-0.5">{{ __('prevention.danger_zone') }}</p>
+                </div>
+            </div>
+            <button type="button" @click="cancelOpen = !cancelOpen"
+                class="inline-flex items-center justify-center gap-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold py-2.5 px-5 rounded transition-colors dark:border-red-800 dark:bg-red-900/20 dark:text-red-300 shrink-0">
+                <span class="material-symbols-outlined text-base" aria-hidden="true">cancel</span>
+                <span x-text="cancelOpen ? '{{ __('prevention.hide_cancellation') }}' : '{{ __('prevention.cancel_dossier') }}'">{{ __('prevention.cancel_dossier') }}</span>
+            </button>
+        </div>
+
+        {{-- Formulaire d'annulation (déplié) --}}
+        <div x-show="cancelOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+             class="border-t border-red-200 dark:border-red-800/40 p-5">
+            <form method="POST" action="{{ route('admin.prevention-dossiers.cancel', $d) }}"
+                  onsubmit="return confirm('{{ __('prevention.confirm_cancel_dossier') }}')">
+                @csrf
+                <label class="block text-xs font-semibold text-red-800 dark:text-red-200 mb-1.5">{{ __('prevention.cancellation_reason') }} <span class="text-red-500">*</span></label>
+                <textarea name="admin_note" rows="4" required maxlength="2000"
+                    placeholder="{{ __('prevention.cancel_reason_placeholder') }}">{{ old('admin_note') }}</textarea>
+                <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                    <span class="material-symbols-outlined text-base" aria-hidden="true">cancel</span>
+                    {{ __('prevention.confirm_cancellation') }}
+                </button>
+            </form>
+        </div>
+    </section>
+    @endif
+    @endcan
+
     {{-- ═════════════════════════════════════════════════════════════════
         FICHE IMPRIMABLE — feuille professionnelle du dossier (A4)
         Masquée à l'écran, seule visible sous @media print.
@@ -1743,41 +1709,41 @@
                     <img src="/images/logo.png" alt="" class="fiche-band-logo">
                     <div style="min-width:0;">
                         <div class="fiche-band-org">{{ setting('app_name', 'ONPC — Office National de la Protection Civile') }}</div>
-                        <div class="fiche-band-sub">Prevention service — {{ $d->governorate?->name_fr ?? $d->governorate?->name_ar ?? '—' }}</div>
+                        <div class="fiche-band-sub">{{ __('prevention.prevention_service', ['gov' => $d->governorate?->name_fr ?? $d->governorate?->name_ar ?? '—']) }}</div>
                     </div>
                 </div>
                 <div class="fiche-band-ref">
-                    <div class="fiche-band-ref-label">Dossier</div>
+                    <div class="fiche-band-ref-label">{{ __('prevention.dossier') }}</div>
                     <div class="fiche-band-ref-value" dir="ltr">{{ $viewRef }}</div>
                 </div>
             </div>
 
             {{-- Titre + date d'édition --}}
             <div class="fiche-title-row">
-                <div class="fiche-title">PREVENTION DOSSIER — ADMINISTRATIVE SHEET</div>
-                <div class="fiche-printed" dir="ltr">Printed: {{ $printDate }}</div>
+                <div class="fiche-title">{{ __('prevention.print_title') }}</div>
+                <div class="fiche-printed" dir="ltr">{{ __('prevention.printed_on') }} {{ $printDate }}</div>
             </div>
 
             {{-- Bloc jumelé : demandeur • bâtiment --}}
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
                 <section class="fiche-sec">
-                    <h2 class="fiche-h2">Applicant</h2>
+                    <h2 class="fiche-h2">{{ __('prevention.fiche_applicant') }}</h2>
                     <table class="fiche-table fiche-kv">
-                        <tr><th>Full name</th><td style="font-weight:700;">{{ $d->nom_prenom }}</td></tr>
-                        <tr><th>CIN</th><td class="fiche-mono" dir="ltr">{{ $d->cin }}</td></tr>
-                        <tr><th>Phone</th><td class="fiche-mono" dir="ltr">{{ $d->phone ?? '—' }}</td></tr>
-                        <tr><th>Email</th><td dir="ltr">{{ $d->user?->email ?? '—' }}</td></tr>
+                        <tr><th>{{ __('prevention.f_full_name') }}</th><td style="font-weight:700;">{{ $d->nom_prenom }}</td></tr>
+                        <tr><th>{{ __('prevention.f_cin') }}</th><td class="fiche-mono" dir="ltr">{{ $d->cin }}</td></tr>
+                        <tr><th>{{ __('prevention.f_phone') }}</th><td class="fiche-mono" dir="ltr">{{ $d->phone ?? '—' }}</td></tr>
+                        <tr><th>{{ __('prevention.f_email') }}</th><td dir="ltr">{{ $d->user?->email ?? '—' }}</td></tr>
                     </table>
                 </section>
                 <section class="fiche-sec">
-                    <h2 class="fiche-h2">Building</h2>
+                    <h2 class="fiche-h2">{{ __('prevention.fiche_building') }}</h2>
                     <table class="fiche-table fiche-kv">
-                        <tr><th>Building type</th><td>{{ $d->buildingType?->name ?? '—' }}</td></tr>
-                        <tr><th>Activity</th><td>{{ $d->buildingActivity?->name ?? $d->activity_other ?? '—' }}</td></tr>
-                        <tr><th>Delegation</th><td>{{ $d->delegation?->name_fr ?? $d->delegation?->name_ar ?? '—' }}</td></tr>
-                        <tr><th>Address</th><td>{{ $d->building_address ?? '—' }}</td></tr>
+                        <tr><th>{{ __('prevention.f_building_type') }}</th><td>{{ $d->buildingType?->name ?? '—' }}</td></tr>
+                        <tr><th>{{ __('prevention.f_activity') }}</th><td>{{ $d->buildingActivity?->name ?? $d->activity_other ?? '—' }}</td></tr>
+                        <tr><th>{{ __('prevention.f_delegation') }}</th><td>{{ $d->delegation?->name_fr ?? $d->delegation?->name_ar ?? '—' }}</td></tr>
+                        <tr><th>{{ __('prevention.address') }}</th><td>{{ $d->building_address ?? '—' }}</td></tr>
                         @if ($d->latitude && $d->longitude)
-                        <tr><th>Coordinates</th><td class="fiche-mono" dir="ltr">{{ number_format((float)$d->latitude, 5) }}, {{ number_format((float)$d->longitude, 5) }}</td></tr>
+                        <tr><th>{{ __('prevention.coordinates') }}</th><td class="fiche-mono" dir="ltr">{{ number_format((float)$d->latitude, 5) }}, {{ number_format((float)$d->longitude, 5) }}</td></tr>
                         @endif
                     </table>
                 </section>
@@ -1785,18 +1751,18 @@
 
             {{-- Références administratives --}}
             <section class="fiche-sec">
-                <h2 class="fiche-h2">Administrative references</h2>
+                <h2 class="fiche-h2">{{ __('prevention.admin_refs') }}</h2>
                 <table class="fiche-table fiche-kv-4">
                     <tr>
-                        <th>Request no.</th>
+                        <th>{{ __('prevention.request_no') }}</th>
                         <td class="fiche-mono" dir="ltr">{{ $d->num_demande ?: '—' }}</td>
-                        <th>Internal ref.</th>
+                        <th>{{ __('prevention.internal_ref') }}</th>
                         <td class="fiche-mono" dir="ltr">{{ $d->api_reference ?: $d->reference ?: '—' }}</td>
                     </tr>
                     <tr>
-                        <th>Deposited on</th>
+                        <th>{{ __('prevention.deposited_short') }}</th>
                         <td class="fiche-mono" dir="ltr">{{ $d->created_at->format('d/m/Y') }}</td>
-                        <th>Office</th>
+                        <th>{{ __('prevention.office') }}</th>
                         <td>{{ $d->governorate?->name_fr ?? $d->governorate?->name_ar ?? '—' }}</td>
                     </tr>
                 </table>
@@ -1806,13 +1772,13 @@
             @if ($cert)
             <section class="fiche-sec">
                 <div class="fiche-cert">
-                    <div class="fiche-cert-title">Prevention certificate</div>
-                    Reference <strong class="fiche-mono">{{ $cert->reference }}</strong>
-                    — Delivery: {{ $cert->isPickup() ? 'pickup at office' : 'Poste Tunisienne (B3)' }}
-                    — Status: {{ $certStatusCfg[0] }}
-                    — Issued: {{ $cert->issued_at->format('d/m/Y') }}
-                    @if ($cert->valid_until) — Valid until: {{ $cert->valid_until->format('d/m/Y') }}@endif
-                    @if ($cert->post_tracking) — Tracking: <span class="fiche-mono">{{ $cert->post_tracking }}</span>@endif
+                    <div class="fiche-cert-title">{{ __('prevention.cert_title') }}</div>
+                    {{ __('prevention.cert_ref') }} <strong class="fiche-mono">{{ $cert->reference }}</strong>
+                    — {{ __('prevention.delivery') }}: {{ $cert->isPickup() ? __('prevention.pickup_office') : __('prevention.poste_tunisienne') }}
+                    — {{ __('prevention.fiche_status') }}: {{ $certStatusCfg[0] }}
+                    — {{ __('prevention.fiche_issued') }}: {{ $cert->issued_at->format('d/m/Y') }}
+                    @if ($cert->valid_until) — {{ __('prevention.valid_until') }}: {{ $cert->valid_until->format('d/m/Y') }}@endif
+                    @if ($cert->post_tracking) — {{ __('prevention.fiche_tracking') }}: <span class="fiche-mono">{{ $cert->post_tracking }}</span>@endif
                 </div>
             </section>
             @endif
@@ -1820,17 +1786,17 @@
             {{-- Documents versés au dossier --}}
             <section class="fiche-sec">
                 <h2 class="fiche-h2">
-                    Supporting documents
+                    {{ __('prevention.supporting_docs') }}
                     <span dir="ltr" style="font-weight:700;">— {{ $uploadedTypes }}/{{ $documentTypes->count() }}</span>
                 </h2>
                 <table class="fiche-table fiche-table-dark">
                     <thead>
                         <tr>
-                            <th style="width:6%;">No.</th>
-                            <th>Document</th>
-                            <th>File</th>
-                            <th style="width:11%;">Size</th>
-                            <th style="width:13%;">Date</th>
+                            <th style="width:6%;">{{ __('prevention.col_no') }}</th>
+                            <th>{{ __('prevention.col_document') }}</th>
+                            <th>{{ __('prevention.col_file') }}</th>
+                            <th style="width:11%;">{{ __('prevention.col_size') }}</th>
+                            <th style="width:13%;">{{ __('prevention.col_date') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1846,7 +1812,7 @@
                                     <td class="fiche-mono" dir="ltr">{{ $fmtSize($doc->size) }}</td>
                                     <td class="fiche-mono" dir="ltr">{{ $doc->updated_at->format('d/m/Y') }}</td>
                                 @else
-                                    <td class="fiche-missing">missing{{ $docType->is_conditional ? '' : ' (required)' }}</td>
+                                    <td class="fiche-missing">{{ __('prevention.missing_chip') }}{{ $docType->is_conditional ? '' : ' ' . __('prevention.required_suffix') }}</td>
                                     <td class="fiche-dim">—</td>
                                     <td class="fiche-dim">—</td>
                                 @endif
@@ -1860,7 +1826,7 @@
 
             {{-- Pied de fiche --}}
             <div class="fiche-foot">
-                <div>Internal administrative sheet — {{ $d->hasPassedAppointment() ? 'inspection passed' : 'inspection not completed' }}</div>
+                <div>{{ $d->hasPassedAppointment() ? __('prevention.fiche_foot_passed') : __('prevention.fiche_foot_not') }}</div>
                 <div>{{ $viewRef }} · {{ $d->id }}</div>
             </div>
         </div>

@@ -41,6 +41,7 @@
         @stack('styles')
     </head>
     <body class="font-sans antialiased bg-surface-container-low dark:bg-surface-dim text-on-surface overflow-x-hidden">
+        <x-app-alerts />
         <div class="min-h-screen flex w-full overflow-x-hidden flex-col" x-data="sidebarManager()">
             <!-- Bandeau officiel (full width, au-dessus de la zone admin) -->
             <div class="w-full shrink-0">
