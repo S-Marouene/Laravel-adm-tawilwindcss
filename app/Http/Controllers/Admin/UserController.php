@@ -7,8 +7,10 @@ use App\Models\Delegation;
 use App\Models\Governorate;
 use App\Models\Service;
 use App\Models\User;
+use App\Models\UserTerritory;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
@@ -18,7 +20,10 @@ class UserController extends Controller
     {
         $this->authorize('view users');
 
-        $users = User::with(['roles', 'governorate', 'delegation', 'services'])->latest()->paginate(10);
+        $users = User::with(['roles', 'territories.governorate', 'territories.delegation', 'services'])
+            ->latest()
+            ->paginate(15);
+
         return view('admin.users.index', compact('users'));
     }
 
@@ -26,9 +31,9 @@ class UserController extends Controller
     {
         $this->authorize('create users');
 
-        $roles = Role::all();
+        $roles       = $this->availableRoles();
         $governorates = Governorate::with('delegations')->orderBy('id')->get();
-        $services = Service::orderBy('sort_order')->get();
+        $services    = Service::orderBy('sort_order')->get();
 
         return view('admin.users.create', compact('roles', 'governorates', 'services'));
     }
@@ -38,38 +43,34 @@ class UserController extends Controller
         $this->authorize('create users');
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'roles' => ['nullable', 'array'],
-            'roles.*' => ['exists:roles,id'],
-            'is_admin' => ['boolean'],
-            'governorate_id' => ['nullable', 'integer', 'exists:governorates,id'],
-            'delegation_id' => ['nullable', 'integer', 'exists:delegations,id'],
+            'role'     => ['nullable', 'string', 'exists:roles,name'],
             'services' => ['nullable', 'array'],
             'services.*' => ['integer', 'exists:services,id'],
+            // Territories: array of objects sent as territories[0][governorate_id], territories[0][delegation_id]
+            'territories'                  => ['nullable', 'array'],
+            'territories.*.governorate_id' => ['required', 'integer', 'exists:governorates,id'],
+            'territories.*.delegation_id'  => ['nullable', 'integer', 'exists:delegations,id'],
         ]);
 
-        $this->validateTerritory($request, $validated);
+        $this->validateRoleExtras($request, $validated);
 
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'is_admin' => $validated['is_admin'] ?? false,
-            'governorate_id' => $validated['governorate_id'] ?? null,
-            'delegation_id' => $validated['delegation_id'] ?? null,
         ]);
 
-        $this->syncRolesSafely($user, $validated['roles'] ?? []);
-
-        // Services this administrator handles (multi-select)
+        $this->syncRoleSafely($user, $validated['role'] ?? null);
         $user->services()->sync($validated['services'] ?? []);
+        $this->syncTerritories($user, $validated['territories'] ?? []);
 
         ActivityLogger::created("user {$user->name} ({$user->email})", $user, [
-            'name' => $user->name,
+            'name'  => $user->name,
             'email' => $user->email,
-            'is_admin' => $user->is_admin,
+            'role'  => $validated['role'] ?? null,
         ]);
 
         return redirect()->route('admin.users.index')
@@ -80,14 +81,14 @@ class UserController extends Controller
     {
         $this->authorize('edit users');
 
-        $roles = Role::all();
-        $userRoles = $user->roles->pluck('id')->toArray();
+        $roles        = $this->availableRoles();
+        $currentRole  = $user->roles->first()?->name;
         $governorates = Governorate::with('delegations')->orderBy('id')->get();
-        $services = Service::orderBy('sort_order')->get();
-        $user->load(['governorate', 'delegation']);
+        $services     = Service::orderBy('sort_order')->get();
+        $user->load(['territories.governorate', 'territories.delegation', 'services']);
 
         return view('admin.users.edit', compact(
-            'user', 'roles', 'userRoles', 'governorates', 'services',
+            'user', 'roles', 'currentRole', 'governorates', 'services',
         ));
     }
 
@@ -96,40 +97,35 @@ class UserController extends Controller
         $this->authorize('edit users');
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'roles' => ['nullable', 'array'],
-            'roles.*' => ['exists:roles,id'],
-            'is_admin' => ['boolean'],
-            'governorate_id' => ['nullable', 'integer', 'exists:governorates,id'],
-            'delegation_id' => ['nullable', 'integer', 'exists:delegations,id'],
+            'role'     => ['nullable', 'string', 'exists:roles,name'],
             'services' => ['nullable', 'array'],
             'services.*' => ['integer', 'exists:services,id'],
+            'territories'                  => ['nullable', 'array'],
+            'territories.*.governorate_id' => ['required', 'integer', 'exists:governorates,id'],
+            'territories.*.delegation_id'  => ['nullable', 'integer', 'exists:delegations,id'],
         ]);
 
-        $this->validateTerritory($request, $validated);
+        $this->validateRoleExtras($request, $validated);
 
         $changes = [];
-        if ($user->name !== $validated['name']) $changes['name'] = ['old' => $user->name, 'new' => $validated['name']];
+        if ($user->name !== $validated['name'])  $changes['name']  = ['old' => $user->name,  'new' => $validated['name']];
         if ($user->email !== $validated['email']) $changes['email'] = ['old' => $user->email, 'new' => $validated['email']];
 
         $user->update([
-            'name' => $validated['name'],
+            'name'  => $validated['name'],
             'email' => $validated['email'],
-            'is_admin' => $validated['is_admin'] ?? $user->is_admin,
-            'governorate_id' => $validated['governorate_id'] ?? null,
-            'delegation_id' => $validated['delegation_id'] ?? null,
         ]);
 
-        if (isset($validated['password']) && $validated['password']) {
+        if (! empty($validated['password'])) {
             $user->update(['password' => Hash::make($validated['password'])]);
         }
 
-        $this->syncRolesSafely($user, $validated['roles'] ?? []);
-
-        // Services this administrator handles (multi-select)
+        $this->syncRoleSafely($user, $validated['role'] ?? null);
         $user->services()->sync($validated['services'] ?? []);
+        $this->syncTerritories($user, $validated['territories'] ?? []);
 
         ActivityLogger::updated("user {$user->name}", $user, $changes);
 
@@ -149,12 +145,12 @@ class UserController extends Controller
             return back()->with('error', 'Only a super-admin can delete a super-admin account.');
         }
 
-        $userName = $user->name;
+        $userName  = $user->name;
         $userEmail = $user->email;
         $user->delete();
 
         ActivityLogger::deleted("user {$userName} ({$userEmail})", $user, [
-            'name' => $userName,
+            'name'  => $userName,
             'email' => $userEmail,
         ]);
 
@@ -162,77 +158,111 @@ class UserController extends Controller
             ->with('success', 'User deleted successfully.');
     }
 
-    // =====================================================================
-    // Territory validation — delegated to the roles picked on the form
-    // =====================================================================
+    // =========================================================================
+    // Private helpers
+    // =========================================================================
+
+    private function availableRoles()
+    {
+        $query = Role::orderBy('name');
+
+        if (! auth()->user()->hasRole('super-admin')) {
+            $query->where('name', '!=', 'super-admin');
+        }
+
+        return $query->get();
+    }
 
     /**
-     * - A 'delegation' administrator must be bound to a delegation that
-     *   belongs to the selected governorate.
-     * - A 'gouvernorat' administrator must be bound to a governorate.
-     * - Only a super-admin may grant the 'super-admin' role.
+     * Additional validation rules that depend on the chosen role:
+     * - manager  → at least one territory, at least one service
+     * - centrale → at least one service
+     * - Each territory row: if delegation_id is set, it must belong to governorate_id
+     * - super-admin may only be granted by a super-admin
      */
-    private function validateTerritory(Request $request, array $validated): void
+    private function validateRoleExtras(Request $request, array $validated): void
     {
-        $roleNames = Role::whereIn('id', $validated['roles'] ?? [])->pluck('name');
+        $role = $validated['role'] ?? null;
 
-        $isDelegation = $roleNames->contains('delegation');
-        $isGovernorate = $roleNames->contains('gouvernorat');
-        $isCentrale = $roleNames->contains('centrale');
-
-        if ($isDelegation || $isGovernorate) {
+        if ($role === 'manager') {
             $request->validate([
-                'governorate_id' => ['required', 'integer', 'exists:governorates,id'],
+                'territories'   => ['required', 'array', 'min:1'],
+                'services'      => ['required', 'array', 'min:1'],
             ], [
-                'governorate_id.required' => 'A governorate is required for a gouvernorat or delegation administrator.',
+                'territories.required' => 'Assign at least one territory for a manager.',
+                'territories.min'      => 'Assign at least one territory for a manager.',
+                'services.required'    => 'Select at least one service for a manager.',
             ]);
         }
 
-        // Centrale / gouvernorat / delegation administrators must handle at
-        // least one service — the service list decides which dossier menu they get.
-        if ($isDelegation || $isGovernorate || $isCentrale) {
+        if ($role === 'centrale') {
             $request->validate([
                 'services' => ['required', 'array', 'min:1'],
             ], [
-                'services.required' => 'Select at least one service for this administrator.',
+                'services.required' => 'Select at least one service for a centrale user.',
             ]);
         }
 
-        if ($isDelegation) {
-            $request->validate([
-                'delegation_id' => ['required', 'integer', 'exists:delegations,id'],
-            ], [
-                'delegation_id.required' => 'A delegation is required for a delegation administrator.',
-            ]);
+        // Validate each territory: delegation must belong to its governorate
+        foreach ($validated['territories'] ?? [] as $i => $territory) {
+            $govId = $territory['governorate_id'] ?? null;
+            $delId = $territory['delegation_id'] ?? null;
 
-            $delegation = Delegation::find($validated['delegation_id']);
-            if ($delegation && (int) $delegation->governorate_id !== (int) $validated['governorate_id']) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'delegation_id' => 'The selected delegation does not belong to the selected governorate.',
-                ]);
+            if ($delId) {
+                $delegation = Delegation::find($delId);
+                if ($delegation && (int) $delegation->governorate_id !== (int) $govId) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        "territories.{$i}.delegation_id" => "Delegation does not belong to the selected governorate.",
+                    ]);
+                }
             }
         }
 
-        if ($roleNames->contains('super-admin') && ! auth()->user()->hasRole('super-admin')) {
+        if ($role === 'super-admin' && ! auth()->user()->hasRole('super-admin')) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'roles' => 'Only a super-admin may grant the super-admin role.',
+                'role' => 'Only a super-admin may grant the super-admin role.',
             ]);
         }
     }
 
     /**
-     * Sync roles, but never let a non-super-admin touch super-admin accounts.
+     * Sync the user's territory assignments.
+     * Deletes all existing rows then re-inserts the submitted ones.
      */
-    private function syncRolesSafely(User $user, array $roleIds): void
+    private function syncTerritories(User $user, array $territories): void
     {
-        $roleNames = Role::whereIn('id', $roleIds)->pluck('name');
+        $user->territories()->delete();
 
+        foreach ($territories as $territory) {
+            $govId = $territory['governorate_id'] ?? null;
+            $delId = $territory['delegation_id'] ?? null;
+
+            if (! $govId) {
+                continue;
+            }
+
+            UserTerritory::firstOrCreate([
+                'user_id'        => $user->id,
+                'governorate_id' => $govId,
+                'delegation_id'  => $delId ?: null,
+            ]);
+        }
+    }
+
+    /**
+     * Assign a single role safely.
+     * Non-super-admins cannot touch existing super-admin accounts.
+     */
+    private function syncRoleSafely(User $user, ?string $roleName): void
+    {
         if ($user->hasRole('super-admin') && ! auth()->user()->hasRole('super-admin')) {
-            $roleNames = $roleNames->push('super-admin')->unique();
-        } elseif ($roleNames->contains('super-admin') && ! auth()->user()->hasRole('super-admin')) {
-            $roleNames = $roleNames->reject(fn ($name) => $name === 'super-admin');
+            return;
         }
 
-        $user->syncRoles($roleNames->all());
+        if ($roleName === 'super-admin' && ! auth()->user()->hasRole('super-admin')) {
+            return;
+        }
+
+        $user->syncRoles($roleName ? [$roleName] : []);
     }
 }

@@ -8,6 +8,7 @@ use App\Models\DossierDocument;
 use App\Models\Governorate;
 use App\Models\PreventionDossier;
 use App\Services\ActivityLogger;
+use App\Services\DossierNotifier;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -440,6 +441,9 @@ class PreventionRequestController extends Controller
             'resubmission'     => $isResubmission,
         ]);
 
+        // Notify eligible admins of the new/resubmitted dossier
+        DossierNotifier::notify($dossier, $isResubmission ? 'resubmitted' : 'submitted', 'admin');
+
         // Attempt to push to external API if configured
         if ($this->hasPreventionApiBaseUrl()) {
             $payload = $this->withAuthenticatedEmail([
@@ -588,6 +592,9 @@ class PreventionRequestController extends Controller
             'applicant'=> $dossier->nom_prenom,
             'reference'=> $dossier->reference,
         ]);
+
+        // Notify eligible admins that the citizen chose a delivery method
+        DossierNotifier::notify($dossier, 'delivery_chosen', 'admin');
 
         return redirect()->route('prevention-requests.show', $dossier)
             ->with('success', __('prevention_request.delivery_saved'));
@@ -874,6 +881,9 @@ class PreventionRequestController extends Controller
             'fields_fixed'  => $fieldsToFix,
             'docs_fixed'    => $docsToFix,
         ]);
+
+        // Notify eligible admins that the citizen resubmitted after correction
+        DossierNotifier::notify($dossier, 'resubmitted', 'admin');
 
         return redirect()
             ->route('prevention-requests.show', $dossier)

@@ -286,22 +286,22 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col lg:flex-row gap-3">
+                <div class="flex flex-col gap-3">
                     {{-- Advance to consultation — the only forward move in this phase --}}
-                    <form method="POST" action="{{ route('admin.prevention-dossiers.advance', $d) }}" class="flex-1"
+                    <form method="POST" action="{{ route('admin.prevention-dossiers.advance', $d) }}"
                           data-confirm data-confirm-style="info"
                           data-confirm-title="{{ __('prevention.confirm_advance') }}">
                         @csrf
-                        <button type="submit" class="inline-flex w-full lg:w-auto items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-6 rounded transition-colors shadow-sm">
+                        <button type="submit" class="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-3 px-6 rounded transition-colors shadow-sm">
                             <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_circle_right</span>
                             {{ __('prevention.advance_btn') }}
                         </button>
                     </form>
 
                     @unless ($pendingAppointment)
-                    {{-- {{ __('prevention.request_correction') }} (collapsed amber panel) — masqué si un RDV est en attente : c'est la visite qui décide --}}
+                    {{-- Request correction toggle --}}
                     <button type="button" @click="fixOpen = !fixOpen"
-                        class="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                        class="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-3 px-5 rounded transition-colors shadow-sm">
                         <span class="material-symbols-outlined text-base" aria-hidden="true">edit_note</span>
                         <span x-text="fixOpen ? '{{ __('prevention.hide_correction_form') }}' : '{{ __('prevention.request_correction') }}'">{{ __('prevention.request_correction') }}</span>
                     </button>

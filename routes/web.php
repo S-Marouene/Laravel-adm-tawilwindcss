@@ -151,4 +151,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// ── Notification API ──────────────────────────────────────────────────────
+// All authenticated users (citizen + admin) can access their own notifications.
+Route::middleware('auth')->prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/all',                                   [\App\Http\Controllers\NotificationController::class, 'viewAll'])->name('index');
+    Route::get('/',                                      [\App\Http\Controllers\NotificationController::class, 'index'])->name('api');
+    Route::patch('/{notification}/read',                [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('read');
+    Route::post('/mark-all-read',                       [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('read-all');
+    Route::delete('/{notification}',                    [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('destroy');
+    Route::delete('/',                                  [\App\Http\Controllers\NotificationController::class, 'destroyAll'])->name('destroy-all');
+});
+
 require __DIR__.'/auth.php';

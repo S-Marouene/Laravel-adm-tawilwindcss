@@ -225,12 +225,7 @@
             {{-- ══════════════ CONTENU ÉCRAN ══════════════ --}}
             <div class="dossier-screen no-print">
 
-                @if (session('success'))
-                    <div class="mb-4 bg-surface-container-lowest border border-surface-dim rounded-lg text-body-sm font-body-sm text-on-surface px-4 py-3 shadow-sm flex items-center gap-2.5 border-s-4 border-s-success" role="alert">
-                        <span class="material-symbols-outlined text-success text-base" aria-hidden="true">check_circle</span>
-                        <span>{{ session('success') }}</span>
-                    </div>
-                @endif
+
                 {{-- ══════════════ 4. ACTUALITÉ DU DOSSIER — toujours en tête ══════════════
                      Ce bloc unique, pleine largeur, remonte systématiquement la nouvelle la
                      plus importante : correction demandée, RDV programmé, visite échouée,
@@ -263,7 +258,7 @@
                             <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $dossier->admin_note }}</p>
                         </div>
                         <a href="{{ route('prevention-requests.correct', $dossier) }}"
-                            class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                            class="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-3 px-5 rounded transition-colors shadow-sm">
                             <span class="material-symbols-outlined text-base" aria-hidden="true">edit_note</span>
                             {{ __('prevention_request.fix_and_resubmit') }}
                         </a>

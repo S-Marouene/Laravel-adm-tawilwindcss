@@ -6,6 +6,16 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="theme-color" content="#1E40AF">
 
+        {{-- Real-time notification meta (read by Laravel Echo in app.js) --}}
+        @auth
+        <meta name="auth-user-id" content="{{ auth()->id() }}">
+        <meta name="unread-notifications" content="{{ auth()->user()->unreadNotifications()->count() }}">
+        <meta name="reverb-key" content="{{ env('REVERB_APP_KEY') }}">
+        <meta name="reverb-host" content="{{ env('REVERB_HOST', 'localhost') }}">
+        <meta name="reverb-port" content="{{ env('REVERB_PORT', 8080) }}">
+        <meta name="reverb-scheme" content="{{ env('REVERB_SCHEME', 'http') }}">
+        @endauth
+
         <!-- Favicon -->
         @php
             $favicon = setting('app_favicon') ? Storage::url(setting('app_favicon')) . '?v=' . date('Ymd') : '/favicon.ico';
@@ -65,7 +75,7 @@
                 </div>
                 <div class="mx-3 mt-2 mb-1 bg-inverse-surface text-inverse-on-surface rounded p-2 text-center" x-show="!collapsed">
                     <span class="block text-[10px] font-bold uppercase tracking-widest text-inverse-primary">Salle des Opérations</span>
-                    <span class="block text-[10px] text-surface-dim">{{ auth()->user()?->is_admin ? 'Console Administrateur' : 'Poste de Travail' }}</span>
+                    <span class="block text-[10px] text-surface-dim">{{ auth()->user()?->isAdministrator() ? 'Console Administrateur' : 'Poste de Travail' }}</span>
                 </div>
 
                 <!-- Sidebar Navigation -->
@@ -399,62 +409,92 @@
 
 
 
-                                <!-- Notifications Dropdown -->
+                                <!-- Notifications Dropdown — real-time via Reverb/Echo -->
                                 <div class="header-element admin-header-secondary py-[1rem] md:px-[0.65rem] px-2" x-data="notificationPanel()">
                                     <div class="hs-dropdown ti-dropdown relative flex items-center" x-data="{ dropOpen: false }" @click.outside="dropOpen = false">
                                         <button @click.stop="dropOpen = !dropOpen" type="button" class="relative inline-flex cursor-pointer flex-shrink-0 justify-center items-center w-9 h-9 rounded-lg text-secondary dark:text-gray-400 hover:text-gov-600 dark:hover:text-gov-400 hover:bg-surface-container dark:hover:bg-gray-700/60 transition-all duration-200" :aria-expanded="dropOpen" aria-haspopup="true">
                                             <i class="bx bx-bell header-link-icon"></i>
-                                            <span class="header-badge" x-text="unreadCount" x-show="unreadCount > 0" style="display: none;">0</span>
-                                            <span class="flex absolute h-5 w-5 -top-[0.25rem] end-0 -me-[0.6rem]" x-show="unreadCount > 0" style="display: none;">
-                                                <span class="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-gov-400 opacity-75"></span>
+                                            {{-- Ping ring — pulses from behind the badge --}}
+                                            <span x-show="unreadCount > 0" style="display: none;"
+                                                class="pointer-events-none absolute h-[1.125rem] w-[1.125rem] -top-[0.2rem] end-[-0.3rem] z-[9]">
+                                                <span class="absolute inset-0 rounded-full bg-error animate-ping-slow opacity-55"></span>
                                             </span>
+                                            {{-- Badge with number — on top of the ring --}}
+                                            <span class="header-badge" x-text="unreadCount" x-show="unreadCount > 0" style="display: none;">0</span>
                                         </button>
 
                                         <div x-show="dropOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 -translate-y-1" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 -translate-y-1" class="main-header-dropdown admin-notification-dropdown z-[60]" style="display: none;">
                                             <div class="ti-dropdown-header flex justify-between items-center !m-0 !p-4">
-                                                <span class="text-base font-semibold text-on-surface dark:text-gray-200">{{ app()->getLocale() === 'ar' ? 'الإشعارات' : 'Notifications' }}</span>
-                                                <button @click="markAllRead" type="button" class="cursor-pointer text-xs font-semibold text-gov-600 dark:text-gov-400 hover:underline">
-                                                    {{ app()->getLocale() === 'ar' ? 'تحديد الكل كمقروء' : 'Tout marquer lu' }}
-                                                </button>
+                                                <span class="text-base font-semibold text-on-surface dark:text-gray-200">
+                                                    {{ app()->getLocale() === 'ar' ? 'الإشعارات' : 'Notifications' }}
+                                                    <span x-show="unreadCount > 0" class="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-gov-600 text-white" x-text="unreadCount"></span>
+                                                </span>
+                                                <div class="flex items-center gap-3">
+                                                    <button @click="clearAll" type="button" class="cursor-pointer text-xs font-medium text-secondary dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:underline" x-show="notifications.length > 0">
+                                                        {{ app()->getLocale() === 'ar' ? 'مسح الكل' : 'Tout supprimer' }}
+                                                    </button>
+                                                    <button @click="markAllRead" type="button" class="cursor-pointer text-xs font-semibold text-gov-600 dark:text-gov-400 hover:underline" x-show="unreadCount > 0">
+                                                        {{ app()->getLocale() === 'ar' ? 'تحديد الكل كمقروء' : 'Tout marquer lu' }}
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div class="dropdown-divider border-t border-surface-container-high dark:border-gray-700"></div>
                                             <div class="max-h-[60vh] overflow-y-auto sm:max-h-80">
-                                                <template x-if="notifications.length === 0">
+                                                {{-- Loading state --}}
+                                                <template x-if="loading">
+                                                    <div class="p-8 text-center">
+                                                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-container dark:bg-gray-700 mb-3">
+                                                            <svg class="animate-spin w-5 h-5 text-secondary" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                                            </svg>
+                                                        </div>
+                                                        <p class="text-sm text-secondary dark:text-gray-400">Loading...</p>
+                                                    </div>
+                                                </template>
+
+                                                {{-- Empty state --}}
+                                                <template x-if="!loading && notifications.length === 0">
                                                     <div class="p-8 text-center">
                                                         <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-container dark:bg-gray-700 text-outline mb-3">
                                                             <i class="bx bx-bell-off text-2xl"></i>
                                                         </span>
-                                                        <p class="text-sm text-secondary dark:text-gray-400">{{ app()->getLocale() === 'ar' ? 'لا توجد إشعارات جديدة' : 'Aucune nouvelle notification' }}</p>
+                                                        <p class="text-sm text-secondary dark:text-gray-400">{{ app()->getLocale() === 'ar' ? 'لا توجد إشعارات' : 'Aucune notification' }}</p>
                                                     </div>
                                                 </template>
-                                                <template x-for="(notification, index) in notifications" :key="index">
-                                                    <div class="notification-item">
+
+                                                {{-- Notification list --}}
+                                                <template x-for="(notification, index) in notifications" :key="notification.id">
+                                                    <div class="notification-item cursor-pointer group relative"
+                                                         @click="navigateTo(notification)"
+                                                         :class="{ 'bg-gov-50/50 dark:bg-gov-900/10': !notification.read_at }">
                                                         <div class="notification-icon" :class="{
-                                                            'bg-primary/10 text-gov-600 dark:text-gov-400': notification.type === 'info',
-                                                            'bg-success/10 text-success': notification.type === 'success',
-                                                            'bg-warning/10 text-amber-600 dark:text-amber-400': notification.type === 'warning',
-                                                            'bg-danger/10 text-red-600 dark:text-red-400': notification.type === 'error'
+                                                            'bg-secondary/10 text-secondary dark:text-gray-400': notification.level === 'info',
+                                                            'bg-primary/10 text-gov-600 dark:text-gov-400': notification.level === 'success',
+                                                            'bg-warning/10 text-amber-600 dark:text-amber-400': notification.level === 'warning',
+                                                            'bg-danger/10 text-red-600 dark:text-red-400': notification.level === 'danger'
                                                         }">
                                                             <i :class="{
-                                                                'bx bx-info-circle': notification.type === 'info',
-                                                                'bx bx-check-circle': notification.type === 'success',
-                                                                'bx bx-error': notification.type === 'error',
-                                                                'bx bx-error-circle': notification.type === 'warning'
+                                                                'bx bx-info-circle': notification.level === 'info',
+                                                                'bx bx-check-circle': notification.level === 'success',
+                                                                'bx bx-error': notification.level === 'danger',
+                                                                'bx bx-error-circle': notification.level === 'warning'
                                                             }"></i>
                                                         </div>
                                                         <div class="flex-1 min-w-0">
                                                             <p class="text-sm font-medium text-on-surface dark:text-gray-200 truncate" x-text="notification.title"></p>
-                                                            <p class="text-xs text-secondary dark:text-gray-400 truncate" x-text="notification.message"></p>
-                                                            <p class="text-xs text-outline mt-0.5" x-text="notification.time"></p>
+                                                            <p class="text-xs text-secondary dark:text-gray-400 truncate" x-text="notification.body"></p>
+                                                            <p class="text-xs text-outline mt-0.5" x-text="notification.at"></p>
                                                         </div>
-                                                        <button @click="removeNotification(index)" type="button" class="inline-flex cursor-pointer flex-shrink-0 items-center justify-center w-8 h-8 rounded-lg text-gray-300 dark:text-gray-600 hover:text-secondary dark:hover:text-outline hover:bg-surface-container dark:hover:bg-gray-700/60">
+                                                        <span x-show="!notification.read_at" class="flex-shrink-0 w-2 h-2 rounded-full bg-gov-500 self-center"></span>
+                                                        <button @click.stop="removeNotification(notification)" type="button" class="inline-flex cursor-pointer flex-shrink-0 items-center justify-center w-8 h-8 rounded-lg text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-surface-container dark:hover:bg-gray-700/60 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <i class="bx bx-x text-lg"></i>
                                                         </button>
                                                     </div>
                                                 </template>
                                             </div>
                                             <div class="p-3 border-t border-surface-container-high dark:border-gray-700">
-                                                <a href="{{ route('admin.activity-logs.index') }}" class="block w-full text-center py-2 text-sm font-semibold text-white bg-gov-600 hover:bg-gov-700 dark:bg-gov-500 dark:hover:bg-gov-600 rounded-lg transition-colors">
+                                                <a href="{{ route('notifications.index') }}" class="block w-full text-center py-2 text-sm font-semibold text-white bg-gov-600 hover:bg-gov-700 dark:bg-gov-500 dark:hover:bg-gov-600 rounded-lg transition-colors">
                                                     {{ app()->getLocale() === 'ar' ? 'عرض الكل' : 'Voir tout' }}
                                                 </a>
                                             </div>
@@ -481,7 +521,12 @@
                                                 <p class="font-semibold mb-0 leading-none text-on-surface dark:text-gray-300 text-sm">{{ Auth::user()->name }}</p>
                                                 <span class="opacity-70 font-normal text-secondary dark:text-gray-400 block text-[0.6875rem]">
                                                     @if(auth()->user()->adminScope() !== 'all')
-                                                        {{ auth()->user()->adminScope() === 'delegation' ? 'Délégation' : 'Gouvernorat' }} — {{ auth()->user()->scopeLabel() }}
+                                                        @php
+                                                            $scopePrefix = auth()->user()->adminScope() === 'delegation' ? 'Délégation' : 'Gouvernorat';
+                                                            $scopeFull   = $scopePrefix . ' — ' . auth()->user()->scopeLabel();
+                                                            $scopeShort  = mb_strlen($scopeFull) > 28 ? mb_substr($scopeFull, 0, 28) . '…' : $scopeFull;
+                                                        @endphp
+                                                        <span title="{{ $scopeFull }}" class="cursor-default">{{ $scopeShort }}</span>
                                                     @else
                                                         Administrator
                                                     @endif

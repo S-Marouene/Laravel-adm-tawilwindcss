@@ -53,6 +53,101 @@
                 <x-language-switcher variant="minimal" />
 
                 @auth
+                {{-- Citizen notification bell — real-time via Reverb/Echo --}}
+                <div class="relative" x-data="notificationPanel()">
+                    <div x-data="{ dropOpen: false }" @click.outside="dropOpen = false" class="relative">
+                        <button @click.stop="dropOpen = !dropOpen" type="button"
+                            class="relative inline-flex items-center justify-center w-10 h-10 rounded text-secondary hover:text-primary hover:bg-surface-container transition-colors touch-target"
+                            :aria-expanded="dropOpen" aria-label="{{ app()->getLocale() === 'ar' ? 'الإشعارات' : 'Notifications' }}">
+                            <span class="material-symbols-outlined text-xl" aria-hidden="true">notifications</span>
+                            {{-- Ping ring — pulses from behind the badge --}}
+                            <span x-show="unreadCount > 0" style="display: none;"
+                                class="pointer-events-none absolute h-[1.125rem] w-[1.125rem] -top-[0.2rem] end-[-0.3rem] z-[9]">
+                                <span class="absolute inset-0 rounded-full bg-error animate-ping-slow opacity-55"></span>
+                            </span>
+                            {{-- Badge with number — on top of the ring --}}
+                            <span class="header-badge" x-text="unreadCount" x-show="unreadCount > 0" style="display: none;">0</span>
+                        </button>
+
+                        <div x-show="dropOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 -translate-y-1" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                            class="absolute end-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-surface-container-lowest dark:bg-gray-800 border border-surface-dim dark:border-gray-700 rounded-xl shadow-2xl z-[60]" style="display: none;">
+
+                            <div class="flex justify-between items-center px-4 py-3 border-b border-surface-dim dark:border-gray-700">
+                                <span class="text-sm font-bold text-on-surface dark:text-gray-200">
+                                    {{ app()->getLocale() === 'ar' ? 'الإشعارات' : 'Notifications' }}
+                                    <span x-show="unreadCount > 0" class="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-primary text-white" x-text="unreadCount"></span>
+                                </span>
+                                <div class="flex items-center gap-2">
+                                    <button @click="clearAll" type="button" class="cursor-pointer text-xs font-medium text-secondary dark:text-gray-400 hover:text-red-500" x-show="notifications.length > 0">
+                                        {{ app()->getLocale() === 'ar' ? 'مسح الكل' : 'Tout suppr.' }}
+                                    </button>
+                                    <button @click="markAllRead" type="button" class="cursor-pointer text-xs font-semibold text-primary hover:underline" x-show="unreadCount > 0">
+                                        {{ app()->getLocale() === 'ar' ? 'قراءة الكل' : 'Tout lire' }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="max-h-[60vh] overflow-y-auto">
+                                <template x-if="loading">
+                                    <div class="p-8 text-center">
+                                        <svg class="animate-spin w-6 h-6 text-secondary mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                        </svg>
+                                        <p class="text-xs text-secondary dark:text-gray-400">...</p>
+                                    </div>
+                                </template>
+
+                                <template x-if="!loading && notifications.length === 0">
+                                    <div class="p-8 text-center">
+                                        <span class="material-symbols-outlined text-3xl text-outline mb-2 block" aria-hidden="true">notifications_off</span>
+                                        <p class="text-sm text-secondary dark:text-gray-400">{{ app()->getLocale() === 'ar' ? 'لا توجد إشعارات' : 'Aucune notification' }}</p>
+                                    </div>
+                                </template>
+
+                                <template x-for="(notification, index) in notifications" :key="notification.id">
+                                    <div class="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-surface-container dark:hover:bg-gray-700/40 transition-colors border-b border-surface-dim/50 dark:border-gray-700/50 group relative"
+                                         @click="navigateTo(notification)"
+                                         :class="{ 'bg-primary/5 dark:bg-primary/10': !notification.read_at }">
+                                        <span class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-lg"
+                                              :class="{
+                                                  'bg-secondary/10 text-secondary dark:text-gray-400': notification.level === 'info',
+                                                  'bg-primary/10 text-primary': notification.level === 'success',
+                                                  'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400': notification.level === 'warning',
+                                                  'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400': notification.level === 'danger'
+                                              }">
+                                            <span class="material-symbols-outlined text-base" aria-hidden="true" x-text="{
+                                                info: 'info',
+                                                success: 'check_circle',
+                                                warning: 'warning',
+                                                danger: 'error'
+                                            }[notification.level] || 'info'"></span>
+                                        </span>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-on-surface dark:text-gray-200 truncate" x-text="notification.title"></p>
+                                            <p class="text-xs text-secondary dark:text-gray-400 line-clamp-2" x-text="notification.body"></p>
+                                            <p class="text-[10px] text-outline mt-0.5" x-text="notification.at"></p>
+                                        </div>
+                                        <span x-show="!notification.read_at" class="flex-shrink-0 w-2 h-2 rounded-full bg-primary self-center mt-3"></span>
+                                        <button @click.stop="removeNotification(notification)" type="button"
+                                            class="flex-shrink-0 p-1 rounded text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity self-center">
+                                            <span class="material-symbols-outlined text-base" aria-hidden="true">close</span>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="p-2 border-t border-surface-dim dark:border-gray-700">
+                                <a href="{{ route('notifications.index') }}" class="block w-full text-center py-2 text-sm font-semibold text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors">
+                                    {{ app()->getLocale() === 'ar' ? 'عرض الكل' : 'Voir tout' }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endauth
+
+                @auth
                     {{-- Profil connecté + dropdown --}}
                     <div class="relative">
                         <x-dropdown align="{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}" width="52">
@@ -75,7 +170,7 @@
                                         {{ __('nav.profile') }}
                                     </x-dropdown-link>
 
-                                    @if(Auth::user()->is_admin || Auth::user()->hasRole('admin'))
+                                    @if(Auth::user()->isAdministrator())
                                         <x-dropdown-link :href="route('admin.dashboard')" class="!text-[0.8125rem] !p-[0.65rem]">
                                             <span class="material-symbols-outlined text-base me-2 opacity-70" aria-hidden="true">shield</span>
                                             {{ __('nav.admin') }}
@@ -137,7 +232,7 @@
                     </li>
                 @endforeach
                 @auth
-                    @if(Auth::user()->is_admin || Auth::user()->hasRole('admin'))
+                    @if(Auth::user()->isAdministrator())
                         <li>
                             <a href="{{ route('admin.dashboard') }}"
                                class="h-10 inline-flex items-center gap-2 px-3.5 rounded text-body-sm font-semibold whitespace-nowrap transition-colors duration-150 {{ request()->routeIs('admin.*') ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container' }}"
@@ -170,7 +265,7 @@
                 </a>
             @endforeach
             @auth
-                @if(Auth::user()->is_admin || Auth::user()->hasRole('admin'))
+                @if(Auth::user()->isAdministrator())
                     <a href="{{ route('admin.dashboard') }}" @click="open=false" class="flex items-center gap-3 px-3 py-3 min-h-[44px] text-body-md font-semibold rounded transition-colors {{ request()->routeIs('admin.*') ? 'bg-primary/10 text-primary' : 'text-on-surface hover:bg-surface-container' }}">
                         <span class="material-symbols-outlined text-xl" aria-hidden="true">shield</span>
                         {{ __('nav.admin') }}

@@ -7,6 +7,16 @@
         <meta name="theme-color" content="#9e001f">
         <meta name="description" content="{{ __('app.description') }}">
 
+        {{-- Real-time notification meta (read by Laravel Echo in app.js) --}}
+        @auth
+        <meta name="auth-user-id" content="{{ auth()->id() }}">
+        <meta name="unread-notifications" content="{{ auth()->user()->unreadNotifications()->count() }}">
+        <meta name="reverb-key" content="{{ env('REVERB_APP_KEY') }}">
+        <meta name="reverb-host" content="{{ env('REVERB_HOST', 'localhost') }}">
+        <meta name="reverb-port" content="{{ env('REVERB_PORT', 8080) }}">
+        <meta name="reverb-scheme" content="{{ env('REVERB_SCHEME', 'http') }}">
+        @endauth
+
         <!-- Favicon -->
         @php
             // Fallback locaux : emblème ONPC fourni dans design/ (logo.ico + logo.png)

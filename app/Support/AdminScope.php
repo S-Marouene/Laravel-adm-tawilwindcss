@@ -4,25 +4,27 @@ namespace App\Support;
 
 use App\Models\Service;
 use App\Models\User;
+use App\Models\UserTerritory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * Territory scoping for back-office users.
  *
- * Dossiers carry a governorate_id + delegation_id. Administrators with a
- * 'gouvernorat' role only see dossiers of their governorate, 'delegation'
- * role only their delegation, and full-access roles see everything.
+ * Full-access roles (super-admin, admin, centrale) see all dossiers.
  *
- * Every service (prevention, rescue, presence, works…) stores the same two
- * FK columns, so this helper can be reused when extending the scoping to the
- * other services.
+ * Manager users have a set of territory assignments in `user_territories`:
+ *   - row with delegation_id = null  → sees all dossiers of that governorate
+ *   - row with delegation_id = X     → sees only dossiers of delegation X
+ *
+ * A manager can hold multiple territory rows, so the WHERE clause is an OR
+ * across all assigned territories.
  */
 class AdminScope
 {
     /**
-     * Restrict a query of a dossier-like model to the user's territory.
-     * Percentages: full-access roles get the query untouched.
+     * Restrict a dossier-like query to the user's assigned territories.
+     * Full-access roles receive the query untouched.
      */
     public static function apply(Builder $query, ?User $user = null): Builder
     {
@@ -32,21 +34,41 @@ class AdminScope
             return $query;
         }
 
-        switch ($user->adminScope()) {
-            case 'delegation':
-                $query->where($query->getModel()->getTable() . '.delegation_id', $user->delegation_id);
-                break;
-
-            case 'governorate':
-                $query->where($query->getModel()->getTable() . '.governorate_id', $user->governorate_id);
-                break;
+        if ($user->adminScope() !== 'manager') {
+            return $query; // full access
         }
+
+        $territories = $user->territories;
+
+        if ($territories->isEmpty()) {
+            // Manager with no territories sees nothing
+            $query->whereRaw('1 = 0');
+            return $query;
+        }
+
+        $table = $query->getModel()->getTable();
+
+        $query->where(function (Builder $q) use ($territories, $table) {
+            foreach ($territories as $territory) {
+                if ($territory->delegation_id) {
+                    // Specific delegation only
+                    $q->orWhere(function (Builder $sub) use ($territory, $table) {
+                        $sub->where("{$table}.delegation_id", $territory->delegation_id);
+                    });
+                } else {
+                    // Whole governorate (any delegation under it)
+                    $q->orWhere(function (Builder $sub) use ($territory, $table) {
+                        $sub->where("{$table}.governorate_id", $territory->governorate_id);
+                    });
+                }
+            }
+        });
 
         return $query;
     }
 
     /**
-     * Whether the user may view/manage a given dossier-like record.
+     * Whether the user may access a given dossier record.
      */
     public static function canAccess(Model $record, ?User $user = null): bool
     {
@@ -56,19 +78,29 @@ class AdminScope
             return false;
         }
 
-        switch ($user->adminScope()) {
-            case 'delegation':
-                return (string) $record->delegation_id === (string) $user->delegation_id;
-
-            case 'governorate':
-                return (string) $record->governorate_id === (string) $user->governorate_id;
+        if ($user->adminScope() !== 'manager') {
+            return true; // full access
         }
 
-        return true;
+        $territories = $user->territories;
+
+        foreach ($territories as $territory) {
+            if ($territory->delegation_id) {
+                if ((string) $record->delegation_id === (string) $territory->delegation_id) {
+                    return true;
+                }
+            } else {
+                if ((string) $record->governorate_id === (string) $territory->governorate_id) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
-     * Guard: abort with 403 when the record is outside the user's territory.
+     * Abort 403 when the record is outside the user's territories.
      */
     public static function authorize(Model $record, ?User $user = null): void
     {
@@ -78,9 +110,7 @@ class AdminScope
     }
 
     /**
-     * Guard: abort with 403 when the user is not assigned to this service.
-     * Every service controller calls it with its own service key, so a
-     * centrale limited to prevention can never touch presence dossiers.
+     * Abort 403 when the user is not assigned to this service.
      */
     public static function authorizeService(string $serviceKey, ?User $user = null): void
     {
@@ -92,8 +122,7 @@ class AdminScope
     }
 
     /**
-     * The admin index route of the first service the user handles
-     * (used by the dashboard to land scoped users on their workspace).
+     * The admin index route of the first service the user handles.
      */
     public static function firstAllowedServiceRoute(?User $user = null): ?string
     {

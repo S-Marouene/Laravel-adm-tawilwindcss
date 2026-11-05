@@ -28,11 +28,6 @@
     @endif
 </form>
 
-@if (session('success'))
-    <div class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200">
-        {{ session('success') }}
-    </div>
-@endif
 
 <div class="admin-table-card">
     <div class="overflow-x-auto">

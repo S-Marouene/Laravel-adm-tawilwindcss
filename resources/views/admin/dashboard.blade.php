@@ -149,13 +149,11 @@
         <div class="flex flex-wrap items-center gap-2 text-xs">
             {{-- Périmètre territorial actif (rôle → gouvernorat → délégation) --}}
             <span class="inline-flex items-center gap-1.5 rounded border border-secondary/40 bg-secondary/20 px-2 py-0.5 font-bold tracking-wide text-surface-bright">
-                <span class="material-symbols-outlined text-[14px] text-primary-fixed" aria-hidden="true">@if($scope === 'delegation')location_on@elseif($scope === 'governorate')map@else public @endif</span>
+                <span class="material-symbols-outlined text-[14px] text-primary-fixed" aria-hidden="true">{{ $scope === 'manager' ? 'map' : 'public' }}</span>
                 @if ($scope === 'all')
                     {{ $ar ? 'التغطية الوطنية (24 ولاية)' : 'Périmètre national — 24 gouvernorats' }}
-                @elseif ($scope === 'governorate')
-                    {{ $ar ? 'ولاية' : 'Gouvernorat' }} : {{ $scopeLabel }}
                 @else
-                    {{ $ar ? 'المعتمدية' : 'Délégation' }} : {{ $scopeLabel }}
+                    {{ $ar ? 'النطاق الإداري' : 'Périmètre' }} : {{ $scopeLabel }}
                 @endif
             </span>
             <span class="hidden items-center gap-1.5 rounded border border-secondary/40 px-2 py-0.5 font-mono font-bold text-surface-dim sm:inline-flex">

@@ -11,6 +11,7 @@ use App\Models\PreventionCertificate;
 use App\Models\PreventionDossier;
 use App\Models\Service;
 use App\Services\ActivityLogger;
+use App\Services\DossierNotifier;
 use App\Support\AdminScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -70,15 +71,27 @@ class PreventionDossierController extends Controller
             ->keyBy('document_type_id');
 
         // Delegations grouped by governorate — used by the "issue certificate" form.
-        // Scoped administrators are restricted to their own territory.
-        $governorates = match (auth()->user()->adminScope()) {
-            'governorate' => Governorate::whereKey(auth()->user()->governorate_id)
-                ->with('delegations')->orderBy('id')->get(),
-            'delegation' => Governorate::whereKey(auth()->user()->governorate_id)
-                ->with(['delegations' => fn ($q) => $q->whereKey(auth()->user()->delegation_id)])
-                ->orderBy('id')->get(),
-            default => Governorate::with('delegations')->orderBy('id')->get(),
-        };
+        // Scoped managers are restricted to their assigned territories.
+        $user = auth()->user();
+        if ($user->adminScope() === 'manager') {
+            $territories = $user->territories;
+            $govIds = $territories->pluck('governorate_id')->unique();
+            $governorates = Governorate::whereIn('id', $govIds)
+                ->with(['delegations' => function ($q) use ($territories) {
+                    // Include only delegations that are either within a whole-gov territory
+                    // or explicitly assigned
+                    $specificDelIds = $territories->whereNotNull('delegation_id')->pluck('delegation_id');
+                    $wholeGovIds    = $territories->whereNull('delegation_id')->pluck('governorate_id');
+                    $q->where(function ($sub) use ($specificDelIds, $wholeGovIds) {
+                        $sub->whereIn('governorate_id', $wholeGovIds)
+                            ->orWhereIn('id', $specificDelIds);
+                    });
+                }])
+                ->orderBy('id')
+                ->get();
+        } else {
+            $governorates = Governorate::with('delegations')->orderBy('id')->get();
+        }
 
         // All correction rounds — each round has the old field values + archived file metadata
         // so the admin can consult every version of the dossier at any time.
@@ -116,6 +129,8 @@ class PreventionDossierController extends Controller
             'applicant' => $preventionDossier->nom_prenom,
             'reference' => $preventionDossier->reference,
         ]);
+
+        DossierNotifier::notify($preventionDossier, 'under_consultation', 'user');
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
@@ -213,6 +228,8 @@ class PreventionDossierController extends Controller
             'note'       => $validated['admin_note'],
         ]);
 
+        DossierNotifier::notify($preventionDossier, 'needs_correction', 'user');
+
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
 
@@ -243,6 +260,8 @@ class PreventionDossierController extends Controller
             'admin'      => auth()->user()->name,
             'applicant'  => $preventionDossier->nom_prenom,
         ]);
+
+        DossierNotifier::notify($preventionDossier, 'approved', 'user');
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
@@ -279,6 +298,8 @@ class PreventionDossierController extends Controller
             'applicant'  => $preventionDossier->nom_prenom,
             'reason'     => $validated['admin_note'],
         ]);
+
+        DossierNotifier::notify($preventionDossier, 'cancelled', 'user');
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
@@ -321,6 +342,8 @@ class PreventionDossierController extends Controller
             'visit_date' => $validated['visit_date'],
             'visit_time' => $validated['visit_time'],
         ]);
+
+        DossierNotifier::notify($preventionDossier, 'appointment_scheduled', 'user');
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
@@ -388,6 +411,8 @@ class PreventionDossierController extends Controller
                 'admin'     => auth()->user()->name,
                 'applicant' => $preventionDossier->nom_prenom,
             ]);
+
+            DossierNotifier::notify($preventionDossier, 'waiting_delivery', 'user');
         } else {
             // ── Inspection failed: if no visit ever passed, the dossier goes
             // back to "awaiting RDV" with the failure note. The applicant must
@@ -399,6 +424,8 @@ class PreventionDossierController extends Controller
                     'reviewed_at' => now(),
                 ]);
             }
+
+            DossierNotifier::notify($preventionDossier, 'appointment_failed', 'user');
         }
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
@@ -449,6 +476,8 @@ class PreventionDossierController extends Controller
             'visit_date' => $rdvDetails['visit_date'],
             'visit_time' => $rdvDetails['visit_time'],
         ]);
+
+        DossierNotifier::notify($preventionDossier, 'appointment_cancelled', 'user');
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
@@ -510,18 +539,17 @@ class PreventionDossierController extends Controller
                 return back()->withErrors(['governorate_id' => 'A pickup gouvernorat office is required.']);
             }
 
-            // Scoped administrators can only assign a pickup location inside
-            // their own territory (delegation scope is clamped automatically).
+            // Scoped managers can only assign a pickup location inside their territory.
             $user = auth()->user();
-            if (in_array($user->adminScope(), ['governorate', 'delegation'])) {
-                if ((int) $validated['governorate_id'] !== (int) $user->governorate_id) {
+            if ($user->adminScope() === 'manager') {
+                $ok = AdminScope::canAccess((object) [
+                    'governorate_id' => $validated['governorate_id'],
+                    'delegation_id'  => $validated['delegation_id'] ?? null,
+                ], $user);
+                if (! $ok) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
-                        'governorate_id' => 'The pickup governorate must be inside your territory.',
+                        'governorate_id' => 'The pickup location must be inside your assigned territory.',
                     ]);
-                }
-
-                if ($user->adminScope() === 'delegation') {
-                    $validated['delegation_id'] = $user->delegation_id;
                 }
             }
 
@@ -564,6 +592,8 @@ class PreventionDossierController extends Controller
             'reference'  => $certificate->reference,
             'method'     => $deliveryMethod,
         ]);
+
+        DossierNotifier::notify($preventionDossier, 'certificate_issued', 'user');
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }
@@ -615,6 +645,7 @@ class PreventionDossierController extends Controller
                 ActivityLogger::log('prevention_update', "Prevention — Certificate {$certificate->reference} collected for dossier #{$preventionDossier->id} by " . auth()->user()->name, $preventionDossier, [
                     'admin' => auth()->user()->name, 'reference' => $certificate->reference,
                 ]);
+                DossierNotifier::notify($preventionDossier, 'certificate_collected', 'user');
                 $msg = 'Certificate marked as collected.';
                 break;
 
@@ -639,6 +670,7 @@ class PreventionDossierController extends Controller
                 ActivityLogger::log('prevention_update', "Prevention — Certificate {$certificate->reference} sent by post (tracking: {$certificate->post_tracking}) for dossier #{$preventionDossier->id} by " . auth()->user()->name, $preventionDossier, [
                     'admin' => auth()->user()->name, 'reference' => $certificate->reference, 'tracking' => $certificate->post_tracking,
                 ]);
+                DossierNotifier::notify($preventionDossier, 'certificate_post_sent', 'user');
                 $msg = "Certificate registered at Poste Tunisienne (B3) — tracking {$certificate->post_tracking}.";
                 break;
 
@@ -654,6 +686,7 @@ class PreventionDossierController extends Controller
                 ActivityLogger::log('prevention_update', "Prevention — Certificate {$certificate->reference} delivered by post for dossier #{$preventionDossier->id} by " . auth()->user()->name, $preventionDossier, [
                     'admin' => auth()->user()->name, 'reference' => $certificate->reference,
                 ]);
+                DossierNotifier::notify($preventionDossier, 'certificate_delivered', 'user');
                 $msg = 'Post delivery confirmed — the applicant received the certificate.';
                 break;
 
@@ -716,6 +749,8 @@ class PreventionDossierController extends Controller
             'applicant' => $preventionDossier->nom_prenom,
             'reference' => $reference,
         ]);
+
+        DossierNotifier::notify($preventionDossier, 'certificate_revoked', 'user');
 
         return redirect()->route('admin.prevention-dossiers.show', $preventionDossier);
     }

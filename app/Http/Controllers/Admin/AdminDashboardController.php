@@ -20,8 +20,8 @@ class AdminDashboardController extends Controller
      * Salle des Opérations — Dashboard de la Direction de la Prévention.
      *
      * Every metric is scoped through AdminScope, so:
-     *  - full-access roles (super-admin, admin, centrale, reference-manager) see the whole country;
-     *  - 'gouvernorat' roles see only their governorate;
+     *  - full-access roles (super-admin, admin, centrale) see the whole country;
+     *  - 'manager' roles see only their governorate;
      *  - 'delegation' roles see only their delegation.
      */
     public function index()
@@ -31,7 +31,7 @@ class AdminDashboardController extends Controller
 
         // Staff not assigned to the Prevention service never see prevention
         // data here — they keep landing on their own service workspace.
-        if (! $user->is_admin && ! $user->hasService(Service::SERVICE_PREVENTION)) {
+        if (! $user->hasAnyRole(['super-admin', 'admin']) && ! $user->hasService(Service::SERVICE_PREVENTION)) {
             $route = AdminScope::firstAllowedServiceRoute($user);
 
             return redirect()->route($route ?? 'admin.prevention-dossiers.index');

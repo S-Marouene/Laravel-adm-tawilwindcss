@@ -1,10 +1,33 @@
 import Alpine from 'alpinejs';
 import Swal from 'sweetalert2';
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import 'boxicons/css/boxicons.min.css';
 
 window.Swal = Swal;
 window.Alpine = Alpine;
+
+// ------------------------------------------------------------------
+// Laravel Echo — real-time via Reverb (Pusher-compatible protocol)
+// Initialised here once; Alpine components subscribe to channels
+// after DOM boot. Only active for authenticated users (the meta tag
+// is rendered by the layouts only when auth()->check()).
+// ------------------------------------------------------------------
+window.Pusher = Pusher;
+
+if (document.querySelector('meta[name="reverb-key"]')) {
+    window.Echo = new Echo({
+        broadcaster:       'reverb',
+        key:               document.querySelector('meta[name="reverb-key"]').content,
+        wsHost:            document.querySelector('meta[name="reverb-host"]').content,
+        wsPort:            parseInt(document.querySelector('meta[name="reverb-port"]').content) || 8080,
+        wssPort:           parseInt(document.querySelector('meta[name="reverb-port"]').content) || 443,
+        forceTLS:          (document.querySelector('meta[name="reverb-scheme"]')?.content ?? 'http') === 'https',
+        enabledTransports: ['ws', 'wss'],
+        authEndpoint:      '/broadcasting/auth',
+    });
+}
 
 /**
  * Locale Switcher Component
@@ -301,39 +324,195 @@ Alpine.data('searchModal', () => ({
 }));
 
 /**
- * Notification Dropdown Component
+ * Notification Panel — real-time bell panel for both admin and citizen layouts.
+ *
+ * - Loads existing notifications from the API on mount
+ * - Subscribes to the user's private Echo channel for instant pushes
+ * - Supports: mark-one-read, mark-all-read, delete-one, delete-all
+ * - Shows an in-page toast (SweetAlert2 toast) for each new push
+ *
+ * Expects a meta tag `<meta name="auth-user-id" content="{{ auth()->id() }}">` to exist.
  */
 Alpine.data('notificationPanel', () => ({
-    open: false,
+    open:         false,
     notifications: [],
-    unreadCount: 0,
+    unreadCount:  0,
+    loading:      true,
 
+    // ── Bootstrap ─────────────────────────────────────────────────────
     init() {
+        // Read server-rendered unread count so the badge shows instantly
+        const countMeta = document.querySelector('meta[name="unread-notifications"]');
+        if (countMeta) {
+            this.unreadCount = parseInt(countMeta.content) || 0;
+        }
         this.fetchNotifications();
+        this.subscribeEcho();
+
+        // Close on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.open = false;
+        });
     },
 
-    fetchNotifications() {
-        // For now, we'll load from the page's meta data if available
-        const el = document.getElementById('notification-data');
-        if (el) {
-            try {
-                this.notifications = JSON.parse(el.textContent || '[]');
-                this.unreadCount = this.notifications.filter(n => !n.read_at).length;
-            } catch(e) {
-                this.notifications = [];
-            }
+    // ── Fetch from API ────────────────────────────────────────────────
+    async fetchNotifications() {
+        this.loading = true;
+        try {
+            const res = await fetch('/notifications', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                },
+                credentials: 'same-origin',
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            this.notifications = data.notifications ?? [];
+            this.unreadCount   = data.unread_count ?? 0;
+        } catch (e) {
+            // silent — offline or not logged in
+        } finally {
+            this.loading = false;
         }
     },
 
-    markAllRead() {
-        this.notifications.forEach(n => n.read_at = new Date().toISOString());
-        this.unreadCount = 0;
+    // ── Real-time subscription ────────────────────────────────────────
+    subscribeEcho() {
+        const userIdMeta = document.querySelector('meta[name="auth-user-id"]');
+        if (!userIdMeta || !window.Echo) return;
+
+        const userId = userIdMeta.content;
+
+        window.Echo
+            .private(`user.${userId}`)
+            .notification((payload) => {
+                // The payload from the broadcast channel is the toBroadcast() array
+                const notif = {
+                    id:      payload.id ?? ('live_' + Date.now()),
+                    level:   payload.level  ?? payload.data?.level  ?? 'info',
+                    title:   payload.title  ?? payload.data?.title  ?? 'Notification',
+                    body:    payload.body   ?? payload.data?.body   ?? '',
+                    url:     payload.url    ?? payload.data?.url    ?? null,
+                    read_at: null,
+                    at:      'just now',
+                };
+
+                // Prepend to the list
+                this.notifications.unshift(notif);
+                this.unreadCount++;
+
+                // Pop-up toast
+                this.showToast(notif);
+            });
     },
 
-    removeNotification(index) {
-        this.notifications.splice(index, 1);
-        this.unreadCount = this.notifications.filter(n => !n.read_at).length;
-    }
+    // ── Toast popup ───────────────────────────────────────────────────
+    showToast(notif) {
+        const iconMap = { success: 'success', danger: 'error', warning: 'warning', info: 'info' };
+        const icon    = iconMap[notif.level] ?? 'info';
+
+        Swal.fire({
+            toast:             true,
+            position:          document.documentElement.dir === 'rtl' ? 'bottom-start' : 'bottom-end',
+            icon:              icon,
+            title:             notif.title,
+            text:              notif.body,
+            showConfirmButton: false,
+            timer:             5000,
+            timerProgressBar:  true,
+            showCloseButton:   true,
+            customClass: {
+                popup:           'swal2-toast-popup swal2-notif-toast',
+                icon:             'swal2-toast-icon',
+                title:            'swal2-toast-title',
+                htmlContainer:    'swal2-toast-body',
+                timerProgressBar: 'swal2-toast-progress',
+                closeButton:      'swal2-toast-close',
+            },
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+                toast.addEventListener('click', () => {
+                    if (notif.url) window.location.href = notif.url;
+                });
+            },
+        });
+    },
+
+    // ── Mark one read ─────────────────────────────────────────────────
+    async markRead(notif) {
+        if (notif.read_at) return;
+        notif.read_at = new Date().toISOString();
+        this.unreadCount = Math.max(0, this.unreadCount - 1);
+
+        // Skip API call for live (not yet persisted) notifications
+        if (String(notif.id).startsWith('live_')) return;
+
+        await fetch(`/notifications/${notif.id}/read`, {
+            method:  'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                'Accept':       'application/json',
+            },
+            credentials: 'same-origin',
+        }).catch(() => {});
+    },
+
+    // ── Mark all read ─────────────────────────────────────────────────
+    async markAllRead() {
+        this.notifications.forEach(n => { n.read_at = n.read_at ?? new Date().toISOString(); });
+        this.unreadCount = 0;
+
+        await fetch('/notifications/mark-all-read', {
+            method:  'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                'Accept':       'application/json',
+            },
+            credentials: 'same-origin',
+        }).catch(() => {});
+    },
+
+    // ── Delete one ────────────────────────────────────────────────────
+    async removeNotification(notif) {
+        const idx = this.notifications.indexOf(notif);
+        if (idx === -1) return;
+        if (!notif.read_at) this.unreadCount = Math.max(0, this.unreadCount - 1);
+        this.notifications.splice(idx, 1);
+
+        if (String(notif.id).startsWith('live_')) return;
+
+        await fetch(`/notifications/${notif.id}`, {
+            method:  'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                'Accept':       'application/json',
+            },
+            credentials: 'same-origin',
+        }).catch(() => {});
+    },
+
+    // ── Delete all ────────────────────────────────────────────────────
+    async clearAll() {
+        this.notifications = [];
+        this.unreadCount   = 0;
+
+        await fetch('/notifications', {
+            method:  'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                'Accept':       'application/json',
+            },
+            credentials: 'same-origin',
+        }).catch(() => {});
+    },
+
+    // ── Navigate and mark read ────────────────────────────────────────
+    async navigateTo(notif) {
+        await this.markRead(notif);
+        if (notif.url) window.location.href = notif.url;
+    },
 }));
 
 /**
@@ -761,14 +940,23 @@ Alpine.data('confirmManager', () => ({
 
     /* ── 1. Toasts (haut-droite, auto-destruction, pause au survol) ── */
     const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
+        toast:             true,
+        position:          'top-end',
         showConfirmButton: false,
-        timer: 4500,
-        timerProgressBar: true,
+        showCloseButton:   true,
+        timer:             4500,
+        timerProgressBar:  true,
         didOpen: (toast) => {
             toast.onmouseenter = Swal.stopTimer;
             toast.onmouseleave = Swal.resumeTimer;
+        },
+        customClass: {
+            popup:           'swal2-toast-popup',
+            icon:            'swal2-toast-icon',
+            title:           'swal2-toast-title',
+            htmlContainer:   'swal2-toast-body',
+            timerProgressBar:'swal2-toast-progress',
+            closeButton:     'swal2-toast-close',
         },
     });
 
@@ -810,14 +998,20 @@ Alpine.data('confirmManager', () => ({
                 ? (host?.dataset.deleteOk || 'Oui, supprimer')
                 : (host?.dataset.confirmOk || 'Oui, continuer')),
             cancelButtonText: opts.cancel || (host?.dataset.confirmCancel || 'Annuler'),
-            confirmButtonColor: style.confirm,
-            cancelButtonColor: style.cancel,
             focusCancel: opts.focusCancel ?? true,
-            buttonsStyling: true,
+            buttonsStyling: false,
             reverseButtons: rtl(),
             allowOutsideClick: !opts.important,
             allowEscapeKey: !opts.important,
-            customClass: { title: 'swal-title-fs' },
+            customClass: {
+                popup:         'swal2-confirm-popup',
+                icon:          'swal2-confirm-icon',
+                title:         'swal2-confirm-title',
+                htmlContainer: 'swal2-confirm-body',
+                actions:       'swal2-confirm-actions',
+                confirmButton: `swal2-confirm-btn swal2-confirm-btn--${opts.style || 'info'}`,
+                cancelButton:  'swal2-confirm-btn swal2-confirm-btn--cancel',
+            },
         });
     }
     window.AppConfirm = confirmDialog;
