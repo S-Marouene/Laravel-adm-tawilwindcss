@@ -10,14 +10,12 @@ use Illuminate\Notifications\Notification;
  * Persisted notification stored in the `notifications` database table.
  * Also dispatches the real-time broadcast event so Echo clients receive it instantly.
  *
+ * Both French and Arabic translations are stored together so the recipient
+ * always sees their preferred language, regardless of when they open the panel.
+ *
  * Two channels:
  *  - 'database' : persists the record for the bell panel & "all notifications" page
  *  - 'broadcast': pushes immediately to open browser tabs via Reverb/WebSocket
- *
- * NOTE: intentionally NOT queued (synchronous) so notifications are stored
- * immediately even without a queue worker running. The broadcast portion
- * will silently no-op if Reverb isn't running, but the database record
- * still lands — the badge count works either way.
  */
 class DossierNotification extends Notification
 {
@@ -26,8 +24,10 @@ class DossierNotification extends Notification
     public function __construct(
         public readonly PreventionDossier $dossier,
         public readonly string $event,
-        public readonly string $title,
-        public readonly string $body,
+        public readonly string $title_fr,
+        public readonly string $body_fr,
+        public readonly string $title_ar,
+        public readonly string $body_ar,
         public readonly string $level = 'info',
         public readonly ?string $url = null,
     ) {}
@@ -47,8 +47,10 @@ class DossierNotification extends Notification
             'dossier_id' => $this->dossier->id,
             'reference'  => $this->dossier->reference,
             'event'      => $this->event,
-            'title'      => $this->title,
-            'body'       => $this->body,
+            'title_fr'   => $this->title_fr,
+            'body_fr'    => $this->body_fr,
+            'title_ar'   => $this->title_ar,
+            'body_ar'    => $this->body_ar,
             'level'      => $this->level,
             'url'        => $this->url,
         ];
@@ -56,6 +58,7 @@ class DossierNotification extends Notification
 
     // ------------------------------------------------------------------
     // Broadcast channel — real-time push via Reverb/Echo
+    // Both languages are sent; the client picks the right one.
     // ------------------------------------------------------------------
 
     public function toBroadcast(object $notifiable): \Illuminate\Notifications\Messages\BroadcastMessage
@@ -64,8 +67,10 @@ class DossierNotification extends Notification
             'dossier_id' => $this->dossier->id,
             'reference'  => $this->dossier->reference,
             'event'      => $this->event,
-            'title'      => $this->title,
-            'body'       => $this->body,
+            'title_fr'   => $this->title_fr,
+            'body_fr'    => $this->body_fr,
+            'title_ar'   => $this->title_ar,
+            'body_ar'    => $this->body_ar,
             'level'      => $this->level,
             'url'        => $this->url,
         ]);

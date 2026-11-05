@@ -38,6 +38,12 @@ class LocalizationMiddleware
 
         $response = $next($request);
 
+        // If authenticated, sync the locale preference to the user record
+        // so that notifications sent to them always use their preferred language.
+        if ($request->user() && $request->user()->locale !== $locale) {
+            $request->user()->updateQuietly(['locale' => $locale]);
+        }
+
         return $response;
     }
 }

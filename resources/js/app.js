@@ -387,15 +387,23 @@ Alpine.data('notificationPanel', () => ({
         window.Echo
             .private(`user.${userId}`)
             .notification((payload) => {
-                // The payload from the broadcast channel is the toBroadcast() array
+                // Determine the user's active locale from the html[lang] attribute
+                const locale = document.documentElement.getAttribute('lang')?.startsWith('ar') ? 'ar' : 'fr';
+
                 const notif = {
                     id:      payload.id ?? ('live_' + Date.now()),
-                    level:   payload.level  ?? payload.data?.level  ?? 'info',
-                    title:   payload.title  ?? payload.data?.title  ?? 'Notification',
-                    body:    payload.body   ?? payload.data?.body   ?? '',
-                    url:     payload.url    ?? payload.data?.url    ?? null,
+                    level:   payload.level   ?? payload.data?.level   ?? 'info',
+                    title:   (locale === 'ar'
+                                ? (payload.title_ar ?? payload.data?.title_ar)
+                                : (payload.title_fr ?? payload.data?.title_fr))
+                             ?? payload.title ?? payload.data?.title ?? 'Notification',
+                    body:    (locale === 'ar'
+                                ? (payload.body_ar  ?? payload.data?.body_ar)
+                                : (payload.body_fr  ?? payload.data?.body_fr))
+                             ?? payload.body  ?? payload.data?.body  ?? '',
+                    url:     payload.url     ?? payload.data?.url     ?? null,
                     read_at: null,
-                    at:      'just now',
+                    at:      locale === 'ar' ? 'الآن' : 'à l\'instant',
                 };
 
                 // Prepend to the list

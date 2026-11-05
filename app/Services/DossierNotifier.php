@@ -41,19 +41,21 @@ class DossierNotifier
         string $audience = 'both',
         string $serviceKey = Service::SERVICE_PREVENTION,
     ): void {
-        [$title, $body, $level] = self::buildContent($dossier, $eventType);
+        [$title_fr, $body_fr, $title_ar, $body_ar, $level] = self::buildContent($dossier, $eventType);
 
         if (in_array($audience, ['both', 'user'])) {
             $citizen = $dossier->user;
             if ($citizen) {
                 $citizenUrl = self::citizenUrl($dossier);
                 $citizen->notify(new DossierNotification(
-                    dossier: $dossier,
-                    event: $eventType,
-                    title: $title,
-                    body: $body,
-                    level: $level,
-                    url: $citizenUrl,
+                    dossier:  $dossier,
+                    event:    $eventType,
+                    title_fr: $title_fr,
+                    body_fr:  $body_fr,
+                    title_ar: $title_ar,
+                    body_ar:  $body_ar,
+                    level:    $level,
+                    url:      $citizenUrl,
                 ));
             }
         }
@@ -62,12 +64,14 @@ class DossierNotifier
             $adminUrl = self::adminUrl($dossier);
             foreach (self::eligibleAdmins($dossier, $serviceKey) as $admin) {
                 $admin->notify(new DossierNotification(
-                    dossier: $dossier,
-                    event: $eventType,
-                    title: $title,
-                    body: $body,
-                    level: $level,
-                    url: $adminUrl,
+                    dossier:  $dossier,
+                    event:    $eventType,
+                    title_fr: $title_fr,
+                    body_fr:  $body_fr,
+                    title_ar: $title_ar,
+                    body_ar:  $body_ar,
+                    level:    $level,
+                    url:      $adminUrl,
                 ));
             }
         }
@@ -140,124 +144,74 @@ class DossierNotifier
     // Content builder
     // ------------------------------------------------------------------
 
+    // ------------------------------------------------------------------
+    // Content builder — loads from NotificationTemplate DB table,
+    // falls back to hardcoded strings if the template hasn't been seeded.
+    // Returns: [title_fr, body_fr, title_ar, body_ar, level]
+    // ------------------------------------------------------------------
+
     private static function buildContent(PreventionDossier $dossier, string $event): array
     {
-        $ref = $dossier->reference ?? "#{$dossier->id}";
+        $ref  = $dossier->reference ?? "#{$dossier->id}";
+        $name = $dossier->nom_prenom;
 
+        // Try the editable DB template first
+        $tpl = \App\Models\NotificationTemplate::forEvent($event);
+        if ($tpl) {
+            [$title_fr, $body_fr, $level] = $tpl->resolve('fr', $ref, $name);
+            [$title_ar, $body_ar]         = array_slice($tpl->resolve('ar', $ref, $name), 0, 2);
+            return [$title_fr, $body_fr, $title_ar, $body_ar, $level];
+        }
+
+        // Hardcoded fallbacks (used until the seeder runs or if unknown event)
         return match ($event) {
-            // Citizen submits / resubmits
             'submitted' => [
                 'Nouveau dossier soumis',
-                "Dossier {$ref} ({$dossier->nom_prenom}) vient d'être soumis et est en attente d'examen.",
+                "Le dossier {$ref} ({$name}) vient d'être soumis et est en attente d'examen.",
+                'ملف جديد مُقدَّم',
+                "تم تقديم الملف {$ref} ({$name}) وهو في انتظار المراجعة.",
                 'info',
             ],
             'resubmitted' => [
                 'Dossier re-soumis après correction',
-                "Dossier {$ref} ({$dossier->nom_prenom}) a été corrigé et re-soumis par le demandeur.",
+                "Le dossier {$ref} ({$name}) a été corrigé et re-soumis par le demandeur.",
+                'إعادة تقديم الملف بعد التصحيح',
+                "أعاد المتقدم {$name} تقديم الملف {$ref} بعد إجراء التصحيحات المطلوبة.",
                 'warning',
             ],
-
-            // Admin advances to consultation (RDV phase)
             'under_consultation' => [
-                'Dossier under consultation',
-                "Your dossier {$ref} has been reviewed and an inspection visit will be scheduled.",
+                'Dossier en cours de consultation',
+                "Votre dossier {$ref} a été examiné. Une visite d'inspection sera programmée prochainement.",
+                'الملف قيد الدراسة',
+                "تم فحص ملفكم {$ref} وستتم جدولة زيارة تفتيشية قريبًا.",
                 'info',
             ],
-
-            // Admin requests corrections
             'needs_correction' => [
-                'Correction required',
-                "Your dossier {$ref} requires corrections. Please review the admin note.",
+                'Correction requise',
+                "Votre dossier {$ref} nécessite des corrections. Veuillez consulter la note de l'administration.",
+                'مطلوب تصحيح',
+                "يستلزم ملفكم {$ref} إجراء تصحيحات. يرجى الاطلاع على ملاحظة الإدارة.",
                 'warning',
             ],
-
-            // Admin approves directly
             'approved' => [
-                'Dossier approved',
-                "Your dossier {$ref} has been approved.",
+                'Dossier approuvé',
+                "Votre dossier {$ref} a été approuvé par l'administration.",
+                'تمت الموافقة على الملف',
+                "تمت الموافقة على ملفكم {$ref} من قِبل الإدارة.",
                 'success',
             ],
-
-            // Admin cancels
             'cancelled' => [
-                'Dossier cancelled',
-                "Dossier {$ref} has been cancelled.",
+                'Dossier annulé',
+                "Le dossier {$ref} a été annulé.",
+                'تم إلغاء الملف',
+                "تم إلغاء الملف {$ref}.",
                 'danger',
             ],
-
-            // RDV scheduled
-            'appointment_scheduled' => [
-                'Inspection visit scheduled',
-                "An inspection visit (RDV) has been scheduled for dossier {$ref}.",
-                'info',
-            ],
-
-            // RDV cancelled by admin
-            'appointment_cancelled' => [
-                'Visit cancelled',
-                "The scheduled inspection visit for dossier {$ref} has been cancelled.",
-                'warning',
-            ],
-
-            // RDV passed → waiting delivery
-            'waiting_delivery' => [
-                'Inspection passed — certificate ready',
-                "The inspection for dossier {$ref} passed. Your certificate will be issued shortly.",
-                'success',
-            ],
-
-            // RDV failed
-            'appointment_failed' => [
-                'Inspection visit did not pass',
-                "The inspection visit for dossier {$ref} did not pass. Please review the note.",
-                'warning',
-            ],
-
-            // Certificate issued
-            'certificate_issued' => [
-                'Certificate issued',
-                "The prevention certificate for dossier {$ref} has been issued.",
-                'success',
-            ],
-
-            // Certificate collected at office
-            'certificate_collected' => [
-                'Certificate collected',
-                "Your prevention certificate for dossier {$ref} has been collected at the office.",
-                'success',
-            ],
-
-            // Certificate sent by post
-            'certificate_post_sent' => [
-                'Certificate sent by post',
-                "Your prevention certificate for dossier {$ref} has been sent via Poste Tunisienne.",
-                'info',
-            ],
-
-            // Certificate delivered by post
-            'certificate_delivered' => [
-                'Certificate delivered',
-                "Your prevention certificate for dossier {$ref} has been delivered.",
-                'success',
-            ],
-
-            // Certificate revoked
-            'certificate_revoked' => [
-                'Certificate revoked',
-                "The prevention certificate for dossier {$ref} has been revoked. Please contact the office.",
-                'danger',
-            ],
-
-            // Citizen chose delivery method
-            'delivery_chosen' => [
-                'Delivery method chosen',
-                "The applicant chose a delivery method for dossier {$ref}.",
-                'info',
-            ],
-
             default => [
-                'Dossier updated',
-                "Dossier {$ref} was updated.",
+                'Dossier mis à jour',
+                "Le dossier {$ref} a été mis à jour.",
+                'تم تحديث الملف',
+                "تم تحديث الملف {$ref}.",
                 'info',
             ],
         };

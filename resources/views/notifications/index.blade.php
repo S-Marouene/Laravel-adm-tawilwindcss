@@ -39,6 +39,9 @@
                 @php
                     $data = $notification->data;
                     $level = $data['level'] ?? 'info';
+                    $locale = app()->getLocale();
+                    $notifTitle = $data["title_{$locale}"] ?? $data['title_fr'] ?? $data['title'] ?? 'Notification';
+                    $notifBody  = $data["body_{$locale}"]  ?? $data['body_fr']  ?? $data['body']  ?? '';
                     $iconMap = [
                         'info'    => 'info',
                         'success' => 'check_circle',
@@ -66,12 +69,12 @@
                     {{-- Content --}}
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
-                            <p class="text-sm font-semibold text-on-surface dark:text-gray-200">{{ $data['title'] ?? 'Notification' }}</p>
+                            <p class="text-sm font-semibold text-on-surface dark:text-gray-200">{{ $notifTitle }}</p>
                             @if(!$notification->read_at)
                                 <span class="w-2 h-2 rounded-full bg-primary flex-shrink-0"></span>
                             @endif
                         </div>
-                        <p class="text-sm text-secondary dark:text-gray-400 mt-1">{{ $data['body'] ?? '' }}</p>
+                        <p class="text-sm text-secondary dark:text-gray-400 mt-1">{{ $notifBody }}</p>
                         @if(!empty($data['reference']))
                             <p class="text-xs text-outline mt-1">ref: {{ $data['reference'] }}</p>
                         @endif

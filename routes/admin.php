@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\PreventionDossierController;
 use App\Http\Controllers\Admin\PreventivePresenceController;
 use App\Http\Controllers\Admin\RescueCertificateController as AdminRescueCertificateController;
 use App\Http\Controllers\Admin\WorksNotificationController as AdminWorksNotificationController;
+use App\Http\Controllers\Admin\NotificationTemplateController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -64,6 +65,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::resource('building-activities', BuildingActivityController::class)->except(['show']);
     Route::resource('document-types', DocumentTypeController::class)->except(['show']);
     Route::get('document-types/{documentType}/template', [DocumentTypeController::class, 'downloadTemplate'])->name('document-types.template.download');
+
+    // Notification Templates (super-admin + admin only)
+    Route::middleware('can:edit settings')->group(function () {
+        Route::get('notification-templates', [NotificationTemplateController::class, 'index'])->name('notification-templates.index');
+        Route::get('notification-templates/{notificationTemplate}/edit', [NotificationTemplateController::class, 'edit'])->name('notification-templates.edit');
+        Route::put('notification-templates/{notificationTemplate}', [NotificationTemplateController::class, 'update'])->name('notification-templates.update');
+        Route::post('notification-templates/reset', [NotificationTemplateController::class, 'reset'])->name('notification-templates.reset');
+    });
 
     // Prevention Dossiers
     Route::post('prevention-dossiers/{preventionDossier}/advance',    [PreventionDossierController::class, 'advanceToConsultation'])->name('prevention-dossiers.advance');

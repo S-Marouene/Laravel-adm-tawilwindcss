@@ -35,6 +35,8 @@ class NotificationController extends Controller
     /** GET /notifications — return unread + recent read notifications */
     public function index(Request $request): JsonResponse
     {
+        $locale = app()->getLocale(); // set by LocalizationMiddleware for this request
+
         $notifications = $request->user()
             ->notifications()
             ->latest()
@@ -43,8 +45,8 @@ class NotificationController extends Controller
             ->map(fn ($n) => [
                 'id'       => $n->id,
                 'level'    => $n->data['level'] ?? 'info',
-                'title'    => $n->data['title'] ?? 'Notification',
-                'body'     => $n->data['body'] ?? '',
+                'title'    => $n->data["title_{$locale}"] ?? $n->data['title_fr'] ?? $n->data['title'] ?? 'Notification',
+                'body'     => $n->data["body_{$locale}"]  ?? $n->data['body_fr']  ?? $n->data['body']  ?? '',
                 'url'      => $n->data['url'] ?? null,
                 'event'    => $n->data['event'] ?? null,
                 'read_at'  => $n->read_at?->toIso8601String(),
