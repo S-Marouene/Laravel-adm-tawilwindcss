@@ -86,7 +86,7 @@
             'appointment_failed'         => $ar ? 'الزيارة : غير مطابقة' : 'Visite : non conforme',
             'certificate_issued'         => $ar ? 'إصدار الشهادة' : 'Certificat émis',
             'certificate_collected'      => $ar ? 'تسليم بالكسان' : 'Certificat retiré au bureau',
-            'certificate_post_sent'      => $ar ? 'إرسال بالبريد (B3)' : 'Certificat expédié (B3)',
+            'certificate_post_sent'      => $ar ? 'إرسال بالبريد' : 'Certificat expédié par poste',
             'certificate_post_delivered' => $ar ? 'تم التسليم بالبريد' : 'Livré par poste',
             'cancelled'                  => $ar ? 'إلغاء الملف' : 'Dossier annulé',
             default                      => ucfirst((string) $type),
@@ -102,7 +102,7 @@
             'icon'  => 'schedule_send',
         ],
         'post_sent'      => [
-            'label' => $ar ? 'في الطريق (بريد)' : 'En transit (Poste B3)',
+            'label' => $ar ? 'في الطريق (بريد)' : 'En transit (Poste)',
             'bar'   => 'bg-blue-500',
             'color' => 'text-blue-500',
             'chip'  => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
@@ -228,7 +228,7 @@
         </div>
         <div class="mt-2 flex items-baseline gap-2">
             <span class="text-headline-lg font-black text-primary">{{ number_format($visitPipeline) }}</span>
-            <span class="text-xs font-medium text-secondary">{{ $ar ? 'ملف في مرحلة الزيارة' : 'dossiers en phase RDV' }}</span>
+            <span class="text-xs font-medium text-secondary">{{ $ar ? 'ملف في مرحلة الزيارة' : 'dossiers en phase de visite' }}</span>
         </div>
         <div class="mt-3 flex items-center justify-between border-t border-surface-dim pt-2 text-[11px] text-secondary">
             <span>{{ $ar ? 'زيارات شهوتهم' : 'RV programmés' }} :</span>
@@ -469,7 +469,7 @@
                     <span class="material-symbols-outlined text-[18px] text-primary" aria-hidden="true">calendar_month</span>
                     {{ $ar ? 'الزيارات القادمة' : 'Visites régionales à venir' }}
                 </h3>
-                <span class="text-[11px] font-bold text-secondary">{{ $ar ? 'القادمة' : ($upcomingVisits->count() === 1 ? 'Prochaine' : $upcomingVisits->count() . ' RDV') }}</span>
+                <span class="text-[11px] font-bold text-secondary">{{ $ar ? 'القادمة' : ($upcomingVisits->count() === 1 ? 'Prochaine' : $upcomingVisits->count() . ' visites') }}</span>
             </div>
             @if ($upcomingVisits->isEmpty())
                 <x-onpc.empty-state icon="event_available" class="mt-3" :title="$ar ? 'لا زيارات قادمة' : 'Aucune visite programmée'" />
@@ -576,9 +576,9 @@
             <div class="mt-4 rounded border border-surface-dim bg-surface-container-low p-3 text-[11px] leading-relaxed text-secondary dark:border-outline-variant dark:bg-slate-800/60">
                 <span class="font-bold text-on-surface">{{ $ar ? 'مود: معالجة الشهادة نعمل جاهزة' : 'Cycle de délivrance' }} :</span>
                 @if ($ar)
-                    جاهزة → تُسلَّم بالمكتب / في طريقها (B3) → مستلمة
+                    جاهزة → تُسلَّم بالمكتب / في طريقها (بريد) → مستلمة
                 @else
-                    prête → collectée au bureau / expédiée (B3) → livrée
+                    prête → collectée au bureau / expédiée par poste → livrée
                 @endif
             </div>
         </div>

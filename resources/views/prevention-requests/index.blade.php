@@ -183,7 +183,7 @@
                                     </div>
                                 </div>
 
-                                {{-- Timeline — follow-up history (submissions, corrections, approval, RDV) --}}
+                                {{-- Timeline — follow-up history (submissions, corrections, approval, visit) --}}
                                 @if ($dossier->events->isNotEmpty())
                                     <div class="border-t border-surface-container-high dark:border-gray-700/50 mt-4 pt-4">
                                         <p class="text-xs font-semibold uppercase tracking-wide text-secondary dark:text-gray-400 mb-3 flex items-center gap-1.5">
@@ -210,7 +210,7 @@
                                                             · {{ $event->created_at->format('d/m/Y H:i') }}
                                                         </p>
 
-                                                        {{-- RDV details --}}
+                                                        {{-- Visit details --}}
                                                         @if (in_array($event->type, ['appointment_scheduled', 'appointment_passed', 'appointment_failed', 'appointment_deleted']) && is_array($event->data) && ! empty($event->data['visit_date']))
                                                             <p class="mt-1 text-xs inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
                                                                 <svg class="h-3 w-3 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -256,7 +256,7 @@
                                     </div>
                                 @endif
 
-                                {{-- Appointments / RDV (shown once the dossier is approved via consultation) --}}
+                                {{-- Appointments / visits (shown once the dossier is approved via consultation) --}}
                                 @if ($dossier->appointments->isNotEmpty())
                                     <div class="border-t border-surface-container-high dark:border-gray-700/50 mt-4 pt-4">
                                         <p class="text-xs font-semibold uppercase tracking-wide text-secondary dark:text-gray-400 mb-3 flex items-center gap-1.5">

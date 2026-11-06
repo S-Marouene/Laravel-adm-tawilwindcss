@@ -236,7 +236,7 @@
                                 </div>
                             </div>
 
-                            {{-- ── Adresse du bâtiment (lieu du RDV de visite) ── --}}
+                            {{-- ── Adresse du bâtiment (lieu de la visite) ── --}}
                             <div class="space-y-1.5">
                                 <label for="building_address" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
                                     {{ __('prevention_request.building_address') }} <span class="text-primary" aria-hidden="true">*</span>

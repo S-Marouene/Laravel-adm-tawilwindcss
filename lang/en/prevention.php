@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /* Admin — Prevention dossiers (show / list) */
 
@@ -28,15 +28,20 @@ return [
     'step1'                    => 'Submission',
     'step2'                    => 'Study & approval',
     'step3'                    => 'On-site inspection',
-    'step4'                    => 'Certificate delivery',
+    'step4'                    => 'Certificate issued',
+    'step5'                    => 'Collected / Delivered',
+    'step_had_correction'      => 'Correction required (resolved)',
+    'step_had_failed_visit'    => 'Visit failed (rescheduled)',
     'step_done'                => 'Completed',
     'step_pending'             => 'Pending',
     'step_correction_required' => 'Correction required',
     'step2_sub'                => 'Administrative review of documents',
     'step_visit_scheduled'     => 'Visit scheduled :date',
     'step3_sub'                => 'On-site inspection awaiting',
-    'step_delivered'           => 'Delivered',
-    'step_cert_to_issue'       => 'Certificate to be issued',
+    'step_cert_issued'         => 'Certificate issued',
+    'step_delivered'           => 'Collected / Delivered',
+    'step_cert_to_issue'       => 'To be issued',
+    'step_cert_waiting_pickup' => 'Awaiting collection',
     'step_in_progress'         => 'In progress',
 
     // ⛩ ACTE 1 — Administrative review
@@ -44,7 +49,7 @@ return [
     'action_required'         => 'Action required',
     'review_intro'            => 'Check the documents and details below, then advance the dossier to consultation — or request a correction from the applicant.',
     'advance_btn'             => 'Advance to consultation',
-    'confirm_advance'         => 'Advance to consultation? This validates the dossier — the applicant is notified and a visit (RDV) can then be scheduled.',
+    'confirm_advance'         => 'Advance to consultation? This validates the dossier — the applicant is notified and a visit  can then be scheduled.',
     'request_correction'      => 'Request correction',
     'hide_correction_form'    => 'Hide correction form',
     'note_to_applicant'       => 'Note to applicant',
@@ -88,7 +93,7 @@ return [
     'alert_chip'              => 'Alert',
     'note_visible_applicant'  => 'Note visible to the applicant',
 
-    // ? ACTE 3 — consultation / first RDV
+    // ? ACTE 3 — consultation / first visit
     'consultation_phase'       => 'Consultation phase — schedule the on-site visit',
     'consultation_intro'       => 'The dossier was approved for consultation. Schedule the inspection at the declared address; the applicant is notified with the visit instructions.',
     'applicant_phone_convocation' => "Applicant's phone (convocation):",
@@ -101,13 +106,13 @@ return [
     'schedule_visit'           => 'Schedule visit',
     'visit_at_building'        => 'Visit takes place at the building:',
     'schedule_new_visit'       => 'Schedule new visit',
-    'schedule_new_rdv_title'   => 'Schedule the new visit (RDV)',
+    'schedule_new_rdv_title'   => 'Schedule the new visit ',
     'new_visit_date'           => 'New visit date',
     'new_visit_time'           => 'New visit time',
     'new_visit_note_placeholder' => 'Instructions for the new visit…',
     'next_visit_ready'         => 'A new visit is already scheduled — :date at :time.',
 
-    // ? Next visit band (pending RDV)
+    // ? Next visit band (pending visit)
     'next_visit_at'   => 'Next visit — :date at :time',
     'convocation_sent' => 'Convocation sent',
     'card_presence'    => 'Applicant presence',
@@ -122,12 +127,12 @@ return [
 
     // ? Failed visit band
     'visit_failed_at'  => 'Visit failed — :date at :time',
-    'failed_intro'     => 'The inspection record above is negative. The applicant must fix the issues, then a new visit (RDV) can be scheduled.',
+    'failed_intro'     => 'The inspection record above is negative. The applicant must fix the issues, then a new visit  can be scheduled.',
     'inspector_note'   => 'Inspector note',
     'inspector_note_placeholder' => 'Inspector note (required if failed)...',
 
-    // RDV list
-    'site_visits'        => 'Site visits (RDV)',
+    // Visits list
+    'site_visits'        => 'Site visits',
     'visits_count'       => ':count visit(s) · at',
     'visits_none'        => 'No visits scheduled yet',
     'visits_none_hint'   => '— use the action band above to schedule the first one',
@@ -140,7 +145,7 @@ return [
     'cancel_appointment' => 'Cancel appointment',
     'cancel_appt_title'  => 'Cancel this appointment (a note is required)',
     'save_result'        => 'Save result',
-    'cancel_panel_title' => 'Cancel this appointment — the RDV stays in the history',
+    'cancel_panel_title' => 'Cancel this appointment — the visit stays in the history',
     'cancel_panel_placeholder' => 'Why is this appointment cancelled?…',
     'already_recorded'   => 'This appointment is no longer pending — its result is already recorded.',
 
@@ -151,7 +156,7 @@ return [
     'deliver_cert_below' => 'Deliver the prevention certificate below (issue →',
     'b3_flow'           => 'B3 send → delivered',
     'pickup_flow'       => 'pickup marked as collected',
-    'approved_await_rdv' => 'Dossier approved — awaiting RDV.',
+    'approved_await_rdv' => 'Dossier approved — awaiting visit.',
     'approved_wait_act' => 'Dossier approved — waiting for the next administrative act.',
     'dossier_cancelled' => 'Dossier cancelled',
     'closed_by_admin'   => '— closed by the administration.',
@@ -171,7 +176,7 @@ return [
     'cert_post_delivered' => 'Delivered by post',
     'post_workflow_strict' => 'Post (B3) workflow — strict order: ready <span aria-hidden="true">→</span> sent (tracking required) <span aria-hidden="true">→</span> delivered',
     'applicant_phone'     => "Applicant's phone:",
-    'hint_record_flow'    => 'Record Passed or Failed — if Failed, a new RDV can be scheduled from the failed-visit band below.',
+    'hint_record_flow'    => 'Record Passed or Failed — if Failed, a new visit can be scheduled from the failed-visit band below.',
     'hide_result_form'    => 'Hide result form',
     'pickup_workflow_short' => 'Pickup workflow — ready ↔ collected',
     'post_workflow_short' => 'Post (B3) workflow — ready → sent → delivered',
@@ -267,16 +272,16 @@ return [
     // Timeline event labels (model)
     'evt_submitted'         => 'Submitted by applicant',
     'evt_resubmitted'       => 'Dossier resubmitted after correction',
-    'evt_advanced'          => 'Dossier approved — awaiting RDV',
+    'evt_advanced'          => 'Dossier approved — awaiting visit',
     'evt_correction_requested' => 'Correction requested',
     'evt_history_snapshot'  => 'Old version archived in history',
     'evt_approved'          => 'Dossier approved',
     'evt_cancelled'         => 'Dossier cancelled',
-    'evt_rdv_scheduled'     => 'RDV (visit) scheduled',
+    'evt_rdv_scheduled'     => 'Visit scheduled',
     'evt_rdv_passed'        => 'Visit marked as passed',
     'evt_rdv_failed'        => 'Visit marked as failed',
-    'evt_rdv_deleted'       => 'RDV removed',
-    'evt_rdv_cancelled'     => 'RDV cancelled',
+    'evt_rdv_deleted'       => 'Visit removed',
+    'evt_rdv_cancelled'     => 'Visit cancelled',
     'evt_waiting_delivery'  => 'Inspection passed — awaiting certificate delivery',
     'evt_delivery_chosen'   => 'Certificate delivery method chosen',
     'evt_cert_issued'       => 'Prevention certificate issued',
@@ -334,7 +339,7 @@ return [
     'idx_reset'          => 'Reset',
     'idx_status_under_review' => 'Under Review',
     'idx_status_submitted_api' => 'Submitted to API',
-    'idx_status_await_rdv' => 'Approved — Awaiting RDV',
+    'idx_status_await_rdv' => 'Approved — awaiting visit',
     'idx_status_all_ok'  => 'All OK — Awaiting Delivery',
     'idx_applicant'      => 'Applicant',
     'idx_phone'          => 'Phone',

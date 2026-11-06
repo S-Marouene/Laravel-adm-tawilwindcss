@@ -1,4 +1,4 @@
-@extends('admin.layouts.admin')
+﻿@extends('admin.layouts.admin')
 @section('title', __('prevention.page_title', ['id' => $preventionDossier->id]))
 
 @php
@@ -12,48 +12,66 @@
     $lastFailedAppointment = $d->appointments->last(fn ($a) => $a->isFailed());
     $lastPassedAppointment = $d->appointments->last(fn ($a) => $a->isPassed());
 
-    /* ── Stepper 4 étapes : dépôt → étude → inspection → certificat ── */
+    /* ── Stepper 5 étapes : dépôt → étude → inspection → certificat émis → retiré/livré ── */
     $currentStep = match ($status) {
         'draft'                  => 1,
         'completed', 'submitted' => 2,
         'under_consultation'     => 3,
-        'approved'               => 4,
+        'approved'               => 3,
         'waiting_delivery'       => 4,
         'needs_correction'       => 2,
+        'cancelled'              => 0,
         default                  => null,
     };
-    if ($d->certificate) {
-        $currentStep = 5; // finalisé
+    // Certificate issued → step 5 (waiting for pickup/delivery)
+    if ($d->certificate && $currentStep < 5) {
+        $currentStep = 5;
+    }
+    // Certificate collected or delivered → step 6 (all done)
+    if ($d->certificate && ($d->certificate->isCollected() || $d->certificate->isPostDelivered())) {
+        $currentStep = 6;
     }
 
     $stepDates = [];
     $stepDates[1] = $d->created_at;
     $stepDates[2] = $d->reviewed_at;
-    $stepDates[3] = $d->appointments->last(fn ($a) => $a->isPassed())?->visit_date ?? $pendingAppointment->visit_date ?? null;
+    $stepDates[3] = $lastPassedAppointment?->visit_date ?? $pendingAppointment?->visit_date ?? null;
     $stepDates[4] = $d->certificate?->issued_at;
+    $stepDates[5] = $d->certificate?->collected_at ?? $d->certificate?->post_delivered_at ?? null;
 
     $steps = [];
-    foreach ([1, 2, 3, 4] as $i) {
-        if ($currentStep === 5 || $i < $currentStep) $state = 'done';
+    // Detect historical issues to mark steps even after completion
+    $hadCorrection   = $d->events->contains(fn ($e) => $e->type === 'correction_requested');
+    $hadFailedVisit  = $lastFailedAppointment !== null;
+
+    foreach ([1, 2, 3, 4, 5] as $i) {
+        if ($currentStep === 6 || $i < $currentStep) $state = 'done';
         elseif ($i === $currentStep)                 $state = $status === 'needs_correction' ? 'error' : 'current';
         else                                         $state = 'pending';
 
+        // Override done state if the step had an incident in history
+        if ($state === 'done' && $i === 2 && $hadCorrection)  $state = 'warning';
+        if ($state === 'done' && $i === 3 && $hadFailedVisit) $state = 'warning';
+
         $sub = match (true) {
+            $state === 'warning' && $i === 2 => __('prevention.step_done'),
+            $state === 'warning' && $i === 3 => __('prevention.step_done'),
             $state === 'done'    => __('prevention.step_done'),
             $state === 'pending' => __('prevention.step_pending'),
             $status === 'needs_correction' && $state === 'error' => __('prevention.step_correction_required'),
             $i === 2             => __('prevention.step2_sub'),
             $i === 3 && $pendingAppointment => __('prevention.step_visit_scheduled', ['date' => $pendingAppointment->visit_date->format('d/m/Y')]),
             $i === 3             => __('prevention.step3_sub'),
-            $i === 4             => $d->certificate ? __('prevention.step_delivered') : __('prevention.step_cert_to_issue'),
+            $i === 4             => $d->certificate ? __('prevention.step_cert_issued') : __('prevention.step_cert_to_issue'),
+            $i === 5             => $d->certificate && ($d->certificate->isCollected() || $d->certificate->isPostDelivered()) ? __('prevention.step_done') : __('prevention.step_cert_waiting_pickup'),
             default              => __('prevention.step_in_progress'),
         };
 
         $steps[] = ['num' => $i, 'state' => $state, 'sub' => $sub];
     }
     $doneSteps = collect($steps)->where('state', 'done')->count();
-    $progress  = $currentStep === 5 ? 100 : (int) round($doneSteps / 4 * 100);
-    $phaseNum  = $currentStep ? min($currentStep, 4) : 1;
+    $progress  = $currentStep === 6 ? 100 : ($currentStep === 0 ? 0 : (int) round($doneSteps / 5 * 100));
+    $phaseNum  = $currentStep > 0 ? min($currentStep, 5) : 0;
 
     /* ── Timeline « journal d'audit » : pastilles + chips ──
        ● amber = validé / officiel    ● red ONPC = convocation / incident
@@ -1143,6 +1161,25 @@
         @endcan
 
         {{-- ══════════════ CYCLE DE VIE — Stepper + progression ══════════════ --}}
+        @if ($status === 'cancelled')
+        {{-- Dossier annulé : message dédié au lieu du stepper --}}
+        <section class="bg-surface-container-lowest border border-red-200 dark:border-red-800/40 rounded-lg shadow-sm overflow-hidden">
+            <div class="border-s-4 border-s-red-600 p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">cancel</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('prevention.dossier_cancelled') }}</h3>
+                        <p class="text-body-sm text-secondary mt-1">{{ __('prevention.closed_by_admin') }}</p>
+                        @if ($d->cancelled_at)
+                        <p class="text-[11px] text-secondary mt-2 font-mono" dir="ltr">{{ $d->cancelled_at->format('d/m/Y, H:i') }}</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </section>
+        @else
         <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden">
             <div class="p-5 md:px-6">
                 {{-- En-tête : titre + phase + barre de progression --}}
@@ -1153,7 +1190,7 @@
                     </h3>
                     <div class="flex items-center gap-3 flex-1 sm:flex-none sm:min-w-64">
                         <span class="text-xs font-bold text-primary bg-primary-fixed/40 px-2 py-0.5 rounded whitespace-nowrap">
-                            {{ __('prevention.phase_word') }} {{ $phaseNum }} / 4
+                            {{ __('prevention.phase_word') }} {{ $phaseNum }} / 5
                         </span>
                         <div class="hidden sm:flex-1 h-1.5 bg-surface-dim/50 rounded-full overflow-hidden">
                             <div class="h-full bg-gradient-to-r from-primary-container to-amber-500 rounded-full transition-all duration-500" style="width: {{ $progress }}%"></div>
@@ -1163,8 +1200,8 @@
                 </div>
 
                 {{-- Étapes reliées par une ligne de conduite --}}
-                <div class="relative grid grid-cols-1 md:grid-cols-4 gap-5 md:gap-3">
-                    <div class="hidden md:block absolute top-5 [inset-inline-start:12%] [inset-inline-end:12%] h-0.5 bg-surface-dim" aria-hidden="true"></div>
+                <div class="relative grid grid-cols-1 md:grid-cols-5 gap-5 md:gap-3">
+                    <div class="hidden md:block absolute top-5 [inset-inline-start:10%] [inset-inline-end:10%] h-0.5 bg-surface-dim" aria-hidden="true"></div>
 
                     @foreach ($steps as $idx => $step)
                         <div class="relative flex md:flex-col items-start md:items-center gap-3 md:gap-2 md:text-center">
@@ -1172,13 +1209,18 @@
                                 <span class="relative z-10 w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center shadow-sm ring-4 ring-amber-100 dark:ring-amber-900/40">
                                     <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check</span>
                                 </span>
+                            @elseif ($step['state'] === 'warning')
+                                {{-- Done but had an incident — same look as done --}}
+                                <span class="relative z-10 w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center shadow-sm ring-4 ring-amber-100 dark:ring-amber-900/40">
+                                    <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check</span>
+                                </span>
                             @elseif ($step['state'] === 'current')
-                                <span class="relative z-10 w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center text-sm font-black shadow-sm ring-4 ring-primary-fixed/70">
+                                <span class="relative z-10 w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-black shadow-sm ring-4 ring-amber-200 dark:ring-amber-800/50 animate-pulse">
                                     {{ $step['num'] }}
                                 </span>
                             @elseif ($step['state'] === 'error')
                                 <span class="relative z-10 w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shadow-sm ring-4 ring-red-100 dark:ring-red-900/40">
-                                    <span class="material-symbols-outlined text-lg" aria-hidden="true">priority_high</span>
+                                    <span class="material-symbols-outlined text-lg" aria-hidden="true">edit_note</span>
                                 </span>
                             @else
                                 <span class="relative z-10 w-10 h-10 rounded-full bg-surface-container text-secondary flex items-center justify-center text-sm font-bold border border-surface-dim dark:bg-gray-700">
@@ -1189,18 +1231,18 @@
                             <div class="min-w-0 md:px-1">
                                 <div class="flex md:justify-center items-center gap-2">
                                     <h4 class="text-xs font-bold {{ $step['state'] === 'pending' ? 'text-secondary' : 'text-on-surface' }}">
-                                        {{ [__('prevention.step1'), __('prevention.step2'), __('prevention.step3'), __('prevention.step4')][$idx] }}
+                                        {{ [__('prevention.step1'), __('prevention.step2'), __('prevention.step3'), __('prevention.step4'), __('prevention.step5')][$idx] }}
                                     </h4>
                                     @if ($step['state'] === 'current')
-                                        <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true"></span>
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" aria-hidden="true"></span>
                                     @elseif ($step['state'] === 'error')
-                                        <span class="text-[10px] uppercase font-black text-red-800 bg-red-100 dark:bg-red-900/40 px-1.5 py-px rounded">{{ __('prevention.alert_chip') }}</span>
+                                        <span class="text-[10px] uppercase font-black text-red-800 bg-red-100 dark:bg-red-900/40 dark:text-red-300 px-1.5 py-px rounded">{{ __('prevention.alert_chip') }}</span>
                                     @endif
                                 </div>
-                                <p class="text-[11px] mt-0.5 leading-snug {{ $step['state'] === 'error' ? 'text-red-800 dark:text-red-400 font-medium' : ($step['state'] === 'current' ? 'text-primary font-medium' : 'text-secondary') }}">
+                                <p class="text-[11px] mt-0.5 leading-snug {{ $step['state'] === 'error' ? 'text-red-700 dark:text-red-400 font-medium' : ($step['state'] === 'warning' ? 'text-red-600 dark:text-red-400 font-medium' : ($step['state'] === 'current' ? 'text-amber-700 dark:text-amber-400 font-medium' : ($step['state'] === 'done' ? 'text-amber-800 dark:text-amber-400' : 'text-secondary'))) }}">
                                     {{ $step['sub'] }}
                                 </p>
-                                <p class="text-[10px] mt-1 font-semibold {{ $step['state'] === 'done' ? 'text-amber-800 dark:text-amber-400' : 'text-secondary' }}" dir="ltr">
+                                <p class="text-[10px] mt-1 font-semibold {{ in_array($step['state'], ['done','warning']) ? 'text-amber-700 dark:text-amber-500' : ($step['state'] === 'current' ? 'text-amber-600' : 'text-secondary') }}" dir="ltr">
                                     @if ($stepDates[$step['num']] ?? null)
                                         {{ \Illuminate\Support\Carbon::parse($stepDates[$step['num']])->format('d/m/Y') }}
                                         @if ($step['num'] === 3 && $pendingAppointment && $pendingAppointment->visit_date->isSameDay(\Illuminate\Support\Carbon::parse($stepDates[3])))
@@ -1216,6 +1258,7 @@
                 </div>
             </div>
         </section>
+        @endif
 
         {{-- ══════════════ HÉROS — Fiche identity du dossier ══════════════ --}}
         <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden">
@@ -1526,59 +1569,79 @@
                 </div>
                 @elseif ($cert->isCollected() || $cert->isPostDelivered())
                 {{-- Certificat en état terminal : affiché ici (récupéré / livré) --}}
-                <div class="bg-surface-container-lowest border border-violet-200 dark:border-violet-800/40 rounded-lg shadow-sm overflow-hidden">
-                    <div class="p-5 space-y-4">
-                        {{-- Header --}}
-                        <div class="flex flex-wrap items-start gap-3">
-                            <div class="w-10 h-10 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 flex items-center justify-center flex-shrink-0">
-                                <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">workspace_premium</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <h3 class="text-headline-sm font-headline-sm text-on-surface">{{ __('prevention.cert_title') }} — <span class="font-mono" dir="ltr">{{ $cert->reference }}</span></h3>
-                                <p class="text-xs text-secondary mt-0.5">
-                                    @if ($cert->isPickup()) {{ __('prevention.pickup_workflow_short') }}
-                                    @elseif ($cert->isPost()) {{ __('prevention.post_workflow_short') }}
+                <div class="bg-surface-container-lowest border border-violet-200 dark:border-violet-800/40 rounded-lg shadow-sm overflow-hidden"
+                     x-data="{ open: false }">
+
+                    {{-- Clickable header --}}
+                    <button type="button" @click="open = !open"
+                            class="w-full flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-violet-50/40 dark:hover:bg-violet-900/10 transition-colors text-start border-b border-violet-100 dark:border-violet-800/30">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-9 h-9 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1" aria-hidden="true">workspace_premium</span>
+                            </span>
+                            <div class="min-w-0">
+                                <h3 class="text-sm font-extrabold text-on-surface leading-tight flex items-center gap-2 flex-wrap">
+                                    <span class="font-mono text-violet-700 dark:text-violet-300" dir="ltr">{{ $cert->reference }}</span>
+                                    <span class="text-on-surface font-extrabold">—
+                                        @if ($cert->isCollected()) {{ __('prevention.tl_collected') }}
+                                        @else {{ __('prevention.tl_delivered') }}
+                                        @endif
+                                    </span>
+                                </h3>
+                                <p class="text-[11px] text-secondary mt-0.5 flex flex-wrap items-center gap-x-2">
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[12px]" aria-hidden="true">schedule_send</span>
+                                        {{ __('prevention.issued_dt') }}: <strong class="text-on-surface" dir="ltr">{{ $cert->issued_at->format('d/m/Y') }}</strong>
+                                    </span>
+                                    @if ($cert->isCollected() && $cert->collected_at)
+                                    <span class="text-surface-dim">·</span>
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[12px]" aria-hidden="true">handshake</span>
+                                        {{ __('prevention.collected_on') }}: <strong class="text-on-surface" dir="ltr">{{ $cert->collected_at->format('d/m/Y') }}</strong>
+                                    </span>
+                                    @elseif ($cert->isPostDelivered() && $cert->post_delivered_at)
+                                    <span class="text-surface-dim">·</span>
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[12px]" aria-hidden="true">mark_email_read</span>
+                                        {{ __('prevention.delivered_on') }}: <strong class="text-on-surface" dir="ltr">{{ $cert->post_delivered_at->format('d/m/Y') }}</strong>
+                                    </span>
                                     @endif
-                                    — {{ __('prevention.issued_on', ['date' => $cert->issued_at->format('d/m/Y')]) }}
                                 </p>
                             </div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary">{{ $cert->isPickup() ? __('prevention.pickup_chip') : __('prevention.poste_tunisienne') }}</span>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded {{ $certStatusCfg[1] }}">{{ $certStatusCfg[0] }}</span>
-                            </div>
                         </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary">{{ $cert->isPickup() ? __('prevention.pickup_chip') : __('prevention.poste_tunisienne') }}</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded {{ $certStatusCfg[1] }}">{{ $certStatusCfg[0] }}</span>
+                            <svg class="w-4 h-4 text-secondary transition-transform shrink-0 ms-1" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </button>
 
-                        {{-- Pipeline --}}
+                    <div x-show="open" x-cloak class="p-5 space-y-4">
+
+                        {{-- Pipeline — all steps shown as done since terminal state --}}
+                        @php
+                            $certSteps = $cert->isPickup()
+                                ? [[__('prevention.cs_ready_office'), 'schedule_send', $cert->issued_at],
+                                   [__('prevention.cs_collected'), 'handshake', $cert->collected_at]]
+                                : [[__('prevention.cs_ready'), 'schedule_send', $cert->issued_at],
+                                   [__('prevention.cs_sent_b3'), 'local_post_office', $cert->post_sent_at],
+                                   [__('prevention.cs_delivered'), 'mark_email_read', $cert->post_delivered_at]];
+                            // All steps done in terminal state
+                            $certTotalSteps = count($certSteps);
+                        @endphp
                         <div class="rounded-lg border border-surface-dim bg-surface-container-low/60 p-3.5">
                             <p class="mb-2.5 text-[10px] font-extrabold uppercase tracking-wider text-secondary">
                                 @if ($cert->isPickup()) {{ __('prevention.pickup_workflow_short') }} @else {{ __('prevention.post_workflow_strict') }} @endif
                             </p>
-                            @php
-                                $certSteps = $cert->isPickup()
-                                    ? [[__('prevention.cs_ready_office'), 'schedule_send', $cert->issued_at],
-                                       [__('prevention.cs_collected'), 'check', $cert->collected_at]]
-                                    : [[__('prevention.cs_ready'), 'schedule_send', $cert->issued_at],
-                                       [__('prevention.cs_sent_b3'), 'local_post_office', $cert->post_sent_at],
-                                       [__('prevention.cs_delivered'), 'mark_email_read', $cert->post_delivered_at]];
-                                $stepIdx = $cert->isPickup()
-                                    ? ($cert->isCollected() ? 1 : 0)
-                                    : match ($cert->status) {
-                                        \App\Models\PreventionCertificate::STATUS_POST_SENT      => 1,
-                                        \App\Models\PreventionCertificate::STATUS_POST_DELIVERED => 2,
-                                        default => 0,
-                                    };
-                            @endphp
                             <ol class="flex flex-col gap-2.5 sm:flex-row sm:items-stretch">
                                 @foreach ($certSteps as $i => $step)
-                                    @php $done = $i < $stepIdx; $current = $i === $stepIdx; @endphp
-                                    <li class="flex flex-1 items-start gap-2.5 sm:flex-col sm:items-start" aria-current="{{ $current ? 'step' : 'false' }}">
-                                        <span class="flex h-7 w-7 flex-none items-center justify-center rounded-full text-[11px] font-black
-                                            {{ $done ? 'bg-amber-600 text-white ring-4 ring-amber-100 dark:ring-amber-900/40' : ($current ? 'bg-primary text-on-primary ring-4 ring-primary-fixed/70' : 'bg-surface-container text-outline border border-surface-dim dark:bg-gray-700') }}">
-                                            @if ($done)<span class="material-symbols-outlined text-base" aria-hidden="true">check</span>@elseif ($current){{ $i + 1 }}@else<span class="material-symbols-outlined text-xs" aria-hidden="true">circle</span>@endif
+                                    <li class="flex flex-1 items-start gap-2.5 sm:flex-col sm:items-start">
+                                        <span class="flex h-7 w-7 flex-none items-center justify-center rounded-full text-[11px] font-black bg-amber-600 text-white ring-4 ring-amber-100 dark:ring-amber-900/40">
+                                            <span class="material-symbols-outlined text-base" aria-hidden="true">check</span>
                                         </span>
                                         <div class="min-w-0">
-                                            <p class="text-[11px] font-bold leading-tight {{ $done ? 'text-amber-800 dark:text-amber-400' : ($current ? 'text-primary' : 'text-outline dark:text-gray-500') }}">{{ $step[0] }}</p>
-                                            <p class="mt-0.5 font-mono text-[10px] text-secondary" dir="ltr">{{ ($done || $current) && $step[2] ? $step[2]->format('d/m/Y') : __('prevention.pending_dots') }}</p>
+                                            <p class="text-[11px] font-bold leading-tight text-amber-800 dark:text-amber-400">{{ $step[0] }}</p>
+                                            <p class="mt-0.5 font-mono text-[10px] text-secondary" dir="ltr">{{ $step[2] ? \Illuminate\Support\Carbon::parse($step[2])->format('d/m/Y') : '—' }}</p>
                                         </div>
                                     </li>
                                 @endforeach
@@ -1659,7 +1722,6 @@
                             </div>
                         @endif
 
-                        {{-- Locked --}}
                         <p class="flex items-center gap-1.5 border-t border-surface-dim pt-3 text-[11px] font-bold text-secondary">
                             <span class="material-symbols-outlined text-sm" aria-hidden="true">lock</span>
                             {{ __('prevention.locked_cert') }}

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /* Admin — Dossiers de prévention (show / index) */
 
@@ -28,15 +28,20 @@ return [
     'step1'                    => 'Dépôt',
     'step2'                    => 'Étude & approbation',
     'step3'                    => 'Visite sur site',
-    'step4'                    => 'Remise du certificat',
+    'step4'                    => 'Certificat émis',
+    'step5'                    => 'Retiré / Livré',
+    'step_had_correction'      => 'Correction requise (résolue)',
+    'step_had_failed_visit'    => 'Visite échouée (re-planifiée)',
     'step_done'                => 'Terminé',
     'step_pending'             => 'En attente',
     'step_correction_required' => 'Correction requise',
     'step2_sub'                => 'Étude administrative des documents',
     'step_visit_scheduled'     => 'Visite programmée le :date',
     'step3_sub'                => 'Inspection sur site en attente',
-    'step_delivered'           => 'Délivré',
-    'step_cert_to_issue'       => 'Certificat à délivrer',
+    'step_cert_issued'         => 'Certificat émis',
+    'step_delivered'           => 'Retiré / Livré',
+    'step_cert_to_issue'       => 'À émettre',
+    'step_cert_waiting_pickup' => 'En attente de retrait',
     'step_in_progress'         => 'En cours',
 
     // ? ACTE 1 — Étude administrative
@@ -44,7 +49,7 @@ return [
     'action_required'         => 'Action requise',
     'review_intro'            => 'Vérifiez les documents et détails ci-dessous, puis faites avancer le dossier vers la consultation — ou demandez une correction au demandeur.',
     'advance_btn'             => 'Passer à la consultation',
-    'confirm_advance'         => 'Passer à la consultation ? Valide le dossier — le demandeur sera notifié et un RDV pourra ensuite être programmé.',
+    'confirm_advance'         => 'Passer à la consultation ? Valide le dossier — le demandeur sera notifié et un visite pourra ensuite être programmé.',
     'request_correction'      => 'Demander une correction',
     'hide_correction_form'    => 'Masquer le formulaire',
     'note_to_applicant'       => 'Note au demandeur',
@@ -88,7 +93,7 @@ return [
     'alert_chip'              => 'Alerte',
     'note_visible_applicant'  => 'Note visible par le demandeur',
 
-    // ? ACTE 3 — consultation / premier RDV
+    // ? ACTE 3 — consultation / première visite
     'consultation_phase'       => 'Phase de consultation — programmer la visite sur site',
     'consultation_intro'       => 'Le dossier a été approuvé pour la consultation. Programmez l\'inspection à l\'adresse déclarée ; le demandeur est notifié avec les instructions de visite.',
     'applicant_phone_convocation' => 'Téléphone du demandeur (convocation) :',
@@ -101,13 +106,13 @@ return [
     'schedule_visit'           => 'Programmer la visite',
     'visit_at_building'        => 'La visite a lieu au bâtiment :',
     'schedule_new_visit'       => 'Programmer la nouvelle visite',
-    'schedule_new_rdv_title'   => 'Programmer la nouvelle visite (RDV)',
+    'schedule_new_rdv_title'   => 'Programmer la nouvelle visite ',
     'new_visit_date'           => 'Nouvelle date de visite',
     'new_visit_time'           => 'Nouvelle heure de visite',
     'new_visit_note_placeholder' => 'Instructions pour la nouvelle visite…',
     'next_visit_ready'         => 'Une nouvelle visite est déjà programmée — :date à :time.',
 
-    // ? Bande « prochain RDV » (RDV en attente)
+    // ? Bande « prochaine visite » (visite en attente)
     'next_visit_at'   => 'Prochaine visite — :date à :time',
     'convocation_sent' => 'Convocation envoyée',
     'card_presence'    => 'Présence du demandeur',
@@ -122,12 +127,12 @@ return [
 
     // ? Bande « visite échouée »
     'visit_failed_at'  => 'Visite échouée — :date à :time',
-    'failed_intro'     => 'Le rapport d\'inspection ci-dessus est négatif. Le demandeur doit corriger les problèmes, puis une nouvelle visite (RDV) peut être programmée.',
+    'failed_intro'     => 'Le rapport d\'inspection ci-dessus est négatif. Le demandeur doit corriger les problèmes, puis une nouvelle visite  peut être programmée.',
     'inspector_note'   => "Note d'inspection",
     'inspector_note_placeholder' => "Note d'inspection (obligatoire si échoué)...",
 
-    // Liste des RDV
-    'site_visits'        => 'Visites du site (RDV)',
+    // Liste des visites
+    'site_visits'        => 'Visites du site',
     'visits_count'       => ':count visite(s) · au',
     'visits_none'        => 'Aucune visite programmée',
     'visits_none_hint'   => '— utilisez la bande d\'action ci-dessus pour programmer la première',
@@ -137,12 +142,12 @@ return [
     'status_scheduled'   => 'Programmé',
     'by_name'            => 'par :name',
     'record_result'      => 'Enregistrer le résultat',
-    'cancel_appointment' => 'Annuler le RDV',
-    'cancel_appt_title'  => 'Annuler ce RDV (un motif est requis)',
+    'cancel_appointment' => 'Annuler la visite',
+    'cancel_appt_title'  => 'Annuler cette visite (un motif est requis)',
     'save_result'        => 'Enregistrer le résultat',
-    'cancel_panel_title' => 'Annuler ce RDV — il reste dans l\'historique',
-    'cancel_panel_placeholder' => 'Pourquoi ce RDV est-il annulé ?…',
-    'already_recorded'   => 'Ce RDV a déjà été traité — le résultat est enregistré.',
+    'cancel_panel_title' => 'Annuler cette visite — il reste dans l\'historique',
+    'cancel_panel_placeholder' => 'Pourquoi cette visite est-il annulé ?…',
+    'already_recorded'   => 'Cette visite a déjà été traité — le résultat est enregistré.',
 
     // Alertes du héros
     'all_passed'        => 'Toutes les visites sont passées — tout est OK.',
@@ -151,7 +156,7 @@ return [
     'deliver_cert_below' => 'Délivrez le certificat de prévention ci-dessous (émettre →',
     'b3_flow'           => 'envoi B3 → livré',
     'pickup_flow'       => 'retrait marqué comme récupéré',
-    'approved_await_rdv' => 'Dossier approuvé — en attente de RDV.',
+    'approved_await_rdv' => 'Dossier approuvé — en attente de visite.',
     'approved_wait_act' => 'Dossier approuvé — en attente de la prochaine action administrative.',
     'dossier_cancelled' => 'Dossier annulé',
     'closed_by_admin'   => '— fermé par l\'administration.',
@@ -171,7 +176,7 @@ return [
     'cert_post_delivered' => 'Livré par poste',
     'post_workflow_strict' => 'Circuit postal (B3) — ordre strict : prêt <span aria-hidden="true">→</span> envoyé (suivi obligatoire) <span aria-hidden="true">→</span> livré',
     'applicant_phone'     => 'Téléphone du demandeur :',
-    'hint_record_flow'    => 'Enregistrez &laquo;&nbsp;Passé&raquo;&nbsp;ou &laquo;&nbsp;Échoué&raquo;&nbsp;— si échoué, un nouveau RDV peut être programmé depuis la bande «&nbsp;visite échouée&nbsp;» ci-dessous.',
+    'hint_record_flow'    => 'Enregistrez &laquo;&nbsp;Passé&raquo;&nbsp;ou &laquo;&nbsp;Échoué&raquo;&nbsp;— si échoué, une nouvelle visite peut être programmé depuis la bande «&nbsp;visite échouée&nbsp;» ci-dessous.',
     'hide_result_form'    => 'Masquer le formulaire',
     'pickup_workflow_short' => 'Circuit de retrait — prêt ↔ récupéré',
     'post_workflow_short' => 'Circuit postal (B3) — prêt → envoyé → livré',
@@ -267,16 +272,16 @@ return [
     // Libellés des événements (modèle)
     'evt_submitted'         => 'Déposé par le demandeur',
     'evt_resubmitted'       => 'Dossier déposé à nouveau après correction',
-    'evt_advanced'          => 'Dossier approuvé — RDV en attente',
+    'evt_advanced'          => 'Dossier approuvé — visite en attente',
     'evt_correction_requested' => 'Correction demandée',
     'evt_history_snapshot'  => 'Ancienne version archivée dans l\'historique',
     'evt_approved'          => 'Dossier approuvé',
     'evt_cancelled'         => 'Dossier annulé',
-    'evt_rdv_scheduled'     => 'RDV (visite) programmé',
+    'evt_rdv_scheduled'     => 'Visite programmé',
     'evt_rdv_passed'        => 'Visite marquée comme passée',
     'evt_rdv_failed'        => 'Visite marquée comme échouée',
-    'evt_rdv_deleted'       => 'RDV supprimé',
-    'evt_rdv_cancelled'     => 'RDV annulé',
+    'evt_rdv_deleted'       => 'Visite supprimé',
+    'evt_rdv_cancelled'     => 'Visite annulé',
     'evt_waiting_delivery'  => 'Inspection passée — remise du certificat en attente',
     'evt_delivery_chosen'   => 'Mode de remise du certificat choisi',
     'evt_cert_issued'       => 'Certificat de prévention émis',
@@ -334,7 +339,7 @@ return [
     'idx_reset'          => 'Réinitialiser',
     'idx_status_under_review' => 'En cours d\'étude',
     'idx_status_submitted_api' => 'Soumis à l\'API',
-    'idx_status_await_rdv' => 'Approuvé — RDV en attente',
+    'idx_status_await_rdv' => 'Approuvé — visite en attente',
     'idx_status_all_ok'  => 'Tout est OK — Remise en attente',
     'idx_applicant'      => 'Demandeur',
     'idx_phone'          => 'Téléphone',

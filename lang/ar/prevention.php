@@ -28,15 +28,20 @@ return [
     'step1'                    => 'الإيداع',
     'step2'                    => 'الدراسة والموافقة',
     'step3'                    => 'الزيارة الميدانية',
-    'step4'                    => 'تسليم الشهادة',
+    'step4'                    => 'الشهادة صدرت',
+    'step5'                    => 'تم الاستلام / التسليم',
+    'step_had_correction'      => 'تصحيح مطلوب (تم حله)',
+    'step_had_failed_visit'    => 'زيارة فاشلة (أُعيد تحديدها)',
     'step_done'                => 'مكتمل',
     'step_pending'             => 'قيد الانتظار',
     'step_correction_required' => 'مطلوب تصحيح',
     'step2_sub'                => 'الدراسة الإدارية للمستندات',
     'step_visit_scheduled'     => 'تم تحديد الزيارة في :date',
     'step3_sub'                => 'بانتظار الزيارة الميدانية',
-    'step_delivered'           => 'تم التسليم',
-    'step_cert_to_issue'       => 'بانتظار إصدار الشهادة',
+    'step_cert_issued'         => 'الشهادة صدرت',
+    'step_delivered'           => 'تم الاستلام / التسليم',
+    'step_cert_to_issue'       => 'بانتظار الإصدار',
+    'step_cert_waiting_pickup' => 'بانتظار الاستلام',
     'step_in_progress'         => 'جارٍ',
 
     // ACTE 1 — الدراسة الإدارية
@@ -126,8 +131,8 @@ return [
     'inspector_note'   => 'ملاحظة المفتش',
     'inspector_note_placeholder' => 'ملاحظة المفتش (إلزامية عند الفشل)...',
 
-    // قائمة المواعيد
-    'site_visits'        => 'زيارات الموقع (المواعيد)',
+    // قائمة الزيارات
+    'site_visits'        => 'زيارات الموقع',
     'visits_count'       => ':count زيارة · في',
     'visits_none'        => 'لا توجد زيارات بعد',
     'visits_none_hint'   => '— استخدم شريط الإجراءات أعلاه لتحديد الزيارة الأولى',
@@ -334,7 +339,7 @@ return [
     'idx_reset'          => 'إعادة',
     'idx_status_under_review' => 'قيد الدراسة',
     'idx_status_submitted_api' => 'أُرسل إلى الوكالة',
-    'idx_status_await_rdv' => 'مقبول — بانتظار الموعد',
+    'idx_status_await_rdv' => 'مقبول — بانتظار الزيارة',
     'idx_status_all_ok'  => 'كل شيء جيد — بانتظار التسليم',
     'idx_applicant'      => 'مقدم الطلب',
     'idx_phone'          => 'الهاتف',

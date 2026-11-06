@@ -320,7 +320,7 @@ class PreventionDossier extends Model
             'draft'              => 'Draft',
             'completed'          => 'Under Review',
             'submitted'          => 'Submitted',
-            'under_consultation' => 'Approved — Awaiting RDV',
+            'under_consultation' => 'Approved — Awaiting visit',
             'needs_correction'   => 'Needs Correction',
             'approved'           => 'Approved',
             'waiting_delivery'   => 'All OK — Awaiting Certificate Delivery',

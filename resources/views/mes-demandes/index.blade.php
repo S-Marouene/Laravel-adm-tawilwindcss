@@ -206,7 +206,7 @@
                                             </a>
                                         </div>
 
-                                        {{-- RDV chip — shown when a pending visit is scheduled --}}
+                                        {{-- Visit chip — shown when a pending visit is scheduled --}}
                                         <div x-show="item.rdv" class="mt-2">
                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
                                                          bg-blue-50 border border-blue-200 text-blue-800 text-[11px] font-bold
