@@ -122,4 +122,8 @@ return [
     'service_team' => 'الأمر المكلف',
     'service_agents' => 'عدد الأعوان',
     'service_note' => 'ملاحظات',
+
+    // Placeholders bilingues des notes d'administration
+    'note_fix_placeholder'     => 'صِف ما يجب تصحيحه (مثل مستند ناقص، ملف خاطئ، بيانات غير صحيحة)…',
+    'note_cancel_placeholder'  => 'اشرح لماذا يتم إلغاء هذا الطلب…',
 ];

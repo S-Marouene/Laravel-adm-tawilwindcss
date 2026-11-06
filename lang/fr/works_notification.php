@@ -114,4 +114,8 @@ return [
     'fees_info' => 'Cette procédure administrative est entièrement gratuite.',
     'free' => 'Gratuit',
     'free_info' => 'Cette procédure est gratuite — aucun frais n\'est dû.',
+
+    // Placeholders bilingues des notes d'administration
+    'note_fix_placeholder'     => 'Décrivez ce qui doit être corrigé (ex. pièce manquante, mauvais fichier, donnée incorrecte)…',
+    'note_cancel_placeholder'  => 'Expliquez pourquoi cette demande est annulée…',
 ];

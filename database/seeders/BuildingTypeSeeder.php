@@ -9,6 +9,12 @@ use Illuminate\Support\Facades\DB;
 
 class BuildingTypeSeeder extends Seeder
 {
+    /**
+     * Uniform certificate fee applied to every building type (amount stays
+     * editable per type in the admin panel: Building types → certificate fee).
+     */
+    public const CERTIFICATE_FEE = 20.000;
+
     public function run(): void
     {
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
@@ -18,11 +24,12 @@ class BuildingTypeSeeder extends Seeder
 
         foreach ($this->types() as $i => $type) {
             $bt = BuildingType::create([
-                'name_ar'        => $type['ar'],
-                'name_fr'        => $type['fr'],
-                'name_en'        => $type['en'],
-                'has_activities' => $type['has_activities'],
-                'sort_order'     => $i + 1,
+                'name_ar'         => $type['ar'],
+                'name_fr'         => $type['fr'],
+                'name_en'         => $type['en'],
+                'has_activities'  => $type['has_activities'],
+                'sort_order'      => $i + 1,
+                'certificate_fee' => self::CERTIFICATE_FEE,
             ]);
 
             foreach ($type['activities'] as $j => $act) {

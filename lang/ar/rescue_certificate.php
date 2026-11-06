@@ -136,4 +136,8 @@ return [
     'incident_type_fire' => 'حرائق',
     'incident_type_property_protection' => 'حماية الممتلكات',
     'incident_type_other' => 'أخرى',
+
+    // Placeholders bilingues des notes d'administration
+    'note_fix_placeholder'     => 'صِف ما يجب تصحيحه (مثل مستند ناقص، ملف خاطئ، بيانات غير صحيحة)…',
+    'note_cancel_placeholder'  => 'اشرح لماذا يتم إلغاء هذا الطلب…',
 ];

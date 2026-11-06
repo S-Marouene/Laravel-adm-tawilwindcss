@@ -309,72 +309,129 @@
 
                 {{-- Correction form ───────────────────────────────────────────── --}}
                 <div x-show="fixOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-900/10 p-4">
-                    <form method="POST" action="{{ route('admin.prevention-dossiers.correction', $d) }}">
+                    <form method="POST" action="{{ route('admin.prevention-dossiers.correction', $d) }}"
+                          x-data="{ picked: 0 }">
                         @csrf
+
+                        {{-- ── Form header: icon + purpose + what the applicant will see ── --}}
+                        <div class="mb-4 flex items-start gap-3">
+                            <span class="grid h-9 w-9 flex-none place-items-center rounded-lg bg-amber-500/15 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" aria-hidden="true">
+                                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">edit_note</span>
+                            </span>
+                            <div class="min-w-0">
+                                <p class="text-xs font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                                    {{ __('prevention.fields_to_fix') }}
+                                </p>
+                                <p class="mt-0.5 text-[11px] leading-relaxed text-secondary dark:text-gray-400">
+                                    {{ __('prevention.correction_hint') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        {{-- ── Note bilingue pour le demandeur ── --}}
                         <label class="block text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 mb-1.5">
                             {{ __('prevention.note_to_applicant') }} <span class="text-red-500">*</span>
                         </label>
                         <x-admin.bilingual-note name="admin_note" :rows="3" required
-                            placeholder-fr="{{ __('prevention.note_correction_placeholder') }}" />
+                            placeholder-key="prevention.note_correction_placeholder" />
 
-                        <p class="mt-3 mb-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
-                            {{ __('prevention.fields_to_fix') }} <span class="font-normal normal-case">{{ __('prevention.select_all_apply') }}</span>
+                        {{-- ── Section 1 : champs du dossier à corriger ── --}}
+                        <p class="mt-4 mb-2 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                            <span class="material-symbols-outlined text-sm" aria-hidden="true">fact_check</span>
+                            <span>{{ __('prevention.fields_to_fix') }}</span>
+                            <span class="font-normal normal-case tracking-normal text-secondary dark:text-gray-500">{{ __('prevention.select_all_apply') }}</span>
                         </p>
                         @php
                             $fixableFields = [
-                                'nom_prenom'           => __('prevention.f_full_name'),
-                                'cin'                  => __('prevention.f_cin'),
-                                'phone'                => __('prevention.f_phone'),
-                                'governorate_id'       => __('prevention.f_governorate'),
-                                'delegation_id'        => __('prevention.f_delegation'),
-                                'building_address'     => __('prevention.f_building_address'),
-                                'building_type_id'     => __('prevention.f_building_type'),
-                                'building_activity_id' => __('prevention.f_activity'),
+                                'nom_prenom'           => ['label' => __('prevention.f_full_name'),       'icon' => 'person'],
+                                'cin'                  => ['label' => __('prevention.f_cin'),             'icon' => 'badge'],
+                                'phone'                => ['label' => __('prevention.f_phone'),           'icon' => 'call'],
+                                'governorate_id'       => ['label' => __('prevention.f_governorate'),     'icon' => 'public'],
+                                'delegation_id'        => ['label' => __('prevention.f_delegation'),      'icon' => 'account_balance'],
+                                'building_address'     => ['label' => __('prevention.f_building_address'),'icon' => 'home_work'],
+                                // Map position (latitude/longitude) — pinned via Google Maps; correctable on its own.
+                                'map_position'         => ['label' => __('prevention.f_map'),             'icon' => 'map'],
+                                'building_type_id'     => ['label' => __('prevention.f_building_type'),   'icon' => 'domain'],
+                                'building_activity_id' => ['label' => __('prevention.f_activity'),        'icon' => 'category'],
                             ];
                         @endphp
-                        <div class="rounded-lg border border-surface-dim dark:border-gray-600 divide-y divide-surface-dim dark:divide-gray-700 overflow-hidden bg-surface-container-lowest">
-                            @foreach ($fixableFields as $fieldKey => $fieldLabel)
-                                <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container text-xs text-on-surface">
-                                    <input type="checkbox" name="fields_to_fix[]" value="{{ $fieldKey }}"
-                                           class="rounded border-surface-dim text-amber-500 focus:ring-amber-500/30"
+                        <div class="grid gap-1.5"
+                             @change="picked = $root.querySelectorAll('[data-fix]:checked, [data-doc]:checked').length">
+                            @foreach ($fixableFields as $fieldKey => $fieldDef)
+                                @php
+                                    $currentVal = match($fieldKey) {
+                                        'nom_prenom'           => $d->nom_prenom,
+                                        'cin'                  => $d->cin,
+                                        'phone'                => $d->phone,
+                                        'governorate_id'       => $d->governorate?->name_fr ?? $d->governorate?->name_ar,
+                                        'delegation_id'        => $d->delegation?->name_fr ?? $d->delegation?->name_ar,
+                                        'building_address'     => $d->building_address,
+                                        'building_type_id'     => $d->buildingType?->name,
+                                        'building_activity_id' => $d->buildingActivity?->name ?? $d->activity_other,
+                                        // Coordinates as "lat, lng" — mono display, LTR in any locale.
+                                        'map_position'         => ($d->latitude !== null && $d->longitude !== null)
+                                            ? number_format((float) $d->latitude, 6, '.', '').', '.number_format((float) $d->longitude, 6, '.', '')
+                                            : null,
+                                        default                => null,
+                                    };
+                                @endphp
+                                <label class="group flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-surface-dim/70 bg-surface-container-lowest px-3 py-2 transition
+                                              hover:border-amber-400/70 hover:bg-surface-container
+                                              has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50/80 has-[:checked]:shadow-sm
+                                              dark:border-gray-600 dark:bg-gray-800/50 dark:hover:border-gray-500
+                                              dark:has-[:checked]:border-amber-500/70 dark:has-[:checked]:bg-amber-900/20">
+                                    <input type="checkbox" name="fields_to_fix[]" value="{{ $fieldKey }}" data-fix
+                                           class="h-4 w-4 shrink-0 cursor-pointer rounded border-surface-dim text-amber-500 focus:ring-2 focus:ring-amber-500/30"
                                            {{ in_array($fieldKey, old('fields_to_fix', [])) ? 'checked' : '' }}>
-                                    <span class="flex-1">{{ $fieldLabel }}</span>
-                                    @php
-                                        $currentVal = match($fieldKey) {
-                                            'nom_prenom'           => $d->nom_prenom,
-                                            'cin'                  => $d->cin,
-                                            'phone'                => $d->phone,
-                                            'governorate_id'       => $d->governorate?->name_fr ?? $d->governorate?->name_ar,
-                                            'delegation_id'        => $d->delegation?->name_fr ?? $d->delegation?->name_ar,
-                                            'building_address'     => $d->building_address,
-                                            'building_type_id'     => $d->buildingType?->name,
-                                            'building_activity_id' => $d->buildingActivity?->name ?? $d->activity_other,
-                                            default                => null,
-                                        };
-                                    @endphp
+                                    <span class="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-surface-container text-secondary transition
+                                                 group-has-[:checked]:bg-amber-100 group-has-[:checked]:text-amber-700
+                                                 dark:bg-gray-700 dark:text-gray-300 dark:group-has-[:checked]:bg-amber-900/50 dark:group-has-[:checked]:text-amber-300"
+                                          aria-hidden="true">
+                                        <span class="material-symbols-outlined text-sm">{{ $fieldDef['icon'] }}</span>
+                                    </span>
+                                    <span class="flex-1 text-xs font-semibold text-on-surface dark:text-gray-200">{{ $fieldDef['label'] }}</span>
                                     @if ($currentVal)
-                                        <span class="text-outline truncate max-w-28 text-end" title="{{ $currentVal }}">{{ $currentVal }}</span>
+                                        @if ($fieldKey === 'map_position')
+                                            {{-- Coordinates: keep the LTR order even in the RTL Arabic UI --}}
+                                            <span class="truncate max-w-36 text-[10px] font-semibold font-mono text-outline dark:text-gray-500" dir="ltr" title="{{ $currentVal }}">{{ $currentVal }}</span>
+                                        @else
+                                            <span class="truncate max-w-28 text-[10px] text-outline dark:text-gray-500" title="{{ $currentVal }}">{{ $currentVal }}</span>
+                                        @endif
                                     @endif
                                 </label>
                             @endforeach
                         </div>
 
+                        {{-- ── Section 2 : documents à remplacer ── --}}
                         @php
                             $corrDocTypes = \App\Models\DocumentType::service(\App\Models\DocumentType::SERVICE_PREVENTION)
                                 ->with('buildingTypes')->orderBy('sort_order')->get()
                                 ->filter(fn ($t) => $t->appliesToBuildingType($d->building_type_id));
                         @endphp
                         @if ($corrDocTypes->isNotEmpty())
-                            <p class="mt-3 mb-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
-                                {{ __('prevention.docs_to_reupload') }} <span class="font-normal normal-case">{{ __('prevention.select_replacement') }}</span>
+                            <p class="mt-4 mb-2 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">folder_open</span>
+                                <span>{{ __('prevention.docs_to_reupload') }}</span>
+                                <span class="font-normal normal-case tracking-normal text-secondary dark:text-gray-500">{{ __('prevention.select_replacement') }}</span>
                             </p>
-                            <div class="rounded-lg border border-surface-dim dark:border-gray-600 divide-y divide-surface-dim dark:divide-gray-700 overflow-hidden bg-surface-container-lowest">
+                            <div class="grid gap-1.5"
+                                 @change="picked = $root.querySelectorAll('[data-fix]:checked, [data-doc]:checked').length">
                                 @foreach ($corrDocTypes as $docType)
-                                    <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-container text-xs text-on-surface">
-                                        <input type="checkbox" name="docs_to_fix[]" value="{{ $docType->id }}"
-                                               class="rounded border-surface-dim text-amber-500 focus:ring-amber-500/30"
+                                    <label class="group flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-surface-dim/70 bg-surface-container-lowest px-3 py-2 transition
+                                                  hover:border-amber-400/70 hover:bg-surface-container
+                                                  has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50/80 has-[:checked]:shadow-sm
+                                                  dark:border-gray-600 dark:bg-gray-800/50 dark:hover:border-gray-500
+                                                  dark:has-[:checked]:border-amber-500/70 dark:has-[:checked]:bg-amber-900/20">
+                                        <input type="checkbox" name="docs_to_fix[]" value="{{ $docType->id }}" data-doc
+                                               class="h-4 w-4 shrink-0 cursor-pointer rounded border-surface-dim text-amber-500 focus:ring-2 focus:ring-amber-500/30"
                                                {{ in_array($docType->id, old('docs_to_fix', [])) ? 'checked' : '' }}>
-                                        <span class="flex-1">{{ $docType->name }}</span>
+                                        <span class="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-surface-container text-secondary transition
+                                                     group-has-[:checked]:bg-amber-100 group-has-[:checked]:text-amber-700
+                                                     dark:bg-gray-700 dark:text-gray-300 dark:group-has-[:checked]:bg-amber-900/50 dark:group-has-[:checked]:text-amber-300"
+                                              aria-hidden="true">
+                                            <span class="material-symbols-outlined text-sm">description</span>
+                                        </span>
+                                        <span class="flex-1 text-xs font-semibold text-on-surface dark:text-gray-200">{{ $docType->name }}</span>
                                         @if ($uploadedDocs->has($docType->id))
                                             <span class="text-[10px] rounded-full bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-blue-700 dark:text-blue-300 font-bold whitespace-nowrap">{{ __('prevention.uploaded_chip') }}</span>
                                         @else
@@ -385,10 +442,15 @@
                             </div>
                         @endif
 
-                        <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                        {{-- ── Submit — disabled until at least one item is picked ── --}}
+                        <button type="submit" :disabled="picked === 0"
+                            class="mt-4 w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-5 rounded-lg transition-colors shadow-sm
+                                   disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber-500">
                             <span class="material-symbols-outlined text-base" aria-hidden="true">send</span>
                             {{ __('prevention.send_correction') }}
                         </button>
+                        <p class="mt-1.5 text-center text-[10px] text-secondary dark:text-gray-400"
+                           x-show="picked === 0" x-cloak role="status">{{ __('prevention.correction_empty') }}</p>
                     </form>
                 </div>
                 @endunless
@@ -464,7 +526,7 @@
                     <div class="sm:col-span-3">
                         <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('prevention.note_for_applicant') }} <span class="font-normal normal-case">{{ __('prevention.note_optional_convocation') }}</span></label>
                         <x-admin.bilingual-note name="note" :rows="2"
-                            placeholder-fr="{{ __('prevention.visit_instructions_placeholder') }}" />
+                            placeholder-key="prevention.visit_instructions_placeholder" />
                     </div>
                     <button type="submit" class="sm:col-span-3 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
                         <span class="material-symbols-outlined text-base" aria-hidden="true">calendar_add_on</span>
@@ -599,7 +661,7 @@
                             <div class="sm:col-span-2">
                                 <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('prevention.note_for_applicant') }} <span class="font-normal normal-case">{{ __('prevention.optional') }}</span></label>
                                 <x-admin.bilingual-note name="note" :rows="2"
-                                    placeholder-fr="{{ __('prevention.new_visit_note_placeholder') }}" />
+                                    placeholder-key="prevention.new_visit_note_placeholder" />
                             </div>
                             <p class="sm:col-span-2 text-[11px] text-secondary flex items-start gap-1.5">
                                 <span class="material-symbols-outlined text-sm mt-px" aria-hidden="true">location_on</span>
@@ -1155,7 +1217,7 @@
 
                             @if ($cert->note)
                                 <div class="rounded-lg border border-surface-dim bg-surface-container px-2.5 py-2 dark:bg-gray-700/30">
-                                    <p class="mb-0.5 text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.internal_note_not_visible') }}</p>
+                                    <p class="mb-0.5 text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issue_note_label') }} — {{ __('prevention.visible_short') }}</p>
                                     <p class="whitespace-pre-line text-xs text-secondary dark:text-gray-300">{{ $cert->note }}</p>
                                 </div>
                             @endif
@@ -1281,12 +1343,33 @@
                                      x-data="{
                                         method: '{{ old('delivery_method', $d->delivery_method ?? 'pickup') }}',
                                         gov: {{ old('governorate_id', $d->governorate_id) ?? 'null' }},
-                                        del: {{ old('delegation_id') ? old('delegation_id') : 'null' }},
+                                        del: {{ old('delegation_id', $d->delegation_id) ?? 'null' }},
                                         map: {{ \Illuminate\Support\Js::from($governorates
                                             ->mapWithKeys(fn ($g) => [
-                                                $g->id => ['name' => $g->name_fr ?? $g->name_ar, 'delegations' => $g->delegations->map(fn ($del) => ['id' => $del->id, 'name' => $del->name_fr ?? $del->name_ar])->values()->all()],
+                                                $g->id => [
+                                                    'name'   => $g->name_fr ?? $g->name_ar,
+                                                    // office details (address/phone/hours) — shown to the applicant on the pickup page
+                                                    'office' => ['address' => $g->office_address, 'phone' => $g->office_phone, 'hours' => $g->office_hours],
+                                                    'delegations' => $g->delegations->map(fn ($del) => [
+                                                        'id'     => $del->id,
+                                                        'name'   => $del->name_fr ?? $del->name_ar,
+                                                        'office' => ['address' => $del->office_address, 'phone' => $del->office_phone, 'hours' => $del->office_hours],
+                                                    ])->values()->all(),
+                                                ],
                                             ])
-                                            ->toArray()) }}
+                                            ->toArray()) }},
+                                        // What the applicant will see as the pickup place —
+                                        // delegation office when set, otherwise the governorate office.
+                                        get pickedOffice() {
+                                            if (! this.gov) return null;
+                                            const entry = this.map[this.gov] || {};
+                                            if (this.del) {
+                                                const del = (entry.delegations || []).find(d => String(d.id) === String(this.del));
+                                                if (del?.office?.address || del?.office?.phone || del?.office?.hours) return { office: del.office, name: del.name };
+                                            }
+                                            if (entry.office?.address || entry.office?.phone || entry.office?.hours) return { office: entry.office, name: entry.name };
+                                            return null;
+                                        },
                                      }">
 
                                     {{-- Mode de remise — digital annoncé mais pas actif --}}
@@ -1318,10 +1401,13 @@
                                     <div x-show="method === 'pickup'" x-cloak>
                                         <div>
                                             <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.gouvernorat') }} <span class="text-red-500">*</span></label>
-                                            <select name="governorate_id" :required="method === 'pickup'" x-model="gov" class="w-full text-sm">
+                                            <select name="governorate_id" :required="method === 'pickup'" x-model="gov"
+                                                    x-on:change="if (!(map[gov]?.delegations || []).some(d => String(d.id) === String(del))) del = ''"
+                                                    class="w-full text-sm">
+                                                {{-- :selected keeps the dossier/certificate place highlighted even before Alpine happens --}}
                                                 <option value="">{{ __('prevention.select_gouvernorat') }}</option>
                                                 <template x-for="(entry, govId) in map" :key="govId">
-                                                    <option :value="govId" x-text="entry.name"></option>
+                                                    <option :value="govId" :selected="String(govId) === String(gov)" x-text="entry.name"></option>
                                                 </template>
                                             </select>
                                         </div>
@@ -1330,9 +1416,40 @@
                                             <select name="delegation_id" x-model="del" class="w-full text-sm">
                                                 <option value="">{{ __('prevention.all_delegations') }}</option>
                                                 <template x-for="dele in (map[gov] ? map[gov].delegations : [])" :key="dele.id">
-                                                    <option :value="dele.id" x-text="dele.name"></option>
+                                                    <option :value="dele.id" :selected="String(dele.id) === String(del)" x-text="dele.name"></option>
                                                 </template>
                                             </select>
+                                        </div>
+
+                                        {{-- Live preview: exactly what the applicant will read on their pickup page --}}
+                                        <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-800/40 dark:bg-amber-900/10 animate-in fade-in duration-200">
+                                            <template x-if="pickedOffice">
+                                                <div>
+                                                    <p class="mb-1 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                                                        <span class="material-symbols-outlined text-sm" aria-hidden="true">storefront</span>
+                                                        {{ __('prevention.pickup_preview_title') }} —
+                                                        <span class="normal-case tracking-normal" x-text="pickedOffice.name"></span>
+                                                    </p>
+                                                    <div class="grid grid-cols-1 gap-1 text-[11px] text-amber-900 dark:text-amber-100 sm:grid-cols-2">
+                                                        <span x-show="pickedOffice.office.address" class="flex items-start gap-1.5 min-w-0">
+                                                            <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">location_on</span>
+                                                            <span class="min-w-0"><span class="block text-secondary dark:text-amber-300/70 text-[9px] uppercase font-bold tracking-wider">{{ __('admin.office_address') }}</span><span x-text="pickedOffice.office.address"></span></span>
+                                                        </span>
+                                                        <span x-show="pickedOffice.office.phone" class="flex items-start gap-1.5 min-w-0">
+                                                            <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">call</span>
+                                                            <span class="min-w-0"><span class="block text-secondary dark:text-amber-300/70 text-[9px] uppercase font-bold tracking-wider">{{ __('admin.office_phone') }}</span><span class="font-mono font-bold" dir="ltr" x-text="pickedOffice.office.phone"></span></span>
+                                                        </span>
+                                                        <span x-show="pickedOffice.office.hours" class="flex items-start gap-1.5 min-w-0 sm:col-span-2">
+                                                            <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">schedule</span>
+                                                            <span class="min-w-0"><span class="block text-secondary dark:text-amber-300/70 text-[9px] uppercase font-bold tracking-wider">{{ __('admin.office_hours') }}</span><span x-text="pickedOffice.office.hours"></span></span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                            <p x-show="!pickedOffice" class="flex items-start gap-1.5 text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+                                                <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">info</span>
+                                                {{ __('prevention.office_no_details') }}
+                                            </p>
                                         </div>
                                     </div>
 
@@ -1369,7 +1486,7 @@
                                             <input type="date" name="valid_until" min="{{ date('Y-m-d') }}" value="{{ old('valid_until') }}" class="w-full text-sm">
                                         </div>
                                         <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.internal_note') }} <span class="font-normal normal-case">{{ __('prevention.not_visible_short') }}</span></label>
+                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issue_note_label') }} <span class="font-normal normal-case text-primary">{{ __('prevention.visible_short') }}</span></label>
                                             <x-admin.bilingual-note name="note" :rows="2" class="mt-1" />
                                         </div>
                                     </div>
@@ -1692,7 +1809,7 @@
                 @csrf
                 <label class="block text-xs font-semibold text-red-800 dark:text-red-200 mb-1.5">{{ __('prevention.cancellation_reason') }} <span class="text-red-500">*</span></label>
                 <x-admin.bilingual-note name="admin_note" :rows="3" required
-                    placeholder-fr="{{ __('prevention.cancel_reason_placeholder') }}" />
+                    placeholder-key="prevention.cancel_reason_placeholder" />
                 <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
                     <span class="material-symbols-outlined text-base" aria-hidden="true">cancel</span>
                     {{ __('prevention.confirm_cancellation') }}

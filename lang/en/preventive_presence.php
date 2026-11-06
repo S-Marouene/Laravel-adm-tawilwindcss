@@ -122,4 +122,8 @@ return [
     'service_team' => 'Assigned unit',
     'service_agents' => 'Number of agents',
     'service_note' => 'Notes',
+
+    // Placeholders bilingues des notes d'administration
+    'note_fix_placeholder'     => 'Describe what needs to be fixed (e.g. missing document, wrong file, incorrect data)…',
+    'note_cancel_placeholder'  => 'Explain why this request is being cancelled…',
 ];

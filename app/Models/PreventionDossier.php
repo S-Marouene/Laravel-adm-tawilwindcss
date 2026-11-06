@@ -190,6 +190,25 @@ class PreventionDossier extends Model
         return $this->delivery_method !== null;
     }
 
+    public function isPickup(): bool  { return $this->delivery_method === self::DELIVERY_PICKUP; }
+    public function isPost(): bool    { return $this->delivery_method === self::DELIVERY_POST; }
+    public function isDigital(): bool { return $this->delivery_method === self::DELIVERY_DIGITAL; }
+
+    /**
+     * Presentation pair for a delivery method: translation key + Material icon.
+     * Used by the "chosen method" card on the applicant's dossier page.
+     *
+     * @return array{0:string,1:string}
+     */
+    public static function matchDelivery(?string $method): array
+    {
+        return match ($method) {
+            self::DELIVERY_POST    => ['delivery_method_post', 'local_shipping'],
+            self::DELIVERY_DIGITAL => ['delivery_method_digital', 'download'],
+            default                => ['delivery_method_pickup', 'storefront'],
+        };
+    }
+
     /** Last RDV that was recorded (passed or failed) — used to show the fail reason */
     public function lastAppointment(): ?DossierAppointment
     {

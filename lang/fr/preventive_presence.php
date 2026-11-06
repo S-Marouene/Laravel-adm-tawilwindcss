@@ -122,4 +122,8 @@ return [
     'service_team' => 'Unité / dourie désignée',
     'service_agents' => "Nombre d'agents",
     'service_note' => 'Observations',
+
+    // Placeholders bilingues des notes d'administration
+    'note_fix_placeholder'     => 'Décrivez ce qui doit être corrigé (ex. pièce manquante, mauvais fichier, donnée incorrecte)…',
+    'note_cancel_placeholder'  => 'Expliquez pourquoi cette demande est annulée…',
 ];

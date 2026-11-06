@@ -64,6 +64,11 @@ return [
     'f_governorate'      => 'Governorate',
     'f_delegation'       => 'Delegation',
     'f_building_address' => 'Building address',
+    'f_map'              => 'Map position',
+
+    // Formulaire de correction — aide utilisateur
+    'correction_hint'     => 'The applicant will be able to edit only the items checked below, then resubmit the dossier for a new review.',
+    'correction_empty'    => 'Select at least one item to fix to enable the send button.',
     'f_building_type'    => 'Building type',
     'f_activity'         => 'Activity',
 
@@ -183,6 +188,10 @@ return [
     'cert_ref'            => 'Reference',
     'delivery'            => 'Delivery',
     'pickup_gov'          => 'Pickup gouvernorat',
+
+    // Aperçu du lieu de retrait — sélection dans la fiche d'émission (admin)
+    'pickup_preview_title' => 'Certificate pickup location',
+    'office_no_details'    => 'No office details are recorded for this location — the applicant will only see the governorate/delegation name.',
     'pickup_delegation'   => 'Pickup delegation',
     'issued_dt'           => 'Issued',
     'valid_until'         => 'Valid until',
@@ -197,6 +206,8 @@ return [
     'internal_note_not_visible' => 'Internal note (not visible to the applicant)',
     'internal_note'       => 'Internal note',
     'not_visible_short'   => '(not visible to applicant)',
+    'issue_note_label'    => 'Certificate note',
+    'visible_short'       => '(visible to the applicant)',
     'revoke_cert'         => 'Revoke this certificate',
     'revoke_warning'      => 'Deleting removes the certificate :ref; its history entry stays in the timeline. A new certificate can be issued afterwards.',
     'confirm_revoke'      => 'Revoke certificate :ref? This action cannot be undone.',

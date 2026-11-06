@@ -136,4 +136,8 @@ return [
     'incident_type_fire' => 'Incendie',
     'incident_type_property_protection' => 'Protection des biens',
     'incident_type_other' => 'Autre',
+
+    // Placeholders bilingues des notes d'administration
+    'note_fix_placeholder'     => 'Décrivez ce qui doit être corrigé (ex. pièce manquante, mauvais fichier, donnée incorrecte)…',
+    'note_cancel_placeholder'  => 'Expliquez pourquoi cette demande est annulée…',
 ];

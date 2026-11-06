@@ -114,4 +114,8 @@ return [
     'fees_info' => 'هذا الإجراء الإداري مجاني كليًا.',
     'free' => 'مجاني',
     'free_info' => 'هذا الإجراء مجاني — لا توجد أي رسوم مستحقة.',
+
+    // Placeholders bilingues des notes d'administration
+    'note_fix_placeholder'     => 'صِف ما يجب تصحيحه (مثل مستند ناقص، ملف خاطئ، بيانات غير صحيحة)…',
+    'note_cancel_placeholder'  => 'اشرح لماذا يتم إلغاء هذا الطلب…',
 ];

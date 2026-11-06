@@ -204,6 +204,7 @@ class RolePermissionSeeder extends Seeder
             [
                 'name' => 'Citoyen Test',
                 'password' => bcrypt('password'),
+
                 'email_verified_at' => now(),
             ]
         );

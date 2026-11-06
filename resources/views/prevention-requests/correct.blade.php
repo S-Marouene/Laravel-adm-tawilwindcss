@@ -26,6 +26,8 @@ $fieldLabels = [
     'building_address'     => __('prevention_request.field_address'),
     'building_type_id'     => __('prevention_request.field_building'),
     'building_activity_id' => __('prevention_request.field_activity'),
+    // Map position (latitude/longitude) — may be flagged on its own, without the address
+    'map_position'         => __('prevention_request.field_map'),
 ];
 
 $hasFields = ! empty($fieldsToFix);
@@ -174,11 +176,15 @@ $hasDocs   = $documentTypes->isNotEmpty();
                         ['building_address',     $dossier->building_address,                                             $fieldLabels['building_address']],
                         ['building_type_id',     $dossier->buildingType?->name,                                          $fieldLabels['building_type_id']],
                         ['building_activity_id', $dossier->buildingActivity?->name ?? $dossier->activity_other,         $fieldLabels['building_activity_id']],
+                        // Coordinates as "lat, lng" — LTR even in the RTL locale
+                        ['map_position', ($dossier->latitude !== null && $dossier->longitude !== null)
+                            ? number_format((float) $dossier->latitude, 6, '.', '').', '.number_format((float) $dossier->longitude, 6, '.', '')
+                            : null, $fieldLabels['map_position']],
                     ] as [$key, $val, $label])
                         @if (filled($val) && ! $isField($key))
                         <div class="py-2.5">
                             <dt class="text-[10px] uppercase tracking-wide font-bold text-secondary dark:text-gray-500">{{ $label }}</dt>
-                            <dd class="text-xs font-semibold text-on-surface dark:text-gray-200 mt-0.5">{{ $val }}</dd>
+                            <dd class="text-xs font-semibold text-on-surface dark:text-gray-200 mt-0.5 {{ $key === 'map_position' ? 'font-mono' : '' }}" {{ $key === 'map_position' ? 'dir="ltr"' : '' }}>{{ $val }}</dd>
                         </div>
                         @endif
                     @endforeach
@@ -255,7 +261,21 @@ $hasDocs   = $documentTypes->isNotEmpty();
                         @include('prevention-requests.partials.map-picker', [
                             'initialLat' => old('latitude',  $dossier->latitude  ?? ''),
                             'initialLng' => old('longitude', $dossier->longitude ?? ''),
-                            'mapId'       => 'map-picker-correct',
+                            'mapId'      => 'map-picker-correct',
+                        ])
+                    </div>
+                    @endif
+
+                    {{-- ── Map position flagged on its own (address not selected) ── --}}
+                    @if ($isField('map_position') && ! $isField('building_address'))
+                    <div class="md:col-span-2 space-y-1.5">
+                        <label class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
+                            {{ $fieldLabels['map_position'] }} <span class="text-primary" aria-hidden="true">*</span>
+                        </label>
+                        @include('prevention-requests.partials.map-picker', [
+                            'initialLat' => old('latitude',  $dossier->latitude  ?? ''),
+                            'initialLng' => old('longitude', $dossier->longitude ?? ''),
+                            'mapId'      => 'map-picker-correct-position',
                         ])
                     </div>
                     @endif

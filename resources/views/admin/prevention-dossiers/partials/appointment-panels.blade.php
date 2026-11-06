@@ -17,7 +17,7 @@
                 </label>
             </div>
             <x-admin.bilingual-note name="note" :rows="2"
-                placeholder-fr="{{ __('prevention.inspector_note_placeholder') }}" />
+                placeholder-key="prevention.inspector_note_placeholder" />
             <button type="submit" class="mt-2 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
                 <span class="material-symbols-outlined text-sm" aria-hidden="true">save</span> {{ __('prevention.save_result') }}
             </button>
@@ -37,7 +37,7 @@
             @csrf
             <label class="block text-[10px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1">{{ __('prevention.cancellation_reason') }} <span class="text-red-500">*</span></label>
             <x-admin.bilingual-note name="note" :rows="2" required class="mt-1"
-                placeholder-fr="{{ __('prevention.cancel_panel_placeholder') }}" />
+                placeholder-key="prevention.cancel_panel_placeholder" />
             <button type="submit" class="mt-2 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
                 <span class="material-symbols-outlined text-sm" aria-hidden="true">cancel</span> {{ __('prevention.confirm_cancellation') }}
             </button>

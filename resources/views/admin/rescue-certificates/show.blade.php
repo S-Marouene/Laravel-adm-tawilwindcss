@@ -376,7 +376,8 @@
                         <form method="POST" action="{{ route('admin.rescue-certificates.correction', $certificate) }}">
                             @csrf
                             <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1.5">Note to applicant <span class="text-red-500">*</span></label>
-                            <x-admin.bilingual-note name="admin_note" :rows="3" required placeholder-fr="Describe what needs to be fixed (e.g. missing document, wrong file, incorrect data)..." />
+                            <x-admin.bilingual-note name="admin_note" :rows="3" required
+                                placeholder-key="rescue_certificate.note_fix_placeholder" />
                             <p class="mt-1 text-xs text-outline dark:text-gray-500">This note will be shown to the applicant with a "Fix &amp; Resubmit" button.</p>
                             <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500/40">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
@@ -408,7 +409,8 @@
                               data-confirm-focus-cancel="false">
                             @csrf
                             <label class="block text-xs font-semibold text-secondary dark:text-gray-400 mb-1.5">Cancellation reason <span class="text-red-500">*</span></label>
-                            <x-admin.bilingual-note name="admin_note" :rows="3" required placeholder-fr="Explain why this request is being cancelled..." />
+                            <x-admin.bilingual-note name="admin_note" :rows="3" required
+                                placeholder-key="rescue_certificate.note_cancel_placeholder" />
                             <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/40">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 Confirm Cancellation

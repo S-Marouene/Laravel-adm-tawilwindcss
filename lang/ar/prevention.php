@@ -64,6 +64,11 @@ return [
     'f_governorate'      => 'الولاية',
     'f_delegation'       => 'المعتمدية',
     'f_building_address' => 'عنوان المبنى',
+    'f_map'              => 'الموقع على الخريطة',
+
+    // Formulaire de correction — aide utilisateur
+    'correction_hint'     => 'لن يتمكن مقدّم الطلب من تعديل إلا العناصر المحددة أدناه، ثم يعيد إرسال الملف للمراجعة.',
+    'correction_empty'    => 'حدّد عنصرًا واحدًا على الأقل لتفعيل زر الإرسال.',
     'f_building_type'    => 'نوع المبنى',
     'f_activity'         => 'النشاط',
 
@@ -183,6 +188,10 @@ return [
     'cert_ref'            => 'المرجع',
     'delivery'            => 'التسليم',
     'pickup_gov'          => 'ولاية الاستلام',
+
+    // Aperçu du lieu de retrait — sélection dans la fiche d'émission (admin)
+    'pickup_preview_title' => 'مكان استلام الشهادة',
+    'office_no_details'    => 'لا توجد معلومات مكتب مسجّلة لهذا المكان — سيرى مقدّم الطلب اسم الولاية/المعتمدية فقط.',
     'pickup_delegation'   => 'معتمدية الاستلام',
     'issued_dt'           => 'تاريخ الإصدار',
     'valid_until'         => 'صالحة حتى',
@@ -197,6 +206,8 @@ return [
     'internal_note_not_visible' => 'ملاحظة داخلية (غير مرئية لمقدم الطلب)',
     'internal_note'       => 'ملاحظة داخلية',
     'not_visible_short'   => '(غير مرئية لمقدم الطلب)',
+    'issue_note_label'    => 'ملاحظة الشهادة',
+    'visible_short'       => '(تظهر لمقدّم الطلب)',
     'revoke_cert'         => 'إلغاء هذه الشهادة',
     'revoke_warning'      => 'حذف الشهادة :ref; يبقى سجلها في التسلسل. يمكن إصدار شهادة جديدة لاحقاً.',
     'confirm_revoke'      => 'إلغاء الشهادة :ref؟ لا يمكن الرجوع عن هذا الإجراء.',

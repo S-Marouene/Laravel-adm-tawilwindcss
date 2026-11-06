@@ -29,8 +29,13 @@ trait HasTranslations
      * Bilingual attribute: get = localized string (current app locale with
      * fallback), set = accepts {fr, ar} array (or a legacy string) and
      * packs it into storable JSON.
+     *
+     * The parameter defaults to null on purpose: Laravel's accessor discovery
+     * (HasAttributes::getAttributeMarkedMutatorMethods) calls every
+     * Attribute-returning method with NO arguments during its reflection scan,
+     * so a required parameter would crash model hydration/serialization.
      */
-    protected function translated(string $field): Attribute
+    protected function translated(?string $field = null): Attribute
     {
         return Attribute::make(
             get: fn ($value) => self::pickTranslation($value),

@@ -136,4 +136,8 @@ return [
     'incident_type_fire' => 'Fire',
     'incident_type_property_protection' => 'Property protection',
     'incident_type_other' => 'Other',
+
+    // Placeholders bilingues des notes d'administration
+    'note_fix_placeholder'     => 'Describe what needs to be fixed (e.g. missing document, wrong file, incorrect data)…',
+    'note_cancel_placeholder'  => 'Explain why this request is being cancelled…',
 ];

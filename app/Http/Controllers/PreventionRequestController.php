@@ -786,6 +786,14 @@ class PreventionRequestController extends Controller
             $rules['building_address'] = ['required', 'string', 'max:500'];
             $rules['latitude']         = ['nullable', 'numeric', 'between:29.9,37.8'];
             $rules['longitude']        = ['nullable', 'numeric', 'between:7.2,11.9'];
+        } else {
+            // Address alone carries its own optional map pin; when the map
+            // position is targeted explicitly the admin flagged it on its
+            // own — a pin is then expected (matches the required indicator).
+            if (in_array('map_position', $fieldsToFix)) {
+                $rules['latitude']  = ['required', 'numeric', 'between:29.9,37.8'];
+                $rules['longitude'] = ['required', 'numeric', 'between:7.2,11.9'];
+            }
         }
         if (in_array('building_type_id', $fieldsToFix)) {
             $rules['building_type_id'] = ['required', 'integer', 'exists:building_types,id'];
@@ -813,6 +821,10 @@ class PreventionRequestController extends Controller
             $updates['building_address'] = $validated['building_address'];
             $updates['latitude']          = $validated['latitude'] ?? null;
             $updates['longitude']          = $validated['longitude'] ?? null;
+        } elseif (in_array('map_position', $fieldsToFix)) {
+            // Position only: repin the building on the map (required in this branch).
+            $updates['latitude']  = $validated['latitude'];
+            $updates['longitude'] = $validated['longitude'];
         }
         if (in_array('building_type_id', $fieldsToFix))   $updates['building_type_id'] = $validated['building_type_id'];
         if (in_array('building_activity_id', $fieldsToFix)) {

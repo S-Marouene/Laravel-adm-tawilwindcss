@@ -922,17 +922,21 @@ Alpine.data('confirmManager', () => ({
 }));
 
 /**
- * Bilingual Translator — real-time auto-translation between the two
- * note fields (Français <-> العربية) while the admin types, so both
- * versions of an administration note are always available.
+ * Bilingual Translator — Google-Translate-style ONE-WAY auto-translation
+ * between the two note fields (Français <-> العربية).
  *
- * How it plays with manual edits ("fix any issue of the auto"):
- *  - Typing in one field re-translates into the counterpart after a
- *    short debounce, but ONLY if the counterpart is empty or was itself
- *    produced by a previous auto-translation — a hand-written translation
- *    is never overwritten.
- *  - Editing a field clears its "auto" badge: it becomes the manual
- *    reference of that language.
+ *  - There is always exactly ONE driving language (`src`): the field the
+ *    admin starts typing in, or the one picked with the swap button.
+ *    Every keystroke in the source re-translates the counterpart after a
+ *    short debounce — the target is freely rewritten, exactly how Google
+ *    Translate updates its right-hand box on every edit.
+ *  - Editing the TARGET is a free fix (it survives until the next source
+ *    keystroke) but never flips the direction and never blocks the flow —
+ *    the old "manual lock" that froze everything after a small tweak is
+ *    gone by design.
+ *  - The pause button (⏸) stops auto-translation entirely: both fields
+ *    become plain manual textareas. Resume (▶) waits for the next
+ *    keystroke to re-sync.
  *  - If the translation service is unreachable, the admin simply types
  *    the note by hand (nothing is blocked).
  */
@@ -940,10 +944,10 @@ Alpine.data('bilingualTranslator', () => ({
     url: '',         // proxy endpoint, read from data-translate-url in init()
     frText: '',
     arText: '',
-    frAuto: false,   // current French text was auto-translated from Arabic
-    arAuto: false,   // current Arabic text was auto-translated from French
-    busyFr: false,   // French side is being auto-filled
-    busyAr: false,   // Arabic side is being auto-filled
+    src: null,       // 'fr' | 'ar' — the driving language; null until first choice
+    paused: false,   // auto-translation stopped by the admin (manual mode)
+    busyFr: false,   // French side is being auto-filled (from Arabic)
+    busyAr: false,   // Arabic side is being auto-filled (from French)
     frError: false,  // last auto-fill attempt failed (service unavailable)
     arError: false,
     timers: { fr: null, ar: null },
@@ -955,23 +959,31 @@ Alpine.data('bilingualTranslator', () => ({
         this.frText = this.$refs.fr?.value ?? '';
         this.arText = this.$refs.ar?.value ?? '';
 
-        // After a failed validation, one side may come back filled and the
-        // other empty: auto-fill the missing translation once.
-        if (this.frText.trim() !== '' && this.arText.trim() === '') {
-            this.queue('fr', 'ar', 400);
-        } else if (this.arText.trim() !== '' && this.frText.trim() === '') {
-            this.queue('ar', 'fr', 400);
+        // Pick the initial direction: the side that already has content
+        // drives, and after a failed validation the empty side gets
+        // auto-filled (Google Translate restores its state the same way).
+        if (this.frText.trim() !== '') {
+            this.src = 'fr';
+            if (this.arText.trim() === '') this.queue('fr', 'ar', 400);
+        } else if (this.arText.trim() !== '') {
+            this.src = 'ar';
+            if (this.frText.trim() === '') this.queue('ar', 'fr', 400);
         }
     },
 
-    /** x-on:input on a textarea — mark manual edit + schedule a sync */
+    /** x-on:input on a textarea */
     changed(from, value) {
         this[from + 'Text'] = value;
-        this[from + 'Auto'] = false;
 
-        const to = from === 'fr' ? 'ar' : 'fr';
+        // The first keystroke ever decides the direction; afterwards typing
+        // in the target is only a free fix — the swap button is what flips
+        // the direction, like the ⟲ arrows on Google Translate.
+        this.src ??= from;
+
+        if (this.paused || this.src !== from) return; // target edits never trigger
+
         // Live while typing: recentre the debounce timer on every keystroke.
-        this.queue(from, to, 650);
+        this.queue(from, from === 'fr' ? 'ar' : 'fr', 650);
     },
 
     queue(from, to, delay) {
@@ -979,13 +991,50 @@ Alpine.data('bilingualTranslator', () => ({
         this.timers[from] = setTimeout(() => this.sync(from, to), delay);
     },
 
+    /** ⟲ — flip the driving language and re-sync the new target right away */
+    swap() {
+        clearTimeout(this.timers.fr);
+        clearTimeout(this.timers.ar);
+        this.paused = false; // swapping resumes auto-translation
+
+        // No direction chosen yet: the side that already has content drives.
+        this.src = this.src === 'fr' ? 'ar'
+                 : this.src === 'ar' ? 'fr'
+                 : (this.frText.trim() !== '' ? 'ar' : 'fr');
+
+        this.seq++;  // any in-flight response from the old direction is stale
+        const to = this.src === 'fr' ? 'ar' : 'fr';
+        this.queue(this.src, to, 200);
+    },
+
+    /** ⏸ / ▶ — stop or resume auto-translation (manual mode in between) */
+    togglePause() {
+        this.paused = !this.paused;
+
+        if (this.paused) {
+            // Drop any pending debounced sync; in-flight responses are
+            // discarded by the seq check inside sync().
+            clearTimeout(this.timers.fr);
+            clearTimeout(this.timers.ar);
+            this.busyFr = false;
+            this.busyAr = false;
+        } else if (this.src) {
+            // On resume, only fill an EMPTY target immediately — otherwise
+            // the next source keystroke takes care of it.
+            const to = this.src === 'fr' ? 'ar' : 'fr';
+            if (this[to + 'Text'].trim() === '' && this[this.src + 'Text'].trim() !== '') {
+                this.queue(this.src, to, 250);
+            }
+        }
+    },
+
     /** Translate `from` → `to` (debounced, race-safe, cache-friendly) */
     async sync(from, to) {
         const text = this[from + 'Text'].trim();
 
-        // A hand-written counterpart is never overwritten.
-        const targetManual = this[to + 'Text'].trim() !== '' && !this[to + 'Auto'];
-        if (text === '' || targetManual) return;
+        // The target is ALWAYS rewritten (Google Translate behaviour):
+        // only the source keystrokes write it, so it can never block.
+        if (text === '' || this.paused) return;
 
         const mySeq = ++this.seq;
         this[to + 'Busy'] = true;
@@ -1008,15 +1057,14 @@ Alpine.data('bilingualTranslator', () => ({
             const data  = await res.json();
             const out   = (data.translation || '').trim();
 
-            // A newer keystroke/sync already superseded this response.
-            if (mySeq !== this.seq) return;
+            // A newer keystroke / paused state already superseded this response.
+            if (mySeq !== this.seq || this.paused) return;
 
             this[to + 'Busy'] = false;
 
             if (out !== '' && out !== text) {
                 this.$refs[to].value = out;   // update the DOM textarea
                 this[to + 'Text']    = out;
-                this[to + 'Auto']    = true;
             }
         } catch {
             if (mySeq === this.seq) {

@@ -153,7 +153,7 @@ class PreventionDossierController extends Controller
             'admin_note.ar' => ['required', 'string', 'max:2000'],
             // Which dossier fields need fixing (e.g. 'phone', 'cin', 'building_type_id'…)
             'fields_to_fix' => ['nullable', 'array'],
-            'fields_to_fix.*' => ['string', 'in:cin,nom_prenom,phone,governorate_id,delegation_id,building_address,building_type_id,building_activity_id'],
+            'fields_to_fix.*' => ['string', 'in:cin,nom_prenom,phone,governorate_id,delegation_id,building_address,building_type_id,building_activity_id,map_position'],
             // Which document types need a new upload (array of document_type_id integers)
             'docs_to_fix'   => ['nullable', 'array'],
             'docs_to_fix.*' => ['integer', 'exists:document_types,id'],

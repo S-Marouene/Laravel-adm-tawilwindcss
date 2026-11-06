@@ -66,6 +66,11 @@ return [
     'f_building_address' => 'Adresse du bâtiment',
     'f_building_type'    => 'Type de bâtiment',
     'f_activity'         => 'Activité',
+    'f_map'              => 'Position sur la carte',
+
+    // Formulaire de correction — aide utilisateur
+    'correction_hint'     => 'Le demandeur ne pourra modifier que les éléments cochés ci-dessous, puis il renverra le dossier pour un nouvel examen.',
+    'correction_empty'    => 'Sélectionnez au moins un élément à corriger pour activer l\'envoi.',
 
     // ⚠ Annulation du dossier (les deux bandes)
     'danger_zone_title'   => 'Zone dangereuse',
@@ -183,6 +188,10 @@ return [
     'cert_ref'            => 'Référence',
     'delivery'            => 'Remise',
     'pickup_gov'          => 'Gouvernorat de retrait',
+
+    // Aperçu du lieu de retrait — sélection dans la fiche d'émission (admin)
+    'pickup_preview_title' => 'Lieu de retrait du certificat',
+    'office_no_details'    => 'Aucune fiche bureau enregistrée pour ce lieu — le demandeur ne verra que le nom du gouvernorat/délégation.',
     'pickup_delegation'   => 'Délégation de retrait',
     'issued_dt'           => 'Émis',
     'valid_until'         => "Valable jusqu'au",
@@ -197,6 +206,8 @@ return [
     'internal_note_not_visible' => 'Note interne (non visible par le demandeur)',
     'internal_note'       => 'Note interne',
     'not_visible_short'   => '(non visible par le demandeur)',
+    'issue_note_label'    => 'Note du certificat',
+    'visible_short'       => '(visible par le demandeur)',
     'revoke_cert'         => 'Révoquer ce certificat',
     'revoke_warning'      => 'La suppression du certificat :ref ; son entrée d\'historique reste dans la chronologie. Un nouveau certificat pourra être émis ensuite.',
     'confirm_revoke'      => 'Révoquer le certificat :ref ? Action irréversible.',
