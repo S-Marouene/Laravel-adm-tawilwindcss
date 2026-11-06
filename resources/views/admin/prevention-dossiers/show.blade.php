@@ -686,6 +686,462 @@
         </section>
         @endif
 
+        {{-- ── ACTE 4 : Émission du certificat — formulaire de livraison ── --}}
+        @can('manage prevention-dossiers')
+        @if ($status === 'waiting_delivery' && ! $cert)
+        <section id="act-deliver-cert" class="bg-surface-container-lowest border border-red-200 dark:border-red-800/40 rounded-lg shadow-sm overflow-hidden" x-data="{ open: true }">
+            <div class="border-s-4 border-s-red-600 p-5">
+                <div class="flex flex-wrap items-start gap-3.5 mb-4">
+                    <div class="w-10 h-10 rounded bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">workspace_premium</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('prevention.cert_title') }}</h2>
+                            <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">{{ __('prevention.action_required') }}</span>
+                        </div>
+                        <p class="text-body-sm text-secondary mt-1">{{ __('prevention.not_issued_yet') }}</p>
+                    </div>
+                    <button type="button" @click="open = !open" class="text-secondary hover:text-on-surface transition-colors" :aria-expanded="open">
+                        <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                </div>
+
+                @if ($d->delivery_method)
+                    <div class="mb-4 flex items-start gap-2 rounded-lg border border-red-200 dark:border-red-800/30 bg-red-50/60 dark:bg-red-900/10 px-3 py-2 text-xs text-secondary">
+                        <span class="material-symbols-outlined text-base text-red-600 dark:text-red-400 mt-px shrink-0" aria-hidden="true">touch_app</span>
+                        <span>{{ __('prevention.applicant_chose') }} <strong class="text-on-surface">{{ ['pickup' => __('prevention.pickup_office'), 'post' => __('prevention.poste_tunisienne'), 'digital' => __('prevention.digital_download')][$d->delivery_method] ?? ucfirst($d->delivery_method) }}</strong> {{ __('prevention.pre_selected_below') }}</span>
+                    </div>
+                @endif
+
+                <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
+                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.store', $d) }}">
+                        @csrf
+                        <div class="space-y-3"
+                             x-data="{
+                                method: '{{ old('delivery_method', ($d->delivery_method === 'post' ? 'pickup' : ($d->delivery_method ?? 'pickup'))) }}',
+                                gov: {{ old('governorate_id', $d->governorate_id) ?? 'null' }},
+                                del: {{ old('delegation_id', $d->delegation_id) ?? 'null' }},
+                                map: {{ \Illuminate\Support\Js::from($governorates
+                                    ->mapWithKeys(fn ($g) => [
+                                        $g->id => [
+                                            'name'   => $g->name_fr ?? $g->name_ar,
+                                            'office' => ['address' => $g->office_address, 'phone' => $g->office_phone, 'hours' => $g->office_hours],
+                                            'delegations' => $g->delegations->map(fn ($del) => [
+                                                'id'     => $del->id,
+                                                'name'   => $del->name_fr ?? $del->name_ar,
+                                                'office' => ['address' => $del->office_address, 'phone' => $del->office_phone, 'hours' => $del->office_hours],
+                                            ])->values()->all(),
+                                        ],
+                                    ])
+                                    ->toArray()) }},
+                                get pickedOffice() {
+                                    if (! this.gov) return null;
+                                    const entry = this.map[this.gov] || {};
+                                    if (this.del) {
+                                        const del = (entry.delegations || []).find(d => String(d.id) === String(this.del));
+                                        if (del?.office?.address || del?.office?.phone || del?.office?.hours) return { office: del.office, name: del.name };
+                                    }
+                                    if (entry.office?.address || entry.office?.phone || entry.office?.hours) return { office: entry.office, name: entry.name };
+                                    return null;
+                                },
+                             }">
+
+                            {{-- Mode de remise — Poste Tunisienne désactivée --}}
+                            <div class="overflow-hidden rounded-lg border border-surface-dim dark:border-gray-600">
+                                <p class="px-3 pb-1.5 pt-2.5 text-[10px] font-extrabold uppercase tracking-wider text-secondary">{{ __('prevention.delivery_method') }}</p>
+                                <label class="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-surface-container dark:hover:bg-gray-700/40"
+                                       :class="method === 'pickup' ? 'bg-amber-50 dark:bg-amber-900/20' : ''">
+                                    <input type="radio" name="delivery_method" value="pickup" x-model="method" required class="text-amber-600">
+                                    <span class="material-symbols-outlined text-amber-600 dark:text-amber-400" aria-hidden="true">storefront</span>
+                                    <span class="flex-1 text-sm font-bold text-on-surface">{{ __('prevention.pickup_office') }}</span>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-600 text-white">{{ __('prevention.available') }}</span>
+                                </label>
+                                <div class="flex select-none items-center gap-2.5 border-t border-surface-dim px-3 py-2 opacity-55 dark:border-gray-600">
+                                    <input type="radio" disabled class="text-gray-400">
+                                    <span class="material-symbols-outlined text-secondary" aria-hidden="true">local_shipping</span>
+                                    <span class="flex-1 text-sm font-bold text-outline dark:text-gray-500">{{ __('prevention.poste_tunisienne') }}</span>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">{{ __('prevention.coming_soon') }}</span>
+                                </div>
+                                <div class="flex select-none items-center gap-2.5 border-t border-surface-dim px-3 py-2 opacity-55 dark:border-gray-600">
+                                    <input type="radio" disabled class="text-gray-400">
+                                    <span class="material-symbols-outlined text-secondary" aria-hidden="true">download</span>
+                                    <span class="flex-1 text-sm font-bold text-outline dark:text-gray-500">{{ __('prevention.digital_download') }}</span>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">{{ __('prevention.coming_soon') }}</span>
+                                </div>
+                            </div>
+
+                            {{-- Pickup : gouvernorat + délégation --}}
+                            <div x-show="method === 'pickup'">
+                                <div>
+                                    <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.gouvernorat') }} <span class="text-red-500">*</span></label>
+                                    <select name="governorate_id" :required="method === 'pickup'" x-model="gov"
+                                            x-on:change="if (!(map[gov]?.delegations || []).some(d => String(d.id) === String(del))) del = ''"
+                                            class="w-full text-sm">
+                                        <option value="">{{ __('prevention.select_gouvernorat') }}</option>
+                                        <template x-for="(entry, govId) in map" :key="govId">
+                                            <option :value="govId" :selected="String(govId) === String(gov)" x-text="entry.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="mt-3">
+                                    <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.pickup_delegation') }} <span class="font-normal normal-case">{{ __('prevention.optional') }}</span></label>
+                                    <select name="delegation_id" x-model="del" class="w-full text-sm">
+                                        <option value="">{{ __('prevention.all_delegations') }}</option>
+                                        <template x-for="dele in (map[gov] ? map[gov].delegations : [])" :key="dele.id">
+                                            <option :value="dele.id" :selected="String(dele.id) === String(del)" x-text="dele.name"></option>
+                                        </template>
+                                    </select>
+                                    <p class="mt-1 flex items-start gap-1 text-[10px] text-secondary">
+                                        <span class="material-symbols-outlined text-xs mt-px shrink-0" aria-hidden="true">info</span>
+                                        <span x-show="!del">{{ __('prevention.delegation_empty_hint') }}</span>
+                                        <span x-show="del" x-cloak>{{ __('prevention.delegation_selected_hint') }}</span>
+                                    </p>
+                                </div>
+                                <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-800/40 dark:bg-amber-900/10 animate-in fade-in duration-200">
+                                    <template x-if="pickedOffice">
+                                        <div>
+                                            <p class="mb-1 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                                                <span class="material-symbols-outlined text-sm" aria-hidden="true">storefront</span>
+                                                {{ __('prevention.pickup_preview_title') }} —
+                                                <span class="normal-case tracking-normal" x-text="pickedOffice.name"></span>
+                                            </p>
+                                            <div class="grid grid-cols-1 gap-1 text-[11px] text-amber-900 dark:text-amber-100 sm:grid-cols-2">
+                                                <span x-show="pickedOffice.office.address" class="flex items-start gap-1.5 min-w-0">
+                                                    <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">location_on</span>
+                                                    <span class="min-w-0"><span class="block text-secondary dark:text-amber-300/70 text-[9px] uppercase font-bold tracking-wider">{{ __('admin.office_address') }}</span><span x-text="pickedOffice.office.address"></span></span>
+                                                </span>
+                                                <span x-show="pickedOffice.office.phone" class="flex items-start gap-1.5 min-w-0">
+                                                    <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">call</span>
+                                                    <span class="min-w-0"><span class="block text-secondary dark:text-amber-300/70 text-[9px] uppercase font-bold tracking-wider">{{ __('admin.office_phone') }}</span><span class="font-mono font-bold" dir="ltr" x-text="pickedOffice.office.phone"></span></span>
+                                                </span>
+                                                <span x-show="pickedOffice.office.hours" class="flex items-start gap-1.5 min-w-0 sm:col-span-2">
+                                                    <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">schedule</span>
+                                                    <span class="min-w-0"><span class="block text-secondary dark:text-amber-300/70 text-[9px] uppercase font-bold tracking-wider">{{ __('admin.office_hours') }}</span><span x-text="pickedOffice.office.hours"></span></span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <p x-show="!pickedOffice" class="flex items-start gap-1.5 text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+                                        <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">info</span>
+                                        {{ __('prevention.office_no_details') }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.valid_until') }} <span class="font-normal normal-case">{{ __('prevention.optional') }}</span></label>
+                                    <input type="date" name="valid_until" min="{{ date('Y-m-d') }}" value="{{ old('valid_until') }}" class="w-full text-sm">
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issue_note_label') }} <span class="font-normal normal-case text-primary">{{ __('prevention.visible_short') }}</span></label>
+                                    <x-admin.bilingual-note name="note" :rows="2" class="mt-1" />
+                                </div>
+                            </div>
+                            <button type="submit"
+                                class="inline-flex w-full items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 px-4 rounded transition-colors shadow-sm">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">workspace_premium</span>
+                                {{ __('prevention.confirm_issue') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+        @endif
+        @endcan
+
+        {{-- ── ACTE 5 : Certificat émis — pipeline + détails + actions + révocation ── --}}
+        @can('manage prevention-dossiers')
+        @if ($cert && ! $cert->isCollected() && ! $cert->isPostDelivered())
+        @php
+            $certSteps = $cert->isPickup()
+                ? [[__('prevention.cs_ready_office'), 'schedule_send', $cert->issued_at],
+                   [__('prevention.cs_collected'), 'check', $cert->collected_at]]
+                : [[__('prevention.cs_ready'), 'schedule_send', $cert->issued_at],
+                   [__('prevention.cs_sent_b3'), 'local_post_office', $cert->post_sent_at],
+                   [__('prevention.cs_delivered'), 'mark_email_read', $cert->post_delivered_at]];
+            $stepIdx = $cert->isPickup()
+                ? ($cert->isCollected() ? 1 : 0)
+                : match ($cert->status) {
+                    \App\Models\PreventionCertificate::STATUS_POST_SENT      => 1,
+                    \App\Models\PreventionCertificate::STATUS_POST_DELIVERED => 2,
+                    default => 0,
+                };
+            $act5Theme = match(true) {
+                $cert->isPickup() && $cert->isReady() => ['amber', 'handshake', __('prevention.mark_collected')],
+                $cert->isPickup()                    => ['amber', 'undo', __('prevention.mark_ready_uncollect')],
+                $cert->isPost() && $cert->isReady()  => ['blue', 'local_post_office', __('prevention.register_post')],
+                $cert->isPostSent()                  => ['cyan', 'mark_email_read', __('prevention.confirm_post_delivery')],
+                default                              => ['violet', 'verified', __('prevention.delivery_confirmed')],
+            };
+            [$act5Color, $act5Icon, $act5Title] = $act5Theme;
+            $act5BorderCls = match($act5Color) {
+                'amber' => 'border-amber-200 dark:border-amber-800/40',
+                'blue'  => 'border-blue-200 dark:border-blue-800/40',
+                'cyan'  => 'border-cyan-200 dark:border-cyan-800/40',
+                default => 'border-violet-200 dark:border-violet-800/40',
+            };
+            $act5BarCls = match($act5Color) {
+                'amber' => 'border-s-amber-600',
+                'blue'  => 'border-s-blue-600',
+                'cyan'  => 'border-s-cyan-600',
+                default => 'border-s-violet-600',
+            };
+            $act5IconCls = match($act5Color) {
+                'amber' => 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+                'blue'  => 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+                'cyan'  => 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300',
+                default => 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',
+            };
+            $act5BadgeCls = match($act5Color) {
+                'amber' => 'bg-amber-600 text-white',
+                'blue'  => 'bg-blue-600 text-white',
+                'cyan'  => 'bg-cyan-600 text-white',
+                default => 'bg-violet-600 text-white',
+            };
+        @endphp
+        <section id="act-cert-action" class="bg-surface-container-lowest border rounded-lg shadow-sm overflow-hidden {{ $act5BorderCls }}">
+            <div class="border-s-4 p-5 {{ $act5BarCls }}">
+
+                {{-- ── Header ── --}}
+                <div class="flex flex-wrap items-start gap-3.5 mb-4">
+                    <div class="w-10 h-10 rounded flex items-center justify-center flex-shrink-0 {{ $act5IconCls }}">
+                        <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">{{ $act5Icon }}</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('prevention.cert_title') }} — <span class="font-mono" dir="ltr">{{ $cert->reference }}</span></h2>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary">{{ $cert->isPickup() ? __('prevention.pickup_chip') : __('prevention.poste_tunisienne') }}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded {{ $certStatusCfg[1] }}">{{ $certStatusCfg[0] }}</span>
+                            </div>
+                        </div>
+                        <p class="text-body-sm text-secondary mt-1">
+                            @if ($cert->isPickup()) {{ __('prevention.pickup_workflow_short') }}
+                            @elseif ($cert->isPost()) {{ __('prevention.post_workflow_short') }}
+                            @endif
+                            — {{ __('prevention.issued_on', ['date' => $cert->issued_at->format('d/m/Y')]) }}
+                        </p>
+                    </div>
+                </div>
+
+                {{-- 1. Pipeline de livraison --}}
+                <div class="rounded-lg border border-surface-dim bg-surface-container-low/60 p-3.5 mb-4">
+                    <p class="mb-2.5 text-[10px] font-extrabold uppercase tracking-wider text-secondary">
+                        @if ($cert->isPickup()) {{ __('prevention.pickup_workflow_short') }} @else {{ __('prevention.post_workflow_strict') }} @endif
+                    </p>
+                    <ol class="flex flex-col gap-2.5 sm:flex-row sm:items-stretch">
+                        @foreach ($certSteps as $i => $step)
+                            @php $done = $i < $stepIdx; $current = $i === $stepIdx; @endphp
+                            <li class="flex flex-1 items-start gap-2.5 sm:flex-col sm:items-start" aria-current="{{ $current ? 'step' : 'false' }}">
+                                <span class="flex h-7 w-7 flex-none items-center justify-center rounded-full text-[11px] font-black
+                                    {{ $done ? 'bg-amber-600 text-white ring-4 ring-amber-100 dark:ring-amber-900/40' : ($current ? 'bg-primary text-on-primary ring-4 ring-primary-fixed/70' : 'bg-surface-container text-outline border border-surface-dim dark:bg-gray-700') }}">
+                                    @if ($done)
+                                        <span class="material-symbols-outlined text-base" aria-hidden="true">check</span>
+                                    @elseif ($current)
+                                        {{ $i + 1 }}
+                                    @else
+                                        <span class="material-symbols-outlined text-xs" aria-hidden="true">circle</span>
+                                    @endif
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="text-[11px] font-bold leading-tight {{ $done ? 'text-amber-800 dark:text-amber-400' : ($current ? 'text-primary' : 'text-outline dark:text-gray-500') }}">{{ $step[0] }}</p>
+                                    <p class="mt-0.5 font-mono text-[10px] text-secondary" dir="ltr">{{ ($done || $current) && $step[2] ? $step[2]->format('d/m/Y') : __('prevention.pending_dots') }}</p>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ol>
+                </div>
+
+                {{-- 2. Détails livraison --}}
+                <dl class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs mb-4">
+                    <div>
+                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.cert_ref') }}</dt>
+                        <dd class="font-mono font-bold text-on-surface" dir="ltr">{{ $cert->reference }}</dd>
+                    </div>
+                    <div class="text-end">
+                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.delivery') }}</dt>
+                        <dd class="font-semibold text-on-surface">
+                            @if ($cert->isPost()) {{ __('prevention.poste_tunisienne') }}
+                            @elseif ($cert->isPickup()) {{ __('prevention.pickup_office') }}
+                            @else — @endif
+                        </dd>
+                    </div>
+
+                    @if ($cert->isPickup())
+                        <div>
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.pickup_gov') }}</dt>
+                            <dd class="text-end font-semibold text-on-surface">{{ $cert->governorate?->name_fr ?? $cert->governorate?->name_ar ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.pickup_delegation') }}</dt>
+                            <dd class="text-end font-semibold text-on-surface">{{ $cert->delegation?->name_fr ?? $cert->delegation?->name_ar ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issued_dt') }}</dt>
+                            <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->issued_at->format('d/m/Y') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.valid_until') }}</dt>
+                            <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->valid_until ? $cert->valid_until->format('d/m/Y') : '—' }}</dd>
+                        </div>
+                        @if ($cert->collected_at)
+                        <div class="col-span-2">
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.collected_on') }}</dt>
+                            <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->collected_at->format('d/m/Y, H:i') }}</dd>
+                        </div>
+                        @endif
+                    @else
+                        <div>
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.recipient') }}</dt>
+                            <dd class="text-end font-semibold text-on-surface">{{ $cert->post_recipient ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.f_phone') }}</dt>
+                            <dd class="text-end font-semibold font-mono num-ltr text-on-surface" dir="ltr">{{ $cert->post_phone ?? '—' }}</dd>
+                        </div>
+                        <div class="col-span-2">
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.postal_address') }}</dt>
+                            <dd class="mt-1 rounded-lg bg-surface-container px-2.5 py-2 text-[11px] leading-relaxed break-words text-on-surface dark:bg-gray-700/30">{{ $cert->post_address ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.tracking_b3') }}</dt>
+                            <dd class="text-end font-mono font-semibold text-on-surface" dir="ltr">{{ $cert->post_tracking ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issued_valid_until') }}</dt>
+                            <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->issued_at->format('d/m/Y') }} / {{ $cert->valid_until ? $cert->valid_until->format('d/m/Y') : '—' }}</dd>
+                        </div>
+                        @if ($cert->post_sent_at)
+                        <div>
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.sent_on') }}</dt>
+                            <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->post_sent_at->format('d/m/Y, H:i') }}</dd>
+                        </div>
+                        @endif
+                        @if ($cert->post_delivered_at)
+                        <div>
+                            <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.delivered_on') }}</dt>
+                            <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->post_delivered_at->format('d/m/Y, H:i') }}</dd>
+                        </div>
+                        @endif
+                    @endif
+                </dl>
+
+                @if ($cert->note)
+                    <div class="rounded-lg border border-surface-dim bg-surface-container px-2.5 py-2 mb-4 dark:bg-gray-700/30">
+                        <p class="mb-0.5 text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issue_note_label') }} — {{ __('prevention.visible_short') }}</p>
+                        <p class="whitespace-pre-line text-xs text-secondary dark:text-gray-300">{{ $cert->note }}</p>
+                    </div>
+                @endif
+
+                {{-- 3. Actions — uniquement les mouvements légaux de l'état actuel --}}
+                <div class="space-y-2 pt-1 border-t border-surface-dim">
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-secondary pt-2">{{ $act5Title }}</p>
+                    @if ($cert->isPickup() && $cert->isReady())
+                        <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}"
+                              data-confirm data-confirm-style="success"
+                              data-confirm-title="{{ __('prevention.confirm_collected') }}">
+                            @csrf @method('PUT')
+                            <input type="hidden" name="action" value="collected">
+                            <button type="submit"
+                                class="inline-flex w-full items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-3 px-5 rounded transition-colors shadow-sm">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">handshake</span>
+                                {{ __('prevention.mark_collected') }}
+                            </button>
+                        </form>
+                    @elseif ($cert->isPickup())
+                        <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
+                            @csrf @method('PUT')
+                            <input type="hidden" name="action" value="ready">
+                            <button type="submit"
+                                class="inline-flex w-full items-center justify-center gap-2 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold py-3 px-5 rounded transition-colors shadow-sm dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">undo</span>
+                                {{ __('prevention.mark_ready_uncollect') }}
+                            </button>
+                        </form>
+                    @elseif ($cert->isPost() && $cert->isReady())
+                        <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
+                            @csrf @method('PUT')
+                            <input type="hidden" name="action" value="sent">
+                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.tracking_b3') }} <span class="text-red-500">*</span></label>
+                            <input type="text" name="post_tracking" required maxlength="60"
+                                value="{{ old('post_tracking', $cert->post_tracking) }}"
+                                placeholder="{{ __('prevention.tracking_placeholder') }}" class="w-full text-sm">
+                            <button type="submit"
+                                class="mt-2 inline-flex w-full items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 px-5 rounded transition-colors shadow-sm">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">local_post_office</span>
+                                {{ __('prevention.register_post') }}
+                            </button>
+                        </form>
+                    @elseif ($cert->isPostSent())
+                        <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}"
+                              data-confirm data-confirm-style="success"
+                              data-confirm-title="{{ __('prevention.confirm_delivered') }}">
+                            @csrf @method('PUT')
+                            <input type="hidden" name="action" value="delivered">
+                            <button type="submit"
+                                class="inline-flex w-full items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold py-3 px-5 rounded transition-colors shadow-sm">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">mark_email_read</span>
+                                {{ __('prevention.confirm_post_delivery') }}
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
+                            @csrf @method('PUT')
+                            <input type="hidden" name="action" value="ready">
+                            <button type="submit" class="inline-flex w-full items-center justify-center gap-2 border border-surface-dim bg-surface-container-lowest hover:bg-surface-container text-secondary text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">undo</span>
+                                {{ __('prevention.not_sent_rollback') }}
+                            </button>
+                        </form>
+                    @else
+                        <p class="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-400">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">verified</span>
+                            {{ __('prevention.delivery_confirmed') }}
+                        </p>
+                    @endif
+                </div>
+
+                {{-- 4. Révocation --}}
+                @if (! $cert->isCollected() && $cert->status !== \App\Models\PreventionCertificate::STATUS_POST_DELIVERED)
+                    <div class="border-t border-surface-dim pt-3 mt-3" x-data="{ revokeOpen: false }">
+                        <button type="button" @click="revokeOpen = !revokeOpen"
+                                class="flex w-full items-center justify-between text-start" :aria-expanded="revokeOpen" aria-controls="cert-revoke">
+                            <span class="flex items-center gap-1.5 text-xs font-bold text-red-700 dark:text-red-400">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
+                                {{ __('prevention.revoke_cert') }}
+                            </span>
+                            <svg class="h-3.5 w-3.5 text-red-400 transition-transform" :class="revokeOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="revokeOpen" x-cloak id="cert-revoke" class="mt-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 p-3">
+                            <p class="text-[11px] leading-relaxed text-red-800 dark:text-red-300">
+                                {{ __('prevention.revoke_warning', ['ref' => $cert->reference]) }}
+                            </p>
+                            <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.destroy', $d) }}"
+                                  data-confirm data-confirm-style="danger"
+                                  data-confirm-title="{{ __('prevention.confirm_revoke', ['ref' => $cert->reference]) }}">
+                                @csrf @method('DELETE')
+                                <button type="submit"
+                                        class="mt-2 inline-flex w-full items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
+                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span>
+                                    {{ __('prevention.confirm_revoke_btn') }}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @else
+                    <p class="flex items-center gap-1.5 border-t border-surface-dim pt-3 mt-3 text-[11px] font-bold text-secondary">
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">lock</span>
+                        {{ __('prevention.locked_cert') }}
+                    </p>
+                @endif
+
+            </div>
+        </section>
+        @endif
+        @endcan
+
         {{-- ══════════════ CYCLE DE VIE — Stepper + progression ══════════════ --}}
         <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden">
             <div class="p-5 md:px-6">
@@ -914,11 +1370,7 @@
                                     {{ __('prevention.visit_passed_on', ['date' => $lastPassedAppointment->visit_date->format('d/m/Y'), 'time' => substr($lastPassedAppointment->visit_time, 0, 5)]) }}@if ($lastPassedAppointment->note) {{ __('prevention.note_prefix') }} {{ $lastPassedAppointment->note }}@endif.
                                 @endif
                                 {{ __('prevention.deliver_cert_below') }}
-                                @if ($d->delivery_method === 'post')
-                                    {{ __('prevention.b3_flow') }}
-                                @else
-                                    {{ __('prevention.pickup_flow') }}
-                                @endif
+                                {{ __('prevention.pickup_flow') }}
                                 ).
                             </span>
                         </div>
@@ -1047,48 +1499,60 @@
                     </div>
                 </div>
 
-                {{-- ══════ CERTIFICAT DE PRÉVENTION — bande dorée + panel process ══════ --}}
+                {{-- ══════ CERTIFICAT — bandeau en haut si action requise, sinon ici (état terminal) ══════ --}}
                 @if ($d->hasPassedAppointment() || $cert)
                 @can('manage prevention-dossiers')
-                <div class="bg-surface-container-lowest border rounded-lg shadow-sm overflow-hidden
-                            {{ $cert ? ($cert->isCollected() || $cert->isPostDelivered() ? 'border-violet-200 dark:border-violet-800/40' : 'border-amber-200 dark:border-amber-700/40') : 'border-amber-200 dark:border-amber-700/40' }}"
-                     x-data="{ open: {{ $cert ? ($cert->isCollected() || $cert->isPostDelivered() ? 'true' : 'true') : 'true' }}, revokeOpen: false }">
-
-                    <button type="button" @click="open = !open"
-                            class="w-full flex flex-wrap items-center justify-between gap-3 p-5 border-b border-amber-100 dark:border-amber-800/30 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-colors text-start">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-10 h-10 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                @if (! $cert)
+                <div class="bg-surface-container-lowest border border-amber-200 dark:border-amber-700/40 rounded-lg shadow-sm overflow-hidden">
+                    <div class="p-5">
+                        <a href="#act-deliver-cert"
+                           onclick="document.getElementById('act-deliver-cert')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return false;"
+                           class="group flex items-center justify-between gap-3 rounded-lg border border-red-200 dark:border-red-800/40 bg-red-50/60 dark:bg-red-900/10 px-4 py-3.5 text-sm transition-all hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                            <div class="flex items-center gap-3">
+                                <span class="grid h-9 w-9 flex-none place-items-center rounded-lg bg-red-600 text-white shadow-sm transition-transform group-hover:scale-105" aria-hidden="true">
+                                    <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1">workspace_premium</span>
+                                </span>
+                                <div>
+                                    <p class="font-extrabold text-red-900 dark:text-red-200">{{ __('prevention.cert_title') }}</p>
+                                    <p class="text-xs text-red-700 dark:text-red-300/80">{{ __('prevention.not_issued_yet') }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-bold text-xs">
+                                <span>{{ __('prevention.action_required') }}</span>
+                                <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-y-0.5" aria-hidden="true">arrow_upward</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                @elseif ($cert->isCollected() || $cert->isPostDelivered())
+                {{-- Certificat en état terminal : affiché ici (récupéré / livré) --}}
+                <div class="bg-surface-container-lowest border border-violet-200 dark:border-violet-800/40 rounded-lg shadow-sm overflow-hidden">
+                    <div class="p-5 space-y-4">
+                        {{-- Header --}}
+                        <div class="flex flex-wrap items-start gap-3">
+                            <div class="w-10 h-10 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 flex items-center justify-center flex-shrink-0">
                                 <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">workspace_premium</span>
-                            </span>
-                            <div class="min-w-0">
-                                <h3 class="text-headline-sm font-headline-sm text-on-surface">{{ __('prevention.cert_title') }} @if ($cert)— <span class="font-mono" dir="ltr">{{ $cert->reference }}</span>@endif</h3>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-headline-sm font-headline-sm text-on-surface">{{ __('prevention.cert_title') }} — <span class="font-mono" dir="ltr">{{ $cert->reference }}</span></h3>
                                 <p class="text-xs text-secondary mt-0.5">
-                                    @if ($cert)
-                                        @if ($cert->isPickup()) {{ __('prevention.pickup_workflow_short') }}
-                                        @elseif ($cert->isPost()) {{ __('prevention.post_workflow_short') }}
-                                        @endif {{ __('prevention.issued_on', ['date' => $cert->issued_at->format('d/m/Y')]) }}
-                                    @else
-                                        {{ __('prevention.not_issued_yet') }}
+                                    @if ($cert->isPickup()) {{ __('prevention.pickup_workflow_short') }}
+                                    @elseif ($cert->isPost()) {{ __('prevention.post_workflow_short') }}
                                     @endif
+                                    — {{ __('prevention.issued_on', ['date' => $cert->issued_at->format('d/m/Y')]) }}
                                 </p>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-2.5">
-                            @if ($cert)
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary">
-                                    {{ $cert->isPickup() ? __('prevention.pickup_chip') : __('prevention.poste_tunisienne') }}
-                                </span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary">{{ $cert->isPickup() ? __('prevention.pickup_chip') : __('prevention.poste_tunisienne') }}</span>
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded {{ $certStatusCfg[1] }}">{{ $certStatusCfg[0] }}</span>
-                            @endif
-                            <svg class="w-4 h-4 text-secondary transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
                         </div>
-                    </button>
 
-                    <div x-show="open" x-cloak>
-
-                        {{-- ── Certificat existant ── --}}
-                        @if ($cert)
-                        <div class="p-5 space-y-4">
+                        {{-- Pipeline --}}
+                        <div class="rounded-lg border border-surface-dim bg-surface-container-low/60 p-3.5">
+                            <p class="mb-2.5 text-[10px] font-extrabold uppercase tracking-wider text-secondary">
+                                @if ($cert->isPickup()) {{ __('prevention.pickup_workflow_short') }} @else {{ __('prevention.post_workflow_strict') }} @endif
+                            </p>
                             @php
                                 $certSteps = $cert->isPickup()
                                     ? [[__('prevention.cs_ready_office'), 'schedule_send', $cert->issued_at],
@@ -1104,403 +1568,105 @@
                                         default => 0,
                                     };
                             @endphp
-
-                            {{-- 1. Pipeline de livraison (ordre strict du processus) --}}
-                            <div class="rounded-lg border border-surface-dim bg-surface-container-low/60 p-3.5">
-                                <p class="mb-2.5 text-[10px] font-extrabold uppercase tracking-wider text-secondary">
-                                    @if ($cert->isPickup())
-                                        {{ __('prevention.pickup_workflow_short') }}
-                                    @else
-                                        {{ __('prevention.post_workflow_strict') }}
-                                    @endif
-                                </p>
-                                <ol class="flex flex-col gap-2.5 sm:flex-row sm:items-stretch">
-                                    @foreach ($certSteps as $i => $step)
-                                        @php $done = $i < $stepIdx; $current = $i === $stepIdx; @endphp
-                                        <li class="flex flex-1 items-start gap-2.5 sm:flex-col sm:items-start" aria-current="{{ $current ? 'step' : 'false' }}">
-                                            <span class="flex h-7 w-7 flex-none items-center justify-center rounded-full text-[11px] font-black
-                                                {{ $done ? 'bg-amber-600 text-white ring-4 ring-amber-100 dark:ring-amber-900/40' : ($current ? 'bg-primary text-on-primary ring-4 ring-primary-fixed/70' : 'bg-surface-container text-outline border border-surface-dim dark:bg-gray-700') }}">
-                                                @if ($done)
-                                                    <span class="material-symbols-outlined text-base" aria-hidden="true">check</span>
-                                                @elseif ($current)
-                                                    {{ $i + 1 }}
-                                                @else
-                                                    <span class="material-symbols-outlined text-xs" aria-hidden="true">circle</span>
-                                                @endif
-                                            </span>
-                                            <div class="min-w-0">
-                                                <p class="text-[11px] font-bold leading-tight {{ $done ? 'text-amber-800 dark:text-amber-400' : ($current ? 'text-primary' : 'text-outline dark:text-gray-500') }}">
-                                                    {{ $step[0] }}
-                                                </p>
-                                                <p class="mt-0.5 font-mono text-[10px] text-secondary" dir="ltr">
-                                                    {{ ($done || $current) && $step[2] ? $step[2]->format('d/m/Y') : __('prevention.pending_dots') }}
-                                                </p>
-                                            </div>
-                                        </li>
-                                    @endforeach
-                                </ol>
-                            </div>
-
-                            {{-- 2. Détails livraison --}}
-                            <dl class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
-                                <div>
-                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.cert_ref') }}</dt>
-                                    <dd class="font-mono font-bold text-on-surface" dir="ltr">{{ $cert->reference }}</dd>
-                                </div>
-                                <div class="text-end">
-                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.delivery') }}</dt>
-                                    <dd class="font-semibold text-on-surface">
-                                        @if ($cert->isPost()) Poste Tunisienne (B3)
-                                        @elseif ($cert->isPickup()) Pickup at office
-                                        @else — @endif
-                                    </dd>
-                                </div>
-
-                                @if ($cert->isPickup())
-                                    <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.pickup_gov') }}</dt>
-                                        <dd class="text-end font-semibold text-on-surface">{{ $cert->governorate?->name_fr ?? $cert->governorate?->name_ar ?? '—' }}</dd>
-                                    </div>
-                                    <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.pickup_delegation') }}</dt>
-                                        <dd class="text-end font-semibold text-on-surface">{{ $cert->delegation?->name_fr ?? $cert->delegation?->name_ar ?? __('prevention.all_delegations') }}</dd>
-                                    </div>
-                                    <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issued_dt') }}</dt>
-                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->issued_at->format('d/m/Y') }}</dd>
-                                    </div>
-                                    <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.valid_until') }}</dt>
-                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->valid_until ? $cert->valid_until->format('d/m/Y') : '—' }}</dd>
-                                    </div>
-                                    @if ($cert->collected_at)
-                                    <div class="col-span-2">
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.collected_on') }}</dt>
-                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->collected_at->format('d/m/Y, H:i') }}</dd>
-                                    </div>
-                                    @endif
-                                @else
-                                    <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.recipient') }}</dt>
-                                        <dd class="text-end font-semibold text-on-surface">{{ $cert->post_recipient ?? '—' }}</dd>
-                                    </div>
-                                    <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.f_phone') }}</dt>
-                                        <dd class="text-end font-semibold font-mono num-ltr text-on-surface" dir="ltr">{{ $cert->post_phone ?? '—' }}</dd>
-                                    </div>
-                                    <div class="col-span-2">
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.postal_address') }}</dt>
-                                        <dd class="mt-1 rounded-lg bg-surface-container px-2.5 py-2 text-[11px] leading-relaxed break-words text-on-surface dark:bg-gray-700/30">{{ $cert->post_address ?? '—' }}</dd>
-                                    </div>
-                                    <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.tracking_b3') }}</dt>
-                                        <dd class="text-end font-mono font-semibold text-on-surface" dir="ltr">{{ $cert->post_tracking ?? '—' }}</dd>
-                                    </div>
-                                    <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issued_valid_until') }}</dt>
-                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->issued_at->format('d/m/Y') }} / {{ $cert->valid_until ? $cert->valid_until->format('d/m/Y') : '—' }}</dd>
-                                    </div>
-                                    @if ($cert->post_sent_at)
-                                    <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.sent_on') }}</dt>
-                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->post_sent_at->format('d/m/Y, H:i') }}</dd>
-                                    </div>
-                                    @endif
-                                    @if ($cert->post_delivered_at)
-                                    <div>
-                                        <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.delivered_on') }}</dt>
-                                        <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->post_delivered_at->format('d/m/Y, H:i') }}</dd>
-                                    </div>
-                                    @endif
-                                @endif
-                            </dl>
-
-                            @if ($cert->note)
-                                <div class="rounded-lg border border-surface-dim bg-surface-container px-2.5 py-2 dark:bg-gray-700/30">
-                                    <p class="mb-0.5 text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issue_note_label') }} — {{ __('prevention.visible_short') }}</p>
-                                    <p class="whitespace-pre-line text-xs text-secondary dark:text-gray-300">{{ $cert->note }}</p>
-                                </div>
-                            @endif
-
-                            {{-- 3. Actions — uniquement les mouvements légaux de l'état actuel --}}
-                            <div class="space-y-2 pt-1">
-                                @if ($cert->isPickup() && $cert->isReady())
-                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
-                                        @csrf @method('PUT')
-                                        <input type="hidden" name="action" value="collected">
-                                        <button type="submit"
-                                            class="inline-flex w-full items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
-                                            <span class="material-symbols-outlined text-base" aria-hidden="true">handshake</span>
-                                            {{ __('prevention.mark_collected') }}
-                                        </button>
-                                    </form>
-                                @elseif ($cert->isPickup())
-                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
-                                        @csrf @method('PUT')
-                                        <input type="hidden" name="action" value="ready">
-                                        <button type="submit"
-                                            class="inline-flex w-full items-center justify-center gap-2 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold py-2 px-4 rounded transition-colors dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
-                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">undo</span>
-                                            {{ __('prevention.mark_ready_uncollect') }}
-                                        </button>
-                                    </form>
-                                @elseif ($cert->isPost() && $cert->isReady())
-                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
-                                        @csrf @method('PUT')
-                                        <input type="hidden" name="action" value="sent">
-                                        <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.tracking_b3') }} <span class="text-red-500">*</span></label>
-                                        <input type="text" name="post_tracking" required maxlength="60"
-                                            value="{{ old('post_tracking', $cert->post_tracking) }}"
-                                            placeholder="{{ __('prevention.tracking_placeholder') }}" class="w-full text-sm">
-                                        <button type="submit"
-                                            class="mt-2 inline-flex w-full items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
-                                            <span class="material-symbols-outlined text-base" aria-hidden="true">local_post_office</span>
-                                            {{ __('prevention.register_post') }}
-                                        </button>
-                                    </form>
-                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
-                                        @csrf @method('PUT')
-                                        <input type="hidden" name="action" value="ready">
-                                        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 border border-surface-dim bg-surface-container-lowest hover:bg-surface-container text-secondary text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">undo</span>
-                                            {{ __('prevention.reedit_stays_ready') }}
-                                        </button>
-                                    </form>
-                                @elseif ($cert->isPostSent())
-                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
-                                        @csrf @method('PUT')
-                                        <input type="hidden" name="action" value="delivered">
-                                        <button type="submit"
-                                            class="inline-flex w-full items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
-                                            <span class="material-symbols-outlined text-base" aria-hidden="true">mark_email_read</span>
-                                            {{ __('prevention.confirm_post_delivery') }}
-                                        </button>
-                                    </form>
-                                    <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.update', $d) }}">
-                                        @csrf @method('PUT')
-                                        <input type="hidden" name="action" value="ready">
-                                        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 border border-surface-dim bg-surface-container-lowest hover:bg-surface-container text-secondary text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">undo</span>
-                                            {{ __('prevention.not_sent_rollback') }}
-                                        </button>
-                                    </form>
-                                @else
-                                    <p class="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-400">
-                                        <span class="material-symbols-outlined text-base" aria-hidden="true">verified</span>
-                                        {{ __('prevention.delivery_confirmed') }}
-                                    </p>
-                                @endif
-                            </div>
-
-                            {{-- 4. Révocation — zone dangereuse, verrouillée une fois collecté --}}
-                            @if (! $cert->isCollected() && $cert->status !== \App\Models\PreventionCertificate::STATUS_POST_DELIVERED)
-                                <div class="border-t border-surface-dim pt-3" x-data="{ revokeOpen: false }">
-                                    <button type="button" @click="revokeOpen = !revokeOpen"
-                                            class="flex w-full items-center justify-between text-start" :aria-expanded="revokeOpen" aria-controls="cert-revoke">
-                                        <span class="flex items-center gap-1.5 text-xs font-bold text-red-700 dark:text-red-400">
-                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
-                                            {{ __('prevention.revoke_cert') }}
+                            <ol class="flex flex-col gap-2.5 sm:flex-row sm:items-stretch">
+                                @foreach ($certSteps as $i => $step)
+                                    @php $done = $i < $stepIdx; $current = $i === $stepIdx; @endphp
+                                    <li class="flex flex-1 items-start gap-2.5 sm:flex-col sm:items-start" aria-current="{{ $current ? 'step' : 'false' }}">
+                                        <span class="flex h-7 w-7 flex-none items-center justify-center rounded-full text-[11px] font-black
+                                            {{ $done ? 'bg-amber-600 text-white ring-4 ring-amber-100 dark:ring-amber-900/40' : ($current ? 'bg-primary text-on-primary ring-4 ring-primary-fixed/70' : 'bg-surface-container text-outline border border-surface-dim dark:bg-gray-700') }}">
+                                            @if ($done)<span class="material-symbols-outlined text-base" aria-hidden="true">check</span>@elseif ($current){{ $i + 1 }}@else<span class="material-symbols-outlined text-xs" aria-hidden="true">circle</span>@endif
                                         </span>
-                                        <svg class="h-3.5 w-3.5 text-red-400 transition-transform" :class="revokeOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                                    </button>
-                                    <div x-show="revokeOpen" x-cloak id="cert-revoke" class="mt-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 p-3">
-                                        <p class="text-[11px] leading-relaxed text-red-800 dark:text-red-300">
-                                            {{ __('prevention.revoke_warning', ['ref' => $cert->reference]) }}
-                                        </p>
-                                        <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.destroy', $d) }}"
-                                              data-confirm data-confirm-style="danger"
-                                              data-confirm-title="{{ __('prevention.confirm_revoke', ['ref' => $cert->reference]) }}">
-                                            @csrf @method('DELETE')
-                                            <button type="submit"
-                                                    class="mt-2 inline-flex w-full items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
-                                                <span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span>
-                                                {{ __('prevention.confirm_revoke_btn') }}
-                                            </button>
-                                        </form>
-                                    </div>
+                                        <div class="min-w-0">
+                                            <p class="text-[11px] font-bold leading-tight {{ $done ? 'text-amber-800 dark:text-amber-400' : ($current ? 'text-primary' : 'text-outline dark:text-gray-500') }}">{{ $step[0] }}</p>
+                                            <p class="mt-0.5 font-mono text-[10px] text-secondary" dir="ltr">{{ ($done || $current) && $step[2] ? $step[2]->format('d/m/Y') : __('prevention.pending_dots') }}</p>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ol>
+                        </div>
+
+                        {{-- Détails --}}
+                        <dl class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+                            <div>
+                                <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.cert_ref') }}</dt>
+                                <dd class="font-mono font-bold text-on-surface" dir="ltr">{{ $cert->reference }}</dd>
+                            </div>
+                            <div class="text-end">
+                                <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.delivery') }}</dt>
+                                <dd class="font-semibold text-on-surface">
+                                    @if ($cert->isPost()) {{ __('prevention.poste_tunisienne') }}
+                                    @elseif ($cert->isPickup()) {{ __('prevention.pickup_office') }}
+                                    @else — @endif
+                                </dd>
+                            </div>
+                            @if ($cert->isPickup())
+                                <div>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.pickup_gov') }}</dt>
+                                    <dd class="text-end font-semibold text-on-surface">{{ $cert->governorate?->name_fr ?? $cert->governorate?->name_ar ?? '—' }}</dd>
                                 </div>
+                                <div>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.pickup_delegation') }}</dt>
+                                    <dd class="text-end font-semibold text-on-surface">{{ $cert->delegation?->name_fr ?? $cert->delegation?->name_ar ?? '—' }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issued_dt') }}</dt>
+                                    <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->issued_at->format('d/m/Y') }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.valid_until') }}</dt>
+                                    <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->valid_until ? $cert->valid_until->format('d/m/Y') : '—' }}</dd>
+                                </div>
+                                @if ($cert->collected_at)
+                                <div class="col-span-2">
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.collected_on') }}</dt>
+                                    <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->collected_at->format('d/m/Y, H:i') }}</dd>
+                                </div>
+                                @endif
                             @else
-                                <p class="flex items-center gap-1.5 border-t border-surface-dim pt-3 text-[11px] font-bold text-secondary">
-                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">lock</span>
-                                    {{ __('prevention.locked_cert') }}
-                                </p>
-                            @endif
-                        </div>
-
-                        {{-- ── Pas encore émis : formulaire guidé ── --}}
-                        @else
-                        <div class="p-5">
-                            @if ($d->delivery_method)
-                                <div class="mb-3 flex items-start gap-2 rounded-lg border border-surface-dim bg-surface-container-low px-3 py-2 text-xs text-secondary">
-                                    <span class="material-symbols-outlined text-base text-primary mt-px shrink-0" aria-hidden="true">touch_app</span>
-                                    <span>{{ __('prevention.applicant_chose') }} <strong class="text-on-surface">{{ ['pickup' => __('prevention.pickup_office'), 'post' => __('prevention.poste_tunisienne'), 'digital' => __('prevention.digital_download')][$d->delivery_method] ?? ucfirst($d->delivery_method) }}</strong> {{ __('prevention.pre_selected_below') }} @if ($d->delivery_method === 'post') {{ __('prevention.postal_prefilled') }} @endif</span>
+                                <div>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.recipient') }}</dt>
+                                    <dd class="text-end font-semibold text-on-surface">{{ $cert->post_recipient ?? '—' }}</dd>
                                 </div>
-                            @endif
-
-                            <form method="POST" action="{{ route('admin.prevention-dossiers.certificate.store', $d) }}">
-                                @csrf
-                                <div class="space-y-3"
-                                     x-data="{
-                                        method: '{{ old('delivery_method', $d->delivery_method ?? 'pickup') }}',
-                                        gov: {{ old('governorate_id', $d->governorate_id) ?? 'null' }},
-                                        del: {{ old('delegation_id', $d->delegation_id) ?? 'null' }},
-                                        map: {{ \Illuminate\Support\Js::from($governorates
-                                            ->mapWithKeys(fn ($g) => [
-                                                $g->id => [
-                                                    'name'   => $g->name_fr ?? $g->name_ar,
-                                                    // office details (address/phone/hours) — shown to the applicant on the pickup page
-                                                    'office' => ['address' => $g->office_address, 'phone' => $g->office_phone, 'hours' => $g->office_hours],
-                                                    'delegations' => $g->delegations->map(fn ($del) => [
-                                                        'id'     => $del->id,
-                                                        'name'   => $del->name_fr ?? $del->name_ar,
-                                                        'office' => ['address' => $del->office_address, 'phone' => $del->office_phone, 'hours' => $del->office_hours],
-                                                    ])->values()->all(),
-                                                ],
-                                            ])
-                                            ->toArray()) }},
-                                        // What the applicant will see as the pickup place —
-                                        // delegation office when set, otherwise the governorate office.
-                                        get pickedOffice() {
-                                            if (! this.gov) return null;
-                                            const entry = this.map[this.gov] || {};
-                                            if (this.del) {
-                                                const del = (entry.delegations || []).find(d => String(d.id) === String(this.del));
-                                                if (del?.office?.address || del?.office?.phone || del?.office?.hours) return { office: del.office, name: del.name };
-                                            }
-                                            if (entry.office?.address || entry.office?.phone || entry.office?.hours) return { office: entry.office, name: entry.name };
-                                            return null;
-                                        },
-                                     }">
-
-                                    {{-- Mode de remise — digital annoncé mais pas actif --}}
-                                    <div class="overflow-hidden rounded-lg border border-surface-dim dark:border-gray-600">
-                                        <p class="px-3 pb-1.5 pt-2.5 text-[10px] font-extrabold uppercase tracking-wider text-secondary">{{ __('prevention.delivery_method') }}</p>
-                                        <label class="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-surface-container dark:hover:bg-gray-700/40"
-                                               :class="method === 'pickup' ? 'bg-amber-50 dark:bg-amber-900/20' : ''">
-                                            <input type="radio" name="delivery_method" value="pickup" x-model="method" required class="text-amber-600">
-                                            <span class="material-symbols-outlined text-amber-600 dark:text-amber-400" aria-hidden="true">storefront</span>
-                                            <span class="flex-1 text-sm font-bold text-on-surface">{{ __('prevention.pickup_office') }}</span>
-                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-600 text-white">{{ __('prevention.available') }}</span>
-                                        </label>
-                                        <label class="flex cursor-pointer items-center gap-2.5 border-t border-surface-dim px-3 py-2 hover:bg-surface-container dark:border-gray-600 dark:hover:bg-gray-700/40"
-                                               :class="method === 'post' ? 'bg-blue-50 dark:bg-blue-900/20' : ''">
-                                            <input type="radio" name="delivery_method" value="post" x-model="method" class="text-blue-600">
-                                            <span class="material-symbols-outlined text-blue-600 dark:text-blue-400" aria-hidden="true">local_shipping</span>
-                                            <span class="flex-1 text-sm font-bold text-on-surface">{{ __('prevention.poste_tunisienne') }}</span>
-                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">{{ __('prevention.registered') }}</span>
-                                        </label>
-                                        <div class="flex select-none items-center gap-2.5 border-t border-surface-dim px-3 py-2 opacity-55 dark:border-gray-600">
-                                            <input type="radio" disabled class="text-gray-400">
-                                            <span class="material-symbols-outlined text-secondary" aria-hidden="true">download</span>
-                                            <span class="flex-1 text-sm font-bold text-outline dark:text-gray-500">{{ __('prevention.digital_download') }}</span>
-                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">{{ __('prevention.coming_soon') }}</span>
-                                        </div>
-                                    </div>
-
-                                    {{-- Pickup : gouvernorat + délégation --}}
-                                    <div x-show="method === 'pickup'" x-cloak>
-                                        <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.gouvernorat') }} <span class="text-red-500">*</span></label>
-                                            <select name="governorate_id" :required="method === 'pickup'" x-model="gov"
-                                                    x-on:change="if (!(map[gov]?.delegations || []).some(d => String(d.id) === String(del))) del = ''"
-                                                    class="w-full text-sm">
-                                                {{-- :selected keeps the dossier/certificate place highlighted even before Alpine happens --}}
-                                                <option value="">{{ __('prevention.select_gouvernorat') }}</option>
-                                                <template x-for="(entry, govId) in map" :key="govId">
-                                                    <option :value="govId" :selected="String(govId) === String(gov)" x-text="entry.name"></option>
-                                                </template>
-                                            </select>
-                                        </div>
-                                        <div class="mt-3">
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.pickup_delegation') }} <span class="font-normal normal-case">{{ __('prevention.optional') }}</span></label>
-                                            <select name="delegation_id" x-model="del" class="w-full text-sm">
-                                                <option value="">{{ __('prevention.all_delegations') }}</option>
-                                                <template x-for="dele in (map[gov] ? map[gov].delegations : [])" :key="dele.id">
-                                                    <option :value="dele.id" :selected="String(dele.id) === String(del)" x-text="dele.name"></option>
-                                                </template>
-                                            </select>
-                                        </div>
-
-                                        {{-- Live preview: exactly what the applicant will read on their pickup page --}}
-                                        <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-800/40 dark:bg-amber-900/10 animate-in fade-in duration-200">
-                                            <template x-if="pickedOffice">
-                                                <div>
-                                                    <p class="mb-1 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300">
-                                                        <span class="material-symbols-outlined text-sm" aria-hidden="true">storefront</span>
-                                                        {{ __('prevention.pickup_preview_title') }} —
-                                                        <span class="normal-case tracking-normal" x-text="pickedOffice.name"></span>
-                                                    </p>
-                                                    <div class="grid grid-cols-1 gap-1 text-[11px] text-amber-900 dark:text-amber-100 sm:grid-cols-2">
-                                                        <span x-show="pickedOffice.office.address" class="flex items-start gap-1.5 min-w-0">
-                                                            <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">location_on</span>
-                                                            <span class="min-w-0"><span class="block text-secondary dark:text-amber-300/70 text-[9px] uppercase font-bold tracking-wider">{{ __('admin.office_address') }}</span><span x-text="pickedOffice.office.address"></span></span>
-                                                        </span>
-                                                        <span x-show="pickedOffice.office.phone" class="flex items-start gap-1.5 min-w-0">
-                                                            <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">call</span>
-                                                            <span class="min-w-0"><span class="block text-secondary dark:text-amber-300/70 text-[9px] uppercase font-bold tracking-wider">{{ __('admin.office_phone') }}</span><span class="font-mono font-bold" dir="ltr" x-text="pickedOffice.office.phone"></span></span>
-                                                        </span>
-                                                        <span x-show="pickedOffice.office.hours" class="flex items-start gap-1.5 min-w-0 sm:col-span-2">
-                                                            <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">schedule</span>
-                                                            <span class="min-w-0"><span class="block text-secondary dark:text-amber-300/70 text-[9px] uppercase font-bold tracking-wider">{{ __('admin.office_hours') }}</span><span x-text="pickedOffice.office.hours"></span></span>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                            <p x-show="!pickedOffice" class="flex items-start gap-1.5 text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
-                                                <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">info</span>
-                                                {{ __('prevention.office_no_details') }}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {{-- Post : données destinataire B3 --}}
-                                    <div x-show="method === 'post'" x-cloak class="space-y-3 rounded-lg border border-blue-200 p-3 dark:border-blue-800/40">
-                                        <p class="flex items-center gap-1.5 text-[11px] font-bold text-blue-700 dark:text-blue-300">
-                                            <span class="material-symbols-outlined flex-none text-sm" aria-hidden="true">local_post_office</span>
-                                            {{ __('prevention.b3_intro') }}
-                                        </p>
-                                        <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.recipient') }} <span class="text-red-500">*</span></label>
-                                            <input type="text" name="post_recipient" :required="method === 'post'" maxlength="255"
-                                                value="{{ old('post_recipient', $d->delivery_method === 'post' ? $d->nom_prenom : '') }}" class="w-full text-sm">
-                                        </div>
-                                        <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">Phone</label>
-                                            <input type="text" name="post_phone" maxlength="40"
-                                                value="{{ old('post_phone', $d->delivery_method === 'post' ? $d->phone : '') }}" class="w-full text-sm">
-                                        </div>
-                                        <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.postal_address') }} <span class="text-red-500">*</span></label>
-                                            <textarea name="post_address" rows="3" :required="method === 'post'" maxlength="500"
-                                                placeholder="{{ __('prevention.postal_address_placeholder') }}">{{ old('post_address', $d->delivery_method === 'post' ? $d->post_address : '') }}</textarea>
-                                        </div>
-                                        <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.tracking_b3') }} <span class="font-normal normal-case">{{ __('prevention.tracking_optional_lot') }}</span></label>
-                                            <input type="text" name="post_tracking" maxlength="60" value="{{ old('post_tracking') }}" placeholder="{{ __('prevention.tracking_placeholder') }}" class="w-full text-sm">
-                                        </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.valid_until') }} <span class="font-normal normal-case">{{ __('prevention.optional') }}</span></label>
-                                            <input type="date" name="valid_until" min="{{ date('Y-m-d') }}" value="{{ old('valid_until') }}" class="w-full text-sm">
-                                        </div>
-                                        <div>
-                                            <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issue_note_label') }} <span class="font-normal normal-case text-primary">{{ __('prevention.visible_short') }}</span></label>
-                                            <x-admin.bilingual-note name="note" :rows="2" class="mt-1" />
-                                        </div>
-                                    </div>
-                                    <button type="submit"
-                                        class="inline-flex w-full items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-4 rounded transition-colors shadow-sm">
-                                        <span class="material-symbols-outlined text-base" aria-hidden="true">workspace_premium</span>
-                                        {{ __('prevention.confirm_issue') }}
-                                    </button>
+                                <div>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.f_phone') }}</dt>
+                                    <dd class="text-end font-semibold font-mono num-ltr text-on-surface" dir="ltr">{{ $cert->post_phone ?? '—' }}</dd>
                                 </div>
-                            </form>
-                        </div>
+                                <div class="col-span-2">
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.postal_address') }}</dt>
+                                    <dd class="mt-1 rounded-lg bg-surface-container px-2.5 py-2 text-[11px] leading-relaxed break-words text-on-surface dark:bg-gray-700/30">{{ $cert->post_address ?? '—' }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.tracking_b3') }}</dt>
+                                    <dd class="text-end font-mono font-semibold text-on-surface" dir="ltr">{{ $cert->post_tracking ?? '—' }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issued_valid_until') }}</dt>
+                                    <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->issued_at->format('d/m/Y') }} / {{ $cert->valid_until ? $cert->valid_until->format('d/m/Y') : '—' }}</dd>
+                                </div>
+                                @if ($cert->post_delivered_at)
+                                <div>
+                                    <dt class="text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.delivered_on') }}</dt>
+                                    <dd class="text-end font-semibold text-on-surface" dir="ltr">{{ $cert->post_delivered_at->format('d/m/Y, H:i') }}</dd>
+                                </div>
+                                @endif
+                            @endif
+                        </dl>
+
+                        @if ($cert->note)
+                            <div class="rounded-lg border border-surface-dim bg-surface-container px-2.5 py-2 dark:bg-gray-700/30">
+                                <p class="mb-0.5 text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.issue_note_label') }} — {{ __('prevention.visible_short') }}</p>
+                                <p class="whitespace-pre-line text-xs text-secondary dark:text-gray-300">{{ $cert->note }}</p>
+                            </div>
                         @endif
+
+                        {{-- Locked --}}
+                        <p class="flex items-center gap-1.5 border-t border-surface-dim pt-3 text-[11px] font-bold text-secondary">
+                            <span class="material-symbols-outlined text-sm" aria-hidden="true">lock</span>
+                            {{ __('prevention.locked_cert') }}
+                        </p>
                     </div>
                 </div>
+                @endif
                 @endcan
                 @endif
 
