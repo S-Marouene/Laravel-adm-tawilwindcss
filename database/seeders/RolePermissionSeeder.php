@@ -8,8 +8,9 @@ use App\Models\Service;
 use App\Models\User;
 use App\Models\UserTerritory;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -57,7 +58,7 @@ class RolePermissionSeeder extends Seeder
     public function run(): void
     {
         // Reset cached roles and permissions
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // ------------------------------------------------------------------
         // All permissions
@@ -93,6 +94,8 @@ class RolePermissionSeeder extends Seeder
             'view settings', 'edit settings',
             // Theme settings (super-admin only)
             'view theme-settings', 'edit theme-settings',
+            // Notification center (super-admin + admin)
+            'manage notifications',
         ];
 
         foreach ($permissions as $permission) {
@@ -129,8 +132,8 @@ class RolePermissionSeeder extends Seeder
         $superAdmin = User::updateOrCreate(
             ['email' => 'superadmin@onpc.tn'],
             [
-                'name'              => 'Super Administrateur',
-                'password'          => bcrypt('password'),
+                'name' => 'Super Administrateur',
+                'password' => bcrypt('password'),
                 'email_verified_at' => now(),
             ]
         );
@@ -140,8 +143,8 @@ class RolePermissionSeeder extends Seeder
         $admin = User::updateOrCreate(
             ['email' => 'admin@onpc.tn'],
             [
-                'name'              => 'Administrateur',
-                'password'          => bcrypt('password'),
+                'name' => 'Administrateur',
+                'password' => bcrypt('password'),
                 'email_verified_at' => now(),
             ]
         );
@@ -151,8 +154,8 @@ class RolePermissionSeeder extends Seeder
         $centrale = User::updateOrCreate(
             ['email' => 'centrale@onpc.tn'],
             [
-                'name'              => 'Direction Centrale',
-                'password'          => bcrypt('password'),
+                'name' => 'Direction Centrale',
+                'password' => bcrypt('password'),
                 'email_verified_at' => now(),
             ]
         );
@@ -163,8 +166,8 @@ class RolePermissionSeeder extends Seeder
         $manager = User::updateOrCreate(
             ['email' => 'manager@onpc.tn'],
             [
-                'name'              => 'Responsable Régional',
-                'password'          => bcrypt('password'),
+                'name' => 'Responsable Régional',
+                'password' => bcrypt('password'),
                 'email_verified_at' => now(),
             ]
         );
@@ -173,25 +176,25 @@ class RolePermissionSeeder extends Seeder
         $manager->services()->sync([$preventionService]);
 
         // Assign territories: first governorate (all delegations) + first delegation of second gov
-        $firstGov   = Governorate::orderBy('id')->first();
-        $secondGov  = Governorate::orderBy('id')->skip(1)->first();
+        $firstGov = Governorate::orderBy('id')->first();
+        $secondGov = Governorate::orderBy('id')->skip(1)->first();
         $firstDelOfSecondGov = $secondGov
             ? Delegation::where('governorate_id', $secondGov->id)->orderBy('id')->first()
             : null;
 
         $manager->territories()->delete();
         if ($firstGov) {
-            \App\Models\UserTerritory::firstOrCreate([
-                'user_id'        => $manager->id,
+            UserTerritory::firstOrCreate([
+                'user_id' => $manager->id,
                 'governorate_id' => $firstGov->id,
-                'delegation_id'  => null,  // whole governorate
+                'delegation_id' => null,  // whole governorate
             ]);
         }
         if ($firstDelOfSecondGov) {
-            \App\Models\UserTerritory::firstOrCreate([
-                'user_id'        => $manager->id,
+            UserTerritory::firstOrCreate([
+                'user_id' => $manager->id,
                 'governorate_id' => $secondGov->id,
-                'delegation_id'  => $firstDelOfSecondGov->id, // single delegation
+                'delegation_id' => $firstDelOfSecondGov->id, // single delegation
             ]);
         }
 
@@ -199,8 +202,8 @@ class RolePermissionSeeder extends Seeder
         $user = User::updateOrCreate(
             ['email' => 'user@onpc.tn'],
             [
-                'name'              => 'Citoyen Test',
-                'password'          => bcrypt('password'),
+                'name' => 'Citoyen Test',
+                'password' => bcrypt('password'),
                 'email_verified_at' => now(),
             ]
         );

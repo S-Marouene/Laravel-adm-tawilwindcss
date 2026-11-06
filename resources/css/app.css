@@ -1272,9 +1272,11 @@ input[type="tel"] {
 /* Base toast popup — padded card like the notification dropdown */
 .swal2-toast-popup,
 .swal2-popup.swal2-toast {
+    --accent: var(--color-primary);
+
     position: relative !important;
     font-family: inherit !important;
-    border-radius: 0.875rem !important;
+    border-radius: 0.25rem !important; /* rayons institutionnels — angles resserrés */
     box-shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.25) !important;
     border: 1px solid var(--color-surface-dim) !important;
     background: var(--color-surface-container-lowest) !important;
@@ -1295,7 +1297,8 @@ input[type="tel"] {
     box-shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.5) !important;
 }
 
-/* Toast icon — soft tinted circular badge (mirrors .notification-icon) */
+/* Toast icon — soft tinted circular badge (mirrors .notification-icon)
+   Même logique « 5em » : 0.45rem × 5em = 2.25rem → aucune cassure. */
 .swal2-toast-popup .swal2-icon {
     margin: 0 !important;
     padding: 0 !important;
@@ -1307,27 +1310,31 @@ input[type="tel"] {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    font-size: 1.125rem !important;
+    font-size: 0.45rem !important;
 }
 
 /* Soft tinted icon backgrounds — same pattern as the panel
-   (bg-{color}/10 with a colored glyph). Success uses the institutional
-   primary red (not green) so it stays on-brand; info uses neutral steel-gray. */
+   (bg-{color}/10 with a colored glyph). Success = institutional red. */
 .swal2-toast-popup .swal2-icon.swal2-success { background: color-mix(in srgb, var(--color-primary) 10%, transparent) !important; }
 .swal2-toast-popup .swal2-icon.swal2-info    { background: color-mix(in srgb, var(--color-secondary) 10%, transparent) !important; }
 .swal2-toast-popup .swal2-icon.swal2-warning { background: color-mix(in srgb, #d97706 12%, transparent) !important; }
-.swal2-toast-popup .swal2-icon.swal2-error   { background: color-mix(in srgb, #dc2626 12%, transparent) !important; }
+.swal2-toast-popup .swal2-icon.swal2-error   { background: color-mix(in srgb, #ba1a1a 12%, transparent) !important; }
 
-/* Icon glyph — colored (not white), matching the panel text-{color} */
+.dark .swal2-toast-popup .swal2-icon.swal2-success { background: color-mix(in srgb, var(--color-primary) 20%, transparent) !important; }
+.dark .swal2-toast-popup .swal2-icon.swal2-info    { background: color-mix(in srgb, var(--color-secondary) 20%, transparent) !important; }
+.dark .swal2-toast-popup .swal2-icon.swal2-warning { background: color-mix(in srgb, #d97706 22%, transparent) !important; }
+.dark .swal2-toast-popup .swal2-icon.swal2-error   { background: color-mix(in srgb, #ba1a1a 22%, transparent) !important; }
+
+/* Icon glyph — colored (not white), matching the panel text-{color}
+   Taille : échelle interne SweetAlert (3.75em × 0.45rem ≈ 1.69rem). */
 .swal2-toast-popup .swal2-icon .swal2-icon-content {
-    font-size: 1.125rem !important;
     margin: 0 !important;
 }
 
 .swal2-toast-popup .swal2-icon.swal2-success .swal2-icon-content { color: var(--color-primary) !important; }
 .swal2-toast-popup .swal2-icon.swal2-info    .swal2-icon-content { color: var(--color-secondary) !important; }
 .swal2-toast-popup .swal2-icon.swal2-warning .swal2-icon-content { color: #d97706 !important; }
-.swal2-toast-popup .swal2-icon.swal2-error   .swal2-icon-content { color: #dc2626 !important; }
+.swal2-toast-popup .swal2-icon.swal2-error   .swal2-icon-content { color: #ba1a1a !important; }
 
 /* Success checkmark lines — colored, ring/circle stay transparent */
 .swal2-toast-popup .swal2-icon.swal2-success .swal2-success-line-tip,
@@ -1336,9 +1343,9 @@ input[type="tel"] {
 .swal2-toast-popup .swal2-icon.swal2-success .swal2-success-circular-line { border-color: transparent !important; }
 .swal2-toast-popup .swal2-icon.swal2-success .swal2-success-fix { background-color: transparent !important; }
 
-/* Error X-mark — colored */
+/* Error X-mark — colored (ONPC error red) */
 .swal2-toast-popup .swal2-icon.swal2-error .swal2-x-mark-line-left,
-.swal2-toast-popup .swal2-icon.swal2-error .swal2-x-mark-line-right { background: #dc2626 !important; }
+.swal2-toast-popup .swal2-icon.swal2-error .swal2-x-mark-line-right { background: #ba1a1a !important; }
 
 /* Toast content area (title + body) */
 .swal2-toast-popup .swal2-title,
@@ -1356,7 +1363,7 @@ input[type="tel"] {
 }
 
 .swal2-toast-popup .swal2-html-container {
-    font-size: 0.75rem !important;
+    font-size: 0.8125rem !important; /* --text-body-sm (13px) */
     color: var(--color-secondary) !important;
     line-height: 1.4 !important;
     margin-top: 0.125rem !important;
@@ -1393,175 +1400,251 @@ input[type="tel"] {
 .swal2-toast-popup .swal2-timer-progress-bar {
     height: 3px !important;
     border-radius: 0 !important;
-    background: var(--color-primary) !important;
+    background: var(--accent, var(--color-primary)) !important;
     opacity: 0.35;
 }
 
 /* Toast container — z-index above everything */
 .swal2-container.swal2-toast-container { z-index: 99999 !important; }
 
-/* Toast hover effect */
+/* Toast hover — static card: no lift/movement, deeper shadow only */
 .swal2-popup.swal2-toast:hover {
-    box-shadow: 0 14px 48px -8px rgba(0, 0, 0, 0.3) !important;
-    transform: translateY(-1px);
-    transition: all 0.2s ease;
+    box-shadow: 0 12px 44px -10px rgba(0, 0, 0, 0.3) !important;
+    transition: box-shadow 0.2s ease;
 }
 
 .dark .swal2-popup.swal2-toast:hover {
-    box-shadow: 0 14px 48px -8px rgba(0, 0, 0, 0.6) !important;
+    box-shadow: 0 12px 44px -10px rgba(0, 0, 0, 0.6) !important;
 }
 
 /* Notification toast — real-time (bottom-end) with clickable action */
 .swal2-notif-toast { cursor: pointer !important; }
 
-
 /* ===================================================================
    SweetAlert2 Confirmation Dialog — ONPC Design System
-   Replaces the native SweetAlert2 popup with a card that matches
-   the app: design-token colours, institutional radii, ONPC typography,
-   proper dark mode. buttonsStyling: false is set in app.js.
+   Centred modal (never an edge toast): a card that matches the app —
+   design-token colours, tight institutional radii, ONPC typography,
+   hairline divider above the actions, proper dark mode, full RTL.
+   buttonsStyling: false is set in app.js.
    =================================================================== */
 
-/* ── Backdrop ─────────────────────────────────────────────────────── */
-.swal2-container.swal2-backdrop-show,
-.swal2-container.swal2-noanimation {
+/* ── Backdrop — FOR MODALS ONLY ─────────────────────────────────────
+   SweetAlert2 always adds .swal2-backdrop-show to toasts as well, and
+   toast containers span a full-height 360px column on the edge of the
+   screen — without the body:not() scoping below they'd paint a dark
+   semi-transparent band behind every toast. Toasts must never have a
+   backdrop (see also the safety net right after). */
+body:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show,
+body:not(.swal2-toast-shown) .swal2-container.swal2-noanimation {
     background: rgba(19, 27, 46, 0.55) !important;
     backdrop-filter: blur(3px) !important;
 }
 
-/* ── Popup card ───────────────────────────────────────────────────── */
+/* Safety net: toast containers are always transparent — no dark overlay,
+   no blur, ever. */
+body.swal2-toast-shown .swal2-container {
+    background: transparent !important;
+    backdrop-filter: none !important;
+}
+
+/* ── Popup card — centred premium dialog ──────────────────────────── */
 .swal2-confirm-popup.swal2-popup {
+    /* Accent pair (start / end) — overridden per intent from app.js
+       (didRender) so the banner, icon and button always match. */
+    --accent: var(--color-primary);
+    --accent-2: var(--color-primary-container);
+
+    position: relative !important;
     font-family: inherit !important;
     background: var(--color-surface-container-lowest) !important;
     border: 1px solid var(--color-surface-dim) !important;
-    border-radius: 0.75rem !important;
-    box-shadow: 0 24px 64px -16px rgba(19, 27, 46, 0.35) !important;
+    border-radius: 0.5rem !important; /* token --radius-xl */
+    box-shadow: 0 30px 70px -30px rgba(19, 27, 46, 0.55) !important;
     padding: 0 !important;
     width: 26rem !important;
     max-width: calc(100vw - 2rem) !important;
     overflow: hidden !important;
 }
 
+/* ── Header banner — rich gradient with a soft light sweep ────────── */
+.swal2-confirm-popup.swal2-popup::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    inset-inline: 0;
+    height: 4rem; /* bandeau d'en-tête, l'icône le chevauche */
+    background:
+        radial-gradient(120% 200% at 85% -30%, rgba(255, 255, 255, 0.35), transparent 48%),
+        linear-gradient(115deg, var(--accent) 0%, var(--accent-2) 100%);
+    pointer-events: none;
+}
+
+.dark .swal2-confirm-popup.swal2-popup::before {
+    background:
+        radial-gradient(120% 200% at 85% -30%, rgba(255, 255, 255, 0.12), transparent 48%),
+        linear-gradient(115deg, var(--accent) 0%, var(--accent-2) 100%);
+}
+
+/* RTL (arabe) : le dégradé se lit dans le sens de la langue */
+.swal2-container.swal2-rtl .swal2-confirm-popup.swal2-popup::before {
+    background:
+        radial-gradient(120% 200% at 15% -30%, rgba(255, 255, 255, 0.35), transparent 48%),
+        linear-gradient(to left, var(--accent) 0%, var(--accent-2) 100%);
+}
+
+.dark .swal2-container.swal2-rtl .swal2-confirm-popup.swal2-popup::before {
+    background:
+        radial-gradient(120% 200% at 15% -30%, rgba(255, 255, 255, 0.12), transparent 48%),
+        linear-gradient(to left, var(--accent) 0%, var(--accent-2) 100%);
+}
+
+/* Accent per intent — set DIRECTLY on the button variants (no :has()
+   dependency, works in every browser). Each pair = gradient start/end. */
+.swal2-confirm-btn--danger   { --accent: #ba1a1a; --accent-2: color-mix(in srgb, #ba1a1a 82%, #000); }
+.swal2-confirm-btn--warning  { --accent: #d97706; --accent-2: color-mix(in srgb, #d97706 82%, #000); }
+.swal2-confirm-btn--info     { --accent: #575f6b; --accent-2: color-mix(in srgb, #575f6b 84%, #000); }
+.swal2-confirm-btn--question,
+.swal2-confirm-btn--success  { --accent: var(--color-primary); --accent-2: color-mix(in srgb, var(--color-primary) 80%, var(--color-primary-container)); }
+
 .dark .swal2-confirm-popup.swal2-popup {
     background: var(--color-surface-container) !important;
     border-color: var(--color-outline-variant) !important;
-    box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.6) !important;
+    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.7) !important;
 }
 
-/* ── Icon ─────────────────────────────────────────────────────────── */
+/* ── Icon — white chip centred on the banner, soft glow ───────────── */
 .swal2-confirm-popup .swal2-confirm-icon.swal2-icon {
-    margin: 1.75rem auto 0 !important;
-    width: 3.25rem !important;
-    height: 3.25rem !important;
+    position: absolute !important;
+    top: 2.25rem;               /* centré sur le bas du bandeau (4rem - 1.75rem) */
+    left: 50% !important;
+    margin: 0 0 0 -1.75rem !important; /* centrage symétrique : sûr en RTL */
+    width: 3.5rem !important;
+    height: 3.5rem !important;
     border-radius: 9999px !important;
     border: none !important;
-    font-size: 1.5rem !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem !important; /* 5em @ 0.7rem = 3.5rem : géométrie interne (✓, ×, !, ?) toujours proportionnelle */
+    background: var(--color-surface-container-lowest) !important;
+    box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent),
+        0 6px 18px -6px color-mix(in srgb, var(--accent) 55%, transparent) !important;
 }
 
-/* Icon tinted backgrounds — soft, matches notification panel style */
-.swal2-confirm-popup .swal2-icon.swal2-warning {
-    background: color-mix(in srgb, #d97706 12%, transparent) !important;
-    color: #d97706 !important;
-    border-color: transparent !important;
+.dark .swal2-confirm-popup .swal2-confirm-icon.swal2-icon {
+    background: var(--color-surface-container) !important;
 }
-.swal2-confirm-popup .swal2-icon.swal2-question {
-    background: color-mix(in srgb, var(--color-primary) 10%, transparent) !important;
-    color: var(--color-primary) !important;
-    border-color: transparent !important;
-}
-.swal2-confirm-popup .swal2-icon.swal2-error {
-    background: color-mix(in srgb, #dc2626 12%, transparent) !important;
-    color: #dc2626 !important;
-    border-color: transparent !important;
-}
-.swal2-confirm-popup .swal2-icon.swal2-success {
-    background: color-mix(in srgb, var(--color-primary) 10%, transparent) !important;
-    color: var(--color-primary) !important;
-    border-color: transparent !important;
-}
-.swal2-confirm-popup .swal2-icon.swal2-info {
-    background: color-mix(in srgb, var(--color-secondary) 10%, transparent) !important;
-    color: var(--color-secondary) !important;
+
+/* Icône : chip clair posé sur le bandeau — pas de teinte pleine.
+   Les glyphes (✓, !, ?, ×) suivent la couleur d'intention plus bas. */
+.swal2-confirm-popup .swal2-confirm-icon.swal2-icon {
     border-color: transparent !important;
 }
 
-/* Icon mark colours */
-.swal2-confirm-popup .swal2-icon.swal2-warning .swal2-icon-content { color: #d97706 !important; font-size: 1.75rem !important; }
-.swal2-confirm-popup .swal2-icon.swal2-question .swal2-icon-content { color: var(--color-primary) !important; font-size: 1.75rem !important; }
-.swal2-confirm-popup .swal2-icon.swal2-info .swal2-icon-content { color: var(--color-secondary) !important; font-size: 1.75rem !important; }
-.swal2-confirm-popup .swal2-icon.swal2-error .swal2-icon-content { color: #dc2626 !important; font-size: 1.75rem !important; }
-.swal2-confirm-popup .swal2-icon.swal2-error .swal2-x-mark-line-left,
-.swal2-confirm-popup .swal2-icon.swal2-error .swal2-x-mark-line-right { background: #dc2626 !important; }
-.swal2-confirm-popup .swal2-icon.swal2-success .swal2-success-line-tip,
-.swal2-confirm-popup .swal2-icon.swal2-success .swal2-success-line-long { background: var(--color-primary) !important; }
-.swal2-confirm-popup .swal2-icon.swal2-success .swal2-success-ring { border-color: transparent !important; }
-.swal2-confirm-popup .swal2-icon.swal2-success .swal2-success-fix { background: transparent !important; }
+/* ── Icône SVG statique (injectée via willOpen) — jamais de HUD cassé ─
+   Le HUD animé de SweetAlert (coche/croix en « em », verts en dur) est
+   remplacé par une icône vectorielle nette, colorée par --accent. */
+.swal2-confirm-popup .swal2-confirm-icon.swal2-icon.swal2-svg-icon > * {
+    display: block;
+}
 
-/* ── Title ────────────────────────────────────────────────────────── */
+.swal2-confirm-popup .swal2-confirm-icon.swal2-icon.swal2-svg-icon svg {
+    width: 1.75rem !important;
+    height: 1.75rem !important;
+    color: var(--accent, var(--color-primary));
+}
+
+/* Neutralisation défensive : tout reste éventuel du HUD est masqué */
+.swal2-confirm-popup .swal2-confirm-icon .swal2-success-ring,
+.swal2-confirm-popup .swal2-confirm-icon .swal2-success-fix,
+.swal2-confirm-popup .swal2-confirm-icon .swal2-success-circular-line,
+.swal2-confirm-popup .swal2-confirm-icon .swal2-success-circular-line-left,
+.swal2-confirm-popup .swal2-confirm-icon .swal2-success-circular-line-right,
+.swal2-confirm-popup .swal2-confirm-icon .swal2-success-line-tip,
+.swal2-confirm-popup .swal2-confirm-icon .swal2-success-line-long,
+.swal2-confirm-popup .swal2-confirm-icon .swal2-success-line-cusped,
+.swal2-confirm-popup .swal2-confirm-icon .swal2-x-mark {
+    display: none !important;
+}
+
+/* ── Title — centred editorial headline (15–17px, extra bold) ─────── */
 .swal2-confirm-popup .swal2-confirm-title.swal2-title {
     font-size: 1rem !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     color: var(--color-on-surface) !important;
-    line-height: 1.3 !important;
-    margin: 1rem 1.5rem 0 !important;
+    line-height: 1.38 !important; /* diacritiques arabes (Janna LT) préservés */
+    margin: 6.75rem 1.5rem 0 !important; /* sous l'icône qui chevauche le bandeau */
     padding: 0 !important;
+    text-align: center !important;
+    letter-spacing: -0.01em;
+    overflow-wrap: break-word !important;
 }
 
 .dark .swal2-confirm-popup .swal2-confirm-title.swal2-title {
     color: var(--color-on-surface) !important;
 }
 
-/* ── Body text ────────────────────────────────────────────────────── */
+/* ── Body text — centred, comfortable measure (13px / 1.6) ────────── */
 .swal2-confirm-popup .swal2-confirm-body.swal2-html-container,
 .swal2-confirm-popup .swal2-html-container {
     font-size: 0.8125rem !important;
     color: var(--color-secondary) !important;
-    line-height: 1.55 !important;
-    margin: 0.5rem 1.5rem 0 !important;
+    line-height: 1.6 !important;
+    margin: 0.5rem 2rem 0 !important;
     padding: 0 !important;
-    text-align: start !important;
+    text-align: center !important;
+    overflow-wrap: break-word !important;
 }
 
 .dark .swal2-confirm-popup .swal2-confirm-body.swal2-html-container {
     color: var(--color-outline) !important;
 }
 
-/* ── Actions row ──────────────────────────────────────────────────── */
+/* ── Actions row — modern split: two equal buttons, no divider ────── */
 .swal2-confirm-popup .swal2-confirm-actions.swal2-actions {
-    display: flex !important;
-    gap: 0.625rem !important;
-    padding: 1.25rem 1.5rem !important;
-    margin: 0 !important;
-    width: 100% !important;
-    justify-content: flex-end !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr; /* moitié/moitié, miroir automatique en RTL */
+    gap: 0.75rem !important;
+    margin: 1.25rem 1.5rem 1.5rem !important;
+    padding: 0 !important;
+    width: auto !important;
 }
 
-/* ── Base button ──────────────────────────────────────────────────── */
+/* No stray SweetAlert margins around the strict buttons */
+.swal2-confirm-popup .swal2-confirm-btn { margin: 0 !important; }
+
+/* ── Base button — exact app style (text-xs font-bold, angles resserrés) ── */
 .swal2-confirm-btn {
+    /* Accent pair (start / end of the gradient) per intent */
+    --accent: var(--color-primary);
+    --accent-2: var(--color-primary-container);
+
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 0.375rem !important;
-    padding: 0.5625rem 1.125rem !important;
-    font-size: 0.8125rem !important;
-    font-weight: 700 !important;
+    padding: 0.625rem 1rem !important;
+    font-size: 0.75rem !important;      /* text-xs comme les boutons du template */
+    font-weight: 700 !important;        /* font-bold */
     font-family: inherit !important;
-    line-height: 1 !important;
-    border-radius: 0.375rem !important;
+    letter-spacing: 0.01em;
+    line-height: 1.4 !important;
+    border-radius: 0.25rem !important;
     border: 1px solid transparent !important;
     cursor: pointer !important;
-    transition: all 0.15s ease !important;
+    transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease !important;
     outline: none !important;
     white-space: nowrap !important;
 }
 
 .swal2-confirm-btn:focus-visible {
-    box-shadow: 0 0 0 3px rgba(158, 0, 31, 0.25) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, var(--color-primary)) 30%, transparent) !important;
 }
 
-/* Cancel — surface style */
+/* Cancel — quiet surface style */
 .swal2-confirm-btn--cancel {
-    background: var(--color-surface-container) !important;
+    background: var(--color-surface-container-lowest) !important;
     color: var(--color-secondary) !important;
     border-color: var(--color-surface-dim) !important;
 }
@@ -1575,58 +1658,131 @@ input[type="tel"] {
     color: var(--color-outline) !important;
 }
 
-/* Danger — ONPC error red */
-.swal2-confirm-btn--danger {
-    background: #dc2626 !important;
-    color: #fff !important;
-    border-color: #dc2626 !important;
-    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3) !important;
-}
-.swal2-confirm-btn--danger:hover {
-    background: #b91c1c !important;
-    border-color: #b91c1c !important;
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4) !important;
-    transform: translateY(-1px) !important;
-}
-
-/* Info / Question — ONPC institutional red */
+/* Confirm — "strict" ONPC gradient action button (rouge institutionnel)
+   background-color first = solid fallback if the gradient ever fails. */
+.swal2-confirm-btn--danger,
 .swal2-confirm-btn--info,
-.swal2-confirm-btn--question {
-    background: var(--color-primary) !important;
-    color: var(--color-on-primary) !important;
-    border-color: var(--color-primary) !important;
-    box-shadow: 0 2px 8px rgba(158, 0, 31, 0.3) !important;
-}
-.swal2-confirm-btn--info:hover,
-.swal2-confirm-btn--question:hover {
-    background: var(--color-primary-container) !important;
-    border-color: var(--color-primary-container) !important;
-    transform: translateY(-1px) !important;
-}
-
-/* Warning — amber */
+.swal2-confirm-btn--question,
+.swal2-confirm-btn--success,
 .swal2-confirm-btn--warning {
-    background: #d97706 !important;
+    background-color: var(--accent) !important;
+    background-image: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%) !important;
     color: #fff !important;
-    border-color: #d97706 !important;
-    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3) !important;
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent) !important;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent) !important;
 }
+.swal2-confirm-btn--danger:hover,
+.swal2-confirm-btn--info:hover,
+.swal2-confirm-btn--question:hover,
+.swal2-confirm-btn--success:hover,
 .swal2-confirm-btn--warning:hover {
-    background: #b45309 !important;
-    border-color: #b45309 !important;
+    background-color: color-mix(in srgb, var(--accent) 85%, #000) !important;
+    background-image: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--accent) 85%, #000) 0%,
+        color-mix(in srgb, var(--accent-2) 85%, #000) 100%
+    ) !important;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 45%, transparent) !important;
     transform: translateY(-1px) !important;
+}
+.swal2-confirm-btn--danger:active,
+.swal2-confirm-btn--info:active,
+.swal2-confirm-btn--question:active,
+.swal2-confirm-btn--success:active,
+.swal2-confirm-btn--warning:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--accent) 40%, transparent) !important;
 }
 
-/* Success — use primary red (consistent with toast system) */
-.swal2-confirm-btn--success {
-    background: var(--color-primary) !important;
-    color: var(--color-on-primary) !important;
-    border-color: var(--color-primary) !important;
-    box-shadow: 0 2px 8px rgba(158, 0, 31, 0.3) !important;
+/* ── Entrance — quick institutional pop (150–300ms, ease-out) ─────── */
+@keyframes swal2-pop-onpc {
+    from { opacity: 0; transform: scale(0.94) translateY(0.5rem); }
+    to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
-.swal2-confirm-btn--success:hover {
-    background: var(--color-primary-container) !important;
-    transform: translateY(-1px) !important;
+
+@keyframes swal2-icon-pop-onpc {
+    0%   { opacity: 0; transform: scale(0.4); }
+    62%  { opacity: 1; transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.swal2-confirm-popup.swal2-show,
+.swal2-confirm-popup.swal2-noanimation.swal2-show {
+    animation: swal2-pop-onpc 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Rebond léger de l'icône, juste après la carte */
+.swal2-confirm-popup .swal2-confirm-icon.swal2-icon {
+    animation: swal2-icon-pop-onpc 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both !important;
+}
+
+/* Modal container layered above app content, below the toasts */
+.swal2-container.swal2-center { z-index: 99998 !important; }
+
+/* Accessibilité : pas d'animation si l'utilisateur la refuse */
+@media (prefers-reduced-motion: reduce) {
+    .swal2-confirm-popup.swal2-show,
+    .swal2-confirm-popup.swal2-noanimation.swal2-show,
+    .swal2-confirm-popup .swal2-confirm-icon.swal2-icon {
+        animation: none !important;
+    }
+}
+
+/* ===================================================================
+   SweetAlert2 Notice (flash) — the SAME premium card, auto-dismissing:
+   same banner, same white chip, same typography, centred. Timer bar at
+   the bottom + subtle close button on the banner. Chain-managed in JS.
+   =================================================================== */
+
+/* Aération du bas de carte (pas de rangée de boutons) */
+.swal2-confirm-popup.swal2-notice-popup .swal2-confirm-title.swal2-title {
+    margin: 6.75rem 1.5rem 1rem !important;
+}
+
+.swal2-confirm-popup.swal2-notice-popup .swal2-confirm-body.swal2-html-container,
+.swal2-confirm-popup.swal2-notice-popup .swal2-html-container {
+    margin: 0.25rem 2rem 1.25rem !important;
+}
+
+/* Barre de progression — en bas de carte, couleur d'intention */
+.swal2-confirm-popup .swal2-timer-progress-bar-container {
+    position: absolute !important;
+    bottom: 0 !important;
+    inset-inline: 0 !important;
+    margin: 0 !important;
+}
+
+.swal2-confirm-popup .swal2-timer-progress-bar {
+    height: 3px !important;
+    border-radius: 0 !important;
+    background: var(--accent, var(--color-primary)) !important;
+    opacity: 0.45;
+}
+
+/* Bouton fermer — posé sur le bandeau, discret */
+.swal2-confirm-popup .swal2-close {
+    position: absolute !important;
+    top: 0.375rem !important;
+    inset-inline-end: 0.375rem !important;
+    margin: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0.3125rem !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 1.25rem !important;
+    line-height: 1 !important;
+    z-index: 2 !important;
+    border-radius: 0.25rem;
+}
+
+.swal2-confirm-popup .swal2-close:hover {
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.18) !important;
+}
+
+.swal2-confirm-popup .swal2-close:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4) !important;
 }
 
 /* Search Modal */

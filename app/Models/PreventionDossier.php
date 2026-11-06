@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Concerns\HasTranslations;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PreventionDossier extends Model
 {
+    use HasTranslations;
+
+
     // Delivery methods chosen by the applicant once the RDV is passed.
     // Digital download is announced but not active yet ("coming soon").
     public const DELIVERY_DIGITAL = 'digital';
@@ -40,6 +45,19 @@ class PreventionDossier extends Model
     // All possible status values — useful for reference
     // draft | completed | submitted | under_consultation | needs_correction | approved
     // waiting_delivery | cancelled
+
+    // -----------------------------------------------------------------------
+    // Bilingual fields
+    // -----------------------------------------------------------------------
+
+    /**
+     * Note left by the administration (correction requests, cancellation…).
+     * Stored as {"fr": …, "ar": …} — reading returns the localized string.
+     */
+    protected function adminNote(): Attribute
+    {
+        return $this->translated('admin_note');
+    }
 
     // -----------------------------------------------------------------------
     // Relations
@@ -109,8 +127,9 @@ class PreventionDossier extends Model
     /**
      * Record an event in the dossier audit log (timeline).
      * The actor is the currently authenticated user (admin or applicant).
+     * The note (when given) may be a legacy string or a bilingual {fr, ar} array.
      */
-    public function logEvent(string $type, ?string $note = null, array $data = []): PreventionDossierEvent
+    public function logEvent(string $type, string|array|null $note = null, array $data = []): PreventionDossierEvent
     {
         return $this->events()->create([
             'user_id' => auth()->id(),

@@ -314,8 +314,8 @@
                         <label class="block text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 mb-1.5">
                             {{ __('prevention.note_to_applicant') }} <span class="text-red-500">*</span>
                         </label>
-                        <textarea name="admin_note" rows="4" required maxlength="2000" class="text-xs"
-                            placeholder="{{ __('prevention.note_correction_placeholder') }}">{{ old('admin_note') }}</textarea>
+                        <x-admin.bilingual-note name="admin_note" :rows="3" required
+                            placeholder-fr="{{ __('prevention.note_correction_placeholder') }}" />
 
                         <p class="mt-3 mb-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
                             {{ __('prevention.fields_to_fix') }} <span class="font-normal normal-case">{{ __('prevention.select_all_apply') }}</span>
@@ -463,7 +463,8 @@
                     </div>
                     <div class="sm:col-span-3">
                         <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('prevention.note_for_applicant') }} <span class="font-normal normal-case">{{ __('prevention.note_optional_convocation') }}</span></label>
-                        <textarea name="note" rows="2" maxlength="2000" placeholder="{{ __('prevention.visit_instructions_placeholder') }}">{{ old('note') }}</textarea>
+                        <x-admin.bilingual-note name="note" :rows="2"
+                            placeholder-fr="{{ __('prevention.visit_instructions_placeholder') }}" />
                     </div>
                     <button type="submit" class="sm:col-span-3 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
                         <span class="material-symbols-outlined text-base" aria-hidden="true">calendar_add_on</span>
@@ -597,7 +598,8 @@
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('prevention.note_for_applicant') }} <span class="font-normal normal-case">{{ __('prevention.optional') }}</span></label>
-                                <textarea name="note" rows="2" maxlength="2000" placeholder="{{ __('prevention.new_visit_note_placeholder') }}">{{ old('note') }}</textarea>
+                                <x-admin.bilingual-note name="note" :rows="2"
+                                    placeholder-fr="{{ __('prevention.new_visit_note_placeholder') }}" />
                             </div>
                             <p class="sm:col-span-2 text-[11px] text-secondary flex items-start gap-1.5">
                                 <span class="material-symbols-outlined text-sm mt-px" aria-hidden="true">location_on</span>
@@ -1368,7 +1370,7 @@
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('prevention.internal_note') }} <span class="font-normal normal-case">{{ __('prevention.not_visible_short') }}</span></label>
-                                            <textarea name="note" rows="2" maxlength="2000" placeholder="{{ __('prevention.internal_note') }}..." class="text-xs">{{ old('note') }}</textarea>
+                                            <x-admin.bilingual-note name="note" :rows="2" class="mt-1" />
                                         </div>
                                     </div>
                                     <button type="submit"
@@ -1689,8 +1691,8 @@
                   data-confirm-focus-cancel="false">
                 @csrf
                 <label class="block text-xs font-semibold text-red-800 dark:text-red-200 mb-1.5">{{ __('prevention.cancellation_reason') }} <span class="text-red-500">*</span></label>
-                <textarea name="admin_note" rows="4" required maxlength="2000"
-                    placeholder="{{ __('prevention.cancel_reason_placeholder') }}">{{ old('admin_note') }}</textarea>
+                <x-admin.bilingual-note name="admin_note" :rows="3" required
+                    placeholder-fr="{{ __('prevention.cancel_reason_placeholder') }}" />
                 <button type="submit" class="mt-3 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
                     <span class="material-symbols-outlined text-base" aria-hidden="true">cancel</span>
                     {{ __('prevention.confirm_cancellation') }}

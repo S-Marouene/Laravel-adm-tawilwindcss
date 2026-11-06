@@ -1,26 +1,34 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\Admin\GovernorateController;
-use App\Http\Controllers\Admin\DelegationController;
-use App\Http\Controllers\Admin\BuildingTypeController;
 use App\Http\Controllers\Admin\BuildingActivityController;
+use App\Http\Controllers\Admin\BuildingTypeController;
+use App\Http\Controllers\Admin\DelegationController;
 use App\Http\Controllers\Admin\DocumentTypeController;
+use App\Http\Controllers\Admin\GovernorateController;
+use App\Http\Controllers\Admin\NotificationCenterController;
+use App\Http\Controllers\Admin\NotificationTemplateController;
+use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PreventionDossierController;
 use App\Http\Controllers\Admin\PreventivePresenceController;
 use App\Http\Controllers\Admin\RescueCertificateController as AdminRescueCertificateController;
-use App\Http\Controllers\Admin\WorksNotificationController as AdminWorksNotificationController;
-use App\Http\Controllers\Admin\NotificationTemplateController;
-use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\PermissionController;
-use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ThemeSettingsController;
+use App\Http\Controllers\Admin\TranslateController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WorksNotificationController as AdminWorksNotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+    // Real-time note translation proxy (bilingual admin notes) — small,
+    // cached payloads; light rate limit to protect the external engines.
+    Route::post('translate', TranslateController::class)
+        ->name('translate')
+        ->middleware('throttle:120,1');
 
     Route::resource('users', UserController::class)->except(['show']);
     Route::resource('roles', RoleController::class)->except(['show']);
@@ -66,7 +74,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::resource('document-types', DocumentTypeController::class)->except(['show']);
     Route::get('document-types/{documentType}/template', [DocumentTypeController::class, 'downloadTemplate'])->name('document-types.template.download');
 
-    // Notification Templates (super-admin + admin only)
+    // Notification Center — global monitoring of every notification sent (super-admin + admin)
+    Route::middleware('can:manage notifications')->group(function () {
+        Route::get('notification-center', [NotificationCenterController::class, 'index'])->name('notification-center.index');
+        Route::post('notification-center/mark-all-read', [NotificationCenterController::class, 'markAllRead'])->name('notification-center.mark-all-read');
+        Route::delete('notification-center/clear-read', [NotificationCenterController::class, 'clearRead'])->name('notification-center.clear-read');
+        Route::delete('notification-center/{notification}', [NotificationCenterController::class, 'destroy'])->name('notification-center.destroy');
+    });
+
+    // Notification Templates (super-admin only)
     Route::middleware('can:edit settings')->group(function () {
         Route::get('notification-templates', [NotificationTemplateController::class, 'index'])->name('notification-templates.index');
         Route::get('notification-templates/{notificationTemplate}/edit', [NotificationTemplateController::class, 'edit'])->name('notification-templates.edit');
@@ -75,17 +91,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     });
 
     // Prevention Dossiers
-    Route::post('prevention-dossiers/{preventionDossier}/advance',    [PreventionDossierController::class, 'advanceToConsultation'])->name('prevention-dossiers.advance');
+    Route::post('prevention-dossiers/{preventionDossier}/advance', [PreventionDossierController::class, 'advanceToConsultation'])->name('prevention-dossiers.advance');
     Route::post('prevention-dossiers/{preventionDossier}/correction', [PreventionDossierController::class, 'requestCorrection'])->name('prevention-dossiers.correction');
-    Route::post('prevention-dossiers/{preventionDossier}/approve',    [PreventionDossierController::class, 'approve'])->name('prevention-dossiers.approve');
-    Route::post('prevention-dossiers/{preventionDossier}/cancel',     [PreventionDossierController::class, 'cancel'])->name('prevention-dossiers.cancel');
+    Route::post('prevention-dossiers/{preventionDossier}/approve', [PreventionDossierController::class, 'approve'])->name('prevention-dossiers.approve');
+    Route::post('prevention-dossiers/{preventionDossier}/cancel', [PreventionDossierController::class, 'cancel'])->name('prevention-dossiers.cancel');
     // Appointments (RDV)
-    Route::post('prevention-dossiers/{preventionDossier}/appointments',                              [PreventionDossierController::class, 'scheduleAppointment'])->name('prevention-dossiers.appointments.store');
-    Route::put('prevention-dossiers/{preventionDossier}/appointments/{appointment}',                 [PreventionDossierController::class, 'updateAppointment'])->name('prevention-dossiers.appointments.update');
-    Route::post('prevention-dossiers/{preventionDossier}/appointments/{appointment}/cancel',          [PreventionDossierController::class, 'cancelAppointment'])->name('prevention-dossiers.appointments.cancel');
+    Route::post('prevention-dossiers/{preventionDossier}/appointments', [PreventionDossierController::class, 'scheduleAppointment'])->name('prevention-dossiers.appointments.store');
+    Route::put('prevention-dossiers/{preventionDossier}/appointments/{appointment}', [PreventionDossierController::class, 'updateAppointment'])->name('prevention-dossiers.appointments.update');
+    Route::post('prevention-dossiers/{preventionDossier}/appointments/{appointment}/cancel', [PreventionDossierController::class, 'cancelAppointment'])->name('prevention-dossiers.appointments.cancel');
     // Prevention certificate (issued after a passed RDV — the applicant picks it up at a delegation)
-    Route::post('prevention-dossiers/{preventionDossier}/certificate',   [PreventionDossierController::class, 'issueCertificate'])->name('prevention-dossiers.certificate.store');
-    Route::put('prevention-dossiers/{preventionDossier}/certificate',    [PreventionDossierController::class, 'updateCertificate'])->name('prevention-dossiers.certificate.update');
+    Route::post('prevention-dossiers/{preventionDossier}/certificate', [PreventionDossierController::class, 'issueCertificate'])->name('prevention-dossiers.certificate.store');
+    Route::put('prevention-dossiers/{preventionDossier}/certificate', [PreventionDossierController::class, 'updateCertificate'])->name('prevention-dossiers.certificate.update');
     Route::delete('prevention-dossiers/{preventionDossier}/certificate', [PreventionDossierController::class, 'revokeCertificate'])->name('prevention-dossiers.certificate.destroy');
     Route::get('prevention-dossiers/documents/{document}/download', [PreventionDossierController::class, 'downloadDocument'])->name('prevention-dossiers.documents.download');
     Route::resource('prevention-dossiers', PreventionDossierController::class)->only(['index', 'show']);
@@ -102,21 +118,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
         ->parameters(['preventive-presence' => 'preventivePresence']);
 
     // Rescue & relief certificate (شهادة نجدة وإنقاذ) workflow actions — free procedure
-    Route::post('rescue-certificates/{rescueCertificate}/advance',     [AdminRescueCertificateController::class, 'advance'])->name('rescue-certificates.advance');
-    Route::post('rescue-certificates/{rescueCertificate}/correction',  [AdminRescueCertificateController::class, 'requestCorrection'])->name('rescue-certificates.correction');
-    Route::post('rescue-certificates/{rescueCertificate}/approve',     [AdminRescueCertificateController::class, 'approve'])->name('rescue-certificates.approve');
-    Route::post('rescue-certificates/{rescueCertificate}/cancel',      [AdminRescueCertificateController::class, 'cancel'])->name('rescue-certificates.cancel');
-    Route::post('rescue-certificates/{rescueCertificate}/deliver',     [AdminRescueCertificateController::class, 'deliver'])->name('rescue-certificates.deliver');
+    Route::post('rescue-certificates/{rescueCertificate}/advance', [AdminRescueCertificateController::class, 'advance'])->name('rescue-certificates.advance');
+    Route::post('rescue-certificates/{rescueCertificate}/correction', [AdminRescueCertificateController::class, 'requestCorrection'])->name('rescue-certificates.correction');
+    Route::post('rescue-certificates/{rescueCertificate}/approve', [AdminRescueCertificateController::class, 'approve'])->name('rescue-certificates.approve');
+    Route::post('rescue-certificates/{rescueCertificate}/cancel', [AdminRescueCertificateController::class, 'cancel'])->name('rescue-certificates.cancel');
+    Route::post('rescue-certificates/{rescueCertificate}/deliver', [AdminRescueCertificateController::class, 'deliver'])->name('rescue-certificates.deliver');
     Route::get('rescue-certificates/{rescueCertificate}/documents/{doc}/download', [AdminRescueCertificateController::class, 'downloadDocument'])->name('rescue-certificates.documents.download');
     Route::resource('rescue-certificates', AdminRescueCertificateController::class)
         ->only(['index', 'show'])
         ->parameters(['rescue-certificates' => 'rescueCertificate']);
 
     // Works notification (الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء) workflow actions — free procedure
-    Route::post('works-notifications/{worksNotification}/advance',    [AdminWorksNotificationController::class, 'advance'])->name('works-notifications.advance');
+    Route::post('works-notifications/{worksNotification}/advance', [AdminWorksNotificationController::class, 'advance'])->name('works-notifications.advance');
     Route::post('works-notifications/{worksNotification}/correction', [AdminWorksNotificationController::class, 'requestCorrection'])->name('works-notifications.correction');
-    Route::post('works-notifications/{worksNotification}/approve',    [AdminWorksNotificationController::class, 'approve'])->name('works-notifications.approve');
-    Route::post('works-notifications/{worksNotification}/cancel',     [AdminWorksNotificationController::class, 'cancel'])->name('works-notifications.cancel');
+    Route::post('works-notifications/{worksNotification}/approve', [AdminWorksNotificationController::class, 'approve'])->name('works-notifications.approve');
+    Route::post('works-notifications/{worksNotification}/cancel', [AdminWorksNotificationController::class, 'cancel'])->name('works-notifications.cancel');
     Route::get('works-notifications/{worksNotification}/documents/{doc}/download', [AdminWorksNotificationController::class, 'downloadDocument'])->name('works-notifications.documents.download');
     Route::resource('works-notifications', AdminWorksNotificationController::class)
         ->only(['index', 'show'])

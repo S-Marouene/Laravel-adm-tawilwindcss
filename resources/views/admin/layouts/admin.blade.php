@@ -296,6 +296,30 @@
                     </a>
                     @endcan
 
+                    @canany(['manage notifications', 'edit settings'])
+                    <div class="pt-4 pb-1" x-show="!collapsed">
+                        <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('nav.notifications') }}</p>
+                    </div>
+
+                    @can('manage notifications')
+                    <a href="{{ route('admin.notification-center.index') }}" data-tooltip="{{ __('nav.notifications_center') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.notification-center.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        <span x-show="!collapsed" class="truncate">{{ __('nav.notifications_center') }}</span>
+                    </a>
+                    @endcan
+
+                    @can('edit settings')
+                    <a href="{{ route('admin.notification-templates.index') }}" data-tooltip="{{ __('nav.notification_templates') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.notification-templates.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        <span x-show="!collapsed" class="truncate">{{ __('nav.notification_templates') }}</span>
+                    </a>
+                    @endcan
+                    @endcanany
+
                     @canany(['edit settings', 'edit theme-settings'])
                     <div class="pt-4 pb-1" x-show="!collapsed">
                         <p class="px-3 sidebar-divider text-xs font-semibold uppercase tracking-widest">{{ __('admin.configuration') }}</p>
@@ -654,6 +678,18 @@
                                 <a href="{{ route('admin.activity-logs.index') }}" @click="closeMobile()" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.activity-logs.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-on-surface dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
                                     <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                                     {{ __('admin.logs') }}
+                                </a>
+                                @endcan
+                                @can('manage notifications')
+                                <a href="{{ route('admin.notification-center.index') }}" @click="closeMobile()" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.notification-center.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-on-surface dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                                    <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                    {{ __('nav.notifications_center') }}
+                                </a>
+                                @endcan
+                                @can('edit settings')
+                                <a href="{{ route('admin.notification-templates.index') }}" @click="closeMobile()" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.notification-templates.*') ? 'bg-gov-50 dark:bg-gov-900/30 text-gov-700 dark:text-gov-300' : 'text-on-surface dark:text-gray-300 hover:bg-sand-50 dark:hover:bg-gray-700/50' }}">
+                                    <svg class="w-5 h-5 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    {{ __('nav.notification_templates') }}
                                 </a>
                                 @endcan
                                 @can('edit theme-settings')

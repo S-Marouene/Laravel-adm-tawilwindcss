@@ -146,13 +146,20 @@ class PreventionDossierController extends Controller
         AdminScope::authorize($preventionDossier);
 
         $validated = $request->validate([
-            'admin_note'    => ['required', 'string', 'max:2000'],
+            // Bilingual note — both languages are required. Real-time
+            // auto-translation prefills the Arabic but the wording stays
+            // under the admin's control.
+            'admin_note.fr' => ['required', 'string', 'max:2000'],
+            'admin_note.ar' => ['required', 'string', 'max:2000'],
             // Which dossier fields need fixing (e.g. 'phone', 'cin', 'building_type_id'…)
             'fields_to_fix' => ['nullable', 'array'],
             'fields_to_fix.*' => ['string', 'in:cin,nom_prenom,phone,governorate_id,delegation_id,building_address,building_type_id,building_activity_id'],
             // Which document types need a new upload (array of document_type_id integers)
             'docs_to_fix'   => ['nullable', 'array'],
             'docs_to_fix.*' => ['integer', 'exists:document_types,id'],
+        ], [], [
+            'admin_note.fr' => 'Note (Français)',
+            'admin_note.ar' => 'Note (العربية)',
         ]);
 
         if (! $preventionDossier->isActionable()) {
@@ -277,7 +284,12 @@ class PreventionDossierController extends Controller
         AdminScope::authorize($preventionDossier);
 
         $validated = $request->validate([
-            'admin_note' => ['required', 'string', 'max:2000'],
+            // Bilingual cancellation reason — both languages are required.
+            'admin_note.fr' => ['required', 'string', 'max:2000'],
+            'admin_note.ar' => ['required', 'string', 'max:2000'],
+        ], [], [
+            'admin_note.fr' => 'Note (Français)',
+            'admin_note.ar' => 'Note (العربية)',
         ]);
 
         if (in_array($preventionDossier->status, ['approved', 'cancelled'])) {
@@ -317,7 +329,9 @@ class PreventionDossierController extends Controller
         $validated = $request->validate([
             'visit_date' => ['required', 'date', 'after_or_equal:today'],
             'visit_time' => ['required', 'date_format:H:i'],
-            'note'       => ['nullable', 'string', 'max:2000'],
+            // Bilingual note for the applicant (optional) — French AND Arabic.
+            'note.fr'    => ['nullable', 'string', 'max:2000'],
+            'note.ar'    => ['nullable', 'string', 'max:2000'],
         ]);
 
         // No location here: the visit takes place at the building whose
@@ -363,13 +377,21 @@ class PreventionDossierController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['required', 'in:passed,failed'],
-            'note'   => ['nullable', 'string', 'max:2000'],
+            'status'  => ['required', 'in:passed,failed'],
+            // Bilingual inspection note — required (both languages) when failed.
+            'note.fr' => ['nullable', 'string', 'max:2000'],
+            'note.ar' => ['nullable', 'string', 'max:2000'],
+        ], [], [
+            'note.fr' => 'Note (Français)',
+            'note.ar' => 'Note (العربية)',
         ]);
 
-        // note is required when failed
-        if ($validated['status'] === 'failed' && empty($validated['note'])) {
-            return back()->withErrors(['note' => 'A note is required when marking a visit as failed.']);
+        // The bilingual note is required when a visit is marked as failed
+        // (the applicant must understand why, in his language — real-time
+        // auto-translation prefills both fields as the admin types).
+        if ($validated['status'] === 'failed' &&
+            (empty(trim((string) ($validated['note']['fr'] ?? ''))) || empty(trim((string) ($validated['note']['ar'] ?? ''))))) {
+            return back()->withErrors(['note.fr' => 'A note is required when marking a visit as failed.']);
         }
 
         $appointment->update([
@@ -451,7 +473,12 @@ class PreventionDossierController extends Controller
         }
 
         $validated = $request->validate([
-            'note' => ['required', 'string', 'max:2000'],
+            // Bilingual cancellation reason — both languages are required.
+            'note.fr' => ['required', 'string', 'max:2000'],
+            'note.ar' => ['required', 'string', 'max:2000'],
+        ], [], [
+            'note.fr' => 'Note (Français)',
+            'note.ar' => 'Note (العربية)',
         ]);
 
         // Capture details before the update so the event keeps the full record.
@@ -518,7 +545,9 @@ class PreventionDossierController extends Controller
             'post_address'    => ['required_if:delivery_method,post', 'nullable', 'string', 'max:500'],
             'post_tracking'   => ['nullable', 'string', 'max:60'],
             'valid_until'     => ['nullable', 'date', 'after_or_equal:today'],
-            'note'            => ['nullable', 'string', 'max:2000'],
+            // Bilingual note (optional) — French AND Arabic.
+            'note.fr'         => ['nullable', 'string', 'max:2000'],
+            'note.ar'         => ['nullable', 'string', 'max:2000'],
         ]);
 
         $deliveryMethod = $validated['delivery_method'];

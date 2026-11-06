@@ -11,6 +11,11 @@ return [
     'register' => 'إنشاء حساب',
     'logout' => 'تسجيل الخروج',
 
+    // Notifications
+    'notifications' => 'الإشعارات',
+    'notifications_center' => 'مركز الإشعارات',
+    'notification_templates' => 'قوالب الرسائل',
+
     // Advanced UI
     'advanced_ui' => 'واجهة متقدمة',
     'stepper' => 'خطوات',

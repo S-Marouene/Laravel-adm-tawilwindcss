@@ -108,7 +108,13 @@ class RescueCertificateController extends Controller
         AdminScope::authorize($rescueCertificate);
 
         $validated = $request->validate([
-            'admin_note' => ['required', 'string', 'max:2000'],
+            // Bilingual note — both languages are required (auto-translated
+            // in real time while the admin types).
+            'admin_note.fr' => ['required', 'string', 'max:2000'],
+            'admin_note.ar' => ['required', 'string', 'max:2000'],
+        ], [], [
+            'admin_note.fr' => 'Note (Français)',
+            'admin_note.ar' => 'Note (العربية)',
         ]);
 
         if (! $rescueCertificate->isActionable()) {
@@ -167,7 +173,12 @@ class RescueCertificateController extends Controller
         AdminScope::authorize($rescueCertificate);
 
         $validated = $request->validate([
-            'admin_note' => ['required', 'string', 'max:2000'],
+            // Bilingual cancellation reason — both languages are required.
+            'admin_note.fr' => ['required', 'string', 'max:2000'],
+            'admin_note.ar' => ['required', 'string', 'max:2000'],
+        ], [], [
+            'admin_note.fr' => 'Note (Français)',
+            'admin_note.ar' => 'Note (العربية)',
         ]);
 
         if (! $rescueCertificate->isActionable()) {
@@ -201,7 +212,9 @@ class RescueCertificateController extends Controller
         $validated = $request->validate([
             'certificate_number' => ['required', 'string', 'max:50'],
             'delivery_date'      => ['required', 'date'],
-            'delivery_note'      => ['nullable', 'string', 'max:2000'],
+            // Bilingual delivery note (optional) — French AND Arabic.
+            'delivery_note.fr'   => ['nullable', 'string', 'max:2000'],
+            'delivery_note.ar'   => ['nullable', 'string', 'max:2000'],
         ]);
 
         if ($rescueCertificate->status !== 'approved') {

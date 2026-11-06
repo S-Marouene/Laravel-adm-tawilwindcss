@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Concerns\HasTranslations;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PreventivePresenceRequest extends Model
 {
+    use HasTranslations;
+
     protected $fillable = [
         'user_id', 'current_step', 'status', 'reference',
         'cin', 'nom_prenom', 'phone',
@@ -37,6 +41,27 @@ class PreventivePresenceRequest extends Model
 
     // All possible status values — useful for reference
     // draft | completed | under_consultation | needs_correction | approved | served | cancelled
+
+    // -----------------------------------------------------------------------
+    // Bilingual fields
+    // -----------------------------------------------------------------------
+
+    /**
+     * Note left by the administration (correction requests, cancellation…).
+     * Stored as {"fr": …, "ar": …} — reading returns the localized string.
+     */
+    protected function adminNote(): Attribute
+    {
+        return $this->translated('admin_note');
+    }
+
+    /**
+     * Note written when the service was performed — bilingual {"fr": …, "ar": …}.
+     */
+    protected function serviceNote(): Attribute
+    {
+        return $this->translated('service_note');
+    }
 
     // -----------------------------------------------------------------------
     // Relations
@@ -78,8 +103,9 @@ class PreventivePresenceRequest extends Model
     /**
      * Record an event in the request audit log (timeline).
      * The actor is the currently authenticated user (admin or applicant).
+     * The note (when given) may be a legacy string or a bilingual {fr, ar} array.
      */
-    public function logEvent(string $type, ?string $note = null, array $data = []): PreventivePresenceEvent
+    public function logEvent(string $type, string|array|null $note = null, array $data = []): PreventivePresenceEvent
     {
         return $this->events()->create([
             'user_id' => auth()->id(),

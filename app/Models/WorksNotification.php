@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Concerns\HasTranslations;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WorksNotification extends Model
 {
+    use HasTranslations;
+
     protected $fillable = [
         'user_id', 'current_step', 'status', 'reference',
         'owner_type', 'owner_name', 'owner_cin', 'company_name', 'jort_reference', 'phone',
@@ -24,6 +28,19 @@ class WorksNotification extends Model
 
     // All possible status values — useful for reference
     // draft | completed | under_consultation | needs_correction | approved | cancelled
+
+    // -----------------------------------------------------------------------
+    // Bilingual fields
+    // -----------------------------------------------------------------------
+
+    /**
+     * Note left by the administration (correction requests, cancellation…).
+     * Stored as {"fr": …, "ar": …} — reading returns the localized string.
+     */
+    protected function adminNote(): Attribute
+    {
+        return $this->translated('admin_note');
+    }
 
     public const OWNER_NATURAL = 'natural';
     public const OWNER_MORAL   = 'moral';
@@ -73,8 +90,9 @@ class WorksNotification extends Model
     /**
      * Record an event in the notification audit log (timeline).
      * The actor is the currently authenticated user (admin or applicant).
+     * The note (when given) may be a legacy string or a bilingual {fr, ar} array.
      */
-    public function logEvent(string $type, ?string $note = null, array $data = []): WorksEvent
+    public function logEvent(string $type, string|array|null $note = null, array $data = []): WorksEvent
     {
         return $this->events()->create([
             'user_id' => auth()->id(),

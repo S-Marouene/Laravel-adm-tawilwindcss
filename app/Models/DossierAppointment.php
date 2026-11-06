@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Concerns\HasTranslations;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DossierAppointment extends Model
 {
+    use HasTranslations;
+
     protected $fillable = [
         'prevention_dossier_id',
         'scheduled_by',
@@ -19,6 +23,15 @@ class DossierAppointment extends Model
     protected $casts = [
         'visit_date' => 'date',
     ];
+
+    /**
+     * Note left by the administration (visit instructions, inspection
+     * result, cancellation reason…) — bilingual {"fr": …, "ar": …}.
+     */
+    protected function note(): Attribute
+    {
+        return $this->translated('note');
+    }
 
     // -----------------------------------------------------------------------
     // Relations

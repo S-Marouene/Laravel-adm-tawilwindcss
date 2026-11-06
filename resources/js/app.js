@@ -921,6 +921,113 @@ Alpine.data('confirmManager', () => ({
     }
 }));
 
+/**
+ * Bilingual Translator — real-time auto-translation between the two
+ * note fields (Français <-> العربية) while the admin types, so both
+ * versions of an administration note are always available.
+ *
+ * How it plays with manual edits ("fix any issue of the auto"):
+ *  - Typing in one field re-translates into the counterpart after a
+ *    short debounce, but ONLY if the counterpart is empty or was itself
+ *    produced by a previous auto-translation — a hand-written translation
+ *    is never overwritten.
+ *  - Editing a field clears its "auto" badge: it becomes the manual
+ *    reference of that language.
+ *  - If the translation service is unreachable, the admin simply types
+ *    the note by hand (nothing is blocked).
+ */
+Alpine.data('bilingualTranslator', () => ({
+    url: '',         // proxy endpoint, read from data-translate-url in init()
+    frText: '',
+    arText: '',
+    frAuto: false,   // current French text was auto-translated from Arabic
+    arAuto: false,   // current Arabic text was auto-translated from French
+    busyFr: false,   // French side is being auto-filled
+    busyAr: false,   // Arabic side is being auto-filled
+    frError: false,  // last auto-fill attempt failed (service unavailable)
+    arError: false,
+    timers: { fr: null, ar: null },
+    seq: 0,          // supersede stale responses while typing fast
+
+    init() {
+        // Endpoint + initial content read from the DOM (SSR'd with old()).
+        this.url    = this.$el.dataset.translateUrl || '';
+        this.frText = this.$refs.fr?.value ?? '';
+        this.arText = this.$refs.ar?.value ?? '';
+
+        // After a failed validation, one side may come back filled and the
+        // other empty: auto-fill the missing translation once.
+        if (this.frText.trim() !== '' && this.arText.trim() === '') {
+            this.queue('fr', 'ar', 400);
+        } else if (this.arText.trim() !== '' && this.frText.trim() === '') {
+            this.queue('ar', 'fr', 400);
+        }
+    },
+
+    /** x-on:input on a textarea — mark manual edit + schedule a sync */
+    changed(from, value) {
+        this[from + 'Text'] = value;
+        this[from + 'Auto'] = false;
+
+        const to = from === 'fr' ? 'ar' : 'fr';
+        // Live while typing: recentre the debounce timer on every keystroke.
+        this.queue(from, to, 650);
+    },
+
+    queue(from, to, delay) {
+        clearTimeout(this.timers[from]);
+        this.timers[from] = setTimeout(() => this.sync(from, to), delay);
+    },
+
+    /** Translate `from` → `to` (debounced, race-safe, cache-friendly) */
+    async sync(from, to) {
+        const text = this[from + 'Text'].trim();
+
+        // A hand-written counterpart is never overwritten.
+        const targetManual = this[to + 'Text'].trim() !== '' && !this[to + 'Auto'];
+        if (text === '' || targetManual) return;
+
+        const mySeq = ++this.seq;
+        this[to + 'Busy'] = true;
+        this[to + 'Error'] = false;
+
+        try {
+            const res = await fetch(this.url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type':  'application/json',
+                    'Accept':        'application/json',
+                    'X-CSRF-TOKEN':  document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ text, from, to }),
+            });
+
+            if (!res.ok) throw new Error('translation failed');
+
+            const data  = await res.json();
+            const out   = (data.translation || '').trim();
+
+            // A newer keystroke/sync already superseded this response.
+            if (mySeq !== this.seq) return;
+
+            this[to + 'Busy'] = false;
+
+            if (out !== '' && out !== text) {
+                this.$refs[to].value = out;   // update the DOM textarea
+                this[to + 'Text']    = out;
+                this[to + 'Auto']    = true;
+            }
+        } catch {
+            if (mySeq === this.seq) {
+                this[to + 'Busy']  = false;
+                this[to + 'Error'] = true;
+            }
+        }
+    },
+}));
+
+
 /* ═══════════════════════════════════════════════════════════════════════════
    SWEETALERT2 — moteur d'alertes global (admin + espace demandeur)
    ─────────────────────────────────────────────────────────────────────────
@@ -937,14 +1044,36 @@ Alpine.data('confirmManager', () => ({
     const defaults = () => document.getElementById('app-alerts');
     const rtl = () => document.documentElement.getAttribute('dir') === 'rtl';
 
-    /* Styles des boutons de confirmation par intention */
+    /* Styles des boutons de confirmation par intention
+       (cohérents avec les tokens ONPC : --color-error #BA1A1A,
+       --color-primary #9E001F, --color-secondary #575F6B) */
     const STYLES = {
-        danger:   { confirm: '#DC2626', cancel: '#64748B', icon: 'warning' },
-        warning:  { confirm: '#D97706', cancel: '#64748B', icon: 'warning' },
-        success:  { confirm: '#059669', cancel: '#64748B', icon: 'question' },
-        info:     { confirm: '#2563EB', cancel: '#64748B', icon: 'question' },
-        question: { confirm: '#9E001F', cancel: '#64748B', icon: 'question' },
+        danger:   { confirm: '#BA1A1A', cancel: '#575F6B', icon: 'warning' },
+        warning:  { confirm: '#D97706', cancel: '#575F6B', icon: 'warning' },
+        success:  { confirm: '#9E001F', cancel: '#575F6B', icon: 'question' },
+        info:     { confirm: '#575F6B', cancel: '#575F6B', icon: 'question' },
+        question: { confirm: '#9E001F', cancel: '#575F6B', icon: 'question' },
     };
+
+    /* Icône vectorielle statique (Heroicons, MIT) — remplace le HUD animé
+       de SweetAlert2 (coche/croix dessinées en « em », verts en dur) qui
+       se casse hors de son gabarit par défaut. SVG net, coloré par
+       --accent, jamais cassé. */
+    const SVG_PATHS = {
+        success:  '<path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>',
+        error:    '<path d="M9.75 9.75 14.25 14.25M14.25 9.75 9.75 14.25M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>',
+        warning:  '<path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>',
+        info:     '<path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/>',
+        question: '<path d="M9.879 7.519c1.171-1.025 3.023-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"/>',
+    };
+
+    function paintSwalIcon(popup) {
+        const el = popup.querySelector('.swal2-icon');
+        if (!el) return;
+        const kind = (el.className.match(/swal2-(success|error|warning|info|question)/) || [])[1] || 'info';
+        el.classList.add('swal2-svg-icon'); // la CSS neutralise tout reste de HUD
+        el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG_PATHS[kind] || SVG_PATHS.info}</svg>`;
+    }
 
     /* ── 1. Toasts (haut-droite, auto-destruction, pause au survol) ── */
     const Toast = Swal.mixin({
@@ -971,54 +1100,119 @@ Alpine.data('confirmManager', () => ({
     const AppToast = (type, message) => Toast.fire({ icon: type, title: message });
     window.AppToast = AppToast;
 
+    /* ── 1bis. Annonces centrées (flash) — la même carte premium que les
+       confirmations : bandeau dégradé, chip blanc, typographie centrale.
+       Auto-destruction avec barre de progression, fermable à tout instant
+       (clic dehors, Échap, bouton ×). Les toasts temps réel des
+       notifications restent en coin d'écran. ── */
+    const FLASH_ACCENTS = {
+        success: { accent: '#9E001F', accent2: 'color-mix(in srgb, #9E001F 55%, #C8102E)' },
+        error:   { accent: '#BA1A1A', accent2: 'color-mix(in srgb, #BA1A1A 82%, #000)' },
+        warning: { accent: '#D97706', accent2: 'color-mix(in srgb, #D97706 82%, #000)' },
+        info:    { accent: '#575F6B', accent2: 'color-mix(in srgb, #575F6B 84%, #000)' },
+    };
+
+    const Notice = Swal.mixin({
+        toast: false, // centré, comme les confirmations
+        timer: 4200,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        showCloseButton: true,
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+        heightAuto: false,
+        didRender: (popup) => {
+            /* Le markup de l'icône est déjà rendu ici → teinte immédiate */
+            const icon = popup.querySelector('.swal2-icon')?.className
+                .match(/swal2-(success|error|warning|info|question)/)?.[1] || 'info';
+            const accent = FLASH_ACCENTS[icon] || FLASH_ACCENTS.info;
+            popup.style.setProperty('--accent', accent.accent);
+            popup.style.setProperty('--accent-2', accent.accent2);
+        },
+        willOpen: paintSwalIcon,
+        customClass: {
+            popup:            'swal2-confirm-popup swal2-notice-popup',
+            icon:             'swal2-confirm-icon',
+            title:            'swal2-confirm-title',
+            htmlContainer:    'swal2-confirm-body',
+            timerProgressBar: 'swal2-notice-progress',
+            closeButton:      'swal2-notice-close',
+        },
+    });
+
     function fireFlashToasts() {
         const node = document.getElementById('app-flash-json');
         if (!node) return;
         try {
             const flash = JSON.parse(node.textContent);
-            const delay = 350; // léger décalage pour laisser la page s'afficher
-            Object.entries(flash).forEach(([type, message], i) => {
-                if (['success', 'error', 'warning', 'info'].includes(type) && message) {
-                    setTimeout(() => AppToast(type, message), delay + i * 450);
-                }
-            });
+            const items = Object.entries(flash)
+                .filter(([type, message]) => ['success', 'error', 'warning', 'info'].includes(type) && message)
+                .map(([type, message]) => () => Notice.fire({ icon: type, title: message }));
+
+            /* Chaînées : la suivante s'affiche après fermeture de la
+               précédente pour ne jamais empiler de modales au centre.
+               Petit décalage pour laisser la page s'afficher d'abord. */
+            setTimeout(() => items.reduce((p, step) => p.then(step), Promise.resolve()), 350);
         } catch (e) { /* JSON corrompu : on ignore silencieusement */ }
     }
 
     if (document.readyState !== 'loading') fireFlashToasts();
     else document.addEventListener('DOMContentLoaded', fireFlashToasts);
 
-    /* ── 2. Boîte de confirmation professionnelle ── */
+    /* Fin (2ᵉ stop) du dégradé de la bande d'accentuation, par intention */
+    const ACCENT2 = {
+        danger:   'color-mix(in srgb, #BA1A1A 82%, #000)',
+        warning:  'color-mix(in srgb, #D97706 82%, #000)',
+        success:  'color-mix(in srgb, #9E001F 55%, #C8102E)',
+        question: 'color-mix(in srgb, #9E001F 55%, #C8102E)',
+        info:     'color-mix(in srgb, #575F6B 84%, #000)',
+    };
+
+    /* ── 2. Boîte de confirmation — modale centrée à l'écran
+       Carte institutionnelle (.swal2-confirm-popup : bande dégradée en
+       haut dans la couleur de l'intention, icône ronde teintée, filet
+       séparateur au-dessus des actions), centrée au milieu de la fenêtre
+       avec voile assombri. buttonsStyling: false → la CSS pilote tout. ── */
     function confirmDialog(opts = {}) {
         const host = defaults();
         const style = STYLES[opts.style] || STYLES.info;
         const isDelete = opts.style === 'danger';
+        const accentEnd = ACCENT2[opts.style] || ACCENT2.info;
 
         return Swal.fire({
+            heightAuto:        false, // ne pas décaler la page avec un padding
             title: opts.title || (isDelete
                 ? (host?.dataset.deleteTitle || 'Confirmer la suppression')
                 : (host?.dataset.confirmTitle || 'Êtes-vous sûr ?')),
             text: opts.text || '',
             icon: opts.icon || style.icon,
             iconColor: style.confirm,
-            showCancelButton: true,
+            showConfirmButton: true,
             confirmButtonText: opts.ok || (isDelete
                 ? (host?.dataset.deleteOk || 'Oui, supprimer')
                 : (host?.dataset.confirmOk || 'Oui, continuer')),
+            showCancelButton: true,
             cancelButtonText: opts.cancel || (host?.dataset.confirmCancel || 'Annuler'),
             focusCancel: opts.focusCancel ?? true,
             buttonsStyling: false,
             reverseButtons: rtl(),
             allowOutsideClick: !opts.important,
             allowEscapeKey: !opts.important,
+            /* Couleur d'intention portée au niveau de la carte : la bande
+               dégradée du haut suit forcément la même teinte que le bouton. */
+            didRender: (popup) => {
+                popup.style.setProperty('--accent', style.confirm);
+                popup.style.setProperty('--accent-2', accentEnd);
+            },
+            willOpen: paintSwalIcon,
             customClass: {
-                popup:         'swal2-confirm-popup',
-                icon:          'swal2-confirm-icon',
-                title:         'swal2-confirm-title',
-                htmlContainer: 'swal2-confirm-body',
-                actions:       'swal2-confirm-actions',
-                confirmButton: `swal2-confirm-btn swal2-confirm-btn--${opts.style || 'info'}`,
-                cancelButton:  'swal2-confirm-btn swal2-confirm-btn--cancel',
+                popup:           'swal2-confirm-popup',
+                icon:            'swal2-confirm-icon',
+                title:           'swal2-confirm-title',
+                htmlContainer:   'swal2-confirm-body',
+                actions:         'swal2-confirm-actions',
+                confirmButton:   `swal2-confirm-btn swal2-confirm-btn--${opts.style || 'info'}`,
+                cancelButton:    'swal2-confirm-btn swal2-confirm-btn--cancel',
             },
         });
     }

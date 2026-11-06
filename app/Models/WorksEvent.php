@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Concerns\HasTranslations;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WorksEvent extends Model
 {
+    use HasTranslations;
+
     protected $fillable = [
         'works_notification_id', 'user_id', 'type', 'note', 'data',
     ];
@@ -14,6 +18,15 @@ class WorksEvent extends Model
     protected $casts = [
         'data' => 'array',
     ];
+
+    /**
+     * Bilingual note attached to this event — stored as {"fr": …, "ar": …},
+     * reading returns the localized string.
+     */
+    protected function note(): Attribute
+    {
+        return $this->translated('note');
+    }
 
     // Possible types — useful for reference:
     // submitted | resubmitted | advanced_to_consultation | correction_requested

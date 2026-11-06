@@ -11,6 +11,11 @@ return [
     'register' => 'Register',
     'logout' => 'Logout',
 
+    // Notifications
+    'notifications' => 'Notifications',
+    'notifications_center' => 'Notification center',
+    'notification_templates' => 'Message templates',
+
     // Advanced UI
     'advanced_ui' => 'Advanced UI',
     'stepper' => 'Stepper',

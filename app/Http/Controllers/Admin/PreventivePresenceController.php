@@ -109,7 +109,13 @@ class PreventivePresenceController extends Controller
         AdminScope::authorize($preventivePresence);
 
         $validated = $request->validate([
-            'admin_note' => ['required', 'string', 'max:2000'],
+            // Bilingual note — both languages are required (auto-translated
+            // in real time while the admin types).
+            'admin_note.fr' => ['required', 'string', 'max:2000'],
+            'admin_note.ar' => ['required', 'string', 'max:2000'],
+        ], [], [
+            'admin_note.fr' => 'Note (Français)',
+            'admin_note.ar' => 'Note (العربية)',
         ]);
 
         if (! $preventivePresence->isActionable()) {
@@ -168,7 +174,12 @@ class PreventivePresenceController extends Controller
         AdminScope::authorize($preventivePresence);
 
         $validated = $request->validate([
-            'admin_note' => ['required', 'string', 'max:2000'],
+            // Bilingual cancellation reason — both languages are required.
+            'admin_note.fr' => ['required', 'string', 'max:2000'],
+            'admin_note.ar' => ['required', 'string', 'max:2000'],
+        ], [], [
+            'admin_note.fr' => 'Note (Français)',
+            'admin_note.ar' => 'Note (العربية)',
         ]);
 
         if (! $preventivePresence->isActionable()) {
@@ -241,7 +252,9 @@ class PreventivePresenceController extends Controller
             'service_date'   => ['required', 'date'],
             'service_team'   => ['nullable', 'string', 'max:255'],
             'service_agents' => ['nullable', 'integer', 'min:1', 'max:999'],
-            'service_note'   => ['nullable', 'string', 'max:2000'],
+            // Bilingual service note (optional) — French AND Arabic.
+            'service_note.fr' => ['nullable', 'string', 'max:2000'],
+            'service_note.ar' => ['nullable', 'string', 'max:2000'],
         ]);
 
         if ($preventivePresence->status !== 'approved') {

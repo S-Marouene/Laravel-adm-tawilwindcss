@@ -110,7 +110,13 @@ class WorksNotificationController extends Controller
         AdminScope::authorize($worksNotification);
 
         $validated = $request->validate([
-            'admin_note' => ['required', 'string', 'max:2000'],
+            // Bilingual note — both languages are required (auto-translated
+            // in real time while the admin types).
+            'admin_note.fr' => ['required', 'string', 'max:2000'],
+            'admin_note.ar' => ['required', 'string', 'max:2000'],
+        ], [], [
+            'admin_note.fr' => 'Note (Français)',
+            'admin_note.ar' => 'Note (العربية)',
         ]);
 
         if (! $worksNotification->isActionable()) {
@@ -169,7 +175,12 @@ class WorksNotificationController extends Controller
         AdminScope::authorize($worksNotification);
 
         $validated = $request->validate([
-            'admin_note' => ['required', 'string', 'max:2000'],
+            // Bilingual cancellation reason — both languages are required.
+            'admin_note.fr' => ['required', 'string', 'max:2000'],
+            'admin_note.ar' => ['required', 'string', 'max:2000'],
+        ], [], [
+            'admin_note.fr' => 'Note (Français)',
+            'admin_note.ar' => 'Note (العربية)',
         ]);
 
         if (! $worksNotification->isActionable()) {

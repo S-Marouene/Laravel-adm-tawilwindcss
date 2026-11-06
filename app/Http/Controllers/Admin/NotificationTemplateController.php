@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\NotificationTemplate;
+use Database\Seeders\NotificationTemplateSeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,6 +17,12 @@ class NotificationTemplateController extends Controller
 {
     public function index(): View
     {
+        // Self-healing: seed the default templates if the table is still
+        // empty (fresh install that never ran the full db:seed).
+        if (NotificationTemplate::query()->doesntExist()) {
+            (new NotificationTemplateSeeder)->run();
+        }
+
         $templates = NotificationTemplate::orderBy('event_key')->get();
 
         return view('admin.notification-templates.index', compact('templates'));
@@ -32,10 +39,10 @@ class NotificationTemplateController extends Controller
     {
         $validated = $request->validate([
             'title_fr' => ['required', 'string', 'max:255'],
-            'body_fr'  => ['required', 'string', 'max:1000'],
+            'body_fr' => ['required', 'string', 'max:1000'],
             'title_ar' => ['required', 'string', 'max:255'],
-            'body_ar'  => ['required', 'string', 'max:1000'],
-            'level'    => ['required', 'in:info,success,warning,danger'],
+            'body_ar' => ['required', 'string', 'max:1000'],
+            'level' => ['required', 'in:info,success,warning,danger'],
         ]);
 
         $notificationTemplate->update($validated);
@@ -45,10 +52,10 @@ class NotificationTemplateController extends Controller
             ->with('success', 'Modèle de notification mis à jour.');
     }
 
-    public function reset(NotificationTemplate $notificationTemplate): RedirectResponse
+    public function reset(): RedirectResponse
     {
-        // Re-seed just this template from the seeder defaults
-        $seeder = new \Database\Seeders\NotificationTemplateSeeder();
+        // Re-seed only edited templates from the seeder defaults
+        $seeder = new NotificationTemplateSeeder;
         $seeder->run();
 
         return redirect()

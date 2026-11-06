@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Concerns\HasTranslations;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PreventionCertificate extends Model
 {
+    use HasTranslations;
+
     // Delivery methods (mirrors PreventionDossier::DELIVERY_* — digital is
     // announced but not active yet).
     public const DELIVERY_DIGITAL = 'digital';
@@ -50,6 +54,14 @@ class PreventionCertificate extends Model
         'post_sent_at'      => 'datetime',
         'post_delivered_at' => 'datetime',
     ];
+
+    /**
+     * Note written when the certificate was issued — bilingual {"fr": …, "ar": …}.
+     */
+    protected function note(): Attribute
+    {
+        return $this->translated('note');
+    }
 
     // -----------------------------------------------------------------------
     // Relations

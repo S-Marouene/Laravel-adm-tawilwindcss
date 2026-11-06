@@ -16,7 +16,8 @@
                     <span class="material-symbols-outlined" aria-hidden="true">cancel</span> {{ __('prevention.status_failed') }}
                 </label>
             </div>
-            <textarea name="note" rows="3" placeholder="{{ __('prevention.inspector_note_placeholder') }}" class="text-xs"></textarea>
+            <x-admin.bilingual-note name="note" :rows="2"
+                placeholder-fr="{{ __('prevention.inspector_note_placeholder') }}" />
             <button type="submit" class="mt-2 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
                 <span class="material-symbols-outlined text-sm" aria-hidden="true">save</span> {{ __('prevention.save_result') }}
             </button>
@@ -34,8 +35,9 @@
               data-confirm-title="{{ __('prevention.cancel_panel_title') }}"
               data-confirm-focus-cancel="false">
             @csrf
-            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1">Cancellation reason <span class="text-red-500">*</span></label>
-            <textarea name="note" rows="3" required maxlength="2000" placeholder="{{ __('prevention.cancel_panel_placeholder') }}">{{ old('note') }}</textarea>
+            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1">{{ __('prevention.cancellation_reason') }} <span class="text-red-500">*</span></label>
+            <x-admin.bilingual-note name="note" :rows="2" required class="mt-1"
+                placeholder-fr="{{ __('prevention.cancel_panel_placeholder') }}" />
             <button type="submit" class="mt-2 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded transition-colors shadow-sm">
                 <span class="material-symbols-outlined text-sm" aria-hidden="true">cancel</span> {{ __('prevention.confirm_cancellation') }}
             </button>

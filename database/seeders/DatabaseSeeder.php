@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'test@example.com'],
             [
-                'name'     => 'Test User',
+                'name' => 'Test User',
                 'password' => bcrypt('password'),
             ],
         );
@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'medaziznefzi1@gmail.com'],
             [
-                'name'     => 'Med Aziz Nefzi',
+                'name' => 'Med Aziz Nefzi',
                 'password' => bcrypt('ONPC198++'),
             ],
         );
@@ -41,11 +41,12 @@ class DatabaseSeeder extends Seeder
             GovernorateSeeder::class,        // governorates + delegations (no deps)
             BuildingTypeSeeder::class,       // building types + activities (no deps)
             RolePermissionSeeder::class,     // roles, permissions, services, admin users
-                                            // (needs governorates/delegations for territory)
+            // (needs governorates/delegations for territory)
             DocumentTypeSeeder::class,       // prevention document types (needs building types)
             PreventivePresenceDocumentTypeSeeder::class,
             RescueDocumentTypeSeeder::class,
             WorksDocumentTypeSeeder::class,
+            NotificationTemplateSeeder::class, // notification templates (used by DossierNotification)
         ]);
     }
 }
