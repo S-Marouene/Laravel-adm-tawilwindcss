@@ -124,12 +124,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ── Rescue & relief certificate (شهادة نجدة وإنقاذ) ──
     Route::get('/rescue-certificates', [RescueCertificateController::class, 'index'])->name('rescue-certificates.index');
     Route::get('/rescue-certificates/create', [RescueCertificateController::class, 'create'])->name('rescue-certificates.create');
+    Route::get('/rescue-certificates/{rescueCertificate}', [RescueCertificateController::class, 'show'])->name('rescue-certificates.show');
     Route::post('/rescue-certificates/step1', [RescueCertificateController::class, 'storeStep1'])->name('rescue-certificates.step1.store');
     Route::get('/rescue-certificates/{rescueCertificate}/step1/edit', [RescueCertificateController::class, 'editStep1'])->name('rescue-certificates.step1.edit');
     Route::put('/rescue-certificates/{rescueCertificate}/step1', [RescueCertificateController::class, 'updateStep1'])->name('rescue-certificates.step1.update');
     Route::get('/rescue-certificates/{rescueCertificate}/step2', [RescueCertificateController::class, 'showStep2'])->name('rescue-certificates.step2.show');
     Route::post('/rescue-certificates/{rescueCertificate}/step2', [RescueCertificateController::class, 'storeStep2'])->name('rescue-certificates.step2.store');
     Route::post('/rescue-certificates/{rescueCertificate}/resubmit', [RescueCertificateController::class, 'resubmit'])->name('rescue-certificates.resubmit');
+    Route::post('/rescue-certificates/{rescueCertificate}/delivery', [RescueCertificateController::class, 'chooseDelivery'])->name('rescue-certificates.delivery');
     Route::get('/rescue-certificates/documents/{rescueDocument}/download', [RescueCertificateController::class, 'downloadDocument'])->name('rescue-certificates.documents.download');
     Route::delete('/rescue-certificates/{rescueCertificate}', [RescueCertificateController::class, 'destroy'])->name('rescue-certificates.destroy');
 

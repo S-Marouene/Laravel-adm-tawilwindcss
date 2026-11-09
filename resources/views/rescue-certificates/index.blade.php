@@ -40,13 +40,14 @@
                             @php
                                 $status = $rescueCertificate->status;
                             @endphp
-                            <div class="overflow-hidden rounded-2xl border
-                                {{ $status === 'needs_correction' ? 'border-red-200 dark:border-red-800/50'       : '' }}
+                            <a href="{{ route('rescue-certificates.show', $rescueCertificate) }}"
+                               class="block overflow-hidden rounded-2xl border transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gov-500/40
+                                {{ $status === 'needs_correction' ? 'border-red-200 dark:border-red-800/50'         : '' }}
                                 {{ $status === 'under_consultation' ? 'border-purple-200 dark:border-purple-800/40' : '' }}
-                                {{ $status === 'approved'  ? 'border-emerald-200 dark:border-emerald-800/40'       : '' }}
-                                {{ $status === 'served'    ? 'border-teal-200 dark:border-teal-800/40'             : '' }}
-                                {{ $status === 'cancelled' ? 'border-surface-dim dark:border-gray-600'               : '' }}
-                                {{ $status === 'completed' ? 'border-surface-dim dark:border-gray-700'               : '' }}
+                                {{ $status === 'approved'  ? 'border-emerald-200 dark:border-emerald-800/40'        : '' }}
+                                {{ $status === 'served'    ? 'border-teal-200 dark:border-teal-800/40'              : '' }}
+                                {{ $status === 'cancelled' ? 'border-surface-dim dark:border-gray-600'              : '' }}
+                                {{ $status === 'completed' ? 'border-surface-dim dark:border-gray-700'              : '' }}
                                 bg-surface-container-lowest shadow-sm dark:bg-gray-800">
 
                                 {{-- Status banner --}}
@@ -173,7 +174,7 @@
 
                                         {{-- Fix & Resubmit button --}}
                                         @if ($status === 'needs_correction')
-                                            <div class="flex-none w-full">
+                                            <div class="relative z-10 flex-none w-full">
                                                 <form method="POST" action="{{ route('rescue-certificates.resubmit', $rescueCertificate) }}">
                                                     @csrf
                                                     <button type="submit"
@@ -186,6 +187,18 @@
                                                 </form>
                                             </div>
                                         @endif
+                                    </div>
+
+                                    {{-- View Details button — always shown --}}
+                                    <div class="relative z-10 mt-4 flex items-center gap-2">
+                                        <a href="{{ route('rescue-certificates.show', $rescueCertificate) }}"
+                                            class="inline-flex items-center gap-2 rounded-lg border border-surface-dim dark:border-gray-600 bg-surface-container-lowest dark:bg-gray-800 px-4 py-2 text-sm font-semibold text-on-surface dark:text-gray-200 transition hover:bg-surface-container dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gov-500/40">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            {{ __('rescue_certificate.view_details') }}
+                                        </a>
                                     </div>
 
                                     {{-- Approved banner info: free procedure --}}
@@ -219,9 +232,9 @@
                                             @endif
                                         </div>
                                     @endif
-                                </div>
+                                </div>{{-- /.px-5.py-4 --}}
 
-                            </div>
+                            </a>{{-- /.card link --}}
                         @endforeach
                     </div>
                 </section>

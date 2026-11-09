@@ -148,7 +148,79 @@ class NotificationTemplateSeeder extends Seeder
             ],
         ];
 
+        // ── Certificat de secours et de sauvetage (شهادة نجدة وإنقاذ) ──
+        // Service-scoped templates: DossierNotifier looks up "rescue_{event}"
+        // when notifying for Service::SERVICE_RESCUE_CERTIFICATE. The wording
+        // differs from prevention — no site visit (verification is done by
+        // consulting rescue operation records), free procedure, and the
+        // applicant is notified by phone.
+        $rescueTemplates = [
+            [
+                'event_key' => 'rescue_submitted',
+                'level'     => 'info',
+                'title_fr'  => 'Nouvelle demande de certificat de secours',
+                'body_fr'   => 'La demande :reference (:nom_prenom) vient d\'être soumise et est en attente d\'examen.',
+                'title_ar'  => 'طلب جديد لشهادة نجدة وإنقاذ',
+                'body_ar'   => 'تم تقديم الطلب :reference (:nom_prenom) وهو في انتظار المراجعة.',
+            ],
+            [
+                'event_key' => 'rescue_resubmitted',
+                'level'     => 'warning',
+                'title_fr'  => 'Demande re-soumise après correction',
+                'body_fr'   => 'La demande :reference (:nom_prenom) a été corrigée et re-soumise par le demandeur.',
+                'title_ar'  => 'إعادة تقديم الطلب بعد التصحيح',
+                'body_ar'   => 'أعاد المتقدم :nom_prenom تقديم الطلب :reference بعد إجراء التصحيحات المطلوبة.',
+            ],
+            [
+                'event_key' => 'rescue_under_consultation',
+                'level'     => 'info',
+                'title_fr'  => 'Vérification des données en cours',
+                'body_fr'   => 'Votre demande :reference est en cours de vérification par rapport aux enregistrements de l\'opération de secours. Vous serez informé du résultat par téléphone.',
+                'title_ar'  => 'جارٍ التأكد من المعطيات',
+                'body_ar'   => 'يجري حاليًا التأكد من طلبكم :reference بالرجوع لسجلات عملية النجدة والإنقاذ. سيتم إبلاغكم بالنتيجة عبر الهاتف.',
+            ],
+            [
+                'event_key' => 'rescue_needs_correction',
+                'level'     => 'warning',
+                'title_fr'  => 'Correction requise',
+                'body_fr'   => 'Votre demande :reference nécessite des corrections. Veuillez consulter la note de l\'administration.',
+                'title_ar'  => 'مطلوب تصحيح',
+                'body_ar'   => 'يستلزم طلبكم :reference إجراء تصحيحات. يرجى الاطلاع على ملاحظة الإدارة.',
+            ],
+            [
+                'event_key' => 'rescue_approved',
+                'level'     => 'success',
+                'title_fr'  => 'Demande approuvée',
+                'body_fr'   => 'Votre demande :reference a été approuvée. La procédure est gratuite — veuillez retirer votre certificat à la Direction Régionale de la Protection Civile.',
+                'title_ar'  => 'تمت الموافقة على الطلب',
+                'body_ar'   => 'تمت الموافقة على طلبكم :reference. الإجراء مجاني — يرجى استلام شهادتكم من الإدارة الجهوية للحماية المدنية.',
+            ],
+            [
+                'event_key' => 'rescue_cancelled',
+                'level'     => 'danger',
+                'title_fr'  => 'Demande annulée',
+                'body_fr'   => 'La demande :reference a été annulée. Veuillez consulter la raison communiquée par l\'administration.',
+                'title_ar'  => 'تم إلغاء الطلب',
+                'body_ar'   => 'تم إلغاء الطلب :reference. يرجى الاطلاع على السبب المُبلَّغ من الإدارة.',
+            ],
+            [
+                'event_key' => 'rescue_certificate_delivered',
+                'level'     => 'success',
+                'title_fr'  => 'Certificat de secours remis',
+                'body_fr'   => 'Votre certificat de secours et de sauvetage (demande :reference) vous a été remis. Cette demande est désormais terminée.',
+                'title_ar'  => 'تم تسليم شهادة النجدة',
+                'body_ar'   => 'تم تسليم شهادة النجدة والإنقاذ الخاصة بطلبكم :reference. اعتُبر هذا الطلب منتهيًا.',
+            ],
+        ];
+
         foreach ($templates as $data) {
+            NotificationTemplate::updateOrCreate(
+                ['event_key' => $data['event_key']],
+                $data
+            );
+        }
+
+        foreach ($rescueTemplates as $data) {
             NotificationTemplate::updateOrCreate(
                 ['event_key' => $data['event_key']],
                 $data

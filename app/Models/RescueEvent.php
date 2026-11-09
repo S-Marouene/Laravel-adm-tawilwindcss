@@ -54,16 +54,7 @@ class RescueEvent extends Model
     /** Human-readable label for the timeline */
     public function typeLabel(): string
     {
-        return match ($this->type) {
-            'submitted'                 => 'Submitted by applicant',
-            'resubmitted'               => 'Certificate request resubmitted after correction',
-            'advanced_to_consultation'  => 'Verification of rescue operation data',
-            'correction_requested'      => 'Correction requested',
-            'approved'                  => 'Certificate request approved',
-            'cancelled'                 => 'Certificate request cancelled',
-            'certificate_delivered'     => 'Certificate delivered',
-            default                     => ucfirst(str_replace('_', ' ', $this->type)),
-        };
+        return __('rescue_certificate.tl_' . $this->type);
     }
 
     /** Tailwind dot class used by the timeline */
@@ -91,10 +82,10 @@ class RescueEvent extends Model
 
         $parts = [];
         if (! empty($data['delivery_date'])) {
-            $parts[] = 'Delivered on: ' . Carbon::parse($data['delivery_date'])->format('d M Y');
+            $parts[] = __('rescue_certificate.delivered_on_label', ['date' => Carbon::parse($data['delivery_date'])->format('d/m/Y')]);
         }
         if (! empty($data['certificate_number'])) {
-            $parts[] = 'Certificate No.: ' . $data['certificate_number'];
+            $parts[] = __('rescue_certificate.certificate_no_label', ['num' => $data['certificate_number']]);
         }
 
         return $parts ? implode(' · ', $parts) : null;

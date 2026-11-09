@@ -44,6 +44,14 @@ class NotificationTemplate extends Model
             'certificate_delivered'  => 'success',
             'certificate_revoked'    => 'danger',
             'delivery_chosen'        => 'info',
+            // Rescue certificates (service-scoped templates)
+            'rescue_submitted'              => 'info',
+            'rescue_resubmitted'            => 'warning',
+            'rescue_under_consultation'     => 'info',
+            'rescue_needs_correction'       => 'warning',
+            'rescue_approved'               => 'success',
+            'rescue_cancelled'              => 'danger',
+            'rescue_certificate_delivered'  => 'success',
             default                  => 'info',
         };
     }
@@ -70,6 +78,14 @@ class NotificationTemplate extends Model
             'certificate_delivered'  => 'Certificat remis',
             'certificate_revoked'    => 'Certificat révoqué',
             'delivery_chosen'        => 'Mode de retrait choisi',
+            // Rescue certificates (service-scoped templates)
+            'rescue_submitted'              => 'Secours — nouvelle demande',
+            'rescue_resubmitted'            => 'Secours — re-soumission après correction',
+            'rescue_under_consultation'     => 'Secours — vérification des données',
+            'rescue_needs_correction'       => 'Secours — correction demandée',
+            'rescue_approved'               => 'Secours — demande approuvée',
+            'rescue_cancelled'              => 'Secours — demande annulée',
+            'rescue_certificate_delivered'  => 'Secours — certificat remis',
             default                  => $this->event_key,
         };
     }

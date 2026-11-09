@@ -12,15 +12,41 @@ class RescueCertificate extends Model
 {
     use HasTranslations;
 
+    // -----------------------------------------------------------------------
+    // Delivery method constants (mirrors PreventionCertificate)
+    // -----------------------------------------------------------------------
+    public const DELIVERY_PICKUP = 'pickup';
+    public const DELIVERY_POST   = 'post';
+
+    // -----------------------------------------------------------------------
+    // Certificate sub-status constants
+    // ready          — waiting at the office (pickup) or being prepared (post)
+    // collected      — picked up at the office
+    // post_sent      — handed to Poste Tunisienne (B3), tracking available
+    // post_delivered — received by the applicant
+    // -----------------------------------------------------------------------
+    public const CERT_STATUS_READY          = 'ready';
+    public const CERT_STATUS_COLLECTED      = 'collected';
+    public const CERT_STATUS_POST_SENT      = 'post_sent';
+    public const CERT_STATUS_POST_DELIVERED = 'post_delivered';
+
     protected $fillable = [
         'user_id', 'current_step', 'status',
         'cin', 'nom_prenom', 'phone',
         'victim_is_minor', 'parent_name', 'parent_cin', 'spouse_case',
         'governorate_id', 'delegation_id', 'incident_address',
         'incident_type', 'incident_date', 'incident_time', 'incident_description', 'notes',
+        // Legacy flat delivery (kept for backward-compat)
         'certificate_number', 'delivery_date', 'delivery_note', 'delivered_at',
         'reference',
         'admin_note', 'reviewed_by', 'reviewed_at',
+        // ── Delivery pipeline (prevention-style) ──
+        'delivery_method', 'delivery_choice_at',
+        'post_recipient', 'post_phone', 'post_address', 'post_tracking',
+        'post_sent_at', 'post_delivered_at',
+        'pickup_governorate_id', 'pickup_delegation_id',
+        'cert_status', 'issued_by', 'issued_at', 'valid_until',
+        'post_address_citizen',
     ];
 
     protected $casts = [
@@ -32,27 +58,22 @@ class RescueCertificate extends Model
         'delivery_date'      => 'date',
         'delivered_at'       => 'datetime',
         'reviewed_at'        => 'datetime',
+        'issued_at'          => 'date',
+        'valid_until'        => 'date',
+        'delivery_choice_at' => 'datetime',
+        'post_sent_at'       => 'datetime',
+        'post_delivered_at'  => 'datetime',
     ];
-
-    // All possible status values — useful for reference
-    // draft | completed | under_consultation | needs_correction | approved | served | cancelled
 
     // -----------------------------------------------------------------------
     // Bilingual fields
     // -----------------------------------------------------------------------
 
-    /**
-     * Note left by the administration (correction requests, cancellation…).
-     * Stored as {"fr": …, "ar": …} — reading returns the localized string.
-     */
     protected function adminNote(): Attribute
     {
         return $this->translated('admin_note');
     }
 
-    /**
-     * Note written when the certificate was delivered — bilingual {"fr": …, "ar": …}.
-     */
     protected function deliveryNote(): Attribute
     {
         return $this->translated('delivery_note');
@@ -72,6 +93,11 @@ class RescueCertificate extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    public function issuer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'issued_by');
+    }
+
     public function governorate(): BelongsTo
     {
         return $this->belongsTo(Governorate::class, 'governorate_id');
@@ -82,12 +108,23 @@ class RescueCertificate extends Model
         return $this->belongsTo(Delegation::class, 'delegation_id');
     }
 
+    /** Pickup office governorate (may differ from incident governorate) */
+    public function pickupGovernorate(): BelongsTo
+    {
+        return $this->belongsTo(Governorate::class, 'pickup_governorate_id');
+    }
+
+    /** Pickup office delegation */
+    public function pickupDelegation(): BelongsTo
+    {
+        return $this->belongsTo(Delegation::class, 'pickup_delegation_id');
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(RescueDocument::class, 'rescue_certificate_id');
     }
 
-    /** Full audit log — chronological history of every action on this certificate */
     public function events(): HasMany
     {
         return $this->hasMany(RescueEvent::class, 'rescue_certificate_id')
@@ -95,11 +132,6 @@ class RescueCertificate extends Model
             ->orderBy('id');
     }
 
-    /**
-     * Record an event in the certificate audit log (timeline).
-     * The actor is the currently authenticated user (admin or applicant).
-     * The note (when given) may be a legacy string or a bilingual {fr, ar} array.
-     */
     public function logEvent(string $type, string|array|null $note = null, array $data = []): RescueEvent
     {
         return $this->events()->create([
@@ -111,51 +143,28 @@ class RescueCertificate extends Model
     }
 
     // -----------------------------------------------------------------------
-    // Status helpers
+    // Dossier-level status helpers
     // -----------------------------------------------------------------------
 
-    public function isDraft(): bool
+    public function isDraft(): bool             { return $this->status === 'draft'; }
+    public function isCompleted(): bool         { return $this->status === 'completed'; }
+    public function isUnderConsultation(): bool { return $this->status === 'under_consultation'; }
+    public function isNeedsCorrection(): bool   { return $this->status === 'needs_correction'; }
+    public function isApproved(): bool          { return $this->status === 'approved'; }
+    public function isServed(): bool            { return $this->status === 'served'; }
+    public function isCancelled(): bool         { return $this->status === 'cancelled'; }
+
+    /** Approved but certificate not yet issued — citizen waits for certificate */
+    public function isWaitingDelivery(): bool
     {
-        return $this->status === 'draft';
+        return $this->status === 'approved' && $this->cert_status === null;
     }
 
-    public function isCompleted(): bool
-    {
-        return $this->status === 'completed';
-    }
-
-    public function isUnderConsultation(): bool
-    {
-        return $this->status === 'under_consultation';
-    }
-
-    public function isNeedsCorrection(): bool
-    {
-        return $this->status === 'needs_correction';
-    }
-
-    public function isApproved(): bool
-    {
-        return $this->status === 'approved';
-    }
-
-    public function isServed(): bool
-    {
-        return $this->status === 'served';
-    }
-
-    public function isCancelled(): bool
-    {
-        return $this->status === 'cancelled';
-    }
-
-    /** Can this certificate be acted on by admin (not yet resolved) */
     public function isActionable(): bool
     {
         return in_array($this->status, ['completed', 'under_consultation', 'needs_correction']);
     }
 
-    /** User can edit/resubmit this certificate */
     public function isCorrectableByUser(): bool
     {
         return $this->status === 'needs_correction';
@@ -164,6 +173,30 @@ class RescueCertificate extends Model
     public function isDelivered(): bool
     {
         return $this->isServed() && $this->delivered_at !== null;
+    }
+
+    // -----------------------------------------------------------------------
+    // Certificate sub-status helpers (mirrors PreventionCertificate)
+    // -----------------------------------------------------------------------
+
+    public function certIsReady(): bool         { return $this->cert_status === self::CERT_STATUS_READY; }
+    public function certIsCollected(): bool     { return $this->cert_status === self::CERT_STATUS_COLLECTED; }
+    public function certIsPostSent(): bool      { return $this->cert_status === self::CERT_STATUS_POST_SENT; }
+    public function certIsPostDelivered(): bool { return $this->cert_status === self::CERT_STATUS_POST_DELIVERED; }
+
+    public function isPickup(): bool { return $this->delivery_method === self::DELIVERY_PICKUP; }
+    public function isPost(): bool   { return $this->delivery_method === self::DELIVERY_POST; }
+
+    /** Return the pickup office (delegation or governorate fallback) */
+    public function pickupOffice(): ?Model
+    {
+        return $this->pickupDelegation ?? $this->pickupGovernorate;
+    }
+
+    /** Has the certificate been issued (cert_status is set) */
+    public function hasCertificate(): bool
+    {
+        return $this->cert_status !== null;
     }
 
     // -----------------------------------------------------------------------
@@ -192,15 +225,21 @@ class RescueCertificate extends Model
 
     public function statusLabel(): string
     {
-        return match($this->status) {
-            'draft'              => 'Draft',
-            'completed'          => 'Under Review',
-            'under_consultation' => 'Verifying Rescue Operation',
-            'needs_correction'   => 'Needs Correction',
-            'approved'           => 'Approved',
-            'served'             => 'Certificate Delivered',
-            'cancelled'          => 'Cancelled',
+        return match ($this->status) {
+            'draft'              => __('rescue_certificate.status_draft'),
+            'completed'          => __('rescue_certificate.status_completed'),
+            'under_consultation' => __('rescue_certificate.status_under_consultation'),
+            'needs_correction'   => __('rescue_certificate.status_needs_correction'),
+            'approved'           => __('rescue_certificate.status_approved'),
+            'served'             => __('rescue_certificate.status_served'),
+            'cancelled'          => __('rescue_certificate.status_cancelled'),
             default              => ucfirst($this->status),
         };
+    }
+
+    /** Build a unique certificate reference, e.g. SEC-2026-000123. */
+    public static function makeCertificateReference(self $certificate): string
+    {
+        return 'SEC-' . date('Y') . '-' . str_pad((string) $certificate->id, 6, '0', STR_PAD_LEFT);
     }
 }

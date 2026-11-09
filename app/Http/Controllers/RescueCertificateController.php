@@ -6,6 +6,8 @@ use App\Models\DocumentType;
 use App\Models\Governorate;
 use App\Models\RescueCertificate;
 use App\Models\RescueDocument;
+use App\Models\Service;
+use App\Services\DossierNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -39,14 +41,44 @@ class RescueCertificateController extends Controller
     }
 
     // =========================================================================
+    // Show — full lifecycle page (hero, stepper, details, documents, timeline)
+    // =========================================================================
+
+    public function show(RescueCertificate $rescueCertificate): View
+    {
+        if ($rescueCertificate->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $rescueCertificate->load(['user', 'governorate', 'delegation', 'documents.documentType', 'events.actor', 'pickupGovernorate', 'pickupDelegation']);
+
+        $documentTypes = DocumentType::service(DocumentType::SERVICE_RESCUE_CERTIFICATE)
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('rescue-certificates.show', [
+            'certificate'   => $rescueCertificate,
+            'documentTypes' => $documentTypes,
+        ]);
+    }
+
+    // =========================================================================
     // Step 1 — Show form (victim identity + rescue operation details)
     // =========================================================================
 
     public function create(): View
     {
+        // Load user's rescue drafts so the service-details-tabs component can show them
+        $drafts = RescueCertificate::where('user_id', auth()->id())
+            ->where('status', 'draft')
+            ->with(['governorate', 'delegation'])
+            ->latest()
+            ->get();
+
         return view('rescue-certificates.create', [
             'gouvernorats' => $this->gouvernorats(),
             'delegations'  => $this->delegations(),
+            'drafts'       => $drafts,
         ]);
     }
 
@@ -159,7 +191,9 @@ class RescueCertificateController extends Controller
             ->pluck('id');
 
         foreach ($documentTypeIds as $docTypeId) {
-            $rules['documents.' . $docTypeId] = ['nullable', 'file', 'max:10240']; // 10MB max
+            // Accept multiple files per doc type (same as prevention step3)
+            $rules['documents.' . $docTypeId]   = ['nullable', 'array'];
+            $rules['documents.' . $docTypeId . '.*'] = ['nullable', 'file', 'max:10240'];
         }
 
         $request->validate($rules);
@@ -167,42 +201,102 @@ class RescueCertificateController extends Controller
         $uploadDir = "rescue-documents/{$rescueCertificate->id}";
 
         foreach ($documentTypeIds as $docTypeId) {
-            $file = $request->file("documents.{$docTypeId}");
-            if ($file && $file->isValid()) {
+            $files = $request->file("documents.{$docTypeId}");
+            if (! $files) continue;
+            // Accept both single file (old input) and array (new multi-upload)
+            if (! is_array($files)) $files = [$files];
+
+            foreach ($files as $file) {
+                if (! $file || ! $file->isValid()) continue;
                 $path = $file->store($uploadDir, 'local');
 
-                RescueDocument::updateOrCreate(
-                    [
-                        'rescue_certificate_id' => $rescueCertificate->id,
-                        'document_type_id'      => $docTypeId,
-                    ],
-                    [
+                // Use updateOrCreate for the first file, create for subsequent ones
+                $existing = RescueDocument::where('rescue_certificate_id', $rescueCertificate->id)
+                    ->where('document_type_id', $docTypeId)
+                    ->first();
+
+                if ($existing) {
+                    $existing->update([
                         'file_path'     => $path,
                         'original_name' => $file->getClientOriginalName(),
                         'mime_type'     => $file->getMimeType(),
                         'size'          => $file->getSize(),
                         'status'        => 'uploaded',
-                    ]
-                );
+                    ]);
+                } else {
+                    RescueDocument::create([
+                        'rescue_certificate_id' => $rescueCertificate->id,
+                        'document_type_id'      => $docTypeId,
+                        'file_path'             => $path,
+                        'original_name'         => $file->getClientOriginalName(),
+                        'mime_type'             => $file->getMimeType(),
+                        'size'                  => $file->getSize(),
+                        'status'                => 'uploaded',
+                    ]);
+                }
             }
         }
 
-        // Mark request as completed (submitted for review) + assign reference (SEC26-0001)
+        // Mark request as completed (submitted for review) + assign reference
+        $isResubmission = $rescueCertificate->events()->where('type', 'correction_requested')->exists();
+
         $rescueCertificate->update([
             'current_step' => 2,
             'status'       => 'completed',
             'reference'    => $rescueCertificate->reference ?: \App\Support\Reference::make('rescue', $rescueCertificate),
         ]);
 
-        $rescueCertificate->logEvent('submitted');
+        $rescueCertificate->logEvent($isResubmission ? 'resubmitted' : 'submitted');
 
-        return redirect()
-            ->route('rescue-certificates.index')
+        DossierNotifier::notify($rescueCertificate, $isResubmission ? 'resubmitted' : 'submitted', 'admin', Service::SERVICE_RESCUE_CERTIFICATE);
+
+        // Always redirect to mes-demandes so the user sees their full dashboard
+        return redirect('/mes-demandes')
             ->with('success', __('rescue_certificate.submit_success'));
     }
 
     // =========================================================================
-    // Resubmit — user fixes a needs_correction request and re-submits step 2
+    // Choose delivery method (citizen) — pickup | post
+    // Available once the request is approved (admin has issued the certificate)
+    // =========================================================================
+
+    public function chooseDelivery(Request $request, RescueCertificate $rescueCertificate): RedirectResponse
+    {
+        if ($rescueCertificate->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        // The delivery choice is available once approved (before cert is issued)
+        if ($rescueCertificate->status !== 'approved') {
+            return redirect()->route('rescue-certificates.show', $rescueCertificate)
+                ->withErrors(['delivery_method' => __('rescue_certificate.delivery_not_available_yet')]);
+        }
+
+        $validated = $request->validate([
+            'delivery_method' => ['required', 'in:pickup,post'],
+            'post_address'    => ['required_if:delivery_method,post', 'nullable', 'string', 'max:500'],
+        ]);
+
+        $rescueCertificate->update([
+            'delivery_method'    => $validated['delivery_method'],
+            'post_address_citizen' => $validated['delivery_method'] === 'post' ? $validated['post_address'] : null,
+            'delivery_choice_at' => now(),
+        ]);
+
+        $rescueCertificate->logEvent('delivery_chosen', null, [
+            'method'  => $validated['delivery_method'],
+            'address' => $validated['delivery_method'] === 'post' ? $validated['post_address'] : null,
+        ]);
+
+        \App\Services\DossierNotifier::notify($rescueCertificate, 'delivery_chosen', 'admin', \App\Models\Service::SERVICE_RESCUE_CERTIFICATE);
+
+        return redirect()->route('rescue-certificates.show', $rescueCertificate)
+            ->with('success', __('rescue_certificate.delivery_saved'));
+    }
+
+    // =========================================================================
+    // Resubmit after correction
+    // =========================================================================
     // The request status goes back to drafted so admin can review again.
     // =========================================================================
 
@@ -217,16 +311,15 @@ class RescueCertificateController extends Controller
                 ->withErrors(['status' => __('rescue_certificate.resubmit_forbidden')]);
         }
 
-        // Re-open to step 2 so user can upload corrected documents
-        $previousNote = $rescueCertificate->admin_note;
-
+        // Re-open to step 2 so user can upload corrected documents.
+        // No event is logged here: the "resubmitted" event is logged once,
+        // in storeStep2, when the request is actually re-submitted (same as
+        // prevention — the timeline then reads correction → resubmitted).
         $rescueCertificate->update([
             'status'       => 'draft',
             'current_step' => 2,
             'admin_note'   => null,
         ]);
-
-        $rescueCertificate->logEvent('resubmitted', $previousNote ? 'In response to: ' . $previousNote : null);
 
         return redirect()
             ->route('rescue-certificates.step2.show', $rescueCertificate)

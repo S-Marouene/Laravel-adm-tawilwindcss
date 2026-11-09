@@ -135,7 +135,7 @@ class MesDemandesController extends Controller
                     kind:  'rescue',
                     lang:  'rescue_certificate',
                     label: __('services.rescue_certificate'),
-                    url:   route('rescue-certificates.index'),
+                    url:   route('rescue-certificates.show', $rescueCertificate),
                     title: __('demandes.title_rescue', ['ref' => $this->requestReference($rescueCertificate, 'rescue', $rescueCertificate->certificate_number)]),
                     meta: $this->rescueSummary($rescueCertificate),
                     details: $this->rescueDetails($rescueCertificate),

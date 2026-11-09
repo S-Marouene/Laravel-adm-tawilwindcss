@@ -12,20 +12,20 @@
 {{-- Filters --}}
 <form method="GET" class="mb-5 flex flex-wrap gap-3">
     <input type="text" name="q" value="{{ request('q') }}"
-        placeholder="Search by name, CIN, phone or event..."
+        placeholder="{{ __('rescue_certificate.search_placeholder') }}"
         class="flex-1 min-w-48 px-4 py-2 text-sm bg-surface-container-lowest dark:bg-gray-900/50 border border-surface-dim dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 dark:text-gray-100">
     <select name="status" class="px-4 py-2 text-sm bg-surface-container-lowest dark:bg-gray-900/50 border border-surface-dim dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 dark:text-gray-100">
-        <option value="">All statuses</option>
-        <option value="completed"          {{ request('status') === 'completed'          ? 'selected' : '' }}>Under Review</option>
-        <option value="under_consultation" {{ request('status') === 'under_consultation' ? 'selected' : '' }}>Under Consultation</option>
-        <option value="needs_correction"   {{ request('status') === 'needs_correction'   ? 'selected' : '' }}>Needs Correction</option>
-        <option value="approved"           {{ request('status') === 'approved'           ? 'selected' : '' }}>Approved</option>
-        <option value="served"             {{ request('status') === 'served'             ? 'selected' : '' }}>Service Performed</option>
-        <option value="cancelled"          {{ request('status') === 'cancelled'          ? 'selected' : '' }}>Cancelled</option>
+        <option value="">{{ __('rescue_certificate.idx_all_statuses') }}</option>
+        <option value="completed"          {{ request('status') === 'completed'          ? 'selected' : '' }}>{{ __('rescue_certificate.status_completed') }}</option>
+        <option value="under_consultation" {{ request('status') === 'under_consultation' ? 'selected' : '' }}>{{ __('rescue_certificate.status_under_consultation') }}</option>
+        <option value="needs_correction"   {{ request('status') === 'needs_correction'   ? 'selected' : '' }}>{{ __('rescue_certificate.status_needs_correction') }}</option>
+        <option value="approved"           {{ request('status') === 'approved'           ? 'selected' : '' }}>{{ __('rescue_certificate.status_approved') }}</option>
+        <option value="served"             {{ request('status') === 'served'             ? 'selected' : '' }}>{{ __('rescue_certificate.status_served') }}</option>
+        <option value="cancelled"          {{ request('status') === 'cancelled'          ? 'selected' : '' }}>{{ __('rescue_certificate.status_cancelled') }}</option>
     </select>
-    <button type="submit" class="px-4 py-2 text-sm font-semibold bg-gov-600 text-white rounded-xl hover:bg-gov-700">Search</button>
+    <button type="submit" class="px-4 py-2 text-sm font-semibold bg-gov-600 text-white rounded-xl hover:bg-gov-700">{{ __('rescue_certificate.idx_search') }}</button>
     @if(request('q') || request('status'))
-        <a href="{{ route('admin.rescue-certificates.index') }}" class="px-4 py-2 text-sm font-semibold border border-surface-dim dark:border-gray-600 rounded-xl text-secondary dark:text-gray-300 hover:bg-surface-container dark:hover:bg-gray-700">Reset</a>
+        <a href="{{ route('admin.rescue-certificates.index') }}" class="px-4 py-2 text-sm font-semibold border border-surface-dim dark:border-gray-600 rounded-xl text-secondary dark:text-gray-300 hover:bg-surface-container dark:hover:bg-gray-700">{{ __('rescue_certificate.idx_reset') }}</a>
     @endif
 </form>
 
@@ -35,13 +35,13 @@
         <table class="w-full">
             <thead>
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Applicant</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">CIN</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Phone</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('rescue_certificate.admin_full_name') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('rescue_certificate.cin') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('rescue_certificate.phone') }}</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('rescue_certificate.event_label') }}</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Location</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">Submitted</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('rescue_certificate.idx_location') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('rescue_certificate.idx_status') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('rescue_certificate.idx_submitted') }}</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-secondary dark:text-gray-400 uppercase tracking-wider">{{ __('admin.actions') }}</th>
                 </tr>
             </thead>

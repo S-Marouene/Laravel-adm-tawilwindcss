@@ -123,8 +123,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::post('rescue-certificates/{rescueCertificate}/correction', [AdminRescueCertificateController::class, 'requestCorrection'])->name('rescue-certificates.correction');
     Route::post('rescue-certificates/{rescueCertificate}/approve', [AdminRescueCertificateController::class, 'approve'])->name('rescue-certificates.approve');
     Route::post('rescue-certificates/{rescueCertificate}/cancel', [AdminRescueCertificateController::class, 'cancel'])->name('rescue-certificates.cancel');
-    Route::post('rescue-certificates/{rescueCertificate}/deliver', [AdminRescueCertificateController::class, 'deliver'])->name('rescue-certificates.deliver');
-    Route::get('rescue-certificates/{rescueCertificate}/documents/{doc}/download', [AdminRescueCertificateController::class, 'downloadDocument'])->name('rescue-certificates.documents.download');
+    Route::post('rescue-certificates/{rescueCertificate}/certificate', [AdminRescueCertificateController::class, 'issueCertificate'])->name('rescue-certificates.certificate.store');
+    Route::put('rescue-certificates/{rescueCertificate}/certificate', [AdminRescueCertificateController::class, 'updateCertificate'])->name('rescue-certificates.certificate.update');
+    Route::delete('rescue-certificates/{rescueCertificate}/certificate', [AdminRescueCertificateController::class, 'revokeCertificate'])->name('rescue-certificates.certificate.destroy');
+    Route::get('rescue-certificates/documents/{rescueDocument}/download', [AdminRescueCertificateController::class, 'downloadDocument'])->name('rescue-certificates.documents.download');
     Route::resource('rescue-certificates', AdminRescueCertificateController::class)
         ->only(['index', 'show'])
         ->parameters(['rescue-certificates' => 'rescueCertificate']);
