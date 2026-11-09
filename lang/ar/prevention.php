@@ -42,6 +42,12 @@ return [
     'step_delivered'           => 'تم الاستلام / التسليم',
     'step_cert_to_issue'       => 'بانتظار الإصدار',
     'step_cert_waiting_pickup' => 'بانتظار الاستلام',
+    'step_cert_ready_pickup'   => 'جاهزة — للاستلام من المكتب',
+    'step_cert_ready_post'     => 'جاهزة — الإرسال بالبريد قريبًا',
+    'step_cert_post_sent'      => 'أُرسلت بالبريد (B3) — قيد التسليم',
+    'step_visit_failed_retry'  => 'فشلت الزيارة — يتعين تحديد زيارة جديدة',
+    'step_recheck'             => 'إعادة فحص بعد التصحيح',
+    'step_cancelled'           => 'تم إلغاء الملف',
     'step_in_progress'         => 'جارٍ',
 
     // ACTE 1 — الدراسة الإدارية

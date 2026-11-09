@@ -47,6 +47,7 @@ class DatabaseSeeder extends Seeder
             RescueDocumentTypeSeeder::class,
             WorksDocumentTypeSeeder::class,
             NotificationTemplateSeeder::class, // notification templates (used by DossierNotification)
+            TranslationSeeder::class,          // dictionary FR/AR/EN from lang/ files (editable by admins)
         ]);
     }
 }

@@ -340,6 +340,13 @@
                         <span x-show="!collapsed" class="truncate">{{ __('admin.settings') }}</span>
                     </a>
                     @endcan
+
+                    @can('manage translations')
+                    <a href="{{ route('admin.translations.index') }}" data-tooltip="{{ __('admin.translations') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.translations.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7m-2.184-2.25a17.95 17.95 0 00-4.566-7.5M6.412 9A17.97 17.97 0 003 15.75M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg>
+                        <span x-show="!collapsed" class="truncate">{{ __('admin.translations') }}</span>
+                    </a>
+                    @endcan
                     @endcanany
                 </nav>
             </aside>

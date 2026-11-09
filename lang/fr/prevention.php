@@ -42,6 +42,12 @@ return [
     'step_delivered'           => 'Retiré / Livré',
     'step_cert_to_issue'       => 'À émettre',
     'step_cert_waiting_pickup' => 'En attente de retrait',
+    'step_cert_ready_pickup'   => 'Prête — à retirer au bureau',
+    'step_cert_ready_post'     => 'Prête — envoi par la poste à venir',
+    'step_cert_post_sent'      => 'Expédiée (B3) — en cours de livraison',
+    'step_visit_failed_retry'  => 'Visite échouée — nouvelle visite à programmer',
+    'step_recheck'             => 'Nouvel examen après correction',
+    'step_cancelled'           => 'Dossier annulé',
     'step_in_progress'         => 'En cours',
 
     // ? ACTE 1 — Étude administrative

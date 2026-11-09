@@ -20,7 +20,17 @@
         'approved'               => 3,
         'waiting_delivery'       => 4,
         'needs_correction'       => 2,
-        'cancelled'              => 0,
+        // Dossier annulé : l'avancement est figé là où il en était — déduit
+        // des preuves (certificat, visites, journal) puisque le statut ne
+        // progresse plus. L'étape figée portera la marque rouge « annulé ».
+        'cancelled'              => match (true) {
+            $d->certificate && ($d->certificate->isCollected() || $d->certificate->isPostDelivered()) => 6,
+            $d->certificate !== null       => 5,
+            $d->hasPassedAppointment()     => 4,
+            $d->appointments->isNotEmpty()
+                || $d->events->contains(fn ($e) => $e->type === 'advanced_to_consultation') => 3,
+            default                        => 2,
+        },
         default                  => null,
     };
     // Certificate issued → step 5 (waiting for pickup/delivery)
@@ -31,6 +41,7 @@
     if ($d->certificate && ($d->certificate->isCollected() || $d->certificate->isPostDelivered())) {
         $currentStep = 6;
     }
+    $isCancelled = $status === 'cancelled';
 
     $stepDates = [];
     $stepDates[1] = $d->created_at;
@@ -44,33 +55,59 @@
     $hadCorrection   = $d->events->contains(fn ($e) => $e->type === 'correction_requested');
     $hadFailedVisit  = $lastFailedAppointment !== null;
 
+    // Étape qui porte la marque « annulé » (dossier annulé uniquement)
+    $cancelledAt = $isCancelled ? min($currentStep, 5) : null;
+
+    // Étape 5 — libellé selon le circuit de remise (retrait au bureau / poste B3)
+    $certSub5 = match (true) {
+        $d->certificate && ($d->certificate->isCollected() || $d->certificate->isPostDelivered()) => __('prevention.step_done'),
+        $d->certificate?->isPostSent() => __('prevention.step_cert_post_sent'),
+        $d->certificate?->isPost()     => __('prevention.step_cert_ready_post'),
+        $d->certificate !== null       => __('prevention.step_cert_ready_pickup'),
+        default                        => __('prevention.step_cert_waiting_pickup'),
+    };
+
     foreach ([1, 2, 3, 4, 5] as $i) {
-        if ($currentStep === 6 || $i < $currentStep) $state = 'done';
-        elseif ($i === $currentStep)                 $state = $status === 'needs_correction' ? 'error' : 'current';
-        else                                         $state = 'pending';
+        if ($isCancelled) {
+            if ($i < $cancelledAt)       $state = 'done';
+            elseif ($i === $cancelledAt) $state = 'cancelled';
+            else                         $state = 'pending';
+        } else {
+            if ($currentStep === 6 || $i < $currentStep) $state = 'done';
+            elseif ($i === $currentStep)                 $state = $status === 'needs_correction' ? 'error' : 'current';
+            else                                         $state = 'pending';
+        }
 
         // Override done state if the step had an incident in history
         if ($state === 'done' && $i === 2 && $hadCorrection)  $state = 'warning';
         if ($state === 'done' && $i === 3 && $hadFailedVisit) $state = 'warning';
 
         $sub = match (true) {
-            $state === 'warning' && $i === 2 => __('prevention.step_done'),
-            $state === 'warning' && $i === 3 => __('prevention.step_done'),
+            $state === 'cancelled'          => __('prevention.step_cancelled'),
+            $state === 'warning' && $i === 2 => __('prevention.step_had_correction'),
+            $state === 'warning' && $i === 3 => __('prevention.step_had_failed_visit'),
+            $status === 'needs_correction' && $state === 'error' => __('prevention.step_correction_required'),
             $state === 'done'    => __('prevention.step_done'),
             $state === 'pending' => __('prevention.step_pending'),
-            $status === 'needs_correction' && $state === 'error' => __('prevention.step_correction_required'),
-            $i === 2             => __('prevention.step2_sub'),
+            $i === 2 && $hadCorrection => __('prevention.step_recheck'),
             $i === 3 && $pendingAppointment => __('prevention.step_visit_scheduled', ['date' => $pendingAppointment->visit_date->format('d/m/Y')]),
+            $i === 3 && $lastFailedAppointment => __('prevention.step_visit_failed_retry'),
             $i === 3             => __('prevention.step3_sub'),
             $i === 4             => $d->certificate ? __('prevention.step_cert_issued') : __('prevention.step_cert_to_issue'),
-            $i === 5             => $d->certificate && ($d->certificate->isCollected() || $d->certificate->isPostDelivered()) ? __('prevention.step_done') : __('prevention.step_cert_waiting_pickup'),
+            $i === 5             => $certSub5,
             default              => __('prevention.step_in_progress'),
         };
 
-        $steps[] = ['num' => $i, 'state' => $state, 'sub' => $sub];
+        // Sous-titre en rouge : correction requise, visite échouée, annulation
+        $alert = in_array($state, ['error', 'cancelled'])
+            || ($state === 'current' && $i === 3 && $lastFailedAppointment);
+
+        $steps[] = ['num' => $i, 'state' => $state, 'sub' => $sub, 'alert' => $alert];
     }
-    $doneSteps = collect($steps)->where('state', 'done')->count();
-    $progress  = $currentStep === 6 ? 100 : ($currentStep === 0 ? 0 : (int) round($doneSteps / 5 * 100));
+    // Progression : les étapes « done » et « warning » (terminées malgré un
+    // incident résolu) comptent comme réalisées ; annulé = avancement figé.
+    $doneSteps = collect($steps)->whereIn('state', ['done', 'warning'])->count();
+    $progress  = (int) round($doneSteps / 5 * 100);
     $phaseNum  = $currentStep > 0 ? min($currentStep, 5) : 0;
 
     /* ── Timeline « journal d'audit » : pastilles + chips ──
@@ -120,7 +157,7 @@
         'needs_correction'    => ['bg-error-container text-error', 'error'],
         'approved'            => ['bg-amber-100 text-amber-900', 'task_alt'],
         'waiting_delivery'    => ['bg-indigo-100 text-indigo-800', 'verified'],
-        'cancelled'           => ['bg-surface-dim text-secondary', 'cancel'],
+        'cancelled'           => ['bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300', 'cancel'],
         default               => ['bg-surface-container-high text-secondary', 'info'],
     };
     [$statusPillCls, $statusPillIcon] = $statusPill;
@@ -137,6 +174,7 @@
 
     /* ── Bandeau d'état du héros (contextuel) ── */
     $heroAlert = match (true) {
+        $status === 'cancelled'           => 'error',
         $status === 'draft'               => 'draft',
         $status === 'needs_correction'    => 'error',
         $pendingAppointment !== null      => 'visit',
@@ -144,7 +182,6 @@
         $status === 'under_consultation' && $lastFailedAppointment => 'visit_failed',
         $status === 'under_consultation'  => 'info',
         $status === 'approved' && ! $d->certificate => 'info',
-        in_array($status, ['cancelled'])  => 'neutral',
         default                           => null,
     };
 
@@ -504,10 +541,12 @@
         @endif
 
         {{-- ── ACTE 3 : Consultation — programmer la visite (RDV)
-             Affiché uniquement pour une PREMIÈRE programmation : si une visite
-             a échoué, la bande "visite échouée" ci-dessous porte le nouveau RDV ;
-             si un RDV est déjà programmé, c'est la bande "RDV programmé". ── --}}
-        @if ($status === 'under_consultation' && ! $pendingAppointment && ! $lastFailedAppointment)
+              Affiché pour un dossier « en consultation » OU « approuvé » sans
+              visite passée (un dossier approuvé doit quand même être inspecté
+              avant la délivrance du certificat). Si une visite a échoué, la
+              bande "visite échouée" ci-dessous porte le nouveau RDV ; si un
+              RDV est déjà programmé, c'est la bande "RDV programmé". ── --}}
+        @if (in_array($status, ['under_consultation', 'approved']) && ! $pendingAppointment && ! $lastFailedAppointment)
         <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden">
             <div class="border-s-4 border-s-primary p-5">
                 <div class="flex items-start gap-3.5 mb-4">
@@ -634,7 +673,10 @@
         {{-- ── Visite échouée : le record (passé/échoué + note) vit DANS cette
              bande, et quand la visite n'est pas bonne, un nouveau RDV se
              programme directement ici. Pas de "toast" séparé. ── --}}
-        @if ($lastFailedAppointment && ! in_array($status, ['cancelled', 'draft']))
+        {{-- Masquée si une visite a déjà été réussie ensuite (le dossier est
+             passé en « attente de remise » — l'échec historique reste au
+             journal d'audit et dans l'historique des visites). ── --}}
+        @if ($lastFailedAppointment && ! $d->hasPassedAppointment() && ! in_array($status, ['cancelled', 'draft']))
         <section class="bg-surface-container-lowest border border-red-200 dark:border-red-800/40 rounded-lg shadow-sm overflow-hidden no-print">
             <div class="border-s-4 border-s-red-600 p-5">
                 <div class="flex items-start gap-3.5 mb-3">
@@ -1161,10 +1203,10 @@
         @endcan
 
         {{-- ══════════════ CYCLE DE VIE — Stepper + progression ══════════════ --}}
-        @if ($status === 'cancelled')
-        {{-- Dossier annulé : message dédié au lieu du stepper --}}
-        <section class="bg-surface-container-lowest border border-red-200 dark:border-red-800/40 rounded-lg shadow-sm overflow-hidden">
-            <div class="border-s-4 border-s-red-600 p-6">
+        <section class="bg-surface-container-lowest border {{ $isCancelled ? 'border-red-200 dark:border-red-800/40' : 'border-surface-dim' }} rounded-lg shadow-sm overflow-hidden">
+            @if ($isCancelled)
+            {{-- Dossier annulé : bandeau rouge au-dessus du cycle figé --}}
+            <div class="border-b border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 border-s-4 border-s-red-600 p-5 md:px-6">
                 <div class="flex items-start gap-4">
                     <div class="w-12 h-12 rounded bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 flex items-center justify-center flex-shrink-0">
                         <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">cancel</span>
@@ -1178,9 +1220,7 @@
                     </div>
                 </div>
             </div>
-        </section>
-        @else
-        <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden">
+            @endif
             <div class="p-5 md:px-6">
                 {{-- En-tête : titre + phase + barre de progression --}}
                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-surface-dim">
@@ -1189,11 +1229,17 @@
                         {{ __('prevention.lifecycle') }}
                     </h3>
                     <div class="flex items-center gap-3 flex-1 sm:flex-none sm:min-w-64">
+                        @if ($isCancelled)
+                        <span class="text-xs font-bold text-white bg-red-600 px-2 py-0.5 rounded whitespace-nowrap">
+                            {{ __('prevention.step_cancelled') }}
+                        </span>
+                        @else
                         <span class="text-xs font-bold text-primary bg-primary-fixed/40 px-2 py-0.5 rounded whitespace-nowrap">
                             {{ __('prevention.phase_word') }} {{ $phaseNum }} / 5
                         </span>
+                        @endif
                         <div class="hidden sm:flex-1 h-1.5 bg-surface-dim/50 rounded-full overflow-hidden">
-                            <div class="h-full bg-gradient-to-r from-primary-container to-amber-500 rounded-full transition-all duration-500" style="width: {{ $progress }}%"></div>
+                            <div class="h-full {{ $isCancelled ? 'bg-red-500' : 'bg-gradient-to-r from-primary-container to-amber-500' }} rounded-full transition-all duration-500" style="width: {{ $progress }}%"></div>
                         </div>
                         <span class="text-[11px] font-mono font-bold text-secondary hidden sm:inline" dir="ltr">{{ $progress }}%</span>
                     </div>
@@ -1210,7 +1256,7 @@
                                     <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check</span>
                                 </span>
                             @elseif ($step['state'] === 'warning')
-                                {{-- Done but had an incident — same look as done --}}
+                                {{-- Terminé malgré un incident résolu (correction / visite échouée) --}}
                                 <span class="relative z-10 w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center shadow-sm ring-4 ring-amber-100 dark:ring-amber-900/40">
                                     <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check</span>
                                 </span>
@@ -1221,6 +1267,11 @@
                             @elseif ($step['state'] === 'error')
                                 <span class="relative z-10 w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shadow-sm ring-4 ring-red-100 dark:ring-red-900/40">
                                     <span class="material-symbols-outlined text-lg" aria-hidden="true">edit_note</span>
+                                </span>
+                            @elseif ($step['state'] === 'cancelled')
+                                {{-- Dossier annulé à cette étape --}}
+                                <span class="relative z-10 w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shadow-sm ring-4 ring-red-100 dark:ring-red-900/40">
+                                    <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">cancel</span>
                                 </span>
                             @else
                                 <span class="relative z-10 w-10 h-10 rounded-full bg-surface-container text-secondary flex items-center justify-center text-sm font-bold border border-surface-dim dark:bg-gray-700">
@@ -1235,11 +1286,11 @@
                                     </h4>
                                     @if ($step['state'] === 'current')
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" aria-hidden="true"></span>
-                                    @elseif ($step['state'] === 'error')
+                                    @elseif ($step['state'] === 'error' || $step['state'] === 'cancelled')
                                         <span class="text-[10px] uppercase font-black text-red-800 bg-red-100 dark:bg-red-900/40 dark:text-red-300 px-1.5 py-px rounded">{{ __('prevention.alert_chip') }}</span>
                                     @endif
                                 </div>
-                                <p class="text-[11px] mt-0.5 leading-snug {{ $step['state'] === 'error' ? 'text-red-700 dark:text-red-400 font-medium' : ($step['state'] === 'warning' ? 'text-red-600 dark:text-red-400 font-medium' : ($step['state'] === 'current' ? 'text-amber-700 dark:text-amber-400 font-medium' : ($step['state'] === 'done' ? 'text-amber-800 dark:text-amber-400' : 'text-secondary'))) }}">
+                                <p class="text-[11px] mt-0.5 leading-snug {{ $step['alert'] ? 'text-red-700 dark:text-red-400 font-medium' : ($step['state'] === 'current' ? 'text-amber-700 dark:text-amber-400 font-medium' : ($step['state'] === 'done' || $step['state'] === 'warning' ? 'text-amber-800 dark:text-amber-400' : 'text-secondary')) }}">
                                     {{ $step['sub'] }}
                                 </p>
                                 <p class="text-[10px] mt-1 font-semibold {{ in_array($step['state'], ['done','warning']) ? 'text-amber-700 dark:text-amber-500' : ($step['state'] === 'current' ? 'text-amber-600' : 'text-secondary') }}" dir="ltr">
@@ -1258,7 +1309,6 @@
                 </div>
             </div>
         </section>
-        @endif
 
         {{-- ══════════════ HÉROS — Fiche identity du dossier ══════════════ --}}
         <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden">

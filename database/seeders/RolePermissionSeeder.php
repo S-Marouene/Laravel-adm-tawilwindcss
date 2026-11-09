@@ -96,6 +96,8 @@ class RolePermissionSeeder extends Seeder
             'view theme-settings', 'edit theme-settings',
             // Notification center (super-admin + admin)
             'manage notifications',
+            // Translations dictionary (super-admin + admin)
+            'manage translations',
         ];
 
         foreach ($permissions as $permission) {

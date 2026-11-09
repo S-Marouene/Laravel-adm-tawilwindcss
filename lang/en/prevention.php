@@ -42,6 +42,12 @@ return [
     'step_delivered'           => 'Collected / Delivered',
     'step_cert_to_issue'       => 'To be issued',
     'step_cert_waiting_pickup' => 'Awaiting collection',
+    'step_cert_ready_pickup'   => 'Ready — collect at the office',
+    'step_cert_ready_post'     => 'Ready — post delivery upcoming',
+    'step_cert_post_sent'      => 'Sent by post (B3) — in transit',
+    'step_visit_failed_retry'  => 'Visit failed — a new visit must be scheduled',
+    'step_recheck'             => 'Re-review after correction',
+    'step_cancelled'           => 'Dossier cancelled',
     'step_in_progress'         => 'In progress',
 
     // ⛩ ACTE 1 — Administrative review

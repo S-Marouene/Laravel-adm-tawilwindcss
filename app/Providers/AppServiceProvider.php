@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Support\DatabaseTranslationLoader;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Support\Facades\Gate;
@@ -16,7 +17,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Decorate the default translation file loader with the database
+        // dictionary (translations table) — DB values override lang/ files.
+        $this->app->extend('translation.loader', function ($loader) {
+            return new DatabaseTranslationLoader($loader);
+        });
     }
 
     /**

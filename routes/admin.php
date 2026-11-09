@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\RescueCertificateController as AdminRescueCertifi
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ThemeSettingsController;
+use App\Http\Controllers\Admin\TranslationController;
 use App\Http\Controllers\Admin\TranslateController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorksNotificationController as AdminWorksNotificationController;
@@ -147,4 +148,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     // Theme settings
     Route::get('theme-settings', [ThemeSettingsController::class, 'index'])->name('theme-settings.index');
     Route::put('theme-settings', [ThemeSettingsController::class, 'update'])->name('theme-settings.update');
+
+    // Translations dictionary (FR / AR / EN in database — overrides lang/ files)
+    Route::get('translations', [TranslationController::class, 'index'])->name('translations.index');
+    Route::post('translations', [TranslationController::class, 'store'])->name('translations.store');
+    Route::post('translations/import', [TranslationController::class, 'import'])->name('translations.import');
+    Route::put('translations/{translation}', [TranslationController::class, 'update'])->name('translations.update');
+    Route::delete('translations/{translation}', [TranslationController::class, 'destroy'])->name('translations.destroy');
 });
