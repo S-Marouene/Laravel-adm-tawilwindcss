@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('works_documents', function (Blueprint $table) {
+        Schema::create('building_building_building_building_works_documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('works_notification_id')->constrained('works_notifications')->onDelete('cascade');
+            $table->foreignId('works_notification_id')->constrained('building_works_declarations')->onDelete('cascade');
             $table->foreignId('document_type_id')->constrained('document_types')->onDelete('cascade');
             $table->string('file_path');
             $table->string('original_name');
@@ -25,6 +25,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('works_documents');
+        Schema::dropIfExists('building_building_building_building_works_documents');
     }
 };

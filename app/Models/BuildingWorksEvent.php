@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Models;
 
@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class WorksEvent extends Model
+class BuildingBuildingBuildingBuildingWorksEvent extends Model
 {
     use HasTranslations;
 
@@ -38,7 +38,7 @@ class WorksEvent extends Model
 
     public function notification(): BelongsTo
     {
-        return $this->belongsTo(WorksNotification::class, 'works_notification_id');
+        return $this->belongsTo(BuildingWorksDeclaration::class, 'works_notification_id');
     }
 
     public function actor(): BelongsTo
@@ -54,13 +54,25 @@ class WorksEvent extends Model
     public function typeLabel(): string
     {
         return match ($this->type) {
-            'submitted'                 => 'Submitted by applicant',
-            'resubmitted'               => 'Notification resubmitted after correction',
-            'advanced_to_consultation'  => 'Advanced to consultation',
-            'correction_requested'      => 'Correction requested',
-            'approved'                  => 'Notification approved — Civil Protection informed of the works',
-            'cancelled'                 => 'Notification cancelled',
-            default                     => ucfirst(str_replace('_', ' ', $this->type)),
+            'submitted'                 => app()->getLocale() === 'ar'
+                ? 'إيداع الإعلام من قِبل صاحب الطلب'
+                : 'Notification soumise par le demandeur',
+            'resubmitted'               => app()->getLocale() === 'ar'
+                ? 'إعادة إيداع الإعلام بعد التصحيح'
+                : 'Notification re-soumise après correction',
+            'advanced_to_consultation'  => app()->getLocale() === 'ar'
+                ? 'الإعلام بُوشر بدراسته (قيد الدراسة)'
+                : 'Notification avancée en consultation',
+            'correction_requested'      => app()->getLocale() === 'ar'
+                ? 'طُلب تصحيح من الإدارة'
+                : 'Correction demandée par l\'administration',
+            'approved'                  => app()->getLocale() === 'ar'
+                ? 'تمت الموافقة — أُبلغت الحماية المدنية بالأشغال'
+                : 'Notification approuvée — Protection Civile informée des travaux',
+            'cancelled'                 => app()->getLocale() === 'ar'
+                ? 'تم إلغاء الإعلام'
+                : 'Notification annulée',
+            default => ucfirst(str_replace('_', ' ', $this->type)),
         };
     }
 

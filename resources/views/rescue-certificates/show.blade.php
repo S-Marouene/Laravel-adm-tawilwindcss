@@ -107,12 +107,15 @@
         default                          => 'neutral', // completed
     };
 
-    /* ── Documents : complétude ── */
-    $uploadedDocs  = $certificate->documents->keyBy('document_type_id');
-    $uploadedTypes = $uploadedDocs->filter(fn ($doc) => $documentTypes->contains('id', $doc->document_type_id))->count();
+    /* ── Documents : complétude (les fichiers archivés sont exclus) ── */
+    $activeDocuments = $certificate->documents->filter(fn ($d) => $d->status !== 'archived');
+    $documentsByType = $activeDocuments->groupBy('document_type_id');
+    $uploadedDocs    = $activeDocuments->keyBy('document_type_id');
+    $uploadedTypes   = $documentsByType->filter(fn ($files, $typeId) => $documentTypes->contains('id', $typeId) && $files->isNotEmpty())->count();
     $fmtSize = fn ($b) => $b >= 1048576 ? number_format($b / 1048576, 1) . ' Mo' : number_format($b / 1024, 0) . ' Ko';
     $isDocComplete = $documentTypes->count() > 0 && $uploadedTypes >= $documentTypes->count();
     $docPct        = $documentTypes->count() > 0 ? (int) round(min($uploadedTypes, $documentTypes->count()) / $documentTypes->count() * 100) : 0;
+    $correction    = $certificate->lastCorrectionData();
 
     /*
      ── Timeline : pastilles + badges « journal d'audit » ──
@@ -240,7 +243,7 @@
                 {{-- ══════════════ 4. ACTUALITÉ DE LA DEMANDE — toujours en tête ══════════════ --}}
 
                 {{-- ── Correction requise ── --}}
-                @if ($status === 'needs_correction' && $certificate->admin_note)
+                @if ($status === 'needs_correction')
                 <section class="bg-surface-container-lowest border border-red-200 dark:border-red-800/40 rounded-lg shadow-sm overflow-hidden mb-6 no-print">
                     <div class="border-s-4 border-s-red-600 p-5">
                         <div class="flex items-start gap-3.5 mb-3">
@@ -256,6 +259,7 @@
                                 </div>
                             </div>
                         </div>
+                        @if ($certificate->admin_note)
                         <div class="rounded border border-red-200 bg-red-50 dark:bg-red-900/10 px-4 py-3 mb-4">
                             <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1 flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>
@@ -263,14 +267,51 @@
                             </p>
                             <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $certificate->admin_note }}</p>
                         </div>
-                        <form method="POST" action="{{ route('rescue-certificates.resubmit', $certificate) }}">
-                            @csrf
-                            <button type="submit"
-                                class="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-3 px-5 rounded transition-colors shadow-sm">
-                                <span class="material-symbols-outlined text-base" aria-hidden="true">edit_note</span>
-                                {{ __('rescue_certificate.fix_and_resubmit') }}
-                            </button>
-                        </form>
+                        @endif
+
+                        {{-- Éléments signalés par l'administration --}}
+                        @php
+                            $rescueFieldLabels = [
+                                'cin'                  => __('rescue_certificate.cin'),
+                                'nom_prenom'           => __('rescue_certificate.nom_prenom'),
+                                'phone'                => __('rescue_certificate.phone'),
+                                'victim_is_minor'      => __('rescue_certificate.victim_is_minor'),
+                                'spouse_case'          => __('rescue_certificate.spouse_case'),
+                                'governorate_id'       => __('rescue_certificate.code_structure'),
+                                'delegation_id'        => __('rescue_certificate.delegation'),
+                                'incident_address'     => __('rescue_certificate.incident_address'),
+                                'incident_type'        => __('rescue_certificate.incident_type'),
+                                'incident_date'        => __('rescue_certificate.incident_date'),
+                                'incident_time'        => __('rescue_certificate.incident_time'),
+                                'incident_description' => __('rescue_certificate.incident_description'),
+                                'notes'                => __('rescue_certificate.notes'),
+                            ];
+                            $correctionDocs = ! empty($correction['docs_to_fix'])
+                                ? $documentTypes->filter(fn ($t) => in_array($t->id, $correction['docs_to_fix']))
+                                : collect();
+                        @endphp
+                        @if (! empty($correction['fields_to_fix']) || $correctionDocs->isNotEmpty())
+                        <div class="mb-4 flex flex-wrap gap-1.5">
+                            @foreach ($correction['fields_to_fix'] ?? [] as $fk)
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40">
+                                    <span class="material-symbols-outlined text-[11px]" aria-hidden="true">edit</span>
+                                    {{ $rescueFieldLabels[$fk] ?? $fk }}
+                                </span>
+                            @endforeach
+                            @foreach ($correctionDocs as $dt)
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700/40">
+                                    <span class="material-symbols-outlined text-[11px]" aria-hidden="true">upload_file</span>
+                                    {{ $dt->name }}
+                                </span>
+                            @endforeach
+                        </div>
+                        @endif
+
+                        <a href="{{ route('rescue-certificates.correct', $certificate) }}"
+                           class="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-3 px-5 rounded transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">edit_note</span>
+                            {{ __('rescue_certificate.fix_and_resubmit') }}
+                        </a>
                     </div>
                 </section>
                 @endif
@@ -845,51 +886,127 @@
                     {{-- ══════ COLONNE DROITE (4 colonnes) ══════ --}}
                     <div class="lg:col-span-4 space-y-6">
 
-                        {{-- ══════ DOCUMENTS JOINTS ══════ --}}
-                        <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print">
-                            <div class="p-5 md:px-6 border-b border-surface-dim">
-                                <div class="flex items-center justify-between gap-3 mb-2">
-                                    <h3 class="text-headline-sm font-headline-sm text-on-surface flex items-center gap-2">
-                                        <span class="material-symbols-outlined text-primary text-2xl" aria-hidden="true">folder_open</span>
-                                        {{ __('rescue_certificate.documents_title') }}
-                                    </h3>
-                                    <span class="text-[11px] font-mono font-bold px-2 py-0.5 rounded {{ $isDocComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-surface-dim text-secondary' }}" dir="ltr">{{ $uploadedTypes }}/{{ $documentTypes->count() }}</span>
+                        {{-- ══════ DOCUMENTS JOINTS (même design que l'espace admin) ══════ --}}
+                        <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print"
+                             x-data="{ open: false }">
+                            <button type="button" @click="open = !open"
+                                    class="w-full flex items-center gap-2 p-5 hover:bg-surface-container transition-colors text-start border-b border-surface-dim">
+                                <span class="w-8 h-8 rounded bg-primary-fixed/50 text-primary flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-base" aria-hidden="true">attach_file</span>
+                                </span>
+                                <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">{{ __('rescue_certificate.documents_title') }}</h3>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap {{ $isDocComplete ? 'text-amber-900 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300' : 'text-secondary bg-surface-dim' }}" dir="ltr">{{ $uploadedTypes }}/{{ $documentTypes->count() }}</span>
+                                <svg class="w-4 h-4 text-secondary transition-transform shrink-0 ms-1" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+
+                            <div x-show="open" x-cloak class="p-5">
+                                {{-- Barre de complétude --}}
+                                <div class="h-2 bg-surface-dim/50 rounded-full overflow-hidden mb-1" role="progressbar" aria-valuenow="{{ $docPct }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="h-full rounded-full transition-all duration-500 {{ $isDocComplete ? 'bg-amber-500' : 'bg-primary' }}" style="width: {{ $docPct }}%"></div>
                                 </div>
-                                {{-- Progression des pièces --}}
-                                <div class="h-1.5 bg-surface-dim/50 rounded-full overflow-hidden">
-                                    <div class="h-full rounded-full transition-all duration-500 {{ $isDocComplete ? 'bg-emerald-500' : 'bg-amber-500' }}" style="width: {{ $docPct }}%"></div>
-                                </div>
-                            </div>
-                            <div class="divide-y divide-surface-dim/60">
-                                @forelse ($documentTypes as $docType)
-                                    @php $doc = $uploadedDocs->get($docType->id); @endphp
-                                    <div class="flex items-center justify-between gap-3 px-5 md:px-6 py-3">
-                                        <div class="flex items-center gap-2.5 min-w-0">
-                                            <span class="w-7 h-7 rounded-full flex-none flex items-center justify-center {{ $doc ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-dim text-secondary' }}">
-                                                <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">{{ $doc ? 'check' : 'close' }}</span>
-                                            </span>
-                                            <div class="min-w-0">
-                                                <p class="text-xs font-bold text-on-surface truncate">{{ $docType->name }}</p>
-                                                @if ($doc)
-                                                    <p class="text-[10px] text-secondary truncate">{{ $doc->original_name }} · {{ $fmtSize($doc->size) }}</p>
-                                                @elseif ($docType->is_conditional)
-                                                    <p class="text-[10px] text-secondary">{{ __('rescue_certificate.document_conditional') }}</p>
-                                                @endif
+                                <p class="text-[10px] font-semibold mb-4 {{ $isDocComplete ? 'text-amber-800 dark:text-amber-400' : 'text-secondary' }}">
+                                    {{ $isDocComplete ? __('rescue_certificate.documents_title') : $uploadedTypes . ' / ' . $documentTypes->count() }}
+                                </p>
+
+                                <div class="space-y-2.5">
+                                    @forelse ($documentTypes as $docType)
+                                        @php $files = $documentsByType->get($docType->id, collect()); @endphp
+                                        @forelse ($files as $doc)
+                                            <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5 group hover:border-primary/40 transition-colors">
+                                                <div class="flex items-start gap-2.5 min-w-0">
+                                                    <span class="material-symbols-outlined text-red-600 text-lg mt-0.5 shrink-0" aria-hidden="true">{{ str_contains((string) $doc->mime_type, 'pdf') ? 'picture_as_pdf' : 'description' }}</span>
+                                                    <div class="min-w-0">
+                                                        <h4 class="text-xs font-bold text-on-surface leading-snug">{{ $docType->name }}</h4>
+                                                        <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap" dir="ltr">
+                                                            <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
+                                                            <span class="text-surface-dim">•</span>
+                                                            <span>{{ $doc->updated_at->format('d/m/Y') }}</span>
+                                                            @if ($doc->original_name)
+                                                                <span class="truncate max-w-36 text-secondary/80" title="{{ $doc->original_name }}">— {{ $doc->original_name }}</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <a href="{{ route('rescue-certificates.documents.download', $doc) }}"
+                                                   class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors"
+                                                   title="{{ __('rescue_certificate.download_label') }}">
+                                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
+                                                </a>
                                             </div>
+                                        @empty
+                                            <div class="p-3 border border-dashed border-surface-dim rounded flex items-start justify-between gap-2.5">
+                                                <div class="flex items-start gap-2.5 min-w-0">
+                                                    <span class="w-7 h-7 rounded bg-surface-dim/40 text-outline flex items-center justify-center shrink-0" aria-hidden="true">
+                                                        <span class="material-symbols-outlined text-sm">{{ $docType->is_conditional ? 'help_outline' : 'error_outline' }}</span>
+                                                    </span>
+                                                    <div class="min-w-0">
+                                                        <h4 class="text-xs font-bold {{ $docType->is_conditional ? 'text-secondary' : 'text-on-surface' }}">{{ $docType->name }}</h4>
+                                                        <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap">
+                                                            @if ($docType->is_conditional)
+                                                                <span class="font-semibold text-amber-900 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/40 px-1.5 rounded">{{ __('rescue_certificate.document_conditional') }}</span>
+                                                            @endif
+                                                            <span class="{{ $docType->is_conditional ? '' : 'text-red-600 dark:text-red-400' }}">{{ __('rescue_certificate.documents_not_uploaded') }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforelse
+                                    @empty
+                                        <div class="p-4 text-center">
+                                            <span class="material-symbols-outlined text-2xl text-outline" aria-hidden="true">folder_off</span>
+                                            <p class="text-xs text-secondary mt-1">{{ __('rescue_certificate.admin_no_doctypes') }}</p>
                                         </div>
-                                        @if ($doc)
-                                            <a href="{{ route('rescue-certificates.documents.download', $doc) }}"
-                                               class="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:text-primary-container px-2 py-1 rounded hover:bg-primary/5 transition-colors whitespace-nowrap">
-                                                <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
-                                                {{ __('rescue_certificate.download_label') }}
-                                            </a>
-                                        @endif
-                                    </div>
-                                @empty
-                                    <div class="px-6 py-6 text-center text-xs text-secondary">—</div>
-                                @endforelse
+                                    @endforelse
+                                </div>
                             </div>
                         </div>
+
+                        {{-- Anciennes versions archivées (corrections précédentes) --}}
+                        @if ($archivedDocuments->isNotEmpty())
+                        <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print" x-data="{ openArchive: false }">
+                            <div class="p-5">
+                                <button type="button" @click="openArchive = !openArchive" class="w-full text-start">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="w-8 h-8 rounded bg-surface-dim/60 text-secondary flex items-center justify-center shrink-0">
+                                            <span class="material-symbols-outlined text-base" aria-hidden="true">inventory_2</span>
+                                        </span>
+                                        <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">
+                                            {{ __('rescue_certificate.archive_title') }}
+                                        </h3>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary" dir="ltr">{{ $archivedDocuments->count() }}</span>
+                                        <svg class="w-4 h-4 text-secondary transition-transform" :class="openArchive ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </div>
+                                    <p class="text-[11px] text-secondary leading-relaxed">{{ __('rescue_certificate.archive_desc') }}</p>
+                                </button>
+
+                                <div x-show="openArchive" x-cloak class="pt-4 space-y-2.5">
+                                    @foreach ($archivedDocuments as $doc)
+                                        <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5">
+                                            <div class="flex items-start gap-2.5 min-w-0">
+                                                <span class="material-symbols-outlined text-outline text-lg mt-0.5 shrink-0" aria-hidden="true">inventory_2</span>
+                                                <div class="min-w-0">
+                                                    <h4 class="text-xs font-bold text-secondary leading-snug">{{ $doc->documentType?->name ?? __('rescue_certificate.documents_title') }}</h4>
+                                                    <div class="flex items-center gap-2 text-[11px] text-secondary/80 mt-0.5 flex-wrap" dir="ltr">
+                                                        <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
+                                                        <span class="text-surface-dim">•</span>
+                                                        <span>{{ $doc->created_at->format('d/m/Y') }}</span>
+                                                        @if ($doc->original_name)
+                                                            <span class="truncate max-w-36" title="{{ $doc->original_name }}">— {{ $doc->original_name }}</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <a href="{{ route('rescue-certificates.documents.download', $doc) }}"
+                                               class="w-7 h-7 rounded bg-surface-container text-secondary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors"
+                                               title="{{ __('rescue_certificate.download_label') }}">
+                                                <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
+                                            </a>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        @endif
 
                         {{-- ══════ RAPPEL : SUIVI PAR TÉLÉPHONE ══════ --}}
                         <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print">

@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     {{-- ================================================================
          PAGE D'ACCUEIL — Portail Citoyen ONPC (design/landing.html)
          Héros clair institutionnel + numéros d'urgence + 3 étapes
@@ -185,7 +185,7 @@
                 <span class="h-px flex-1 bg-surface-dim" aria-hidden="true"></span>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-14">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12 sm:mb-14">
 
                 {{-- Certificat de prévention --}}
                 <a href="{{ route('prevention-requests.create') }}" class="group relative onpc-kpi flex flex-col">
@@ -238,6 +238,25 @@
                     </div>
                     <h3 class="text-headline-sm text-on-surface mb-1.5">{{ __('services.rescue_certificate') }}</h3>
                     <p class="text-body-sm text-secondary leading-relaxed flex-1">{{ __('services.rescue_certificate.desc') }}</p>
+                    <span class="inline-flex items-center gap-1 mt-4 pt-3 border-t border-surface-dim text-body-sm font-bold text-primary group-hover:gap-2.5 transition-all">
+                        {{ __('services.access_service') }}
+                        <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+                    </span>
+                </a>
+
+                {{-- Notification de travaux (sans permis de construire) --}}
+                <a href="{{ route('building-works-declarations.create') }}" class="group relative onpc-kpi flex flex-col">
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <span class="w-12 h-12 shrink-0 rounded flex items-center justify-center bg-amber-50" aria-hidden="true">
+                            <span class="material-symbols-outlined filled text-2xl text-amber-700">engineering</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 rounded border border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-900">
+                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">check_circle</span>
+                            {{ __('services.free') }}
+                        </span>
+                    </div>
+                    <h3 class="text-headline-sm text-on-surface mb-1.5">{{ __('services.works_notification.short') }}</h3>
+                    <p class="text-body-sm text-secondary leading-relaxed flex-1">{{ __('services.works_notification.desc') }}</p>
                     <span class="inline-flex items-center gap-1 mt-4 pt-3 border-t border-surface-dim text-body-sm font-bold text-primary group-hover:gap-2.5 transition-all">
                         {{ __('services.access_service') }}
                         <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>

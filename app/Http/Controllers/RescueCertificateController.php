@@ -57,8 +57,10 @@ class RescueCertificateController extends Controller
             ->get();
 
         return view('rescue-certificates.show', [
-            'certificate'   => $rescueCertificate,
-            'documentTypes' => $documentTypes,
+            'certificate'         => $rescueCertificate,
+            'documentTypes'       => $documentTypes,
+            'archivedDocuments'   => $rescueCertificate->documents->filter(fn ($d) => $d->status === 'archived')->sortBy('created_at'),
+            'allCorrectionRounds' => $rescueCertificate->allCorrectionRounds(),
         ]);
     }
 
@@ -160,6 +162,7 @@ class RescueCertificateController extends Controller
 
         // Load any already-uploaded documents for this certificate
         $uploadedDocs = RescueDocument::where('rescue_certificate_id', $rescueCertificate->id)
+            ->where('status', '!=', 'archived')
             ->get()
             ->keyBy('document_type_id');
 
@@ -210,30 +213,17 @@ class RescueCertificateController extends Controller
                 if (! $file || ! $file->isValid()) continue;
                 $path = $file->store($uploadDir, 'local');
 
-                // Use updateOrCreate for the first file, create for subsequent ones
-                $existing = RescueDocument::where('rescue_certificate_id', $rescueCertificate->id)
-                    ->where('document_type_id', $docTypeId)
-                    ->first();
-
-                if ($existing) {
-                    $existing->update([
-                        'file_path'     => $path,
-                        'original_name' => $file->getClientOriginalName(),
-                        'mime_type'     => $file->getMimeType(),
-                        'size'          => $file->getSize(),
-                        'status'        => 'uploaded',
-                    ]);
-                } else {
-                    RescueDocument::create([
-                        'rescue_certificate_id' => $rescueCertificate->id,
-                        'document_type_id'      => $docTypeId,
-                        'file_path'             => $path,
-                        'original_name'         => $file->getClientOriginalName(),
-                        'mime_type'             => $file->getMimeType(),
-                        'size'                  => $file->getSize(),
-                        'status'                => 'uploaded',
-                    ]);
-                }
+                // Always create a new row — multiple active files per type are
+                // allowed (same model as prevention's dossier documents).
+                RescueDocument::create([
+                    'rescue_certificate_id' => $rescueCertificate->id,
+                    'document_type_id'      => $docTypeId,
+                    'file_path'             => $path,
+                    'original_name'         => $file->getClientOriginalName(),
+                    'mime_type'             => $file->getMimeType(),
+                    'size'                  => $file->getSize(),
+                    'status'                => 'uploaded',
+                ]);
             }
         }
 
@@ -295,9 +285,191 @@ class RescueCertificateController extends Controller
     }
 
     // =========================================================================
-    // Resubmit after correction
+    // Download the official form/template attached to a document type
+    // (the applicant fills it, scans it and uploads it back)
     // =========================================================================
-    // The request status goes back to drafted so admin can review again.
+
+    public function downloadTemplate(DocumentType $documentType)
+    {
+        if (! $documentType->template_path) {
+            abort(404);
+        }
+
+        return \Storage::disk('local')->download(
+            $documentType->template_path,
+            $documentType->template_name ?: ($documentType->name . '.' . $documentType->templateExtension())
+        );
+    }
+
+    // =========================================================================
+    // Targeted correction — show the form (fields + documents flagged by admin)
+    // =========================================================================
+
+    public function showCorrectForm(RescueCertificate $rescueCertificate): View|RedirectResponse
+    {
+        if ($rescueCertificate->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (! $rescueCertificate->isNeedsCorrection()) {
+            return redirect()->route('rescue-certificates.show', $rescueCertificate)
+                ->withErrors(['status' => __('rescue_certificate.not_needs_correction')]);
+        }
+
+        $rescueCertificate->load(['governorate', 'delegation', 'documents.documentType', 'events']);
+
+        $correction = $rescueCertificate->lastCorrectionData();
+
+        // Legacy fallback: no correction snapshot stored → everything stays editable
+        $allFieldKeys = ['cin', 'nom_prenom', 'phone', 'victim_is_minor', 'spouse_case', 'governorate_id', 'delegation_id', 'incident_address', 'incident_type', 'incident_date', 'incident_time', 'incident_description', 'notes'];
+        $fieldsToFix = $correction !== null ? ($correction['fields_to_fix'] ?? $allFieldKeys) : $allFieldKeys;
+        $docsToFix   = $correction['docs_to_fix'] ?? [];
+
+        // Load only the document types the admin flagged
+        $documentTypes = collect();
+        if (! empty($docsToFix)) {
+            $documentTypes = DocumentType::service(DocumentType::SERVICE_RESCUE_CERTIFICATE)
+                ->orderBy('sort_order')->get()
+                ->filter(fn ($t) => in_array($t->id, $docsToFix))->values();
+        }
+
+        // Archived docs (the ones replaced during previous correction rounds)
+        $archivedDocs = RescueDocument::where('rescue_certificate_id', $rescueCertificate->id)
+            ->where('status', 'archived')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('rescue-certificates.correct', [
+            'rescueCertificate' => $rescueCertificate,
+            'correction'        => $correction,
+            'fieldsToFix'       => $fieldsToFix,
+            'docsToFix'         => $docsToFix,
+            'documentTypes'     => $documentTypes,
+            'archivedDocs'      => $archivedDocs,
+            'gouvernorats'      => Governorate::with('delegations')->orderBy('id')->get(),
+        ]);
+    }
+
+    // =========================================================================
+    // Targeted correction — submit the fixes (only flagged items are validated)
+    // =========================================================================
+
+    public function submitCorrection(Request $request, RescueCertificate $rescueCertificate): RedirectResponse
+    {
+        if ($rescueCertificate->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (! $rescueCertificate->isNeedsCorrection()) {
+            return redirect()->route('rescue-certificates.show', $rescueCertificate)
+                ->withErrors(['status' => __('rescue_certificate.not_needs_correction')]);
+        }
+
+        $correction  = $rescueCertificate->lastCorrectionData();
+        $allFieldKeys = ['cin', 'nom_prenom', 'phone', 'victim_is_minor', 'spouse_case', 'governorate_id', 'delegation_id', 'incident_address', 'incident_type', 'incident_date', 'incident_time', 'incident_description', 'notes'];
+        $fieldsToFix = $correction !== null ? ($correction['fields_to_fix'] ?? $allFieldKeys) : $allFieldKeys;
+        $docsToFix   = array_map('intval', $correction['docs_to_fix'] ?? []);
+
+        // ── Validation rules built ONLY for the fields the admin flagged ──
+        $rules = [];
+        if (in_array('cin', $fieldsToFix))     { $rules['cin']        = ['required', 'string', 'max:20']; }
+        if (in_array('nom_prenom', $fieldsToFix)) { $rules['nom_prenom'] = ['required', 'string', 'max:255']; }
+        if (in_array('phone', $fieldsToFix))   { $rules['phone']      = ['required', 'string', 'max:20']; }
+        if (in_array('victim_is_minor', $fieldsToFix)) {
+            $rules['victim_is_minor'] = ['nullable', 'boolean'];
+            $rules['parent_name']     = ['required_if:victim_is_minor,1', 'nullable', 'string', 'max:255'];
+            $rules['parent_cin']      = ['required_if:victim_is_minor,1', 'nullable', 'string', 'max:20'];
+        }
+        if (in_array('spouse_case', $fieldsToFix))    { $rules['spouse_case']          = ['nullable', 'boolean']; }
+        if (in_array('governorate_id', $fieldsToFix)) { $rules['governorate_id']       = ['required', 'integer', 'exists:governorates,id']; }
+        if (in_array('delegation_id', $fieldsToFix))  { $rules['delegation_id']        = ['required', 'integer', 'exists:delegations,id']; }
+        if (in_array('incident_address', $fieldsToFix))     { $rules['incident_address']     = ['required', 'string', 'max:500']; }
+        if (in_array('incident_type', $fieldsToFix))        { $rules['incident_type']        = ['required', 'string', 'in:' . implode(',', RescueCertificate::TYPES)]; }
+        if (in_array('incident_date', $fieldsToFix))        { $rules['incident_date']        = ['required', 'date']; }
+        if (in_array('incident_time', $fieldsToFix))        { $rules['incident_time']        = ['nullable', 'date_format:H:i']; }
+        if (in_array('incident_description', $fieldsToFix)) { $rules['incident_description'] = ['required', 'string', 'max:5000']; }
+        if (in_array('notes', $fieldsToFix))                { $rules['notes']                = ['nullable', 'string', 'max:3000']; }
+
+        foreach ($docsToFix as $docTypeId) {
+            $rules["documents.{$docTypeId}"]   = ['nullable', 'array', 'max:10'];
+            $rules["documents.{$docTypeId}.*"] = ['file', 'max:10240'];
+        }
+
+        $validated = $request->validate($rules);
+
+        // ── Apply updates: only the flagged fields ──
+        $update = [];
+
+        if (in_array('cin', $fieldsToFix))                  { $update['cin']        = $validated['cin']; }
+        if (in_array('nom_prenom', $fieldsToFix))           { $update['nom_prenom'] = $validated['nom_prenom']; }
+        if (in_array('phone', $fieldsToFix))                { $update['phone']      = $validated['phone']; }
+        if (in_array('victim_is_minor', $fieldsToFix)) {
+            $update['victim_is_minor'] = $request->boolean('victim_is_minor');
+            $update['parent_name']     = $request->boolean('victim_is_minor') ? ($validated['parent_name'] ?? null) : null;
+            $update['parent_cin']      = $request->boolean('victim_is_minor') ? ($validated['parent_cin'] ?? null) : null;
+        }
+        if (in_array('spouse_case', $fieldsToFix))          { $update['spouse_case'] = $request->boolean('spouse_case'); }
+        if (in_array('governorate_id', $fieldsToFix))       { $update['governorate_id'] = $validated['governorate_id']; }
+        if (in_array('delegation_id', $fieldsToFix))        { $update['delegation_id'] = $validated['delegation_id']; }
+        if (in_array('incident_address', $fieldsToFix))     { $update['incident_address'] = $validated['incident_address']; }
+        if (in_array('incident_type', $fieldsToFix))        { $update['incident_type'] = $validated['incident_type']; }
+        if (in_array('incident_date', $fieldsToFix))        { $update['incident_date'] = $validated['incident_date']; }
+        if (in_array('incident_time', $fieldsToFix))        { $update['incident_time'] = $validated['incident_time'] ?? null; }
+        if (in_array('incident_description', $fieldsToFix)) { $update['incident_description'] = $validated['incident_description']; }
+        if (in_array('notes', $fieldsToFix))                { $update['notes'] = $validated['notes'] ?? null; }
+
+        if (! empty($update)) {
+            $rescueCertificate->update($update);
+        }
+
+        // ── Upload new files for flagged document types (multi-file per type) ──
+        $uploadDir = "rescue-documents/{$rescueCertificate->id}";
+        $uploadedCount = 0;
+
+        foreach ($docsToFix as $docTypeId) {
+            $files = $request->file("documents.{$docTypeId}");
+            if (! $files) continue;
+            $files = is_array($files) ? $files : [$files];
+
+            foreach ($files as $file) {
+                if (! $file || ! $file->isValid()) continue;
+
+                $path = $file->store($uploadDir, 'local');
+
+                RescueDocument::create([
+                    'rescue_certificate_id' => $rescueCertificate->id,
+                    'document_type_id'      => $docTypeId,
+                    'file_path'             => $path,
+                    'original_name'         => $file->getClientOriginalName(),
+                    'mime_type'             => $file->getMimeType(),
+                    'size'                  => $file->getSize(),
+                    'status'                => 'uploaded',
+                ]);
+                $uploadedCount++;
+            }
+        }
+
+        // Mark request as completed (submitted for review) + keep the reference
+        $rescueCertificate->update([
+            'status'       => 'completed',
+            'current_step' => 2,
+            'reference'    => $rescueCertificate->reference ?: \App\Support\Reference::make('rescue', $rescueCertificate),
+        ]);
+
+        $rescueCertificate->logEvent('resubmitted', null, [
+            'updated'      => $update,
+            'fields_fixed' => $fieldsToFix,
+            'docs_fixed'   => $docsToFix,
+        ]);
+
+        DossierNotifier::notify($rescueCertificate, 'resubmitted', 'admin', Service::SERVICE_RESCUE_CERTIFICATE);
+
+        return redirect()->route('rescue-certificates.show', $rescueCertificate)
+            ->with('success', __('rescue_certificate.correction_submitted_success'));
+    }
+
+    // =========================================================================
+    // Resubmit after correction — legacy POST now bounces to the correct page
     // =========================================================================
 
     public function resubmit(Request $request, RescueCertificate $rescueCertificate): RedirectResponse
@@ -307,23 +479,11 @@ class RescueCertificateController extends Controller
         }
 
         if (! $rescueCertificate->isNeedsCorrection()) {
-            return redirect()->route('rescue-certificates.index')
+            return redirect()->route('rescue-certificates.show', $rescueCertificate)
                 ->withErrors(['status' => __('rescue_certificate.resubmit_forbidden')]);
         }
 
-        // Re-open to step 2 so user can upload corrected documents.
-        // No event is logged here: the "resubmitted" event is logged once,
-        // in storeStep2, when the request is actually re-submitted (same as
-        // prevention — the timeline then reads correction → resubmitted).
-        $rescueCertificate->update([
-            'status'       => 'draft',
-            'current_step' => 2,
-            'admin_note'   => null,
-        ]);
-
-        return redirect()
-            ->route('rescue-certificates.step2.show', $rescueCertificate)
-            ->with('info', __('rescue_certificate.resubmit_info'));
+        return redirect()->route('rescue-certificates.correct', $rescueCertificate);
     }
 
     // =========================================================================

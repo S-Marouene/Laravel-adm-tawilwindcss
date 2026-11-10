@@ -12,6 +12,15 @@ class RescueDocument extends Model
         'original_name', 'mime_type', 'size', 'status',
     ];
 
+    // Document states: pending | uploaded | archived
+    // "archived" = replaced by a newer version after a correction round —
+    // the old file is kept on disk for history but excluded from the
+    // active checklist and from completeness counting.
+
+    public function isActive(): bool    { return $this->status !== 'archived'; }
+    public function isArchived(): bool  { return $this->status === 'archived'; }
+    public function scopeActive($query) { return $query->where('status', '!=', 'archived'); }
+
     // -----------------------------------------------------------------------
 
     public function certificate(): BelongsTo

@@ -213,6 +213,62 @@ class NotificationTemplateSeeder extends Seeder
             ],
         ];
 
+        // ── Notification de travaux (الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء) ──
+        // Service-scoped templates: DossierNotifier looks up "works_{event}"
+        // when notifying for Service::SERVICE_WORKS_NOTIFICATION. The wording
+        // differs from prevention — no site visit, free procedure (مجاني),
+        // 15-day processing delay, and the applicant is notified by phone.
+        $worksTemplates = [
+            [
+                'event_key' => 'works_submitted',
+                'level'     => 'info',
+                'title_fr'  => 'Nouvelle notification de travaux',
+                'body_fr'   => 'La notification :reference (:nom_prenom) vient d\'être soumise et est en attente d\'examen (délai réglementaire : 15 jours).',
+                'title_ar'  => 'إعلام جديد بأشغال',
+                'body_ar'   => 'تم تقديم إعلام الأشغال :reference (:nom_prenom) وهو في انتظار المراجعة (الأجل القانوني: 15 يومًا).',
+            ],
+            [
+                'event_key' => 'works_resubmitted',
+                'level'     => 'warning',
+                'title_fr'  => 'Notification de travaux re-soumise après correction',
+                'body_fr'   => 'La notification :reference (:nom_prenom) a été corrigée et re-soumise par le demandeur.',
+                'title_ar'  => 'إعادة تقديم الإعلام بعد التصحيح',
+                'body_ar'   => 'أعاد المتقدم :nom_prenom تقديم إعلام الأشغال :reference بعد إجراء التصحيحات المطلوبة.',
+            ],
+            [
+                'event_key' => 'works_under_consultation',
+                'level'     => 'info',
+                'title_fr'  => 'Notification de travaux en cours de traitement',
+                'body_fr'   => 'Votre notification de travaux :reference est en cours de traitement par la Direction Régionale de la Protection Civile. Vous serez informé du résultat par téléphone.',
+                'title_ar'  => 'إعلام الأشغال قيد الدراسة',
+                'body_ar'   => 'يجري حاليًا دراسة إعلامكم :reference من قِبل الإدارة الجهوية للحماية المدنية. سيتم إبلاغكم بالنتيجة عبر الهاتف.',
+            ],
+            [
+                'event_key' => 'works_needs_correction',
+                'level'     => 'warning',
+                'title_fr'  => 'Correction requise — notification de travaux',
+                'body_fr'   => 'Votre notification de travaux :reference nécessite des corrections. Veuillez consulter la note de l\'administration et corriger les éléments signalés.',
+                'title_ar'  => 'مطلوب تصحيح — إعلام أشغال',
+                'body_ar'   => 'يستلزم إعلامكم :reference إجراء تصحيحات. يرجى الاطلاع على ملاحظة الإدارة وتصحيح العناصر المُشار إليها.',
+            ],
+            [
+                'event_key' => 'works_approved',
+                'level'     => 'success',
+                'title_fr'  => 'Notification de travaux approuvée',
+                'body_fr'   => 'Votre notification de travaux :reference a été approuvée. La Protection Civile est informée des travaux — vous serez contacté par téléphone. Cette procédure est entièrement gratuite.',
+                'title_ar'  => 'تمت الموافقة على إعلام الأشغال',
+                'body_ar'   => 'تمت الموافقة على إعلامكم :reference وأُبلغت الحماية المدنية بالأشغال. سيتم التواصل معكم عبر الهاتف. هذا الإجراء مجاني كليًا.',
+            ],
+            [
+                'event_key' => 'works_cancelled',
+                'level'     => 'danger',
+                'title_fr'  => 'Notification de travaux annulée',
+                'body_fr'   => 'Votre notification de travaux :reference a été annulée. Veuillez consulter la raison communiquée par l\'administration.',
+                'title_ar'  => 'تم إلغاء إعلام الأشغال',
+                'body_ar'   => 'تم إلغاء إعلام الأشغال :reference. يرجى الاطلاع على السبب المُبلَّغ من الإدارة.',
+            ],
+        ];
+
         foreach ($templates as $data) {
             NotificationTemplate::updateOrCreate(
                 ['event_key' => $data['event_key']],
@@ -221,6 +277,13 @@ class NotificationTemplateSeeder extends Seeder
         }
 
         foreach ($rescueTemplates as $data) {
+            NotificationTemplate::updateOrCreate(
+                ['event_key' => $data['event_key']],
+                $data
+            );
+        }
+
+        foreach ($worksTemplates as $data) {
             NotificationTemplate::updateOrCreate(
                 ['event_key' => $data['event_key']],
                 $data

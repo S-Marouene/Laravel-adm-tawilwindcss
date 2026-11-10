@@ -61,6 +61,8 @@ return [
     'service_labels' => [
         'prevention' => 'Prevention Certificate',
         'preventive-presence' => 'Preventive Presence',
+        'rescue-certificate' => 'Rescue & Relief Certificate',
+        'works-notification' => 'Works Declaration',
     ],
     'services' => 'Applicable services (multi-select)',
     'document_name' => 'Document name',

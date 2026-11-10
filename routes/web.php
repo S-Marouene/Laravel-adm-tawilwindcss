@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MesDemandesController;
@@ -6,10 +6,10 @@ use App\Http\Controllers\PreventionRequestController;
 use App\Models\PreventionDossier;
 use App\Models\PreventivePresenceRequest;
 use App\Models\RescueCertificate;
-use App\Models\WorksNotification;
+use App\Models\BuildingWorksDeclaration;
 use App\Http\Controllers\PreventivePresenceController;
 use App\Http\Controllers\RescueCertificateController;
-use App\Http\Controllers\WorksNotificationController;
+use App\Http\Controllers\BuildingWorksDeclarationController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\App;
@@ -44,7 +44,7 @@ Route::get('/', function () {
         PreventionDossier::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
         || PreventivePresenceRequest::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
         || RescueCertificate::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
-        || WorksNotification::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
+        || BuildingWorksDeclaration::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
     );
 
     return view('welcome', ['hasRequests' => $hasRequests]);
@@ -125,6 +125,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/rescue-certificates', [RescueCertificateController::class, 'index'])->name('rescue-certificates.index');
     Route::get('/rescue-certificates/create', [RescueCertificateController::class, 'create'])->name('rescue-certificates.create');
     Route::get('/rescue-certificates/{rescueCertificate}', [RescueCertificateController::class, 'show'])->name('rescue-certificates.show');
+
+    // Official form/template attached to a document type (download → fill → rescan → upload)
+    Route::get('/rescue-certificates/document-template/{documentType}', [RescueCertificateController::class, 'downloadTemplate'])
+        ->name('rescue-certificates.document-template.download');
+
+    // Targeted correction form (fields + documents flagged by the admin)
+    Route::get('/rescue-certificates/{rescueCertificate}/correct', [RescueCertificateController::class, 'showCorrectForm'])->name('rescue-certificates.correct');
+    Route::post('/rescue-certificates/{rescueCertificate}/correct', [RescueCertificateController::class, 'submitCorrection'])->name('rescue-certificates.correct.submit');
+
     Route::post('/rescue-certificates/step1', [RescueCertificateController::class, 'storeStep1'])->name('rescue-certificates.step1.store');
     Route::get('/rescue-certificates/{rescueCertificate}/step1/edit', [RescueCertificateController::class, 'editStep1'])->name('rescue-certificates.step1.edit');
     Route::put('/rescue-certificates/{rescueCertificate}/step1', [RescueCertificateController::class, 'updateStep1'])->name('rescue-certificates.step1.update');
@@ -136,15 +145,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/rescue-certificates/{rescueCertificate}', [RescueCertificateController::class, 'destroy'])->name('rescue-certificates.destroy');
 
     // ── Works notification (الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء) ──
-    Route::get('/works-notifications', [WorksNotificationController::class, 'index'])->name('works-notifications.index');
-    Route::get('/works-notifications/create', [WorksNotificationController::class, 'create'])->name('works-notifications.create');
-    Route::post('/works-notifications/step1', [WorksNotificationController::class, 'storeStep1'])->name('works-notifications.step1.store');
-    Route::get('/works-notifications/{worksNotification}/step1/edit', [WorksNotificationController::class, 'editStep1'])->name('works-notifications.step1.edit');
-    Route::put('/works-notifications/{worksNotification}/step1', [WorksNotificationController::class, 'updateStep1'])->name('works-notifications.step1.update');
-    Route::get('/works-notifications/{worksNotification}/step2', [WorksNotificationController::class, 'showStep2'])->name('works-notifications.step2.show');
-    Route::post('/works-notifications/{worksNotification}/step2', [WorksNotificationController::class, 'storeStep2'])->name('works-notifications.step2.store');
-    Route::post('/works-notifications/{worksNotification}/resubmit', [WorksNotificationController::class, 'resubmit'])->name('works-notifications.resubmit');
-    Route::delete('/works-notifications/{worksNotification}', [WorksNotificationController::class, 'destroy'])->name('works-notifications.destroy');
+    Route::get('/building-works-declarations', [BuildingWorksDeclarationController::class, 'index'])->name('building-works-declarations.index');
+    Route::get('/building-works-declarations/create', [BuildingWorksDeclarationController::class, 'create'])->name('building-works-declarations.create');
+    Route::get('/building-works-declarations/{BuildingWorksDeclaration}', [BuildingWorksDeclarationController::class, 'show'])->name('building-works-declarations.show');
+
+    // Official form/template attached to a document type (download → fill → rescan → upload)
+    Route::get('/building-works-declarations/document-template/{documentType}', [BuildingWorksDeclarationController::class, 'downloadTemplate'])
+        ->name('building-works-declarations.document-template.download');
+
+    // Targeted correction form (fields + documents flagged by the admin)
+    Route::get('/building-works-declarations/{BuildingWorksDeclaration}/correct', [BuildingWorksDeclarationController::class, 'showCorrectForm'])->name('building-works-declarations.correct');
+    Route::post('/building-works-declarations/{BuildingWorksDeclaration}/correct', [BuildingWorksDeclarationController::class, 'submitCorrection'])->name('building-works-declarations.correct.submit');
+
+    Route::post('/building-works-declarations/step1', [BuildingWorksDeclarationController::class, 'storeStep1'])->name('building-works-declarations.step1.store');
+    Route::get('/building-works-declarations/{BuildingWorksDeclaration}/step1/edit', [BuildingWorksDeclarationController::class, 'editStep1'])->name('building-works-declarations.step1.edit');
+    Route::put('/building-works-declarations/{BuildingWorksDeclaration}/step1', [BuildingWorksDeclarationController::class, 'updateStep1'])->name('building-works-declarations.step1.update');
+    Route::get('/building-works-declarations/{BuildingWorksDeclaration}/step2', [BuildingWorksDeclarationController::class, 'showStep2'])->name('building-works-declarations.step2.show');
+    Route::post('/building-works-declarations/{BuildingWorksDeclaration}/step2', [BuildingWorksDeclarationController::class, 'storeStep2'])->name('building-works-declarations.step2.store');
+    Route::post('/building-works-declarations/{BuildingWorksDeclaration}/resubmit', [BuildingWorksDeclarationController::class, 'resubmit'])->name('building-works-declarations.resubmit');
+    Route::get('/building-works-declarations/{BuildingWorksDeclaration}/documents/{BuildingBuildingBuildingBuildingWorksDocument}/download', [BuildingWorksDeclarationController::class, 'downloadDocument'])->name('building-works-declarations.documents.download');
+    Route::delete('/building-works-declarations/{BuildingWorksDeclaration}', [BuildingWorksDeclarationController::class, 'destroy'])->name('building-works-declarations.destroy');
 });
 
 Route::middleware('auth')->group(function () {

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Models;
 
@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class WorksNotification extends Model
+class BuildingWorksDeclaration extends Model
 {
     use HasTranslations;
 
@@ -50,6 +50,16 @@ class WorksNotification extends Model
         self::OWNER_MORAL,
     ];
 
+    /**
+     * Notifier compatibility — DossierNotifier reads `nom_prenom` on every
+     * dossier-like model. For works, the applicant is the owner (natural)
+     * or the legal representative of the company (moral).
+     */
+    public function getNomPrenomAttribute(): ?string
+    {
+        return $this->owner_name;
+    }
+
     // -----------------------------------------------------------------------
     // Relations
     // -----------------------------------------------------------------------
@@ -76,13 +86,13 @@ class WorksNotification extends Model
 
     public function documents(): HasMany
     {
-        return $this->hasMany(WorksDocument::class, 'works_notification_id');
+        return $this->hasMany(BuildingBuildingBuildingBuildingWorksDocument::class, 'works_notification_id');
     }
 
     /** Full audit log — chronological history of every action on this notification */
     public function events(): HasMany
     {
-        return $this->hasMany(WorksEvent::class, 'works_notification_id')
+        return $this->hasMany(BuildingBuildingBuildingBuildingWorksEvent::class, 'works_notification_id')
             ->orderBy('created_at')
             ->orderBy('id');
     }
@@ -92,7 +102,7 @@ class WorksNotification extends Model
      * The actor is the currently authenticated user (admin or applicant).
      * The note (when given) may be a legacy string or a bilingual {fr, ar} array.
      */
-    public function logEvent(string $type, string|array|null $note = null, array $data = []): WorksEvent
+    public function logEvent(string $type, string|array|null $note = null, array $data = []): BuildingBuildingBuildingBuildingWorksEvent
     {
         return $this->events()->create([
             'user_id' => auth()->id(),
@@ -150,6 +160,71 @@ class WorksNotification extends Model
     public function isActionable(): bool
     {
         return in_array($this->status, ['completed', 'under_consultation', 'needs_correction']);
+    }
+
+    // -----------------------------------------------------------------------
+    // Correction rounds (mirrors RescueCertificate / PreventionDossier)
+    // -----------------------------------------------------------------------
+
+    /** Event types that hold a full snapshot of a previous (old) version */
+    public const SNAPSHOT_EVENT_TYPES = ['correction_requested', 'history_snapshot'];
+
+    public function lastCorrectionEvent(): ?BuildingBuildingBuildingBuildingWorksEvent
+    {
+        return $this->events->last(
+            fn ($e) => in_array($e->type, self::SNAPSHOT_EVENT_TYPES)
+                || ($e->type === 'resubmitted' && is_array($e->data) && ! empty($e->data['previous']))
+        );
+    }
+
+    public function correctionRoundsCount(): int
+    {
+        return $this->events->filter(
+            fn ($e) => in_array($e->type, self::SNAPSHOT_EVENT_TYPES)
+                || ($e->type === 'resubmitted' && is_array($e->data) && ! empty($e->data['previous']))
+        )->count();
+    }
+
+    /** Data of the last correction round — note, flagged fields, flagged docs, retro values */
+    public function lastCorrectionData(): ?array
+    {
+        $event = $this->lastCorrectionEvent();
+
+        if (! $event || ! is_array($event->data)) {
+            return null;
+        }
+
+        return [
+            'round'          => $this->correctionRoundsCount(),
+            'note'           => $event->note,
+            'fields_to_fix'  => $event->data['fields_to_fix'] ?? [],
+            'docs_to_fix'    => $event->data['docs_to_fix'] ?? [],
+            'previous'       => $event->data['previous'] ?? null,
+            'archived_files' => $event->data['archived_files'] ?? null,
+        ];
+    }
+
+    /** Every correction round snapshot, oldest first */
+    public function allCorrectionRounds(): array
+    {
+        $snapshotEvents = $this->events->filter(
+            fn ($e) => in_array($e->type, self::SNAPSHOT_EVENT_TYPES)
+                || ($e->type === 'resubmitted' && is_array($e->data) && ! empty($e->data['previous']))
+        )->values();
+
+        $round = 0;
+
+        return $snapshotEvents->map(function ($event) use (&$round) {
+            $round++;
+
+            return [
+                'round'          => $round,
+                'date'           => $event->created_at,
+                'note'           => $event->note,
+                'previous'       => is_array($event->data) ? ($event->data['previous'] ?? null) : null,
+                'archived_files' => is_array($event->data) ? ($event->data['archived_files'] ?? null) : null,
+            ];
+        })->all();
     }
 
     // -----------------------------------------------------------------------

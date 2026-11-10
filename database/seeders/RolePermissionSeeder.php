@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Database\Seeders;
 
@@ -34,14 +34,14 @@ class RolePermissionSeeder extends Seeder
             'view prevention-dossiers', 'manage prevention-dossiers',
             'view preventive-presence', 'manage preventive-presence',
             'view rescue-certificates', 'manage rescue-certificates',
-            'view works-notifications', 'manage works-notifications',
+            'view building-works-declarations', 'manage building-works-declarations',
         ],
 
         'manager' => [
             'view prevention-dossiers', 'manage prevention-dossiers',
             'view preventive-presence', 'manage preventive-presence',
             'view rescue-certificates', 'manage rescue-certificates',
-            'view works-notifications', 'manage works-notifications',
+            'view building-works-declarations', 'manage building-works-declarations',
         ],
 
         'user' => [],
@@ -87,7 +87,7 @@ class RolePermissionSeeder extends Seeder
             // Rescue certificates
             'view rescue-certificates', 'manage rescue-certificates',
             // Works notifications
-            'view works-notifications', 'manage works-notifications',
+            'view building-works-declarations', 'manage building-works-declarations',
             // Activity logs
             'view activity-logs', 'delete activity-logs',
             // Website settings (super-admin only)

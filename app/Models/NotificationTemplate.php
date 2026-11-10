@@ -52,6 +52,13 @@ class NotificationTemplate extends Model
             'rescue_approved'               => 'success',
             'rescue_cancelled'              => 'danger',
             'rescue_certificate_delivered'  => 'success',
+            // Works notifications (service-scoped templates)
+            'works_submitted'              => 'info',
+            'works_resubmitted'            => 'warning',
+            'works_under_consultation'     => 'info',
+            'works_needs_correction'       => 'warning',
+            'works_approved'               => 'success',
+            'works_cancelled'              => 'danger',
             default                  => 'info',
         };
     }
@@ -86,6 +93,13 @@ class NotificationTemplate extends Model
             'rescue_approved'               => 'Secours — demande approuvée',
             'rescue_cancelled'              => 'Secours — demande annulée',
             'rescue_certificate_delivered'  => 'Secours — certificat remis',
+            // Works notifications (service-scoped templates)
+            'works_submitted'              => 'Travaux — nouvelle notification',
+            'works_resubmitted'            => 'Travaux — re-soumission après correction',
+            'works_under_consultation'     => 'Travaux — notification en cours de traitement',
+            'works_needs_correction'       => 'Travaux — correction demandée',
+            'works_approved'               => 'Travaux — notification approuvée',
+            'works_cancelled'              => 'Travaux — notification annulée',
             default                  => $this->event_key,
         };
     }

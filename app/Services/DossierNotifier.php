@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Services;
 
@@ -6,6 +6,7 @@ use App\Models\PreventionDossier;
 use App\Models\RescueCertificate;
 use App\Models\Service;
 use App\Models\User;
+use App\Models\BuildingWorksDeclaration;
 use App\Notifications\DossierNotification;
 use Illuminate\Support\Collection;
 
@@ -37,7 +38,7 @@ class DossierNotifier
      * @param  string             $serviceKey  Which service this notification is about
      */
     public static function notify(
-        PreventionDossier|RescueCertificate $dossier,
+        PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier,
         string $eventType,
         string $audience = 'both',
         string $serviceKey = Service::SERVICE_PREVENTION,
@@ -90,7 +91,7 @@ class DossierNotifier
      * @return Collection<int, User>
      */
     public static function eligibleAdmins(
-        PreventionDossier|RescueCertificate $dossier,
+        PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier,
         string $serviceKey = Service::SERVICE_PREVENTION,
     ): Collection {
         return User::with(['roles', 'territories', 'services'])
@@ -122,7 +123,7 @@ class DossierNotifier
     /**
      * Check if a manager's territory assignments cover this dossier's location.
      */
-    private static function managerCoversDossier(User $manager, PreventionDossier|RescueCertificate $dossier): bool
+    private static function managerCoversDossier(User $manager, PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier): bool
     {
         foreach ($manager->territories as $territory) {
             if ($territory->delegation_id) {
@@ -151,10 +152,24 @@ class DossierNotifier
     // Returns: [title_fr, body_fr, title_ar, body_ar, level]
     // ------------------------------------------------------------------
 
-    private static function buildContent(PreventionDossier|RescueCertificate $dossier, string $event, string $serviceKey): array
+    private static function buildContent(PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier, string $event, string $serviceKey): array
     {
         $ref  = $dossier->reference ?? "#{$dossier->id}";
         $name = $dossier->nom_prenom;
+
+        // Works notifications use their own service-scoped templates
+        // (works_submitted, works_under_consultation…) — the wording differs:
+        // free procedure, 15-day delay, and the applicant is notified by phone.
+        if ($serviceKey === Service::SERVICE_WORKS_NOTIFICATION) {
+            $tpl = \App\Models\NotificationTemplate::forEvent("works_{$event}");
+            if ($tpl) {
+                [$title_fr, $body_fr, $level] = $tpl->resolve('fr', $ref, $name);
+                [$title_ar, $body_ar]         = array_slice($tpl->resolve('ar', $ref, $name), 0, 2);
+                return [$title_fr, $body_fr, $title_ar, $body_ar, $level];
+            }
+
+            return self::worksFallback($event, $ref, $name);
+        }
 
         // Rescue certificates use their own service-scoped templates
         // (rescue_submitted, rescue_under_consultation…) — the wording differs
@@ -237,18 +252,22 @@ class DossierNotifier
     // URL helpers
     // ------------------------------------------------------------------
 
-    private static function adminUrl(PreventionDossier|RescueCertificate $dossier, string $serviceKey): string
+    private static function adminUrl(PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier, string $serviceKey): string
     {
-        return $serviceKey === Service::SERVICE_RESCUE_CERTIFICATE
-            ? route('admin.rescue-certificates.show', $dossier)
-            : route('admin.prevention-dossiers.show', $dossier);
+        return match ($serviceKey) {
+            Service::SERVICE_RESCUE_CERTIFICATE => route('admin.rescue-certificates.show', $dossier),
+            Service::SERVICE_WORKS_NOTIFICATION => route('admin.building-works-declarations.show', $dossier),
+            default => route('admin.prevention-dossiers.show', $dossier),
+        };
     }
 
-    private static function citizenUrl(PreventionDossier|RescueCertificate $dossier, string $serviceKey): string
+    private static function citizenUrl(PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier, string $serviceKey): string
     {
-        return $serviceKey === Service::SERVICE_RESCUE_CERTIFICATE
-            ? route('rescue-certificates.show', $dossier)
-            : route('prevention-requests.show', $dossier);
+        return match ($serviceKey) {
+            Service::SERVICE_RESCUE_CERTIFICATE => route('rescue-certificates.show', $dossier),
+            Service::SERVICE_WORKS_NOTIFICATION => route('building-works-declarations.show', $dossier),
+            default => route('prevention-requests.show', $dossier),
+        };
     }
 
     // ------------------------------------------------------------------
@@ -314,6 +333,67 @@ class DossierNotifier
                 "La demande {$ref} a été mise à jour.",
                 'تم تحديث الطلب',
                 "تم تحديث الطلب {$ref}.",
+                'info',
+            ],
+        };
+    }
+
+    // ------------------------------------------------------------------
+    // Works notification fallback content — used until the works_*
+    // notification templates are seeded (or for unknown events).
+    // Returns: [title_fr, body_fr, title_ar, body_ar, level]
+    // ------------------------------------------------------------------
+
+    private static function worksFallback(string $event, string $ref, string $name): array
+    {
+        return match ($event) {
+            'submitted' => [
+                'Nouvelle notification de travaux',
+                "La notification {$ref} ({$name}) vient d'être soumise et est en attente d'examen (délai : 15 jours).",
+                'إعلام جديد بأشغال',
+                "تم تقديم إعلام الأشغال {$ref} ({$name}) وهو في انتظار المراجعة (الأجل : 15 يومًا).",
+                'info',
+            ],
+            'resubmitted' => [
+                'Notification re-soumise après correction',
+                "La notification {$ref} ({$name}) a été corrigée et re-soumise par le demandeur.",
+                'إعادة تقديم الإعلام بعد التصحيح',
+                "أعاد المتقدم {$name} تقديم إعلام الأشغال {$ref} بعد إجراء التصحيحات المطلوبة.",
+                'warning',
+            ],
+            'under_consultation' => [
+                'Notification en cours de consultation',
+                "Votre notification {$ref} est en cours d'examen par la Direction Régionale de la Protection Civile. Vous serez informé du résultat par téléphone.",
+                'الإعلام قيد الدراسة',
+                "إعلام الأشغال {$ref} قيد الدراسة من طرف الإدارة الجهوية للحماية المدنية. سيتم إبلاغكم بالنتيجة عبر الهاتف.",
+                'info',
+            ],
+            'needs_correction' => [
+                'Correction requise',
+                "Votre notification {$ref} nécessite des corrections. Veuillez consulter la note de l'administration.",
+                'مطلوب تصحيح',
+                "يستلزم إعلام الأشغال {$ref} إجراء تصحيحات. يرجى الاطلاع على ملاحظة الإدارة.",
+                'warning',
+            ],
+            'approved' => [
+                'Notification approuvée',
+                "Votre notification {$ref} a été approuvée — la Protection Civile est informée des travaux. Vous serez notifié par téléphone.",
+                'تمت الموافقة على الإعلام',
+                "تمت الموافقة على إعلام الأشغال {$ref} — تم إعلام الحماية المدنية بالأشغال. سيتم إبلاغكم عبر الهاتف.",
+                'success',
+            ],
+            'cancelled' => [
+                'Notification annulée',
+                "La notification {$ref} a été annulée. Veuillez consulter la raison communiquée par l'administration.",
+                'تم إلغاء الإعلام',
+                "تم إلغاء إعلام الأشغال {$ref}. يرجى الاطلاع على السبب المُبلَّغ من الإدارة.",
+                'danger',
+            ],
+            default => [
+                'Notification mise à jour',
+                "La notification {$ref} a été mise à jour.",
+                'تم تحديث الإعلام',
+                "تم تحديث الإعلام {$ref}.",
                 'info',
             ],
         };

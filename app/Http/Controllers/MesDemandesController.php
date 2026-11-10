@@ -1,11 +1,11 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
 use App\Models\PreventionDossier;
 use App\Models\PreventivePresenceRequest;
 use App\Models\RescueCertificate;
-use App\Models\WorksNotification;
+use App\Models\BuildingWorksDeclaration;
 use Illuminate\Http\Request;
 
 class MesDemandesController extends Controller
@@ -169,50 +169,50 @@ class MesDemandesController extends Controller
             });
 
         // ── Works notifications (notification de travaux) ──
-        WorksNotification::where('user_id', $user->id)
+        BuildingWorksDeclaration::where('user_id', $user->id)
             ->whereNotIn('status', ['draft'])
             ->with(['governorate', 'delegation'])
             ->latest()
             ->get()
-            ->each(function ($worksNotification) use ($items) {
+            ->each(function ($BuildingWorksDeclaration) use ($items) {
                 $items->push($this->makeItem(
                     kind:  'works',
                     lang:  'works_notification',
                     label: __('services.works_notification'),
-                    url:   route('works-notifications.index'),
-                    title: $worksNotification->property_address
-                        ?: $worksNotification->owner_name
-                        ?: __('demandes.title_works', ['ref' => $this->requestReference($worksNotification, 'works')]),
-                    meta: $this->worksSummary($worksNotification),
-                    details: $this->worksDetails($worksNotification),
-                    status:    $worksNotification->status,
-                    createdAt: $worksNotification->created_at,
+                    url:   route('building-works-declarations.show', $BuildingWorksDeclaration),
+                    title: $BuildingWorksDeclaration->property_address
+                        ?: $BuildingWorksDeclaration->owner_name
+                        ?: __('demandes.title_works', ['ref' => $this->requestReference($BuildingWorksDeclaration, 'works')]),
+                    meta: $this->worksSummary($BuildingWorksDeclaration),
+                    details: $this->worksDetails($BuildingWorksDeclaration),
+                    status:    $BuildingWorksDeclaration->status,
+                    createdAt: $BuildingWorksDeclaration->created_at,
                 ));
             });
 
         // ── Works notifications — drafts (incomplete) ──
-        WorksNotification::where('user_id', $user->id)
+        BuildingWorksDeclaration::where('user_id', $user->id)
             ->where('status', 'draft')
             ->with(['governorate', 'delegation'])
             ->latest()
             ->get()
-            ->each(function ($worksNotification) use ($items) {
-                $resumeUrl = $worksNotification->current_step >= 2
-                    ? route('works-notifications.step2.show', $worksNotification)
-                    : route('works-notifications.step1.edit', $worksNotification);
+            ->each(function ($BuildingWorksDeclaration) use ($items) {
+                $resumeUrl = $BuildingWorksDeclaration->current_step >= 2
+                    ? route('building-works-declarations.step2.show', $BuildingWorksDeclaration)
+                    : route('building-works-declarations.step1.edit', $BuildingWorksDeclaration);
                 $items->push($this->makeItem(
                     kind:  'works',
                     lang:  'works_notification',
                     label: __('services.works_notification'),
                     url:   $resumeUrl,
-                    title: $worksNotification->property_address
-                        ?: $worksNotification->owner_name
-                        ?: __('demandes.title_works', ['ref' => $this->requestReference($worksNotification, 'works')]),
-                    meta: $this->worksSummary($worksNotification),
-                    details: $this->worksDetails($worksNotification),
+                    title: $BuildingWorksDeclaration->property_address
+                        ?: $BuildingWorksDeclaration->owner_name
+                        ?: __('demandes.title_works', ['ref' => $this->requestReference($BuildingWorksDeclaration, 'works')]),
+                    meta: $this->worksSummary($BuildingWorksDeclaration),
+                    details: $this->worksDetails($BuildingWorksDeclaration),
                     status:    'draft',
-                    createdAt: $worksNotification->created_at,
-                    destroyUrl: route('works-notifications.destroy', $worksNotification) . '?redirect=/mes-demandes',
+                    createdAt: $BuildingWorksDeclaration->created_at,
+                    destroyUrl: route('building-works-declarations.destroy', $BuildingWorksDeclaration) . '?redirect=/mes-demandes',
                 ));
             });
 
@@ -409,39 +409,39 @@ class MesDemandesController extends Controller
     /**
      * Ligne de synthèse courte d'une notification de travaux.
      */
-    private function worksSummary(WorksNotification $worksNotification): array
+    private function worksSummary(BuildingWorksDeclaration $BuildingWorksDeclaration): array
     {
         return array_values(array_filter([
-            $worksNotification->works_start_date
-                ? __('demandes.works_on', ['date' => $worksNotification->works_start_date->format('d/m/Y')])
+            $BuildingWorksDeclaration->works_start_date
+                ? __('demandes.works_on', ['date' => $BuildingWorksDeclaration->works_start_date->format('d/m/Y')])
                 : null,
-            $this->place($worksNotification),
+            $this->place($BuildingWorksDeclaration),
         ]));
     }
 
     /**
      * Détails complets d'une notification de travaux (panneau dépliable).
      */
-    private function worksDetails(WorksNotification $worksNotification): array
+    private function worksDetails(BuildingWorksDeclaration $BuildingWorksDeclaration): array
     {
         $ownerParts = array_filter([
-            $worksNotification->owner_name,
-            $worksNotification->owner_cin ? __('demandes.cin', ['cin' => $worksNotification->owner_cin]) : null,
+            $BuildingWorksDeclaration->owner_name,
+            $BuildingWorksDeclaration->owner_cin ? __('demandes.cin', ['cin' => $BuildingWorksDeclaration->owner_cin]) : null,
         ]);
 
         return array_values(array_filter([
-            $this->referenceDetailText($worksNotification, 'works'),
-            $worksNotification->property_address
-                ? ['icon' => 'location_on', 'text' => $worksNotification->property_address]
+            $this->referenceDetailText($BuildingWorksDeclaration, 'works'),
+            $BuildingWorksDeclaration->property_address
+                ? ['icon' => 'location_on', 'text' => $BuildingWorksDeclaration->property_address]
                 : null,
-            $this->place($worksNotification)
-                ? ['icon' => 'map', 'text' => $this->place($worksNotification)]
+            $this->place($BuildingWorksDeclaration)
+                ? ['icon' => 'map', 'text' => $this->place($BuildingWorksDeclaration)]
                 : null,
             $ownerParts
                 ? ['icon' => 'badge', 'text' => implode(' · ', $ownerParts)]
                 : null,
-            $worksNotification->phone
-                ? ['icon' => 'call', 'text' => $worksNotification->phone]
+            $BuildingWorksDeclaration->phone
+                ? ['icon' => 'call', 'text' => $BuildingWorksDeclaration->phone]
                 : null,
         ]));
     }

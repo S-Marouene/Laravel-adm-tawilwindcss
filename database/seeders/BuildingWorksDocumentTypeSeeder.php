@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Database\Seeders;
 
@@ -6,7 +6,7 @@ use App\Models\DocumentType;
 use Illuminate\Database\Seeder;
 
 /** Idempotent seeder for the works notification (الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء) document checklist. */
-class WorksDocumentTypeSeeder extends Seeder
+class BuildingBuildingBuildingBuildingBuildingWorksDocumentTypeSeeder extends Seeder
 {
     public function run(): void
     {
@@ -26,6 +26,10 @@ class WorksDocumentTypeSeeder extends Seeder
 
     private function documents(): array
     {
+        // Per the official service datasheet:
+        //   1. بطاقة إرشادات — إستمارة (official form, template attached by the admin)
+        //   2. نسخة من بطاقة التعريف الوطنية — وثيقة مطلوبة (required)
+        //   3. مضمون من الإشعار القانوني بالرائد الرسمي — وثيقة مطلوبة (required)
         return [
             [
                 'ar' => 'بطاقة إرشادات يتم سحبها من مقر الإدارة الجهوية للحماية المدنية أو من مقر فرقة الحماية المدنية المعنية',
@@ -43,7 +47,7 @@ class WorksDocumentTypeSeeder extends Seeder
                 'ar' => 'مضمون من الإشعار القانوني بالرائد الرسمي للجمهورية التونسية لعقد تأسيس الشخص المعنوي',
                 'fr' => "Extrait de l'annonce légale au Journal Officiel de la République Tunisienne constitutive de la personne morale",
                 'en' => "Extract of the legal notice in the Official Gazette of the Tunisian Republic establishing the legal entity",
-                'conditional' => true,
+                'conditional' => false,
             ],
         ];
     }

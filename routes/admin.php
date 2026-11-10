@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AdminDashboardController;
@@ -19,7 +19,7 @@ use App\Http\Controllers\Admin\ThemeSettingsController;
 use App\Http\Controllers\Admin\TranslationController;
 use App\Http\Controllers\Admin\TranslateController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\WorksNotificationController as AdminWorksNotificationController;
+use App\Http\Controllers\Admin\BuildingWorksDeclarationController as AdminBuildingWorksDeclarationController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin'])->group(function () {
@@ -132,14 +132,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
         ->parameters(['rescue-certificates' => 'rescueCertificate']);
 
     // Works notification (الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء) workflow actions — free procedure
-    Route::post('works-notifications/{worksNotification}/advance', [AdminWorksNotificationController::class, 'advance'])->name('works-notifications.advance');
-    Route::post('works-notifications/{worksNotification}/correction', [AdminWorksNotificationController::class, 'requestCorrection'])->name('works-notifications.correction');
-    Route::post('works-notifications/{worksNotification}/approve', [AdminWorksNotificationController::class, 'approve'])->name('works-notifications.approve');
-    Route::post('works-notifications/{worksNotification}/cancel', [AdminWorksNotificationController::class, 'cancel'])->name('works-notifications.cancel');
-    Route::get('works-notifications/{worksNotification}/documents/{doc}/download', [AdminWorksNotificationController::class, 'downloadDocument'])->name('works-notifications.documents.download');
-    Route::resource('works-notifications', AdminWorksNotificationController::class)
+    Route::post('building-works-declarations/{BuildingWorksDeclaration}/advance', [AdminBuildingWorksDeclarationController::class, 'advance'])->name('building-works-declarations.advance');
+    Route::post('building-works-declarations/{BuildingWorksDeclaration}/correction', [AdminBuildingWorksDeclarationController::class, 'requestCorrection'])->name('building-works-declarations.correction');
+    Route::post('building-works-declarations/{BuildingWorksDeclaration}/approve', [AdminBuildingWorksDeclarationController::class, 'approve'])->name('building-works-declarations.approve');
+    Route::post('building-works-declarations/{BuildingWorksDeclaration}/cancel', [AdminBuildingWorksDeclarationController::class, 'cancel'])->name('building-works-declarations.cancel');
+    Route::get('building-works-declarations/{BuildingWorksDeclaration}/documents/{doc}/download', [AdminBuildingWorksDeclarationController::class, 'downloadDocument'])->name('building-works-declarations.documents.download');
+    Route::resource('building-works-declarations', AdminBuildingWorksDeclarationController::class)
         ->only(['index', 'show'])
-        ->parameters(['works-notifications' => 'worksNotification']);
+        ->parameters(['building-works-declarations' => 'BuildingWorksDeclaration']);
 
     // Settings
     Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');

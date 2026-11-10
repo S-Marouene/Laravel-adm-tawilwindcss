@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Models;
 
@@ -169,7 +169,7 @@ class User extends Authenticatable
 
         if (! $this->isAdministrator()) {
             if (is_string($intended) && preg_match(
-                '#/(?:prevention-requests|preventive-presence|rescue-certificates|works-notifications)/create#',
+                '#/(?:prevention-requests|preventive-presence|rescue-certificates|building-works-declarations)/create#',
                 $intended,
             )) {
                 return redirect($intended);

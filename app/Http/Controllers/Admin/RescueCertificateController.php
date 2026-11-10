@@ -145,6 +145,10 @@ class RescueCertificateController extends Controller
         $validated = $request->validate([
             'admin_note.fr' => ['required', 'string', 'max:2000'],
             'admin_note.ar' => ['required', 'string', 'max:2000'],
+            'fields_to_fix' => ['nullable', 'array'],
+            'fields_to_fix.*' => ['string', 'in:cin,nom_prenom,phone,victim_is_minor,spouse_case,governorate_id,delegation_id,incident_address,incident_type,incident_date,incident_time,incident_description,notes'],
+            'docs_to_fix'   => ['nullable', 'array'],
+            'docs_to_fix.*' => ['integer', 'exists:document_types,id'],
         ], [], [
             'admin_note.fr' => 'Note (Français)',
             'admin_note.ar' => 'Note (العربية)',
@@ -154,6 +158,48 @@ class RescueCertificateController extends Controller
             return back()->withErrors(['status' => 'Cannot request correction for this request.']);
         }
 
+        $fieldsToFix = $validated['fields_to_fix'] ?? [];
+        $docsToFix   = array_map('intval', $validated['docs_to_fix'] ?? []);
+
+        // ── Snapshot of the values the applicant will have to update ──
+        $previousParams = [
+            'cin'                  => $rescueCertificate->cin,
+            'nom_prenom'           => $rescueCertificate->nom_prenom,
+            'phone'                => $rescueCertificate->phone,
+            'victim_is_minor'      => $rescueCertificate->victim_is_minor ? ($rescueCertificate->parent_name ?? null) : null,
+            'spouse_case'          => $rescueCertificate->spouse_case ? __('rescue_certificate.spouse_case') : null,
+            'governorate_id'       => $rescueCertificate->governorate?->name_fr ?? $rescueCertificate->governorate?->name_ar,
+            'delegation_id'        => $rescueCertificate->delegation?->name_fr ?? $rescueCertificate->delegation?->name_ar,
+            'incident_address'     => $rescueCertificate->incident_address,
+            'incident_type'        => $rescueCertificate->incidentTypeLabel(),
+            'incident_date'        => $rescueCertificate->incident_date?->format('d/m/Y'),
+            'incident_time'        => $rescueCertificate->incident_time?->format('H:i'),
+            'incident_description' => $rescueCertificate->incident_description,
+            'notes'                => $rescueCertificate->notes,
+        ];
+
+        // ── Archive ONLY the documents whose type was flagged for correction ──
+        $archivedDocsMeta = [];
+        if (! empty($docsToFix)) {
+            $docsToArchive = $rescueCertificate->documents
+                ->filter(fn ($d) => $d->status !== 'archived' && in_array((int) $d->document_type_id, $docsToFix));
+
+            foreach ($docsToArchive as $doc) {
+                $archivedDocsMeta[] = [
+                    'document_type_id' => $doc->document_type_id,
+                    'type'        => $doc->documentType?->name,
+                    'file'        => $doc->original_name,
+                    'size'        => $doc->size,
+                    'uploaded_at' => $doc->created_at?->format('d/m/Y H:i'),
+                ];
+            }
+
+            if ($docsToArchive->isNotEmpty()) {
+                RescueDocument::whereIn('id', $docsToArchive->pluck('id'))
+                    ->update(['status' => 'archived']);
+            }
+        }
+
         $rescueCertificate->update([
             'status'      => 'needs_correction',
             'admin_note'  => $validated['admin_note'],
@@ -161,7 +207,12 @@ class RescueCertificateController extends Controller
             'reviewed_at' => now(),
         ]);
 
-        $rescueCertificate->logEvent('correction_requested', $validated['admin_note']);
+        $rescueCertificate->logEvent('correction_requested', $validated['admin_note'], [
+            'fields_to_fix'  => $fieldsToFix,
+            'docs_to_fix'    => $docsToFix,
+            'previous'       => $previousParams,
+            'archived_files' => $archivedDocsMeta,
+        ]);
         $rescueCertificate->refresh();
 
         DossierNotifier::notify($rescueCertificate, 'needs_correction', 'user', Service::SERVICE_RESCUE_CERTIFICATE);

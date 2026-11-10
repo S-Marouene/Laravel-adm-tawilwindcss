@@ -151,6 +151,8 @@ return [
     'service_labels' => [
         'prevention' => 'شهادة الوقاية',
         'preventive-presence' => 'الحضور الوقائي',
+        'rescue-certificate' => 'شهادة النجدة والإنقاذ',
+        'works-notification' => 'الإعلام عن أشغال لا تستوجب رخصة بناء',
     ],
     'governorate' => 'الولاية',
     'building_type' => 'نوع البناية',

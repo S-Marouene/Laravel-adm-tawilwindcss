@@ -42,6 +42,7 @@ return [
 
     // Service 8
     'works_notification' => 'الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء',
+    'works_notification.short' => 'الإعلام عن الأشغال',
     'works_notification.desc' => 'الإعلام عن إنجاز أشغال البناء التي لا تستوجب الحصول على رخصة بناء',
 
     // Service 9

@@ -100,6 +100,8 @@ return [
     'service_labels' => [
         'prevention' => "Certificat de prévention",
         'preventive-presence' => "Présence préventive",
+        'rescue-certificate' => "Certificat de secours et de sauvetage",
+        'works-notification' => "Déclaration de travaux",
     ],
     'governorate' => 'Gouvernorat',
     'building_type' => 'Type de bâtiment',

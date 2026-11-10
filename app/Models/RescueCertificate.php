@@ -170,6 +170,71 @@ class RescueCertificate extends Model
         return $this->status === 'needs_correction';
     }
 
+    // -----------------------------------------------------------------------
+    // Correction rounds (mirrors PreventionDossier)
+    // -----------------------------------------------------------------------
+
+    /** Event types that hold a full snapshot of a previous (old) version */
+    public const SNAPSHOT_EVENT_TYPES = ['correction_requested', 'history_snapshot'];
+
+    public function lastCorrectionEvent(): ?RescueEvent
+    {
+        return $this->events->last(
+            fn ($e) => in_array($e->type, self::SNAPSHOT_EVENT_TYPES)
+                || ($e->type === 'resubmitted' && is_array($e->data) && ! empty($e->data['previous']))
+        );
+    }
+
+    public function correctionRoundsCount(): int
+    {
+        return $this->events->filter(
+            fn ($e) => in_array($e->type, self::SNAPSHOT_EVENT_TYPES)
+                || ($e->type === 'resubmitted' && is_array($e->data) && ! empty($e->data['previous']))
+        )->count();
+    }
+
+    /** Data of the last correction round — note, flagged fields, flagged docs, retro values */
+    public function lastCorrectionData(): ?array
+    {
+        $event = $this->lastCorrectionEvent();
+
+        if (! $event || ! is_array($event->data)) {
+            return null;
+        }
+
+        return [
+            'round'          => $this->correctionRoundsCount(),
+            'note'           => $event->note,
+            'fields_to_fix'  => $event->data['fields_to_fix'] ?? [],
+            'docs_to_fix'    => $event->data['docs_to_fix'] ?? [],
+            'previous'       => $event->data['previous'] ?? null,
+            'archived_files' => $event->data['archived_files'] ?? null,
+        ];
+    }
+
+    /** Every correction round snapshot, oldest first */
+    public function allCorrectionRounds(): array
+    {
+        $snapshotEvents = $this->events->filter(
+            fn ($e) => in_array($e->type, self::SNAPSHOT_EVENT_TYPES)
+                || ($e->type === 'resubmitted' && is_array($e->data) && ! empty($e->data['previous']))
+        )->values();
+
+        $round = 0;
+
+        return $snapshotEvents->map(function ($event) use (&$round) {
+            $round++;
+
+            return [
+                'round'          => $round,
+                'date'           => $event->created_at,
+                'note'           => $event->note,
+                'previous'       => is_array($event->data) ? ($event->data['previous'] ?? null) : null,
+                'archived_files' => is_array($event->data) ? ($event->data['archived_files'] ?? null) : null,
+            ];
+        })->all();
+    }
+
     public function isDelivered(): bool
     {
         return $this->isServed() && $this->delivered_at !== null;

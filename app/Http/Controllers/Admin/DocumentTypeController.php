@@ -43,7 +43,7 @@ class DocumentTypeController extends Controller
             'name_fr'        => ['required', 'string', 'max:500'],
             'name_en'        => ['required', 'string', 'max:500'],
             'service_keys'   => ['required', 'array', 'min:1'],
-            'service_keys.*' => ['in:prevention,preventive-presence'],
+            'service_keys.*' => ['in:prevention,preventive-presence,rescue-certificate,works-notification'],
             'is_conditional' => ['boolean'],
             'sort_order'     => ['nullable', 'integer', 'min:0'],
             'template_file'  => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:10240'],
@@ -86,7 +86,7 @@ class DocumentTypeController extends Controller
             'name_fr'        => ['required', 'string', 'max:500'],
             'name_en'        => ['required', 'string', 'max:500'],
             'service_keys'   => ['required', 'array', 'min:1'],
-            'service_keys.*' => ['in:prevention,preventive-presence'],
+            'service_keys.*' => ['in:prevention,preventive-presence,rescue-certificate,works-notification'],
             'is_conditional' => ['boolean'],
             'sort_order'     => ['nullable', 'integer', 'min:0'],
             'template_file'  => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:10240'],
@@ -190,7 +190,12 @@ class DocumentTypeController extends Controller
     /** [key => localized label] options for the service select. */
     private function serviceOptions(): array
     {
-        $keys = [DocumentType::SERVICE_PREVENTION, DocumentType::SERVICE_PREVENTIVE_PRESENCE];
+        $keys = [
+            DocumentType::SERVICE_PREVENTION,
+            DocumentType::SERVICE_PREVENTIVE_PRESENCE,
+            DocumentType::SERVICE_RESCUE_CERTIFICATE,
+            DocumentType::SERVICE_WORKS_NOTIFICATION,
+        ];
         $labels = __('admin.service_labels');
         $options = [];
         foreach ($keys as $key) {

@@ -119,6 +119,17 @@
                                                         {{ __('rescue_certificate.conditional') }}
                                                     </span>
                                                 @endif
+                                                @if ($doc->template_path)
+                                                    <a href="{{ route('rescue-certificates.document-template.download', $doc) }}"
+                                                       class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold
+                                                              text-primary bg-primary/10 rounded border border-primary/25 transition
+                                                              hover:bg-primary/15 cursor-pointer dark:bg-primary/15 dark:border-primary/40"
+                                                       title="{{ __('rescue_certificate.download_form_hint') }}">
+                                                        <span class="material-symbols-outlined text-[13px]" aria-hidden="true">download</span>
+                                                        {{ __('rescue_certificate.download_form') }}
+                                                        <span class="text-primary/60">({{ $doc->templateExtension() }})</span>
+                                                    </a>
+                                                @endif
                                             </div>
 
                                             {{-- Already-uploaded file from server --}}

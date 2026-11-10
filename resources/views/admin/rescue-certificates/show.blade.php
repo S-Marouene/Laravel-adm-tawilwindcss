@@ -290,6 +290,68 @@
                         <x-admin.bilingual-note name="admin_note" :rows="3" required
                             placeholder-key="rescue_certificate.note_fix_placeholder" />
 
+                        {{-- Fields to correct ── --}}
+                        @php
+                            $fixableFields = [
+                                'cin'                  => ['label' => __('rescue_certificate.cin'),                  'icon' => 'badge'],
+                                'nom_prenom'           => ['label' => __('rescue_certificate.nom_prenom'),           'icon' => 'person'],
+                                'phone'                => ['label' => __('rescue_certificate.phone'),                'icon' => 'call'],
+                                'victim_is_minor'      => ['label' => __('rescue_certificate.victim_is_minor'),      'icon' => 'escalator_warning'],
+                                'spouse_case'          => ['label' => __('rescue_certificate.spouse_case'),          'icon' => 'favorite'],
+                                'governorate_id'       => ['label' => __('rescue_certificate.code_structure'),       'icon' => 'public'],
+                                'delegation_id'        => ['label' => __('rescue_certificate.delegation'),           'icon' => 'account_balance'],
+                                'incident_address'     => ['label' => __('rescue_certificate.incident_address'),     'icon' => 'location_on'],
+                                'incident_type'        => ['label' => __('rescue_certificate.incident_type'),        'icon' => 'category'],
+                                'incident_date'        => ['label' => __('rescue_certificate.incident_date'),        'icon' => 'event'],
+                                'incident_time'        => ['label' => __('rescue_certificate.incident_time'),        'icon' => 'schedule'],
+                                'incident_description' => ['label' => __('rescue_certificate.incident_description'), 'icon' => 'subject'],
+                                'notes'                => ['label' => __('rescue_certificate.notes'),                'icon' => 'edit_note'],
+                            ];
+
+                            $currentFieldVals = [
+                                'cin'                  => $certificate->cin,
+                                'nom_prenom'           => $certificate->nom_prenom,
+                                'phone'                => $certificate->phone,
+                                'victim_is_minor'      => $certificate->victim_is_minor ? ($certificate->parent_name ?? null) : null,
+                                'spouse_case'          => $certificate->spouse_case ? __('rescue_certificate.spouse_case') : null,
+                                'governorate_id'       => $certificate->governorate?->name_fr ?? $certificate->governorate?->name_ar,
+                                'delegation_id'        => $certificate->delegation?->name_fr ?? $certificate->delegation?->name_ar,
+                                'incident_address'     => $certificate->incident_address,
+                                'incident_type'        => $certificate->incidentTypeLabel(),
+                                'incident_date'        => $certificate->incident_date?->format('d/m/Y'),
+                                'incident_time'        => $certificate->incident_time?->format('H:i'),
+                                'incident_description' => str($certificate->incident_description)->limit(40),
+                                'notes'                => str($certificate->notes)->limit(40),
+                            ];
+                        @endphp
+                        <p class="mt-4 mb-2 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                            <span class="material-symbols-outlined text-sm" aria-hidden="true">fact_check</span>
+                            <span>{{ __('rescue_certificate.admin_fields_to_fix') }}</span>
+                            <span class="font-normal normal-case tracking-normal text-secondary dark:text-gray-500">{{ __('rescue_certificate.admin_select_what_fix') }}</span>
+                        </p>
+                        <div class="grid gap-1.5">
+                            @foreach ($fixableFields as $fieldKey => $fieldDef)
+                            <label class="group flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-surface-dim/70 bg-surface-container-lowest px-3 py-2 transition
+                                          hover:border-amber-400/70 hover:bg-surface-container
+                                          has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50/80 has-[:checked]:shadow-sm
+                                          dark:border-gray-600 dark:bg-gray-800/50
+                                          dark:has-[:checked]:border-amber-500/70 dark:has-[:checked]:bg-amber-900/20">
+                                <input type="checkbox" name="fields_to_fix[]" value="{{ $fieldKey }}"
+                                       class="h-4 w-4 shrink-0 cursor-pointer rounded border-surface-dim text-amber-500 focus:ring-2 focus:ring-amber-500/30"
+                                       {{ in_array($fieldKey, old('fields_to_fix', [])) ? 'checked' : '' }}>
+                                <span class="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-surface-container text-secondary transition
+                                             group-has-[:checked]:bg-amber-100 group-has-[:checked]:text-amber-700
+                                             dark:bg-gray-700 dark:text-gray-300" aria-hidden="true">
+                                    <span class="material-symbols-outlined text-sm">{{ $fieldDef['icon'] }}</span>
+                                </span>
+                                <span class="flex-1 text-xs font-semibold text-on-surface dark:text-gray-200">{{ $fieldDef['label'] }}</span>
+                                @if ($currentFieldVals[$fieldKey])
+                                    <span class="truncate max-w-28 text-[10px] text-outline dark:text-gray-500" title="{{ $currentFieldVals[$fieldKey] }}">{{ $currentFieldVals[$fieldKey] }}</span>
+                                @endif
+                            </label>
+                            @endforeach
+                        </div>
+
                         {{-- Documents to re-upload ── --}}
                         @if ($documentTypes->isNotEmpty())
                         <p class="mt-4 mb-2 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">

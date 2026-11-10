@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Models;
 
@@ -62,7 +62,7 @@ class Service extends Model
         return match ($this->key) {
             self::SERVICE_PREVENTIVE_PRESENCE => 'admin.preventive-presence.index',
             self::SERVICE_RESCUE_CERTIFICATE  => 'admin.rescue-certificates.index',
-            self::SERVICE_WORKS_NOTIFICATION  => 'admin.works-notifications.index',
+            self::SERVICE_WORKS_NOTIFICATION  => 'admin.building-works-declarations.index',
             default                           => 'admin.prevention-dossiers.index',
         };
     }
@@ -75,7 +75,7 @@ class Service extends Model
         return match ($this->key) {
             self::SERVICE_PREVENTIVE_PRESENCE => 'preventive-presence',
             self::SERVICE_RESCUE_CERTIFICATE  => 'rescue-certificates',
-            self::SERVICE_WORKS_NOTIFICATION  => 'works-notifications',
+            self::SERVICE_WORKS_NOTIFICATION  => 'building-works-declarations',
             default                           => 'prevention-dossiers',
         };
     }

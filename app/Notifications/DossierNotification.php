@@ -1,9 +1,10 @@
-<?php
+﻿<?php
 
 namespace App\Notifications;
 
 use App\Models\PreventionDossier;
 use App\Models\RescueCertificate;
+use App\Models\BuildingWorksDeclaration;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -23,7 +24,7 @@ class DossierNotification extends Notification
     use Queueable;
 
     public function __construct(
-        public readonly PreventionDossier|RescueCertificate $dossier,
+        public readonly PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier,
         public readonly string $event,
         public readonly string $title_fr,
         public readonly string $body_fr,

@@ -1283,7 +1283,7 @@
                                 <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">
                                     {{ __('prevention_request.pieces_title') }}
                                 </h3>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap {{ $isDocComplete ? 'text-amber-900 bg-amber-100' : 'text-secondary bg-surface-dim' }}" dir="ltr">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap {{ $isDocComplete ? 'text-amber-900 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300' : 'text-secondary bg-surface-dim' }}" dir="ltr">
                                     {{ $uploadedTypes }}/{{ $documentTypes->count() }}
                                 </span>
                                 <svg class="w-4 h-4 text-secondary transition-transform shrink-0 ms-1" :class="open ? 'rotate-180' : ''"
@@ -1297,7 +1297,7 @@
                                 <div class="h-2 bg-surface-dim/50 rounded-full overflow-hidden mb-1" role="progressbar" aria-valuenow="{{ $docPct }}" aria-valuemin="0" aria-valuemax="100">
                                     <div class="h-full rounded-full transition-all duration-500 {{ $isDocComplete ? 'bg-amber-500' : 'bg-primary' }}" style="width: {{ $docPct }}%"></div>
                                 </div>
-                                <p class="text-[10px] font-semibold mb-4 {{ $isDocComplete ? 'text-amber-800' : 'text-secondary' }}">
+                                <p class="text-[10px] font-semibold mb-4 {{ $isDocComplete ? 'text-amber-800 dark:text-amber-400' : 'text-secondary' }}">
                                     {{ $isDocComplete ? __('prevention_request.docs_complete') : __('prevention_request.docs_incomplete', ['done' => $uploadedTypes, 'total' => $documentTypes->count()]) }}
                                 </p>
 
@@ -1321,7 +1321,7 @@
                                                     </div>
                                                 </div>
                                                 <a href="{{ route('prevention-requests.documents.download', [$dossier, $doc]) }}"
-                                                    class="w-7 h-7 rounded bg-surface-container text-secondary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors"
+                                                    class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors"
                                                     title="{{ __('prevention_request.download') }}">
                                                     <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
                                                 </a>
@@ -1336,7 +1336,7 @@
                                                         <h4 class="text-xs font-bold {{ $docType->is_conditional ? 'text-secondary' : 'text-on-surface font-semibold' }}">{{ $docType->name }}</h4>
                                                         <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap">
                                                             @if ($docType->is_conditional)
-                                                                <span class="font-semibold text-amber-900 bg-amber-50 border border-amber-200 px-1.5 rounded">{{ __('prevention_request.conditional') }}</span>
+                                                                <span class="font-semibold text-amber-900 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/40 px-1.5 rounded">{{ __('prevention_request.conditional') }}</span>
                                                             @endif
                                                             <span>{{ __('prevention_request.not_uploaded') }}</span>
                                                         </div>
@@ -1374,7 +1374,7 @@
                                                             </div>
                                                         </div>
                                                         <a href="{{ route('prevention-requests.documents.download', [$dossier, $doc]) }}"
-                                                            class="w-7 h-7 rounded bg-surface-container text-secondary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors"
+                                                            class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors"
                                                             title="{{ __('prevention_request.download') }}">
                                                             <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
                                                         </a>
