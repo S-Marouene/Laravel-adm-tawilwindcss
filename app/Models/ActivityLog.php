@@ -44,6 +44,9 @@ class ActivityLog extends Model
             'prevention_create' => 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300',
             'prevention_update' => 'bg-cyan-100 dark:bg-cyan-900/50 text-cyan-800 dark:text-cyan-300',
             'prevention_delete' => 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300',
+            'safety_create' => 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300',
+            'safety_update' => 'bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300',
+            'safety_delete' => 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300',
             default => 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300',
         };
     }
@@ -61,6 +64,9 @@ class ActivityLog extends Model
             'prevention_create' => 'Prevention — Create',
             'prevention_update' => 'Prevention — Update',
             'prevention_delete' => 'Prevention — Delete',
+            'safety_create' => 'Safety file — Create',
+            'safety_update' => 'Safety file — Update',
+            'safety_delete' => 'Safety file — Delete',
             default => ucfirst(str_replace('_', ' ', $this->type)),
         };
     }

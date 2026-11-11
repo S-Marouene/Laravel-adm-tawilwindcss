@@ -32,6 +32,7 @@ class RolePermissionSeeder extends Seeder
 
         'centrale' => [
             'view prevention-dossiers', 'manage prevention-dossiers',
+            'view safety-file-dossiers', 'manage safety-file-dossiers',
             'view preventive-presence', 'manage preventive-presence',
             'view rescue-certificates', 'manage rescue-certificates',
             'view building-works-declarations', 'manage building-works-declarations',
@@ -39,6 +40,7 @@ class RolePermissionSeeder extends Seeder
 
         'manager' => [
             'view prevention-dossiers', 'manage prevention-dossiers',
+            'view safety-file-dossiers', 'manage safety-file-dossiers',
             'view preventive-presence', 'manage preventive-presence',
             'view rescue-certificates', 'manage rescue-certificates',
             'view building-works-declarations', 'manage building-works-declarations',
@@ -82,6 +84,8 @@ class RolePermissionSeeder extends Seeder
             'view document-types', 'create document-types', 'edit document-types', 'delete document-types',
             // Prevention dossiers
             'view prevention-dossiers', 'manage prevention-dossiers',
+            // Safety file dossiers (twin services)
+            'view safety-file-dossiers', 'manage safety-file-dossiers',
             // Preventive presence
             'view preventive-presence', 'manage preventive-presence',
             // Rescue certificates

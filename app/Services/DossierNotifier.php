@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PreventionDossier;
 use App\Models\RescueCertificate;
+use App\Models\SafetyFileDossier;
 use App\Models\Service;
 use App\Models\User;
 use App\Models\BuildingWorksDeclaration;
@@ -22,7 +23,8 @@ use Illuminate\Support\Collection;
  *  - manager: notified only if assigned to the relevant service AND has a territory
  *             matching the dossier's governorate/delegation
  *
- * Supports every dossier-like model (PreventionDossier, RescueCertificate):
+ * Supports every dossier-like model (PreventionDossier, RescueCertificate,
+ * SafetyFileDossier):
  * each must expose id, reference, nom_prenom, user, governorate_id, delegation_id.
  * Content templates are service-scoped: rescue looks up `rescue_{event}` keys in
  * the notification_templates table before falling back to hardcoded strings.
@@ -38,7 +40,7 @@ class DossierNotifier
      * @param  string             $serviceKey  Which service this notification is about
      */
     public static function notify(
-        PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier,
+        PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier,
         string $eventType,
         string $audience = 'both',
         string $serviceKey = Service::SERVICE_PREVENTION,
@@ -91,7 +93,7 @@ class DossierNotifier
      * @return Collection<int, User>
      */
     public static function eligibleAdmins(
-        PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier,
+        PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier,
         string $serviceKey = Service::SERVICE_PREVENTION,
     ): Collection {
         return User::with(['roles', 'territories', 'services'])
@@ -123,7 +125,7 @@ class DossierNotifier
     /**
      * Check if a manager's territory assignments cover this dossier's location.
      */
-    private static function managerCoversDossier(User $manager, PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier): bool
+    private static function managerCoversDossier(User $manager, PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier): bool
     {
         foreach ($manager->territories as $territory) {
             if ($territory->delegation_id) {
@@ -152,7 +154,7 @@ class DossierNotifier
     // Returns: [title_fr, body_fr, title_ar, body_ar, level]
     // ------------------------------------------------------------------
 
-    private static function buildContent(PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier, string $event, string $serviceKey): array
+    private static function buildContent(PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier, string $event, string $serviceKey): array
     {
         $ref  = $dossier->reference ?? "#{$dossier->id}";
         $name = $dossier->nom_prenom;
@@ -184,6 +186,21 @@ class DossierNotifier
             }
 
             return self::rescueFallback($event, $ref, $name);
+        }
+
+        // Safety file dossiers (the two twin services) use their own
+        // service-scoped templates (safety_submitted, safety_under_consultation…):
+        // same pipeline as prevention (site visit → study → approval) but a
+        // free procedure (fee = 0) and the applicant is tracked by phone.
+        if (in_array($serviceKey, [Service::SERVICE_SAFETY_FILE_HABITATION, Service::SERVICE_SAFETY_FILE_HAZARDOUS], true)) {
+            $tpl = \App\Models\NotificationTemplate::forEvent("safety_{$event}");
+            if ($tpl) {
+                [$title_fr, $body_fr, $level] = $tpl->resolve('fr', $ref, $name);
+                [$title_ar, $body_ar]         = array_slice($tpl->resolve('ar', $ref, $name), 0, 2);
+                return [$title_fr, $body_fr, $title_ar, $body_ar, $level];
+            }
+
+            return self::safetyFallback($event, $ref, $name);
         }
 
         // Try the editable DB template first
@@ -252,20 +269,24 @@ class DossierNotifier
     // URL helpers
     // ------------------------------------------------------------------
 
-    private static function adminUrl(PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier, string $serviceKey): string
+    private static function adminUrl(PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier, string $serviceKey): string
     {
         return match ($serviceKey) {
             Service::SERVICE_RESCUE_CERTIFICATE => route('admin.rescue-certificates.show', $dossier),
             Service::SERVICE_WORKS_NOTIFICATION => route('admin.building-works-declarations.show', $dossier),
+            Service::SERVICE_SAFETY_FILE_HABITATION,
+            Service::SERVICE_SAFETY_FILE_HAZARDOUS => route('admin.safety-file-dossiers.show', $dossier),
             default => route('admin.prevention-dossiers.show', $dossier),
         };
     }
 
-    private static function citizenUrl(PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier, string $serviceKey): string
+    private static function citizenUrl(PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier, string $serviceKey): string
     {
         return match ($serviceKey) {
             Service::SERVICE_RESCUE_CERTIFICATE => route('rescue-certificates.show', $dossier),
             Service::SERVICE_WORKS_NOTIFICATION => route('building-works-declarations.show', $dossier),
+            Service::SERVICE_SAFETY_FILE_HABITATION => route('safety-file-public.show', $dossier),
+            Service::SERVICE_SAFETY_FILE_HAZARDOUS => route('safety-file-hazardous.show', $dossier),
             default => route('prevention-requests.show', $dossier),
         };
     }
@@ -333,6 +354,69 @@ class DossierNotifier
                 "La demande {$ref} a été mise à jour.",
                 'تم تحديث الطلب',
                 "تم تحديث الطلب {$ref}.",
+                'info',
+            ],
+        };
+    }
+
+    // ------------------------------------------------------------------
+    // Safety file fallback content — used until the safety_* notification
+    // templates are seeded (or for unknown events). Same pipeline as
+    // prevention (site visit → study → approval), free procedure, the
+    // applicant is tracked by phone.
+    // Returns: [title_fr, body_fr, title_ar, body_ar, level]
+    // ------------------------------------------------------------------
+
+    private static function safetyFallback(string $event, string $ref, string $name): array
+    {
+        return match ($event) {
+            'submitted' => [
+                'Nouveau dossier de sécurité soumis',
+                "Le dossier de sécurité {$ref} ({$name}) vient d'être soumis et est en attente d'examen.",
+                'ملف سلامة جديد مُقدَّم',
+                "تم تقديم ملف السلامة {$ref} ({$name}) وهو في انتظار المراجعة.",
+                'info',
+            ],
+            'resubmitted' => [
+                'Dossier de sécurité re-soumis après correction',
+                "Le dossier de sécurité {$ref} ({$name}) a été corrigé et re-soumis par le demandeur.",
+                'إعادة تقديم ملف السلامة بعد التصحيح',
+                "أعاد المتقدم {$name} تقديم ملف السلامة {$ref} بعد إجراء التصحيحات المطلوبة.",
+                'warning',
+            ],
+            'under_consultation' => [
+                'Dossier en cours de consultation',
+                "Votre dossier de sécurité {$ref} a été examiné. Une visite du bâtiment (معاينة ميدانية) sera programmée prochainement. Vous serez informé du résultat par téléphone.",
+                'الملف قيد الدراسة',
+                "تم فحص ملف السلامة الخاص بكم {$ref}. ستتم جدولة زيارة ميدانية للمبنى قريبًا، وسيتم إبلاغكم بالنتيجة عبر الهاتف.",
+                'info',
+            ],
+            'needs_correction' => [
+                'Correction requise',
+                "Votre dossier de sécurité {$ref} nécessite des corrections. Veuillez consulter la note de l'administration.",
+                'مطلوب تصحيح',
+                "يستلزم ملف السلامة الخاص بكم {$ref} إجراء تصحيحات. يرجى الاطلاع على ملاحظة الإدارة.",
+                'warning',
+            ],
+            'approved' => [
+                'Dossier de sécurité approuvé',
+                "Votre dossier de sécurité {$ref} a été approuvé — le fichier de sécurité est authentifié. La procédure est gratuite : vous serez contacté pour le retrait.",
+                'تمت المصادقة على ملف السلامة',
+                "تمت المصادقة على ملف السلامة الخاص بكم {$ref}. الإجراء مجاني — سيتم الاتصال بكم لتحديد موعد استلام الشهادة.",
+                'success',
+            ],
+            'cancelled' => [
+                'Dossier de sécurité annulé',
+                "Le dossier de sécurité {$ref} a été annulé. Veuillez consulter la raison communiquée par l'administration.",
+                'تم إلغاء ملف السلامة',
+                "تم إلغاء ملف السلامة {$ref}. يرجى الاطلاع على السبب المُبلَّغ من الإدارة.",
+                'danger',
+            ],
+            default => [
+                'Dossier de sécurité mis à jour',
+                "Le dossier de sécurité {$ref} a été mis à jour.",
+                'تم تحديث ملف السلامة',
+                "تم تحديث ملف السلامة {$ref}.",
                 'info',
             ],
         };

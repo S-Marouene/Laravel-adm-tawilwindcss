@@ -12,6 +12,8 @@ class ServiceSeeder extends Seeder
         ['key' => Service::SERVICE_PREVENTIVE_PRESENCE, 'name_ar' => 'الحضور الوقائي', 'name_fr' => 'Présence préventive', 'name_en' => 'Preventive presence', 'sort_order' => 2],
         ['key' => Service::SERVICE_RESCUE_CERTIFICATE, 'name_ar' => 'شهادة نجدة وإنقاذ', 'name_fr' => 'Certificat de secours', 'name_en' => 'Rescue certificate', 'sort_order' => 3],
         ['key' => Service::SERVICE_WORKS_NOTIFICATION, 'name_ar' => 'الإعلام عن إنجاز أشغال', 'name_fr' => 'Notification de travaux', 'name_en' => 'Works notification', 'sort_order' => 4],
+        ['key' => Service::SERVICE_SAFETY_FILE_HABITATION, 'name_ar' => 'المصادقة على ملف السلامة - البنايات العمومية', 'name_fr' => 'Validation du dossier sécurité - Bâtiments publics', 'name_en' => 'Safety File Approval - Public Buildings', 'sort_order' => 5],
+        ['key' => Service::SERVICE_SAFETY_FILE_HAZARDOUS, 'name_ar' => 'المصادقة على ملف السلامة - المؤسسات الخطرة', 'name_fr' => 'Validation du dossier sécurité - Établissements dangereux', 'name_en' => 'Safety File Approval - Hazardous Establishments', 'sort_order' => 6],
     ];
 
     public function run(): void

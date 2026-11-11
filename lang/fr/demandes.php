@@ -4,6 +4,9 @@ return [
     'title'    => 'Mes demandes',
     'subtitle' => 'Toutes vos demandes déposées auprès de la Protection Civile, regroupées en un seul endroit.',
 
+    'title_safety_public'   => 'Dossier de sécurité - Bâtiments publics #:ref',
+    'title_safety_hazardous'=> 'Dossier de sécurité - Établissements dangereux #:ref',
+    'filter_safety'         => 'Dossiers de sécurité',
     'title_prevention' => 'Dossier de prévention #:ref',
     'title_rescue'     => 'Certificat de secours #:ref',
     'title_presence'   => 'Demande de présence #:ref',

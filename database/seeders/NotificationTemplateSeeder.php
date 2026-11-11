@@ -269,6 +269,143 @@ class NotificationTemplateSeeder extends Seeder
             ],
         ];
 
+        // ── Dossier de sécurité / ملف السلامة (twin safety file services) ──
+        // Service-scoped templates: DossierNotifier looks up "safety_{event}"
+        // when notifying for Service::SERVICE_SAFETY_FILE_HABITATION / _HAZARDOUS.
+        // Same pipeline as prevention (site visit → study → approval) but a
+        // free procedure (fee = 0), 10-day delay, and the applicant is
+        // tracked by phone.
+        $safetyTemplates = [
+            [
+                'event_key' => 'safety_submitted',
+                'level'     => 'info',
+                'title_fr'  => 'Nouveau dossier de sécurité soumis',
+                'body_fr'   => 'Le dossier de sécurité :reference (:nom_prenom) vient d\'être soumis et est en attente d\'examen (délai : 10 jours).',
+                'title_ar'  => 'ملف سلامة جديد مُقدَّم',
+                'body_ar'   => 'تم تقديم ملف السلامة :reference (:nom_prenom) وهو في انتظار المراجعة (الأجل: 10 أيام).',
+            ],
+            [
+                'event_key' => 'safety_resubmitted',
+                'level'     => 'warning',
+                'title_fr'  => 'Dossier de sécurité re-soumis après correction',
+                'body_fr'   => 'Le dossier de sécurité :reference (:nom_prenom) a été corrigé et re-soumis par le demandeur.',
+                'title_ar'  => 'إعادة تقديم ملف السلامة بعد التصحيح',
+                'body_ar'   => 'أعاد المتقدم :nom_prenom تقديم ملف السلامة :reference بعد إجراء التصحيحات المطلوبة.',
+            ],
+            [
+                'event_key' => 'safety_under_consultation',
+                'level'     => 'info',
+                'title_fr'  => 'Dossier de sécurité en cours d\'étude',
+                'body_fr'   => 'Votre dossier de sécurité :reference est en cours d\'étude. Une visite du bâtiment sera programmée prochainement — vous serez informé par téléphone.',
+                'title_ar'  => 'ملف السلامة قيد الدراسة',
+                'body_ar'   => 'ملف السلامة :reference قيد الدراسة. ستتم جدولة زيارة ميدانية للمبنى قريبًا — سيتم إبلاغكم عبر الهاتف.',
+            ],
+            [
+                'event_key' => 'safety_needs_correction',
+                'level'     => 'warning',
+                'title_fr'  => 'Correction requise — dossier de sécurité',
+                'body_fr'   => 'Votre dossier de sécurité :reference nécessite des corrections. Veuillez consulter la note de l\'administration.',
+                'title_ar'  => 'مطلوب تصحيح — ملف السلامة',
+                'body_ar'   => 'يستلزم ملف السلامة الخاص بكم :reference إجراء تصحيحات. يرجى الاطلاع على ملاحظة الإدارة.',
+            ],
+            [
+                'event_key' => 'safety_approved',
+                'level'     => 'success',
+                'title_fr'  => 'Dossier de sécurité approuvé (authentifié)',
+                'body_fr'   => 'Votre dossier de sécurité :reference a été approuvé — le fichier de sécurité est authentifié. La procédure est gratuite : vous serez contacté pour le retrait.',
+                'title_ar'  => 'تمت المصادقة على ملف السلامة',
+                'body_ar'   => 'تمت المصادقة على ملف السلامة الخاص بكم :reference. الإجراء مجاني — سيتم الاتصال بكم لتحديد موعد الاستلام.',
+            ],
+            [
+                'event_key' => 'safety_cancelled',
+                'level'     => 'danger',
+                'title_fr'  => 'Dossier de sécurité annulé',
+                'body_fr'   => 'Votre dossier de sécurité :reference a été annulé. Veuillez consulter la raison communiquée par l\'administration.',
+                'title_ar'  => 'تم إلغاء ملف السلامة',
+                'body_ar'   => 'تم إلغاء ملف السلامة الخاص بكم :reference. يرجى الاطلاع على السبب المُبلَّغ من الإدارة.',
+            ],
+            [
+                'event_key' => 'safety_appointment_scheduled',
+                'level'     => 'info',
+                'title_fr'  => 'Visite du bâtiment planifiée',
+                'body_fr'   => 'Une visite du bâtiment a été planifiée pour votre dossier de sécurité :reference. Vous recevrez les détails par e-mail.',
+                'title_ar'  => 'تمت جدولة زيارة المبنى',
+                'body_ar'   => 'تمت جدولة زيارة ميدانية للمبنى ضمن ملف السلامة :reference. ستصلكم التفاصيل عبر البريد الإلكتروني.',
+            ],
+            [
+                'event_key' => 'safety_appointment_cancelled',
+                'level'     => 'warning',
+                'title_fr'  => 'Visite annulée',
+                'body_fr'   => 'La visite planifiée pour le dossier de sécurité :reference a été annulée.',
+                'title_ar'  => 'تم إلغاء الزيارة',
+                'body_ar'   => 'تم إلغاء الزيارة المجدولة لملف السلامة :reference.',
+            ],
+            [
+                'event_key' => 'safety_appointment_failed',
+                'level'     => 'warning',
+                'title_fr'  => 'Visite non concluante',
+                'body_fr'   => 'La visite du bâtiment pour le dossier de sécurité :reference n\'a pas abouti. Veuillez consulter la note de l\'inspecteur.',
+                'title_ar'  => 'لم تنجح الزيارة',
+                'body_ar'   => 'لم تُسفر زيارة المبنى لملف السلامة :reference عن نتيجة إيجابية. يرجى الاطلاع على ملاحظة المفتش.',
+            ],
+            [
+                'event_key' => 'safety_waiting_delivery',
+                'level'     => 'success',
+                'title_fr'  => 'Visite passée — certificat en cours de préparation',
+                'body_fr'   => 'La visite du bâtiment pour le dossier de sécurité :reference s\'est déroulée avec succès. Votre certificat sera délivré prochainement.',
+                'title_ar'  => 'نجحت الزيارة — جارٍ إعداد الشهادة',
+                'body_ar'   => 'أُجريت زيارة المبنى لملف السلامة :reference بنجاح. ستصدر شهادتكم قريبًا.',
+            ],
+            [
+                'event_key' => 'safety_delivery_chosen',
+                'level'     => 'info',
+                'title_fr'  => 'Mode de retrait choisi',
+                'body_fr'   => 'Le demandeur a choisi un mode de retrait pour le dossier de sécurité :reference.',
+                'title_ar'  => 'تم اختيار طريقة الاستلام',
+                'body_ar'   => 'اختار المتقدم طريقة استلام شهادة ملف السلامة :reference.',
+            ],
+            [
+                'event_key' => 'safety_certificate_issued',
+                'level'     => 'success',
+                'title_fr'  => 'Certificat émis',
+                'body_fr'   => 'Le certificat pour le dossier de sécurité :reference a été émis. Vous pouvez le retirer au guichet.',
+                'title_ar'  => 'صدرت الشهادة',
+                'body_ar'   => 'صدرت الشهادة الخاصة بملف السلامة :reference. يمكنكم استلامها من الشباك.',
+            ],
+            [
+                'event_key' => 'safety_certificate_collected',
+                'level'     => 'success',
+                'title_fr'  => 'Certificat retiré au guichet',
+                'body_fr'   => 'Votre certificat pour le dossier de sécurité :reference a bien été retiré au guichet.',
+                'title_ar'  => 'تم استلام الشهادة من الشباك',
+                'body_ar'   => 'تم استلام الشهادة الخاصة بملف السلامة :reference من الشباك.',
+            ],
+            [
+                'event_key' => 'safety_certificate_post_sent',
+                'level'     => 'info',
+                'title_fr'  => 'Certificat envoyé par courrier',
+                'body_fr'   => 'Votre certificat pour le dossier de sécurité :reference a été expédié par Poste Tunisienne.',
+                'title_ar'  => 'أُرسلت الشهادة بالبريد',
+                'body_ar'   => 'تم إرسال الشهادة الخاصة بملف السلامة :reference عبر البريد التونسي.',
+            ],
+            [
+                'event_key' => 'safety_certificate_delivered',
+                'level'     => 'success',
+                'title_fr'  => 'Certificat remis',
+                'body_fr'   => 'Votre certificat pour le dossier de sécurité :reference vous a été remis.',
+                'title_ar'  => 'تم تسليم الشهادة',
+                'body_ar'   => 'تم تسليم الشهادة الخاصة بملف السلامة :reference إليكم.',
+            ],
+            [
+                'event_key' => 'safety_certificate_revoked',
+                'level'     => 'danger',
+                'title_fr'  => 'Certificat révoqué',
+                'body_fr'   => 'Le certificat du dossier de sécurité :reference a été révoqué. Veuillez contacter l\'administration.',
+                'title_ar'  => 'تم سحب الشهادة',
+                'body_ar'   => 'تم سحب الشهادة الخاصة بملف السلامة :reference. يرجى التواصل مع الإدارة.',
+            ],
+        ];
+
         foreach ($templates as $data) {
             NotificationTemplate::updateOrCreate(
                 ['event_key' => $data['event_key']],
@@ -284,6 +421,13 @@ class NotificationTemplateSeeder extends Seeder
         }
 
         foreach ($worksTemplates as $data) {
+            NotificationTemplate::updateOrCreate(
+                ['event_key' => $data['event_key']],
+                $data
+            );
+        }
+
+        foreach ($safetyTemplates as $data) {
             NotificationTemplate::updateOrCreate(
                 ['event_key' => $data['event_key']],
                 $data

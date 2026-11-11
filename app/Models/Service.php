@@ -18,11 +18,17 @@ class Service extends Model
     public const SERVICE_RESCUE_CERTIFICATE  = 'rescue-certificate';
     public const SERVICE_WORKS_NOTIFICATION  = 'works-notification';
 
+    // Twin "safety file approval" services (same module, different checklist):
+    public const SERVICE_SAFETY_FILE_HABITATION = 'safety-file-habitation';
+    public const SERVICE_SAFETY_FILE_HAZARDOUS  = 'safety-file-hazardous';
+
     public const KEYS = [
         self::SERVICE_PREVENTION,
         self::SERVICE_PREVENTIVE_PRESENCE,
         self::SERVICE_RESCUE_CERTIFICATE,
         self::SERVICE_WORKS_NOTIFICATION,
+        self::SERVICE_SAFETY_FILE_HABITATION,
+        self::SERVICE_SAFETY_FILE_HAZARDOUS,
     ];
 
     protected $fillable = ['key', 'name_ar', 'name_fr', 'name_en', 'sort_order', 'is_active'];
@@ -63,6 +69,8 @@ class Service extends Model
             self::SERVICE_PREVENTIVE_PRESENCE => 'admin.preventive-presence.index',
             self::SERVICE_RESCUE_CERTIFICATE  => 'admin.rescue-certificates.index',
             self::SERVICE_WORKS_NOTIFICATION  => 'admin.building-works-declarations.index',
+            self::SERVICE_SAFETY_FILE_HABITATION,
+            self::SERVICE_SAFETY_FILE_HAZARDOUS  => 'admin.safety-file-dossiers.index',
             default                           => 'admin.prevention-dossiers.index',
         };
     }
@@ -76,6 +84,8 @@ class Service extends Model
             self::SERVICE_PREVENTIVE_PRESENCE => 'preventive-presence',
             self::SERVICE_RESCUE_CERTIFICATE  => 'rescue-certificates',
             self::SERVICE_WORKS_NOTIFICATION  => 'building-works-declarations',
+            self::SERVICE_SAFETY_FILE_HABITATION,
+            self::SERVICE_SAFETY_FILE_HAZARDOUS  => 'safety-file-dossiers',
             default                           => 'prevention-dossiers',
         };
     }

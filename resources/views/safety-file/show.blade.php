@@ -1,0 +1,1629 @@
+@php
+    $status = $status ?? $dossier->status;
+    // ── Référence affichée : référence stockée > provisoire ──
+    $viewRef = $dossier->reference ?: \App\Support\Reference::provisional($dossier->service);
+
+    $pendingAppointment = $dossier->appointments->first(fn ($a) => $a->isPending());
+    $lastAppointment = $dossier->appointments->last();
+    $lastFailedAppointment = $dossier->appointments->last(fn ($a) => $a->isFailed());
+    $lastPassedAppointment = $dossier->appointments->last(fn ($a) => $a->isPassed());
+
+    /* ── Stepper 5 étapes : dépôt → étude → inspection → certificat émis → retiré/livré ── */
+    $currentStep = match ($status) {
+        'draft'                  => 1,
+        'completed', 'submitted' => 2,
+        'under_consultation'     => 3,
+        'approved'               => 3,
+        'waiting_delivery'       => 4,
+        'needs_correction'       => 2,
+        // Dossier annulé : l'avancement est figé là où il en était — déduit
+        // des preuves (certificat, visites, journal) puisque le statut ne
+        // progresse plus. L'étape figée portera la marque rouge « annulé ».
+        'cancelled'              => match (true) {
+            $dossier->certificate && ($dossier->certificate->isCollected() || $dossier->certificate->isPostDelivered()) => 6,
+            $dossier->certificate !== null       => 5,
+            $dossier->hasPassedAppointment()     => 4,
+            $dossier->appointments->isNotEmpty()
+                || $dossier->events->contains(fn ($e) => $e->type === 'advanced_to_consultation') => 3,
+            default                              => 2,
+        },
+        default                  => null,
+    };
+    // Certificate issued → step 5 (waiting for pickup/delivery)
+    if ($dossier->certificate && $currentStep < 5) {
+        $currentStep = 5;
+    }
+    // Certificate collected or delivered → step 6 (all done)
+    if ($dossier->certificate && ($dossier->certificate->isCollected() || $dossier->certificate->isPostDelivered())) {
+        $currentStep = 6;
+    }
+    $isCancelled = $status === 'cancelled';
+
+    $stepDates = [];
+    $stepDates[1] = $dossier->created_at;
+    $stepDates[2] = $dossier->reviewed_at;
+    // Visite : la date du RDV à venir prime, sinon celle de la visite passée
+    // (l'étape reste datée même une fois la visite réussie).
+    $stepDates[3] = $pendingAppointment?->visit_date ?? $lastPassedAppointment?->visit_date ?? null;
+    $stepDates[4] = $dossier->certificate?->issued_at;
+    $stepDates[5] = $dossier->certificate?->collected_at ?? $dossier->certificate?->post_delivered_at ?? null;
+
+    $steps = [];
+    // Detect historical issues to mark steps even after completion
+    $hadCorrection  = $dossier->events->contains(fn ($e) => $e->type === 'correction_requested');
+    $hadFailedVisit = $dossier->appointments->contains(fn ($a) => $a->isFailed());
+
+    // Étape qui porte la marque « annulé » (dossier annulé uniquement)
+    $cancelledAt = $isCancelled ? min($currentStep, 5) : null;
+
+    // Étape 5 — libellé selon le circuit de remise (retrait au bureau / poste B3)
+    $certificateSub = match (true) {
+        $dossier->certificate && ($dossier->certificate->isCollected() || $dossier->certificate->isPostDelivered()) => __('safety_file.step_done'),
+        $dossier->certificate?->isPostSent() => __('safety_file.stepper_certificate_post_sent'),
+        $dossier->certificate?->isPost()     => __('safety_file.stepper_certificate_ready_post'),
+        $dossier->certificate !== null       => __('safety_file.stepper_certificate_ready_pickup'),
+        default                              => __('safety_file.stepper_certificate_waiting_pickup'),
+    };
+
+    foreach ([1, 2, 3, 4, 5] as $i) {
+        if ($isCancelled) {
+            if ($i < $cancelledAt)       $state = 'done';
+            elseif ($i === $cancelledAt) $state = 'cancelled';
+            else                         $state = 'pending';
+        } else {
+            if ($currentStep === 6 || $i < $currentStep) $state = 'done';
+            elseif ($i === $currentStep)                 $state = $status === 'needs_correction' ? 'error' : 'current';
+            else                                         $state = 'pending';
+        }
+
+        // Override done state if the step had an incident in history
+        if ($state === 'done' && $i === 2 && $hadCorrection)  $state = 'warning';
+        if ($state === 'done' && $i === 3 && $hadFailedVisit) $state = 'warning';
+
+        $sub = match (true) {
+            $state === 'cancelled'          => __('safety_file.stepper_cancelled'),
+            $state === 'warning' && $i === 2 => __('safety_file.stepper_had_correction'),
+            $state === 'warning' && $i === 3 => __('safety_file.stepper_had_failed_visit'),
+            $status === 'needs_correction' && $state === 'error' => __('safety_file.stepper_correction'),
+            $state === 'done'               => __('safety_file.step_done'),
+            $state === 'pending'            => __('safety_file.stepper_pending'),
+            $i === 2 && $hadCorrection      => __('safety_file.stepper_recheck'),
+            $i === 3 && $pendingAppointment => __('safety_file.stepper_inspection_scheduled', ['date' => $pendingAppointment->visit_date->format('d/m/Y')]),
+            $i === 3 && $lastFailedAppointment => __('safety_file.stepper_visit_failed_retry'),
+            $i === 3                        => __('safety_file.stepper_inspection_waiting'),
+            $i === 4                        => $dossier->certificate ? __('safety_file.stepper_certificate_issued') : __('safety_file.stepper_certificate_waiting'),
+            $i === 5                        => $certificateSub,
+            default                         => __('safety_file.active_step'),
+        };
+
+        // Sous-titre en rouge : correction requise, visite échouée, annulation
+        $alert = in_array($state, ['error', 'cancelled'])
+            || ($state === 'current' && $i === 3 && $lastFailedAppointment);
+
+        $steps[] = [
+            'num' => $i, 'title' => __('safety_file.stepper_' . $i),
+            'sub' => $sub, 'state' => $state, 'alert' => $alert,
+        ];
+    }
+    // Progression : les étapes « done » et « warning » (terminées malgré un
+    // incident résolu) comptent comme réalisées ; annulé = avancement figé.
+    $doneSteps = collect($steps)->whereIn('state', ['done', 'warning'])->count();
+    $progress  = (int) round($doneSteps / 5 * 100);
+
+    /*
+     ── Timeline : pastilles + badges « journal d'audit » ──
+       ● or/ambre  = validé, officialisé (remplace le vert du template)
+       ● rouge ONPC = convocation / action officielle / incident
+       ● ardoise    = dépôt, transfert interne
+    */
+    $eventChip = fn ($type) => match (true) {
+        in_array($type, ['submitted', 'resubmitted'])
+            => ['bg-secondary-container text-on-secondary-container', 'post_add', __('safety_file.chip_depot'), 'bg-surface-dim text-secondary'],
+        $type === 'appointment_scheduled'
+            => ['bg-primary text-on-primary', 'campaign', __('safety_file.chip_convocation'), 'bg-primary text-on-primary'],
+        in_array($type, ['advanced_to_consultation', 'appointment_deleted'])
+            => ['bg-secondary text-white', 'sync_alt', __('safety_file.chip_phase'), 'bg-surface-dim text-secondary'],
+        in_array($type, ['approved', 'appointment_passed', 'waiting_delivery', 'certificate_issued'])
+            => ['bg-amber-600 text-white', 'task_alt', __('safety_file.chip_favorable'), 'bg-amber-100 text-amber-900'],
+        $type === 'delivery_chosen'
+            => ['bg-indigo-600 text-white', 'local_shipping', __('safety_file.chip_delivery'), 'bg-indigo-100 text-indigo-800'],
+        in_array($type, ['certificate_post_sent', 'certificate_post_delivered'])
+            => ['bg-amber-600 text-white', 'local_shipping', __('safety_file.chip_post'), 'bg-amber-100 text-amber-800'],
+        in_array($type, ['certificate_collected', 'certificate_reset'])
+            => ['bg-amber-600 text-white', 'handshake', __('safety_file.chip_done'), 'bg-amber-100 text-amber-900'],
+        // default: correction_requested, cancelled, appointment_failed, certificate_deleted
+        default
+            => ['bg-red-600 text-white', 'error', __('safety_file.chip_alert'), 'bg-red-100 text-red-800'],
+    };
+
+    $uploads      = $documents->flatten()->count();
+    $uploadedTypes = $documentTypes->filter(fn ($t) => $documents->has($t->id))->count();
+    $fmtSize = fn ($b) => $b >= 1048576 ? number_format($b / 1048576, 1) . ' Mo' : number_format($b / 1024, 0) . ' Ko';
+    $isDocComplete = $documentTypes->count() > 0 && $uploadedTypes >= $documentTypes->count();
+    $docPct        = $documentTypes->count() > 0 ? (int) round(min($uploadedTypes, $documentTypes->count()) / $documentTypes->count() * 100) : 0;
+    $totalSize     = $fmtSize($documents->flatten()->sum('size'));
+
+    /* ── Pastille de statut (héros) : couleur + icône ── */
+    $statusPill = match ($status) {
+        'draft', 'completed'  => ['bg-surface-container-high text-secondary', 'edit_note'],
+        'submitted'           => ['bg-secondary-container text-on-secondary-container', 'schedule_send'],
+        'under_consultation'  => ['bg-secondary-container text-on-secondary-container', 'manage_search'],
+        'needs_correction'    => ['bg-error-container text-error', 'error'],
+        'approved'            => ['bg-amber-100 text-amber-900', 'task_alt'],
+        'waiting_delivery'    => ['bg-amber-100 text-amber-900', 'workspace_premium'],
+        'cancelled'           => ['bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300', 'cancel'],
+        default               => ['bg-surface-container-high text-secondary', 'info'],
+    };
+    [$statusPillCls, $statusPillIcon] = $statusPill;
+
+    /* ── Bandeau d'état du héros (contextuel, jamais permanent) ── */
+    $heroAlert = match (true) {
+        $status === 'cancelled'           => 'error',
+        $status === 'draft'               => 'draft',
+        $status === 'needs_correction'    => 'error',
+        $pendingAppointment !== null      => 'visit',
+        $status === 'waiting_delivery'    => 'delivery',
+        $status === 'under_consultation' && $lastFailedAppointment => 'visit_failed',
+        $status === 'under_consultation'  => 'info',
+        $status === 'approved' && ! $dossier->certificate => 'info',
+        in_array($status, ['completed', 'submitted'])     => 'neutral',
+        default                           => null,
+    };
+
+    /* ── Fiche impression : édité aujourd'hui ── */
+    $printDate = now()->isoFormat('dddd D MMMM YYYY, HH:mm');
+@endphp
+
+<style>
+    /* ═══════════════════════════════════════════════════════════════════
+       FICHE DU DOSSIER — impression professionnelle (A4)
+       Le contenu écran (.dossier-screen) est masqué ; seule la fiche
+       (.print-sheet) est imprimée. Palette fixe noire / rouge ONPC.
+       ═══════════════════════════════════════════════════════════════════ */
+    .print-sheet { display: none; }
+
+    @media print {
+        @page { size: A4; margin: 11mm 11mm 14mm; }
+
+        header, footer, .no-print { display: none !important; }
+
+        html, body {
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .print-sheet { display: block !important; }
+    }
+
+    /* — Structure de la fiche (rendu uniquement à l'impression) — */
+    .fiche {
+        font-family: var(--font-sans, 'Roboto', Arial, sans-serif);
+        font-size: 11.5px;
+        line-height: 1.5;
+        color: #1a1d29;
+        background: #ffffff;
+    }
+
+    .fiche-band {
+        background: #9e001f;
+        color: #ffffff;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        border-radius: 3px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .fiche-band-logo  { width: 46px; height: 46px; object-fit: contain; border-radius: 4px; background: #fff; padding: 3px; }
+    .fiche-band-org   { font-size: 14.5px; font-weight: 800; letter-spacing: .02em; line-height: 1.25; }
+    .fiche-band-sub   { font-size: 10px; opacity: .92; font-weight: 400; }
+    .fiche-band-ref   { text-align: end; line-height: 1.3; }
+    .fiche-band-ref-label { font-size: 9px; text-transform: uppercase; letter-spacing: .14em; opacity: .85; font-weight: 600; }
+    .fiche-band-ref-value { font-family: 'Roboto Mono', Menlo, Consolas, monospace; font-size: 15px; font-weight: 700; letter-spacing: .03em; }
+
+    .fiche-title-row {
+        display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+        margin: 14px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #1a1d29;
+    }
+    .fiche-title   { font-size: 15px; font-weight: 800; letter-spacing: .01em; }
+    .fiche-printed { font-size: 10px; color: #4b5563; font-weight: 500; white-space: nowrap; }
+
+    .fiche-h2 {
+        font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
+        margin: 0 0 6px; padding-inline-start: 8px;
+        border-inline-start: 3.5px solid #9e001f; color: #1a1d29;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .fiche-sec { break-inside: avoid; margin-bottom: 16px; }
+
+    .fiche-table { width: 100%; border-collapse: collapse; }
+    .fiche-table th, .fiche-table td {
+        border: 1px solid #c7cad1;
+        padding: 4.5px 9px;
+        text-align: start;
+        vertical-align: top;
+        font-size: 10.5px;
+    }
+    .fiche-table th { background: #f4f4f7; font-weight: 700; color: #1a1d29; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .fiche-kv th:first-child  { width: 37%; }
+    .fiche-kv-4 th { width: 17.5%; }
+    .fiche-table td { color: #24273a; }
+    .fiche-mono     { font-family: 'Roboto Mono', Menlo, Consolas, monospace; letter-spacing: .02em; }
+
+    .fiche-thead th { background: #1a1d29; color: #ffffff; }
+    .fiche-table-dark thead th { background: #1a1d29; color: #fff; }
+    .fiche-tfoot td { background: #f4f4f7; font-weight: 700; font-size: 10.5px; padding: 6px 9px; }
+    .fiche-dim      { color: #6b7280; }
+    .fiche-missing  { color: #9ca3af; font-style: italic; }
+
+    .fiche-cert {
+        border: 1.5px solid #b45309; border-radius: 3px; padding: 8px 12px;
+        background: #fffbeb; margin-bottom: 16px;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .fiche-cert-title { font-weight: 800; font-size: 11px; color: #92400e; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
+
+    .fiche-sign-row  { display: flex; gap: 28px; margin: 6px 0 10px; align-items: flex-end; }
+    .fiche-sign-col  { flex: 1; text-align: center; }
+    .fiche-sign-name { font-size: 10.5px; font-weight: 700; margin-bottom: 46px; text-transform: uppercase; letter-spacing: .04em; }
+    .fiche-sign-line { border-top: 1px solid #6b7280; margin: 0 8px; padding-top: 3px; font-size: 9px; color: #6b7280; }
+
+    .fiche-foot {
+        margin-top: 10px; padding-top: 7px; border-top: 1px solid #c7cad1;
+        display: flex; justify-content: space-between; gap: 12px;
+        font-size: 9px; color: #6b7280;
+    }
+</style>
+
+<x-app-layout>
+    <main class="flex-1 w-full mx-auto sm:px-6 lg:px-8 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-0">
+
+            {{-- ══════════════ CONTENU ÉCRAN ══════════════ --}}
+            <div class="dossier-screen no-print">
+
+
+                {{-- ══════════════ 4. ACTUALITÉ DU DOSSIER — toujours en tête ══════════════
+                     Ce bloc unique, pleine largeur, remonte systématiquement la nouvelle la
+                     plus importante : correction demandée, visite programmée, visite échouée,
+                     remise du certificat ou choix de livraison. Le reste de la page fournit
+                     le détail statique (pièces, timeline, coordonnées).
+                ══════════════════════════════════════════════════════════════════════════ --}}
+
+                {{-- ── Correction requise ── --}}
+                @if ($status === 'needs_correction' && $dossier->admin_note)
+                <section class="bg-surface-container-lowest border border-red-200 dark:border-red-800/40 rounded-lg shadow-sm overflow-hidden mb-6 no-print">
+                    <div class="border-s-4 border-s-red-600 p-5">
+                        <div class="flex items-start gap-3.5 mb-3">
+                            <div class="w-10 h-10 rounded bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">assignment_late</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">
+                                        {{ __('safety_file.correction_title') }}
+                                    </h2>
+                                    <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded">{{ __('safety_file.chip_alert') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded border border-red-200 bg-red-50 dark:bg-red-900/10 px-4 py-3 mb-4">
+                            <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>
+                                {{ __('safety_file.admin_note_label') }}
+                            </p>
+                            <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $dossier->admin_note }}</p>
+                        </div>
+                        <a href="{{ route($rp . '.correct', $dossier) }}"
+                            class="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-3 px-5 rounded transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">edit_note</span>
+                            {{ __('safety_file.fix_and_resubmit') }}
+                        </a>
+                    </div>
+                </section>
+                @endif
+
+                {{-- ── Visite programmée — consignes de visite ── --}}
+                @if ($pendingAppointment)
+                <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden mb-6 no-print">
+                    <div class="border-s-4 border-s-primary p-5">
+                        <div class="flex items-start gap-3.5 mb-4">
+                            <div class="w-10 h-10 rounded bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">assignment_late</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">
+                                        {{ __('safety_file.consignes_title', ['date' => $pendingAppointment->visit_date->format('d/m/Y') . ' ' . substr($pendingAppointment->visit_time, 0, 5)]) }}
+                                    </h2>
+                                    <span class="text-[10px] bg-primary text-on-primary font-bold px-2 py-0.5 rounded whitespace-nowrap">{{ __('safety_file.consignes_badge') }}</span>
+                                </div>
+                                <p class="text-body-sm text-secondary mt-1">{{ __('safety_file.consignes_intro') }}</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                            <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
+                                <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">person_check</span>
+                                <div><span class="font-bold text-on-surface block">{{ __('safety_file.consignes_presence') }}</span><span class="text-secondary text-[11px]">{{ __('safety_file.consignes_presence_d', ['name' => $dossier->nom_prenom]) }}</span></div>
+                            </div>
+                            <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
+                                <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">menu_book</span>
+                                <div><span class="font-bold text-on-surface block">{{ __('safety_file.consignes_registre') }}</span><span class="text-secondary text-[11px]">{{ __('safety_file.consignes_registre_d') }}</span></div>
+                            </div>
+                            <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
+                                <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">door_front</span>
+                                <div><span class="font-bold text-on-surface block">{{ __('safety_file.consignes_issues') }}</span><span class="text-secondary text-[11px]">{{ __('safety_file.consignes_issues_d') }}</span></div>
+                            </div>
+                            <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
+                                <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">water_drop</span>
+                                <div><span class="font-bold text-on-surface block">{{ __('safety_file.consignes_eau') }}</span><span class="text-secondary text-[11px]">{{ __('safety_file.consignes_eau_d') }}</span></div>
+                            </div>
+                        </div>
+                        @if ($pendingAppointment->note)
+                        <div class="mt-4 rounded border border-amber-200 bg-amber-50/60 p-3">
+                            <p class="text-[11px] font-bold text-amber-900 mb-0.5 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">event_note</span>{{ __('safety_file.appointment_note_label') }}
+                            </p>
+                            <p class="text-xs text-amber-900 whitespace-pre-line leading-relaxed">{{ $pendingAppointment->note }}</p>
+                        </div>
+                        @endif
+                    </div>
+                </section>
+                @endif
+
+                {{-- ── Visite échouée ── --}}
+                @if ($heroAlert === 'visit_failed' && $lastFailedAppointment)
+                <section class="bg-surface-container-lowest border border-red-200 dark:border-red-800/40 rounded-lg shadow-sm overflow-hidden mb-6 no-print">
+                    <div class="border-s-4 border-s-red-600 p-5">
+                        <div class="flex items-start gap-3.5 mb-3">
+                            <div class="w-10 h-10 rounded bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">report</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('safety_file.visit_failed_title') }}</h2>
+                                    <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">{{ __('safety_file.chip_alert') }}</span>
+                                </div>
+                                <p class="text-body-sm text-secondary mt-1">{{ __('safety_file.visit_failed_intro', ['date' => $lastFailedAppointment->visit_date->format('d/m/Y') . ' ' . substr($lastFailedAppointment->visit_time, 0, 5)]) }}</p>
+                            </div>
+                        </div>
+                        @if ($lastFailedAppointment->note)
+                        <div class="rounded border border-red-200 bg-red-50 px-4 py-3 mb-4">
+                            <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 mb-1 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>{{ __('safety_file.appointment_note_label') }}
+                            </p>
+                            <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $lastFailedAppointment->note }}</p>
+                        </div>
+                        @endif
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div class="flex items-start gap-2.5 bg-amber-50 border border-amber-200 p-3 rounded">
+                                <span class="material-symbols-outlined text-amber-600 text-base mt-0.5" aria-hidden="true">build</span>
+                                <div><span class="font-bold text-amber-900 block">{{ __('safety_file.visit_failed_fix_title') }}</span><span class="text-secondary text-[11px]">{{ __('safety_file.visit_failed_fix_d') }}</span></div>
+                            </div>
+                            <div class="flex items-start gap-2.5 bg-surface-container-low p-3 rounded border border-surface-dim">
+                                <span class="material-symbols-outlined text-primary text-base mt-0.5" aria-hidden="true">event_repeat</span>
+                                <div><span class="font-bold text-on-surface block">{{ __('safety_file.visit_failed_newrdv_title') }}</span><span class="text-secondary text-[11px]">{{ __('safety_file.visit_failed_newrdv_d') }}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                @endif
+
+                {{-- ── Certificat prêt ── --}}
+                @if ($dossier->certificate)
+                @php $cert = $dossier->certificate; @endphp
+                <section class="bg-surface-container-lowest border border-amber-200 dark:border-amber-700/40 rounded-lg shadow-sm overflow-hidden mb-6 no-print">
+                    <div class="border-s-4 border-s-amber-500 p-5">
+                        <div class="flex items-start gap-3.5 mb-3">
+                            <div class="w-10 h-10 rounded bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">workspace_premium</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">
+                                        {{ __('safety_file.certificate_title') }} — <span class="font-mono" dir="ltr">{{ $cert->reference }}</span>
+                                    </h2>
+                                    @php
+                                        [$certStatusKey, $certStatusCls] = match (true) {
+                                            $cert->isPostDelivered() => ['certificate_status_post_delivered', 'bg-amber-100 text-amber-800'],
+                                            $cert->isCollected()     => ['certificate_status_collected', 'bg-amber-100 text-amber-800'],
+                                            $cert->isPostSent()      => ['certificate_status_post_sent', 'bg-blue-100 text-blue-800'],
+                                            $cert->isPost()          => ['certificate_status_post_prep', 'bg-blue-100 text-blue-800'],
+                                            default                  => ['certificate_status_ready', 'bg-amber-500 text-white'],
+                                        };
+                                    @endphp
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary">
+                                            {{ $cert->isPickup() ? __('safety_file.delivery_pickup_title') : ($cert->isPost() ? __('safety_file.delivery_post_title') : __('safety_file.delivery_digital_title')) }}
+                                        </span>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded {{ $certStatusCls }}">{{ __('safety_file.' . $certStatusKey) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if ($cert->isPickup() && $cert->isCollected())
+                        {{-- Pickup & Collected — certificat récupéré --}}
+                        <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 p-3 rounded text-xs mb-3 dark:bg-amber-900/10 dark:border-amber-800/40">
+                            <span class="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base mt-px" aria-hidden="true">check_circle</span>
+                            <div>
+                                <span class="font-bold text-amber-900 dark:text-amber-200 block">{{ __('safety_file.certificate_collected_banner') }}</span>
+                                @if ($cert->collected_at)
+                                <span class="block text-amber-700 dark:text-amber-300/80 text-[11px] mt-1">{{ __('safety_file.certificate_collected_on') }}: <strong>{{ $cert->collected_at->format('d/m/Y') }}</strong></span>
+                                @endif
+                            </div>
+                        </div>
+                        @elseif ($cert->isPickup())
+                        {{-- Pickup & Ready — certificat à récupérer --}}
+                        <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 p-3 rounded text-xs mb-3">
+                            <span class="material-symbols-outlined text-amber-700 text-base mt-px" aria-hidden="true">storefront</span>
+                            <div>
+                                <span class="font-bold text-amber-900 block">{{ __('safety_file.certificate_pickup_text', ['place' => $cert->delegation?->name ?? $cert->governorate?->name ?? '—']) }}</span>
+                                @php $office = $cert->pickupOffice()?->officeDetails(); @endphp
+                                @if ($office['address'] ?? null)<span class="block text-secondary text-[11px] mt-1"><span class="material-symbols-outlined text-[13px] align-[-2px]" aria-hidden="true">location_on</span> {{ $office['address'] }}</span>@endif
+                                @if ($office['phone'] ?? null)<span class="block text-secondary text-[11px] mt-0.5"><a class="inline-flex items-center gap-1 font-mono font-bold text-amber-900 hover:text-amber-700" href="tel:{{ preg_replace('/[^0-9+]/', '', $office['phone']) }}" dir="ltr"><span class="material-symbols-outlined text-[13px] align-[-2px]" aria-hidden="true">call</span>{{ $office['phone'] }}</a></span>@endif
+                                @if ($office['hours'] ?? null)<span class="block text-secondary text-[11px] mt-0.5"><span class="material-symbols-outlined text-[13px] align-[-2px]" aria-hidden="true">schedule</span> {{ $office['hours'] }}</span>@endif
+                                <span class="block text-secondary text-[11px] mt-1 font-semibold">{{ __('safety_file.certificate_pickup_id_note') }}@if ($cert->issued_at) — {{ __('safety_file.certificate_issued_on') }} {{ $cert->issued_at->format('d/m/Y') }}@endif</span>
+                            </div>
+                        </div>
+                        @elseif ($cert->isPost() && $cert->isPostDelivered())
+                        {{-- Post & Delivered — certificat livré par poste --}}
+                        <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 p-3 rounded text-xs mb-3 dark:bg-amber-900/10 dark:border-amber-800/40">
+                            <span class="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base mt-px" aria-hidden="true">check_circle</span>
+                            <div>
+                                <span class="font-bold text-amber-900 dark:text-amber-200 block">{{ __('safety_file.certificate_post_delivered_text') }}</span>
+                                @if ($cert->post_delivered_at)
+                                <span class="block text-amber-700 dark:text-amber-300/80 text-[11px] mt-1">{{ __('safety_file.certificate_delivered_on') }}: <strong>{{ $cert->post_delivered_at->format('d/m/Y') }}</strong></span>
+                                @endif
+                                @if ($cert->post_tracking)<span class="inline-flex items-center gap-1.5 mt-1.5 rounded bg-amber-100 px-2 py-0.5 font-mono font-bold text-amber-900" dir="ltr"><span class="material-symbols-outlined text-[13px]" aria-hidden="true">qr_code</span>{{ __('safety_file.certificate_post_tracking') }}: {{ $cert->post_tracking }}</span>@endif
+                            </div>
+                        </div>
+                        @elseif ($cert->isPost())
+                        {{-- Post & Ready/Sent — en cours --}}
+                        <div class="flex items-start gap-2 bg-blue-50 border border-blue-200 p-3 rounded text-xs mb-3">
+                            <span class="material-symbols-outlined text-blue-700 text-base mt-px" aria-hidden="true">local_shipping</span>
+                            <div class="min-w-0">
+                                <span class="font-bold text-blue-900 block">{{ __('safety_file.certificate_post_text') }}</span>
+                                <span class="block text-secondary text-[11px] mt-1">{{ __('safety_file.certificate_post_recipient') }}: <span class="font-semibold text-on-surface">{{ $cert->post_recipient ?? '—' }}</span>@if ($cert->post_phone) — <a class="font-mono font-bold text-blue-900 hover:text-blue-700" href="tel:{{ preg_replace('/[^0-9+]/', '', $cert->post_phone) }}" dir="ltr">{{ $cert->post_phone }}</a>@endif</span>
+                                <span class="block text-secondary text-[11px] mt-0.5">{{ __('safety_file.certificate_post_address') }}: <span class="font-medium text-on-surface">{{ $cert->post_address }}</span></span>
+                                @if ($cert->post_tracking)<span class="inline-flex items-center gap-1.5 mt-1.5 rounded bg-blue-100 px-2 py-0.5 font-mono font-bold text-blue-900" dir="ltr"><span class="material-symbols-outlined text-[13px]" aria-hidden="true">qr_code</span>{{ __('safety_file.certificate_post_tracking') }}: {{ $cert->post_tracking }}</span>@endif
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- Note accompagnant le certificat — rédigée à l'émission, visible par le demandeur --}}
+                        @if (filled($cert->note))
+                        <div class="mt-2 mb-3 flex items-start gap-2 rounded border border-surface-dim bg-surface-container-low px-3 py-2.5 text-xs">
+                            <span class="material-symbols-outlined text-secondary text-base shrink-0" aria-hidden="true">sticky_note_2</span>
+                            <p class="min-w-0 text-on-surface dark:text-gray-100 whitespace-pre-line leading-relaxed">{{ $cert->note }}</p>
+                        </div>
+                        @endif
+
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-secondary">
+                            {{ __('safety_file.certificate_brigade', ['name' => $cert->governorate?->name ?? '—']) }}
+                            @if ($cert->valid_until) • {{ __('safety_file.certificate_valid_until') }} {{ $cert->valid_until->format('d/m/Y') }}@endif
+                            @if ($cert->isCollected() && $cert->collected_at) • {{ __('safety_file.certificate_collected_on') }} {{ $cert->collected_at->format('d/m/Y') }}@endif
+                            @if ($cert->isPostSent() && $cert->post_sent_at) • {{ __('safety_file.certificate_post_sent') }} {{ $cert->post_sent_at->format('d/m/Y') }}@endif
+                        </div>
+                    </div>
+                </section>
+                @endif
+
+                {{-- ── Mode de remise : choix ou état « choisi » ── --}}
+                @if ($status === 'waiting_delivery' && ! $dossier->certificate && ! $dossier->delivery_method)
+                <section class="bg-surface-container-lowest border border-amber-200 dark:border-amber-800/40 rounded-lg shadow-sm overflow-hidden mb-6 no-print"
+                         x-data="{ method: '{{ old('delivery_method', $dossier->delivery_method) }}' }">
+                    <div class="border-s-4 border-s-amber-500 p-5">
+                        <div class="flex items-start gap-3.5 mb-4">
+                            <div class="w-10 h-10 rounded bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">verified</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('safety_file.delivery_title') }}</h2>
+                                    <span class="text-[10px] bg-amber-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">{{ __('safety_file.delivery_badge') }}</span>
+                                </div>
+                                <p class="text-body-sm text-secondary mt-1">
+                                    {{ __('safety_file.delivery_intro') }}
+                                    <span class="block mt-1 text-[11px] font-semibold text-amber-800 flex items-start gap-1">
+                                        <span class="material-symbols-outlined text-sm mt-px" aria-hidden="true">info</span>
+                                        {{ __('safety_file.delivery_note_soon') }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        {{-- Frais du certificat (selon le type de bâtiment) --}}
+                        @php $certFee = 0.0; @endphp {{-- procedure gratuite (Ù…Ø¬Ø§Ù†ÙŠ) --}}
+                        @if ($certFee > 0)
+                        <div class="mb-3 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3">
+                            <span class="material-symbols-outlined text-amber-700 text-xl" aria-hidden="true">payments</span>
+                            <div class="flex-1 min-w-0">
+                                <span class="block text-[11px] font-extrabold uppercase tracking-wider text-amber-800">{{ __('safety_file.delivery_fee_label') }}</span>
+                                <div class="flex flex-wrap items-center gap-2 mt-1">
+                                    <span class="text-lg font-black text-amber-900 font-mono" dir="ltr">{{ number_format($certFee, 3, '.', ',') }} DT</span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[11px]" aria-hidden="true">storefront</span>{{ __('safety_file.delivery_fee_pickup') }}
+                                    </span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[11px]" aria-hidden="true">credit_card</span>{{ __('safety_file.delivery_fee_card') }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- Message d'information : réception par e-mail --}}
+                        <div x-show="method === 'pickup' || method === ''" x-cloak
+                             class="mb-3 flex items-start gap-3 rounded-lg border border-indigo-200 bg-indigo-50/60 px-4 py-3">
+                            <span class="material-symbols-outlined text-indigo-600 text-lg mt-px shrink-0" aria-hidden="true">mark_email_read</span>
+                            <p class="text-[11px] text-indigo-900 leading-relaxed">
+                                {{ __('safety_file.delivery_info_pickup') }}
+                            </p>
+                        </div>
+
+                        <form method="POST" action="{{ route($rp . '.delivery', $dossier) }}" class="space-y-3">
+                            @csrf
+                            <label class="flex items-start gap-3.5 bg-surface-container-low border border-surface-dim rounded p-3.5 opacity-60 select-none cursor-not-allowed">
+                                <input type="radio" name="delivery_method" value="digital" disabled class="mt-0.5 rounded-full border-surface-dim" aria-disabled="true">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="material-symbols-outlined text-secondary text-lg" aria-hidden="true">download</span>
+                                        <span class="text-xs font-bold text-on-surface">{{ __('safety_file.delivery_digital_title') }}</span>
+                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">{{ __('safety_file.delivery_soon') }}</span>
+                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-dim text-secondary flex items-center gap-0.5"><span class="material-symbols-outlined text-[11px]" aria-hidden="true">credit_card</span>{{ __('safety_file.delivery_needs_payment') }}</span>
+                                    </div>
+                                    <p class="text-[11px] text-secondary mt-1">{{ __('safety_file.delivery_digital_desc') }}</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3.5 bg-surface-container-low border rounded p-3.5 cursor-pointer transition-colors hover:border-primary/50 border-surface-dim has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50/40">
+                                <input type="radio" name="delivery_method" value="pickup" x-model="method" required class="mt-0.5 rounded-full border-surface-dim text-amber-600 focus:ring-amber-500">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="material-symbols-outlined text-amber-700 text-lg" aria-hidden="true">storefront</span>
+                                        <span class="text-xs font-bold text-on-surface">{{ __('safety_file.delivery_pickup_title') }}</span>
+                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-600 text-white flex items-center gap-0.5"><span class="material-symbols-outlined text-[11px]" aria-hidden="true">check_circle</span>{{ __('safety_file.delivery_available') }}</span>
+                                        @if ($certFee > 0)
+                                            {{-- Fee due at the office, shown right on the pickup card --}}
+                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 flex items-center gap-0.5">
+                                                <span class="material-symbols-outlined text-[11px]" aria-hidden="true">payments</span>
+                                                {{ __('safety_file.delivery_fee_label') }}: <span class="font-mono" dir="ltr">{{ number_format($certFee, 3, '.', ',') }} DT</span>
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <p class="text-[11px] text-secondary mt-1">{{ __('safety_file.delivery_pickup_desc') }}</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3.5 bg-surface-container-low border border-surface-dim rounded p-3.5 opacity-60 select-none cursor-not-allowed">
+                                <input type="radio" name="delivery_method" value="post" disabled class="mt-0.5 rounded-full border-surface-dim" aria-disabled="true">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="material-symbols-outlined text-blue-700 text-lg" aria-hidden="true">local_shipping</span>
+                                        <span class="text-xs font-bold text-on-surface">{{ __('safety_file.delivery_post_title') }}</span>
+                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">{{ __('safety_file.delivery_soon') }}</span>
+                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-dim text-secondary flex items-center gap-0.5"><span class="material-symbols-outlined text-[11px]" aria-hidden="true">credit_card</span>{{ __('safety_file.delivery_needs_payment') }}</span>
+                                    </div>
+                                    <p class="text-[11px] text-secondary mt-1">{{ __('safety_file.delivery_post_desc') }}</p>
+                                </div>
+                            </label>
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+                                <p class="text-[11px] text-secondary flex-1">{{ __('safety_file.delivery_editable_note') }}</p>
+                                <button type="submit" class="inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-2.5 px-5 rounded transition-colors shadow-sm">
+                                    <span class="material-symbols-outlined text-base" aria-hidden="true">check_circle</span>
+                                    {{ __('safety_file.delivery_save') }}
+                                </button>
+                            </div>
+                            @error('delivery_method')<p class="text-[11px] font-semibold text-error flex items-center gap-1"><span class="material-symbols-outlined text-sm" aria-hidden="true">error</span>{{ $message }}</p>@enderror
+                        </form>
+                    </div>
+                </section>
+                @endif
+
+                {{-- ── Méthode choisie — certificat pas encore prêt ── --}}
+                @if ($status === 'waiting_delivery' && ! $dossier->certificate && $dossier->delivery_method)
+                @php
+                    [$chosenKey, $chosenIcon] = \App\Models\SafetyFileDossier::matchDelivery($dossier->delivery_method);
+                    $certFee = 0.0; // procedure gratuite â€” aucun frais
+                @endphp
+                <section class="bg-surface-container-lowest border border-red-200 dark:border-red-800/40 rounded-lg shadow-sm overflow-hidden mb-6 no-print"
+                         x-data="{ changeOpen: false }">
+                    <div class="border-s-4 border-s-red-600 p-5">
+                        <div class="flex items-start gap-3.5 mb-4">
+                            <div class="w-10 h-10 rounded bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">task_alt</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('safety_file.delivery_chosen_title') }}</h2>
+                                    <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[11px]" style="font-variation-settings:'FILL' 1" aria-hidden="true">check_circle</span>
+                                        {{ __('safety_file.delivery_saved_chip') }}
+                                    </span>
+                                </div>
+                                @if ($dossier->delivery_choice_at)
+                                    <p class="text-[11px] text-secondary mt-1">{{ __('safety_file.delivery_chosen_on', ['date' => $dossier->delivery_choice_at->format('d/m/Y à H:i')]) }}</p>
+                                @else
+                                    <p class="text-[11px] text-secondary mt-1">{{ __('safety_file.delivery_saved_ack') }}</p>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Méthode retenue --}}
+                        <div class="mb-3 flex items-center gap-3.5 rounded-lg border border-surface-dim bg-surface-container-low px-4 py-3">
+                            <div class="w-10 h-10 rounded-lg bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">{{ $chosenIcon }}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="text-xs font-bold text-on-surface">{{ __('safety_file.' . $chosenKey) }}</span>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-600 text-white whitespace-nowrap">{{ __('safety_file.delivery_chip_chosen') }}</span>
+                                    @if ($dossier->isPickup() && $certFee > 0)
+                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 flex items-center gap-0.5">
+                                            <span class="material-symbols-outlined text-[11px]" aria-hidden="true">payments</span>
+                                            {{ __('safety_file.delivery_fee_label') }}: <span class="font-mono" dir="ltr">{{ number_format($certFee, 3, '.', ',') }} DT</span>
+                                        </span>
+                                    @endif
+                                </div>
+                                @if ($dossier->isPickup())
+                                <p class="text-[11px] text-secondary mt-1">{{ __('safety_file.delivery_fee_pickup') }} — {{ __('safety_file.certificate_pickup_id_note') }}</p>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- En attente du certificat --}}
+                        <div class="mb-3.5 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3">
+                            <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                                <span class="material-symbols-outlined text-[15px]" style="font-variation-settings:'FILL' 1" aria-hidden="true">schedule</span>
+                            </div>
+                            <p class="text-[11px] text-amber-900 leading-relaxed">
+                                <span class="block font-bold">{{ __('safety_file.delivery_awaiting_title') }}</span>
+                                {{ __('safety_file.delivery_awaiting_cert') }}
+                            </p>
+                        </div>
+
+                        {{-- Changer de méthode : les deux autres sont désactivées --}}
+                        <button type="button" x-on:click="changeOpen = ! changeOpen"
+                                class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-800 hover:bg-red-100 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-200 dark:hover:bg-red-900/30 transition-colors">
+                            <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1" aria-hidden="true">published_with_changes</span>
+                            <span x-text="changeOpen ? '{{ __('safety_file.delivery_change_close') }}' : '{{ __('safety_file.delivery_change_open') }}'">{{ __('safety_file.delivery_change_open') }}</span>
+                            <span class="material-symbols-outlined text-base transition-transform duration-200" :class="changeOpen && 'rotate-180'" :aria-expanded="changeOpen" aria-hidden="true">expand_more</span>
+                        </button>
+
+                        <div x-show="changeOpen" x-cloak
+                             class="mt-3 rounded-lg border border-dashed border-surface-dim bg-surface-container-low p-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                            <p class="mb-2.5 text-[10px] uppercase tracking-wider font-extrabold text-secondary flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">list</span>
+                                {{ __('safety_file.delivery_change_others') }}
+                            </p>
+                            <div class="space-y-2">
+                                @unless ($dossier->isPickup())
+                                <div class="flex items-center gap-3 rounded border border-dashed border-surface-dim bg-surface-container px-3.5 py-3 select-none cursor-not-allowed">
+                                    <div class="w-9 h-9 rounded-lg bg-surface-dim text-secondary flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1" aria-hidden="true">storefront</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-bold text-on-surface">{{ __('safety_file.delivery_pickup_title') }}</span>
+                                    </div>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-dim text-secondary flex items-center gap-0.5">
+                                        <span class="material-symbols-outlined text-[12px]" style="font-variation-settings:'FILL' 1" aria-hidden="true">lock</span>{{ __('safety_file.delivery_locked') }}
+                                    </span>
+                                </div>
+                                @endunless
+                                @unless ($dossier->isPost())
+                                <div class="flex items-center gap-3 rounded border border-dashed border-surface-dim bg-surface-container px-3.5 py-3 select-none cursor-not-allowed">
+                                    <div class="w-9 h-9 rounded-lg bg-surface-dim text-secondary flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1" aria-hidden="true">local_shipping</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-bold text-on-surface">{{ __('safety_file.delivery_post_title') }}</span>
+                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 ml-1.5">{{ __('safety_file.delivery_soon') }}</span>
+                                    </div>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-dim text-secondary flex items-center gap-0.5">
+                                        <span class="material-symbols-outlined text-[12px]" aria-hidden="true">credit_card</span>{{ __('safety_file.delivery_needs_payment') }}
+                                    </span>
+                                </div>
+                                @endunless
+                                @unless ($dossier->isDigital())
+                                <div class="flex items-center gap-3 rounded border border-dashed border-surface-dim bg-surface-container px-3.5 py-3 select-none cursor-not-allowed">
+                                    <div class="w-9 h-9 rounded-lg bg-surface-dim text-secondary flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1" aria-hidden="true">download</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-bold text-on-surface">{{ __('safety_file.delivery_digital_title') }}</span>
+                                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 ml-1.5">{{ __('safety_file.delivery_soon') }}</span>
+                                    </div>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-dim text-secondary flex items-center gap-0.5">
+                                        <span class="material-symbols-outlined text-[12px]" aria-hidden="true">credit_card</span>{{ __('safety_file.delivery_needs_payment') }}
+                                    </span>
+                                </div>
+                                @endunless
+                                <p class="text-[11px] text-secondary leading-relaxed flex items-start gap-1.5 px-1 pt-1">
+                                    <span class="material-symbols-outlined text-sm mt-px shrink-0" aria-hidden="true">info</span>
+                                    {{ __('safety_file.delivery_change_none') }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                @endif
+
+                {{-- ── Brouillon ── --}}
+                @if ($status === 'draft')
+                <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden mb-6 no-print">
+                    <div class="border-s-4 border-s-red-600 p-5 flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-start gap-3.5">
+                            <div class="w-10 h-10 rounded bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-xl" aria-hidden="true">edit_note</span>
+                            </div>
+                            <div>
+                                <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('safety_file.status_draft') }}</h2>
+                                <p class="text-body-sm text-secondary mt-0.5">{{ __('safety_file.draft_notice') }}</p>
+                            </div>
+                        </div>
+                        <a href="{{ $dossier->current_step >= 2 ? route($rp . '.step3.show', $dossier) : route($rp . '.step2.show', $dossier) }}"
+                            class="inline-flex items-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-4 rounded transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">play_arrow</span>
+                            {{ __('safety_file.draft_continue_step', ['step' => $dossier->current_step >= 2 ? 3 : 2]) }}
+                        </a>
+                    </div>
+                </section>
+                @endif
+
+                {{-- ══════════════ 3. Cycle de Vie du Dossier (Stepper + progression) ══════════════ --}}
+                <section class="bg-surface-container-lowest border {{ $isCancelled ? 'border-red-200 dark:border-red-800/40' : 'border-surface-dim' }} rounded-lg shadow-sm mb-6 overflow-hidden">
+                    @if ($isCancelled)
+                    {{-- Dossier annulé : bandeau rouge au-dessus du cycle figé --}}
+                    <div class="border-b border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 border-s-4 border-s-red-600 p-5 md:px-6">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">cancel</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('safety_file.cancelled_banner') }}</h3>
+                                <p class="text-body-sm text-secondary mt-1">{{ __('safety_file.status_cancelled') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                    <div class="p-5 md:px-6">
+                        {{-- En-tête : titre + phase + barre de progression --}}
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-surface-dim">
+                            <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">route</span>
+                                {{ __('safety_file.stepper_title') }}
+                            </h3>
+                            <div class="flex items-center gap-3 flex-1 sm:flex-none sm:min-w-64">
+                                @if ($isCancelled)
+                                <span class="text-xs font-bold text-white bg-red-600 px-2 py-0.5 rounded whitespace-nowrap">
+                                    {{ __('safety_file.stepper_cancelled') }}
+                                </span>
+                                @else
+                                <span class="text-xs font-bold text-primary bg-primary-fixed/40 px-2 py-0.5 rounded whitespace-nowrap">
+                                    {{ __('safety_file.phase_instruction', ['step' => $currentStep ? min($currentStep, 5) : 1]) }}
+                                </span>
+                                @endif
+                                <div class="hidden sm:flex-1 h-1.5 bg-surface-dim/50 rounded-full overflow-hidden">
+                                    <div class="h-full {{ $isCancelled ? 'bg-red-500' : 'bg-gradient-to-r from-primary-container to-amber-500' }} rounded-full transition-all duration-500" style="width: {{ $progress }}%"></div>
+                                </div>
+                                <span class="text-[11px] font-mono font-bold text-secondary hidden sm:inline" dir="ltr">{{ $progress }}%</span>
+                            </div>
+                        </div>
+
+                        {{-- Étapes reliées par une ligne de conduite --}}
+                        <div class="relative grid grid-cols-1 md:grid-cols-5 gap-5 md:gap-3">
+                            {{-- Ligne de conduite : uniquement ≥ md, symétrique (compatible RTL) --}}
+                            <div class="hidden md:block absolute top-5 [inset-inline-start:10%] [inset-inline-end:10%] h-0.5 bg-surface-dim" aria-hidden="true"></div>
+
+                            @foreach ($steps as $step)
+                                <div class="relative flex md:flex-col items-start md:items-center gap-3 md:gap-2 md:text-center">
+                                    {{-- Pastille circulaire --}}
+                                    @if ($step['state'] === 'done')
+                                        <span class="relative z-10 w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center shadow-sm ring-4 ring-amber-100">
+                                            <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check</span>
+                                        </span>
+                                    @elseif ($step['state'] === 'warning')
+                                        {{-- Terminé malgré un incident résolu (correction / visite échouée) --}}
+                                        <span class="relative z-10 w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center shadow-sm ring-4 ring-amber-100">
+                                            <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check</span>
+                                        </span>
+                                    @elseif ($step['state'] === 'current')
+                                        <span class="relative z-10 w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-black shadow-sm ring-4 ring-amber-200 animate-pulse">
+                                            {{ $step['num'] }}
+                                        </span>
+                                    @elseif ($step['state'] === 'error')
+                                        <span class="relative z-10 w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shadow-sm ring-4 ring-red-100">
+                                            <span class="material-symbols-outlined text-lg" aria-hidden="true">edit_note</span>
+                                        </span>
+                                    @elseif ($step['state'] === 'cancelled')
+                                        {{-- Dossier annulé à cette étape --}}
+                                        <span class="relative z-10 w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shadow-sm ring-4 ring-red-100">
+                                            <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">cancel</span>
+                                        </span>
+                                    @else
+                                        <span class="relative z-10 w-10 h-10 rounded-full bg-surface-container text-secondary flex items-center justify-center text-sm font-bold border border-surface-dim">
+                                            {{ $step['num'] }}
+                                        </span>
+                                    @endif
+
+                                    {{-- Libellé --}}
+                                    <div class="min-w-0 md:px-1">
+                                        <div class="flex md:justify-center items-center gap-2">
+                                            <h4 class="text-xs font-bold {{ $step['state'] === 'pending' ? 'text-secondary' : 'text-on-surface' }}">
+                                                {{ $step['title'] }}
+                                            </h4>
+                                            @if ($step['state'] === 'current')
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" aria-hidden="true"></span>
+                                            @elseif ($step['state'] === 'error' || $step['state'] === 'cancelled')
+                                                <span class="text-[10px] uppercase font-black text-red-800 bg-red-100 px-1.5 py-px rounded">{{ __('safety_file.chip_alert') }}</span>
+                                            @endif
+                                        </div>
+                                        <p class="text-[11px] mt-0.5 leading-snug {{ $step['alert'] ? 'text-red-700 font-medium' : ($step['state'] === 'current' ? 'text-amber-700 font-medium' : ($step['state'] === 'done' || $step['state'] === 'warning' ? 'text-amber-700 font-medium' : 'text-secondary')) }}">
+                                            {{ $step['sub'] }}
+                                        </p>
+                                        <p class="text-[10px] mt-1 font-semibold {{ in_array($step['state'], ['done','warning']) ? 'text-amber-700' : ($step['state'] === 'current' ? 'text-amber-600' : 'text-secondary') }}" dir="ltr">
+                                            @if ($stepDates[$step['num']] ?? null)
+                                                {{ $stepDates[$step['num']]->format('d/m/Y') }}
+                                                @if ($step['num'] === 3 && $pendingAppointment && $pendingAppointment->visit_date->isSameDay($stepDates[3]))
+                                                    <span class="text-secondary">• {{ substr($pendingAppointment->visit_time, 0, 5) }}</span>
+                                                @endif
+                                            @elseif ($step['state'] !== 'done')
+                                                <span class="text-surface-dim font-normal">—</span>
+                                            @endif
+                                        </p>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm mb-6 overflow-hidden">
+                    <div class="h-1 bg-gradient-to-r from-primary via-primary-container/70 to-transparent" aria-hidden="true"></div>
+
+                    <div class="p-5 md:p-6">
+                        {{-- Ligne haute : titre + actions --}}
+                        <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                            <div class="min-w-0">
+                                <h1 class="text-headline-md font-headline-md text-on-surface tracking-tight leading-tight" dir="ltr">
+                                    {{ __('safety_file.breadcrumb_here', ['ref' => $viewRef]) }}
+                                </h1>
+                                <p class="text-xs text-secondary mt-1 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-xs" aria-hidden="true">calendar_today</span>
+                                    {{ __('safety_file.deposited_on', ['date' => $dossier->created_at->isoFormat('D MMMM YYYY')]) }}
+                                </p>
+                            </div>
+
+                            <div class="flex items-center gap-2.5 shrink-0">
+                                <span class="inline-flex items-center gap-1.5 text-label-caps font-label-caps px-2.5 py-1 rounded font-bold {{ $statusPillCls }}">
+                                    <span class="material-symbols-outlined text-xs" aria-hidden="true">{{ $statusPillIcon }}</span>
+                                    {{ __('safety_file.status_' . str_replace('-', '_', $status)) }}
+                                </span>
+                                <a href="{{ route($rp . '.index') }}"
+                                    class="flex items-center gap-2 bg-surface-container-lowest hover:bg-surface-container text-on-surface border border-surface-dim text-xs font-semibold py-2 px-2.5 rounded transition-colors">
+                                    <span class="material-symbols-outlined text-base text-secondary rtl:rotate-180" aria-hidden="true">arrow_back</span>
+                                </a>
+                                <button type="button" onclick="window.print()"
+                                    class="flex items-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2 px-3.5 rounded transition-colors shadow-sm">
+                                    <span class="material-symbols-outlined text-base" aria-hidden="true">print</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Faits clés — détails complets du dossier --}}
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">fact_check</span>
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-secondary">{{ __('safety_file.details_title') }}</span>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">badge</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('safety_file.nom_prenom') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->nom_prenom ?? '' }}">{{ $dossier->nom_prenom ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">fingerprint</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('safety_file.cin') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate font-mono" dir="ltr" title="{{ $dossier->cin ?? '' }}">{{ $dossier->cin ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">call</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('safety_file.phone') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate font-mono num-ltr" dir="ltr" title="{{ $dossier->phone ?? '' }}">{{ $dossier->phone ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">mail</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('safety_file.email') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" dir="ltr" title="{{ $dossier->user?->email ?? '' }}">{{ $dossier->user?->email ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">account_balance</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('safety_file.field_governorate') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->governorate?->name ?? '' }}">{{ $dossier->governorate?->name ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">location_city</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('safety_file.delegation') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->delegation?->name ?? '' }}">{{ $dossier->delegation?->name ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">apartment</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('safety_file.building_type') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->buildingType?->name ?? '' }}">{{ $dossier->buildingType?->name ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">domain</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('safety_file.building_activity') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->buildingActivity?->name ?? $dossier->activity_other ?? '' }}">{{ $dossier->buildingActivity?->name ?? $dossier->activity_other ?? '—' }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">place</span>
+                                <div class="min-w-0">
+                                    <span class="block text-[10px] uppercase tracking-wider font-bold text-secondary truncate">{{ __('safety_file.building_address') }}</span>
+                                    <span class="block text-xs font-bold text-on-surface truncate" title="{{ $dossier->building_address ?? '' }}">{{ $dossier->building_address ?? '—' }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ── Map: show pinned building location (if coordinates were provided) ── --}}
+                        @if ($dossier->latitude && $dossier->longitude)
+                            <div class="mt-3">
+                                @include('safety-file.partials.map-display', [
+                                    'lat'   => $dossier->latitude,
+                                    'lng'   => $dossier->longitude,
+                                    'mapId' => 'map-show',
+                                ])
+                            </div>
+                        @endif
+
+                        {{-- Note de l'administration (si présente) — espace dédié sous les détails --}}
+                        @if ($dossier->admin_note && $status !== 'needs_correction')
+                        <div class="mt-4 rounded-lg border border-surface-dim bg-surface-container-low px-4 py-3">
+                            <p class="text-[11px] font-extrabold uppercase tracking-wider text-secondary mb-1 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">sticky_note_2</span>
+                                {{ __('safety_file.admin_note_label') }}
+                            </p>
+                            <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $dossier->admin_note }}</p>
+                        </div>
+                        @endif
+
+                        {{-- Espacement avant l'alerte d'état --}}
+                        <div class="h-2"></div>
+
+                        {{-- Alerte d'état opérationnel — contextuelle --}}
+                        @if ($heroAlert === 'visit')
+                            <div class="flex items-start gap-2.5 bg-amber-50 border border-amber-300 rounded px-3.5 py-2.5 text-xs">
+                                <span class="material-symbols-outlined text-amber-600 text-base mt-px" aria-hidden="true">event_available</span>
+                                <div class="font-bold text-amber-900 leading-relaxed">
+                                    {{ __('safety_file.next_appointment', ['date' => $pendingAppointment->visit_date->format('d/m/Y') . ' ' . substr($pendingAppointment->visit_time, 0, 5)]) }}
+                                    <span class="block font-normal text-amber-800 mt-0.5">{{ __('safety_file.phase_instruction', ['step' => $currentStep ?: 3]) }}</span>
+                                </div>
+                            </div>
+                        @elseif ($heroAlert === 'delivery')
+                            <div class="flex items-start gap-2.5 bg-amber-50 border border-amber-300 rounded px-3.5 py-2.5 text-xs">
+                                <span class="material-symbols-outlined text-amber-600 text-base mt-px" aria-hidden="true">verified</span>
+                                <div class="font-bold text-amber-900 leading-relaxed">
+                                    {{ __('safety_file.waiting_delivery_banner') }}
+                                    <span class="block font-normal text-amber-800 mt-0.5">{{ __('safety_file.waiting_delivery_banner_d') }}</span>
+                                </div>
+                            </div>
+                        @elseif ($heroAlert === 'visit_failed')
+                            <div class="flex items-start gap-2.5 bg-red-50 border border-red-300 rounded px-3.5 py-2.5 text-xs">
+                                <span class="material-symbols-outlined text-red-600 text-base mt-px" aria-hidden="true">report</span>
+                                <div class="font-bold text-red-900 leading-relaxed">
+                                    {{ __('safety_file.visit_failed_banner', ['date' => $lastFailedAppointment?->visit_date?->format('d/m/Y')]) }}
+                                    <span class="block font-normal text-red-800 mt-0.5">{{ __('safety_file.visit_failed_banner_d') }}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2.5 bg-amber-50 border border-amber-300 rounded px-3.5 py-2.5 text-xs mt-2">
+                                <span class="material-symbols-outlined text-amber-700 text-base mt-px" aria-hidden="true">event_repeat</span>
+                                <div class="font-bold text-amber-900 leading-relaxed">
+                                    {{ __('safety_file.visit_failed_newrdv_title') }}
+                                    <span class="block font-normal text-amber-800 mt-0.5">{{ __('safety_file.visit_failed_newrdv_d') }}</span>
+                                </div>
+                            </div>
+                        @elseif ($heroAlert === 'info')
+                            <div class="flex items-start gap-2.5 bg-amber-50 border border-amber-300 rounded px-3.5 py-2.5 text-xs">
+                                <span class="material-symbols-outlined text-amber-600 text-base mt-px" aria-hidden="true">hourglass_bottom</span>
+                                <div class="font-bold text-amber-900 leading-relaxed">
+                                    {{ $status === 'under_consultation' ? __('safety_file.under_consultation_banner') : __('safety_file.approved_banner') }}
+                                </div>
+                            </div>
+                        @elseif ($heroAlert === 'error')
+                            <div class="flex items-start gap-2.5 bg-red-50 border border-red-300 rounded px-3.5 py-2.5 text-xs">
+                                <span class="material-symbols-outlined text-red-600 text-base mt-px" aria-hidden="true">notification_important</span>
+                                <div class="font-bold text-red-900 leading-relaxed">
+                                    {{ __('safety_file.needs_correction_banner') }}
+                                </div>
+                            </div>
+                        @elseif ($heroAlert === 'draft')
+                            <div class="flex items-start gap-2.5 bg-red-50 border border-red-300 rounded px-3.5 py-2.5 text-xs">
+                                <span class="material-symbols-outlined text-red-600 text-base mt-px" aria-hidden="true">edit_note</span>
+                                <div class="font-bold text-red-900 leading-relaxed">
+                                    {{ __('safety_file.draft_notice') }}
+                                </div>
+                            </div>
+                        @elseif ($heroAlert === 'neutral')
+                            <div class="flex items-start gap-2.5 bg-surface-container-low border border-surface-dim rounded px-3.5 py-2.5 text-xs">
+                                <span class="material-symbols-outlined text-secondary text-base mt-px" aria-hidden="true">{{ $status === 'cancelled' ? 'cancel' : 'hourglass_top' }}</span>
+                                <div class="font-bold text-on-surface leading-relaxed">
+                                    {{ __('safety_file.status_' . str_replace('-', '_', $status)) }}
+                                    <span class="font-normal text-secondary"> — {{ $status === 'cancelled' ? __('safety_file.cancelled_banner') : __('safety_file.review_note') }}</span>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </section>
+
+                {{-- ══════════════ 5. Grille asymétrique 8/4 ══════════════ --}}
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+
+                    {{-- ══════ COLONNE GAUCHE (8 colonnes) ══════ --}}
+                    <div class="lg:col-span-8 space-y-6">
+
+                        {{-- ══════ HISTORIQUE DES VISITES ══════ --}}
+                        @if ($dossier->appointments->isNotEmpty())
+                        <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print"
+                             x-data="{ open: false }">
+                            <button type="button" @click="open = !open"
+                                    class="w-full flex flex-wrap items-center justify-between gap-3 p-5 md:px-6 border-b border-surface-dim hover:bg-surface-container dark:hover:bg-gray-700/40 transition-colors text-start">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-8 h-8 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-base" aria-hidden="true">event_repeat</span>
+                                    </span>
+                                    <div>
+                                        <h3 class="text-headline-sm font-headline-sm text-on-surface">{{ __('safety_file.appointments_title') }}</h3>
+                                        <p class="text-xs text-secondary mt-0.5">
+                                            {{ __('safety_file.visits_count', ['count' => $dossier->appointments->count()]) }} <strong class="font-semibold text-on-surface">{{ $dossier->building_address ?? '—' }}</strong>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[11px] text-secondary font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-sm" aria-hidden="true">event</span>
+                                        {{ $dossier->appointments->count() }}
+                                    </span>
+                                    <svg class="w-4 h-4 text-secondary transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
+                            </button>
+
+                            <div x-show="open" x-cloak class="p-5 pt-4">
+                                <div class="relative ps-7 space-y-4 before:absolute before:start-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-surface-dim">
+                                    @foreach ($dossier->appointments as $i => $appt)
+                                        <div class="relative">
+                                            <div class="absolute -start-7 top-1 w-6 flex items-center justify-center">
+                                                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ring-4 ring-surface-container-lowest
+                                                    {{ $appt->isPassed() ? 'bg-amber-500 text-white' : ($appt->isFailed() ? 'bg-red-600 text-white' : ($appt->isCancelled() ? 'bg-slate-400 text-white' : 'bg-blue-500 text-white animate-pulse')) }}">
+                                                    @if ($appt->isPassed())✓@elseif ($appt->isFailed())✕@elseif ($appt->isCancelled())<span class="material-symbols-outlined text-[10px]" aria-hidden="true">event_busy</span>@else{{$i + 1}}@endif
+                                                </span>
+                                            </div>
+                                            <div class="bg-surface-container-low/60 border border-surface-dim rounded-lg p-4 transition-all hover:border-primary/40 {{ $appt->isCancelled() ? 'opacity-75' : '' }}">
+                                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase
+                                                            {{ $appt->isPassed() ? 'bg-amber-100 text-amber-800' : ($appt->isFailed() ? 'bg-red-100 text-red-700' : ($appt->isCancelled() ? 'bg-surface-dim text-secondary' : 'bg-blue-100 text-blue-700')) }}">
+                                                            {{ $appt->isPassed() ? __('safety_file.appointment_passed') : ($appt->isFailed() ? __('safety_file.appointment_failed') : ($appt->isCancelled() ? __('safety_file.appointment_cancelled') : __('safety_file.appointment_pending'))) }}
+                                                        </span>
+                                                        <span class="text-xs font-mono font-bold text-on-surface {{ $appt->isCancelled() ? 'line-through decoration-1' : '' }}" dir="ltr">
+                                                            {{ $appt->visit_date->format('d/m/Y') }} • {{ substr($appt->visit_time, 0, 5) }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                @if ($appt->note)
+                                                    <div class="mt-2 rounded-lg border px-3 py-2
+                                                        {{ $appt->isFailed() ? 'border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10' : 'border-surface-dim bg-surface-container dark:bg-gray-700/30' }}">
+                                                        <p class="text-[11px] font-bold mb-0.5 flex items-center gap-1.5
+                                                            {{ $appt->isFailed() ? 'text-red-700 dark:text-red-400' : 'text-secondary' }}">
+                                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">{{ $appt->isFailed() ? 'rate_review' : 'event_note' }}</span>
+                                                            {{ $appt->isFailed() ? __('safety_file.appointment_note_label') : __('safety_file.note_label') }}
+                                                        </p>
+                                                        <p class="text-xs whitespace-pre-line leading-relaxed {{ $appt->isFailed() ? 'text-red-800 dark:text-red-200' : 'text-secondary' }}">{{ $appt->note }}</p>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- ══════ TIMELINE — Historique & Journal d'audit ══════ --}}
+                        @if ($dossier->events->isNotEmpty())
+                            <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print"
+                                 x-data="{ open: false }">
+                                <button type="button" @click="open = !open"
+                                        class="w-full flex flex-wrap items-center justify-between gap-3 p-5 md:px-6 pb-4 border-b border-surface-dim hover:bg-surface-container dark:hover:bg-gray-700/40 transition-colors text-start">
+                                    <div>
+                                        <h3 class="text-headline-sm font-headline-sm text-on-surface flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-primary text-2xl" aria-hidden="true">history</span>
+                                            {{ __('safety_file.timeline_title') }}
+                                        </h3>
+                                        <p class="text-xs text-secondary mt-0.5">{{ __('safety_file.timeline_subtitle') }}</p>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-[11px] text-secondary font-semibold flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">receipt_long</span>
+                                            {{ __('safety_file.events_count', ['n' => $dossier->events->count()]) }}
+                                        </span>
+                                        <svg class="w-4 h-4 text-secondary transition-transform shrink-0" :class="open ? 'rotate-180' : ''"
+                                             fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </div>
+                                </button>
+
+                                <div x-show="open" x-cloak class="p-5 md:p-6 pt-5">
+                                    {{-- Chronologie linéaire haute densité --}}
+                                    <div class="relative ps-6 sm:ps-8 space-y-6 before:absolute before:start-3 sm:before:start-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-surface-dim">
+                                        @foreach ($dossier->events->reverse()->values() as $event)
+                                            @php [$dot, $icon, $chip, $chipCls] = $eventChip($event->type); @endphp
+                                            <div class="relative">
+                                                {{-- Pastille --}}
+                                                <div class="absolute -start-6 sm:-start-8 top-0 w-6 sm:w-8 flex items-center justify-center">
+                                                    <div class="w-5 h-5 rounded-full {{ $dot }} flex items-center justify-center ring-4 ring-surface-container-lowest shadow-xs">
+                                                        <span class="material-symbols-outlined text-xs" aria-hidden="true">{{ $icon }}</span>
+                                                    </div>
+                                                </div>
+                                                {{-- Carte de contenu --}}
+                                                <div class="bg-surface-container-low/60 border border-surface-dim rounded-lg p-4 transition-all hover:border-primary/40">
+                                                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="text-xs font-bold {{ $chipCls }} px-2 py-0.5 rounded uppercase">{{ $chip }}</span>
+                                                            <span class="text-xs font-semibold text-on-surface">{{ in_array($event->type, ['submitted', 'resubmitted', 'delivery_chosen']) ? __('safety_file.timeline_actor_you') : __('safety_file.timeline_actor_admin') }}</span>
+                                                        </div>
+                                                        <time class="text-xs font-mono font-medium text-secondary" dir="ltr">{{ $event->created_at->format('d/m/Y H:i') }}</time>
+                                                    </div>
+                                                    <h5 class="text-xs font-bold text-on-surface mb-1">
+                                                        {{ __('safety_file.timeline_' . $event->type) }}
+                                                    </h5>
+                                                    @if (in_array($event->type, ['appointment_scheduled', 'appointment_passed', 'appointment_failed', 'appointment_deleted', 'appointment_cancelled']) && is_array($event->data) && ! empty($event->data['visit_date']))
+                                                        <p class="text-xs inline-flex items-center gap-1 rounded bg-surface-dim px-2 py-0.5 font-semibold text-on-surface mb-1.5" dir="ltr">
+                                                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">event</span>
+                                                            {{ \Illuminate\Support\Carbon::parse($event->data['visit_date'])->format('d/m/Y') }} @if (! empty($event->data['visit_time'])) • {{ substr((string) $event->data['visit_time'], 0, 5) }} @endif
+                                                        </p>
+                                                    @endif
+                                                    @if (in_array($event->type, ['certificate_issued', 'certificate_collected', 'certificate_deleted']) && is_array($event->data) && ! empty($event->data['reference']))
+                                                        <p class="text-xs inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 font-mono font-bold text-amber-900 mb-1.5" dir="ltr">
+                                                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">workspace_premium</span>
+                                                            {{ $event->data['reference'] }}
+                                                        </p>
+                                                    @endif
+                                                    @if (in_array($event->type, ['certificate_post_sent', 'certificate_post_delivered']) && is_array($event->data) && ! empty($event->data['tracking']))
+                                                        <p class="text-xs inline-flex items-center gap-1 rounded bg-blue-100 px-2 py-0.5 font-mono font-bold text-blue-900 mb-1.5" dir="ltr">
+                                                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">local_shipping</span>
+                                                            {{ __('safety_file.timeline_tracking_short') }} {{ $event->data['tracking'] }}
+                                                        </p>
+                                                    @endif
+                                                    @if ($event->type === 'delivery_chosen' && is_array($event->data) && ! empty($event->data['method']))
+                                                        <p class="text-xs inline-flex items-center gap-1 rounded bg-indigo-100 px-2 py-0.5 font-bold text-indigo-800 mb-1.5">
+                                                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">local_shipping</span>
+                                                            {{ __('safety_file.timeline_delivery_method') }} : {{ __('safety_file.delivery_method_' . $event->data['method']) }}
+                                                        </p>
+                                                    @endif
+                                                    @if ($event->note)
+                                                        <p class="text-body-sm font-body-sm text-secondary">
+                                                            <span class="font-bold text-on-surface">{{ __('safety_file.timeline_note_label') }}</span>
+                                                            {{ $event->note }}
+                                                        </p>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>{{-- /x-show --}}
+                            </div>
+                        @endif
+
+                        {{-- ══════ HISTORIQUE DES CORRECTIONS — même largeur que la timeline ══════ --}}
+                        @if (!empty($allCorrectionRounds))
+                            <div class="bg-surface-container-lowest border border-amber-200 dark:border-amber-700/40 rounded-lg shadow-sm overflow-hidden no-print"
+                                 x-data="{ open: false }">
+                                <button type="button" @click="open = !open"
+                                        class="w-full flex items-center gap-2 p-5 md:px-6 border-b border-amber-100 dark:border-amber-800/30 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-colors text-start">
+                                    <span class="w-8 h-8 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-base" aria-hidden="true">manage_history</span>
+                                    </span>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                                            {{ __('safety_file.correction_history_title') }}
+                                        </h3>
+                                        <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+                                            {{ count($allCorrectionRounds) }} {{ count($allCorrectionRounds) === 1 ? __('safety_file.correction_history_round_singular') : __('safety_file.correction_history_round_plural') }}
+                                        </p>
+                                    </div>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 me-1" dir="ltr">{{ count($allCorrectionRounds) }}</span>
+                                    <svg class="w-4 h-4 text-amber-700 dark:text-amber-400 transition-transform shrink-0" :class="open ? 'rotate-180' : ''"
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                                <div x-show="open" x-cloak class="p-5 md:p-6">
+                                    @include('safety-file.partials.correction-history', [
+                                        'allCorrectionRounds' => $allCorrectionRounds,
+                                        'archivedDocuments'   => $allArchivedDocuments,
+                                        'documentTypes'       => $documentTypes,
+                                    ])
+                                </div>
+                            </div>
+                        @endif
+
+                    </div>
+
+                    {{-- ══════ COLONNE DROITE (4 colonnes) ══════ --}}
+                    <div class="lg:col-span-4 space-y-6">
+
+                        {{-- ENCADRÉ 1 : Pièces justificatives versées --}}
+                        <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden"
+                             x-data="{ open: false }">
+                            {{-- Clickable header --}}
+                            <button type="button" @click="open = !open"
+                                    class="w-full flex items-center gap-2 p-5 hover:bg-surface-container dark:hover:bg-gray-700/40 transition-colors text-start border-b border-surface-dim">
+                                <span class="w-8 h-8 rounded bg-primary-fixed/50 text-primary flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-base" aria-hidden="true">attach_file</span>
+                                </span>
+                                <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">
+                                    {{ __('safety_file.pieces_title') }}
+                                </h3>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap {{ $isDocComplete ? 'text-amber-900 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300' : 'text-secondary bg-surface-dim' }}" dir="ltr">
+                                    {{ $uploadedTypes }}/{{ $documentTypes->count() }}
+                                </span>
+                                <svg class="w-4 h-4 text-secondary transition-transform shrink-0 ms-1" :class="open ? 'rotate-180' : ''"
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+
+                            <div x-show="open" x-cloak class="p-5">
+                                {{-- Barre de complétude --}}
+                                <div class="h-2 bg-surface-dim/50 rounded-full overflow-hidden mb-1" role="progressbar" aria-valuenow="{{ $docPct }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="h-full rounded-full transition-all duration-500 {{ $isDocComplete ? 'bg-amber-500' : 'bg-primary' }}" style="width: {{ $docPct }}%"></div>
+                                </div>
+                                <p class="text-[10px] font-semibold mb-4 {{ $isDocComplete ? 'text-amber-800 dark:text-amber-400' : 'text-secondary' }}">
+                                    {{ $isDocComplete ? __('safety_file.docs_complete') : __('safety_file.docs_incomplete', ['done' => $uploadedTypes, 'total' => $documentTypes->count()]) }}
+                                </p>
+
+                                <div class="space-y-2.5">
+                                    @forelse ($documentTypes as $docType)
+                                        @php $files = $documents->get($docType->id, collect()); @endphp
+                                        @forelse ($files as $doc)
+                                            <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5 group hover:border-primary/40 transition-colors">
+                                                <div class="flex items-start gap-2.5 min-w-0">
+                                                    <span class="material-symbols-outlined text-red-600 text-lg mt-0.5 shrink-0" aria-hidden="true">{{ str_contains((string) $doc->mime_type, 'pdf') ? 'picture_as_pdf' : 'description' }}</span>
+                                                    <div class="min-w-0">
+                                                        <h4 class="text-xs font-bold text-on-surface leading-snug">{{ $docType->name }}</h4>
+                                                        <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap" dir="ltr">
+                                                            <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
+                                                            <span class="text-surface-dim">•</span>
+                                                            <span>{{ $doc->created_at->format('d/m/Y') }}</span>
+                                                            @if ($doc->original_name)
+                                                                <span class="truncate max-w-36 text-secondary/80" title="{{ $doc->original_name }}">— {{ $doc->original_name }}</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <a href="{{ route($rp . '.documents.download', [$dossier, $doc]) }}"
+                                                    class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors"
+                                                    title="{{ __('safety_file.download') }}">
+                                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
+                                                </a>
+                                            </div>
+                                        @empty
+                                            <div class="p-3 border border-dashed border-surface-dim rounded flex items-start justify-between gap-2.5 hover:border-outline/60 transition-colors">
+                                                <div class="flex items-start gap-2.5 min-w-0">
+                                                    <span class="w-7 h-7 rounded bg-surface-dim/40 text-outline flex items-center justify-center shrink-0" aria-hidden="true">
+                                                        <span class="material-symbols-outlined text-sm">{{ $docType->is_conditional ? 'help_outline' : 'error_outline' }}</span>
+                                                    </span>
+                                                    <div class="min-w-0">
+                                                        <h4 class="text-xs font-bold {{ $docType->is_conditional ? 'text-secondary' : 'text-on-surface font-semibold' }}">{{ $docType->name }}</h4>
+                                                        <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap">
+                                                            @if ($docType->is_conditional)
+                                                                <span class="font-semibold text-amber-900 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/40 px-1.5 rounded">{{ __('safety_file.conditional') }}</span>
+                                                            @endif
+                                                            <span>{{ __('safety_file.not_uploaded') }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforelse
+                                    @empty
+                                        <div class="p-4 text-center">
+                                            <span class="material-symbols-outlined text-2xl text-outline" aria-hidden="true">folder_off</span>
+                                            <p class="text-xs text-secondary mt-1">—</p>
+                                        </div>
+                                    @endforelse
+
+                                    {{-- Fichiers transmis hors checklist --}}
+                                    @php $orphanDocs = $documents->filter(fn ($group, $typeId) => ! $documentTypes->contains('id', $typeId))->flatten(); @endphp
+                                    @if ($orphanDocs->isNotEmpty())
+                                        <div class="pt-2 mt-1 border-t border-surface-dim/60">
+                                            <p class="text-[11px] font-bold text-secondary flex items-center gap-1.5 mb-2">
+                                                <span class="material-symbols-outlined text-sm" aria-hidden="true">attachment</span>
+                                                {{ __('safety_file.other_files') }} ({{ $orphanDocs->count() }})
+                                            </p>
+                                            <div class="space-y-2.5">
+                                                @foreach ($orphanDocs as $doc)
+                                                    <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5 group hover:border-primary/40 transition-colors">
+                                                        <div class="flex items-start gap-2.5 min-w-0">
+                                                            <span class="material-symbols-outlined text-red-600 text-lg mt-0.5 shrink-0" aria-hidden="true">{{ str_contains((string) $doc->mime_type, 'pdf') ? 'picture_as_pdf' : 'description' }}</span>
+                                                            <div class="min-w-0">
+                                                                <h4 class="text-xs font-bold text-on-surface truncate" title="{{ $doc->original_name }}">{{ $doc->original_name ?? __('safety_file.download') }}</h4>
+                                                                <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5" dir="ltr">
+                                                                    <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
+                                                                    <span class="text-surface-dim">•</span>
+                                                                    <span>{{ $doc->created_at->format('d/m/Y') }}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <a href="{{ route($rp . '.documents.download', [$dossier, $doc]) }}"
+                                                            class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors"
+                                                            title="{{ __('safety_file.download') }}">
+                                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
+                                                        </a>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>{{-- /x-show --}}
+                        </div>
+
+                        {{-- Historique des versions archivées (corrections précédentes) --}}
+                        @if (! empty($archivedDocuments) && $archivedDocuments->flatten()->isNotEmpty())
+                            <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print" x-data="{ openArchive: false }">
+                                <div class="p-5">
+                                    <button type="button" @click="openArchive = !openArchive" class="w-full text-start">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="w-8 h-8 rounded bg-surface-dim/60 text-secondary flex items-center justify-center shrink-0">
+                                                <span class="material-symbols-outlined text-base" aria-hidden="true">inventory_2</span>
+                                            </span>
+                                            <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">
+                                                {{ __('safety_file.archive_title') }}
+                                            </h3>
+                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-dim text-secondary" dir="ltr">{{ $archivedDocuments->flatten()->count() }}</span>
+                                            <svg class="w-4 h-4 text-secondary transition-transform" :class="openArchive ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        </div>
+                                        <p class="text-[11px] text-secondary leading-relaxed">{{ __('safety_file.archive_desc') }}</p>
+                                    </button>
+
+                                    <div x-show="openArchive" x-cloak class="pt-4 space-y-2.5">
+                                        @foreach ($archivedDocuments as $docType => $docs)
+                                            @php $archiveType = $documentTypes ? $documentTypes->firstWhere('id', $docType) : null; @endphp
+                                            @foreach ($docs as $doc)
+                                                <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5">
+                                                    <div class="flex items-start gap-2.5 min-w-0">
+                                                        <span class="material-symbols-outlined text-outline text-lg mt-0.5 shrink-0" aria-hidden="true">inventory_2</span>
+                                                        <div class="min-w-0">
+                                                            <h4 class="text-xs font-bold text-secondary leading-snug">{{ $archiveType?->name ?? __('safety_file.other_files') }}</h4>
+                                                            <div class="flex items-center gap-2 text-[11px] text-secondary/80 mt-0.5 flex-wrap" dir="ltr">
+                                                                <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
+                                                                <span class="text-surface-dim">•</span>
+                                                                <span>{{ $doc->created_at->format('d/m/Y') }}</span>
+                                                                @if ($doc->original_name)
+                                                                    <span class="truncate max-w-36" title="{{ $doc->original_name }}">— {{ $doc->original_name }}</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <a href="{{ route($rp . '.documents.download', [$dossier, $doc]) }}"
+                                                        class="w-7 h-7 rounded bg-surface-container text-secondary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors"
+                                                        title="{{ __('safety_file.download') }}">
+                                                        <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
+                                                    </a>
+                                                </div>
+                                            @endforeach
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                    </div>
+                </div>
+            </div>
+            {{-- ═════════════════════════════════════════════════════════════════
+                FICHE IMPRIMABLE — feuille professionnelle du dossier
+                Masquée à l'écran, seule visible sous @media print.
+                Contenu : demandeur • bâtiment • références • documents (n°, nom,
+                taille, date, complétude X/Y). Sans statut ni historique.
+                ═════════════════════════════════════════════════════════════════ --}}
+            <div class="print-sheet" aria-hidden="true">
+                <div class="fiche">
+                    {{-- Bandeau institutionnel --}}
+                    <div class="fiche-band">
+                        <div style="display:flex; align-items:center; gap:14px; min-width:0;">
+                            <img src="/images/logo.png" alt="" class="fiche-band-logo">
+                            <div style="min-width:0;">
+                                <div class="fiche-band-org">{{ setting('app_name', __('app.name')) }}</div>
+                                <div class="fiche-band-sub">{{ __('safety_file.fiche_header_service', ['place' => $dossier->governorate?->name ?? '—']) }}</div>
+                            </div>
+                        </div>
+                        <div class="fiche-band-ref">
+                            <div class="fiche-band-ref-label">{{ __('safety_file.fiche_ref_label') }}</div>
+                            <div class="fiche-band-ref-value" dir="ltr">{{ $viewRef }}</div>
+                        </div>
+                    </div>
+
+                    {{-- Titre + date d'édition --}}
+                    <div class="fiche-title-row">
+                        <div class="fiche-title">{{ __('safety_file.fiche_title') }}</div>
+                        <div class="fiche-printed" dir="ltr">{{ __('safety_file.fiche_printed_on', ['date' => $printDate]) }}</div>
+                    </div>
+
+                    {{-- Bloc jumelé : demandeur • bâtiment --}}
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                        <section class="fiche-sec">
+                            <h2 class="fiche-h2">{{ __('safety_file.fiche_section_applicant') }}</h2>
+                            <table class="fiche-table fiche-kv">
+                                <tr><th>{{ __('safety_file.nom_prenom') }}</th><td style="font-weight:700;">{{ $dossier->nom_prenom }}</td></tr>
+                                <tr><th>{{ __('safety_file.cin') }}</th><td class="fiche-mono" dir="ltr">{{ $dossier->cin }}</td></tr>
+                                <tr><th>{{ __('safety_file.phone_applicant') }}</th><td class="fiche-mono" dir="ltr">{{ $dossier->phone ?? '—' }}</td></tr>
+                                <tr><th>{{ __('safety_file.email') }}</th><td dir="ltr">{{ $dossier->user?->email ?? '—' }}</td></tr>
+                            </table>
+                        </section>
+                        <section class="fiche-sec">
+                            <h2 class="fiche-h2">{{ __('safety_file.fiche_section_building') }}</h2>
+                            <table class="fiche-table fiche-kv">
+                                <tr><th>{{ __('safety_file.building_type') }}</th><td>{{ $dossier->buildingType?->name ?? '—' }}</td></tr>
+                                <tr><th>{{ __('safety_file.building_activity') }}</th><td>{{ $dossier->buildingActivity?->name ?? $dossier->activity_other ?? '—' }}</td></tr>
+                                <tr><th>{{ __('safety_file.delegation') }}</th><td>{{ $dossier->delegation?->name ?? '—' }}</td></tr>
+                                <tr><th>{{ __('safety_file.building_address') }}</th><td>{{ $dossier->building_address ?? '—' }}</td></tr>
+                                @if ($dossier->latitude && $dossier->longitude)
+                                <tr><th>{{ __('safety_file.map_selected_coords') }}</th><td class="fiche-mono" dir="ltr">{{ number_format((float)$dossier->latitude, 5) }}, {{ number_format((float)$dossier->longitude, 5) }}</td></tr>
+                                @endif
+                            </table>
+                        </section>
+                    </div>
+
+                    {{-- Références administratives --}}
+                    <section class="fiche-sec">
+                        <h2 class="fiche-h2">{{ __('safety_file.fiche_section_refs') }}</h2>
+                        <table class="fiche-table fiche-kv-4">
+                            <tr>
+                                <th>{{ __('safety_file.reference') }}</th>
+                                <td class="fiche-mono" dir="ltr">{{ $dossier->reference ?: '—' }}</td>
+                                <th>{{ __('safety_file.date_demande') }}</th>
+                                <td class="fiche-mono" dir="ltr">{{ $dossier->created_at->format('d/m/Y') }}</td>
+                            </tr>
+                            <tr>
+                                <th>{{ __('safety_file.code_structure') }}</th>
+                                <td>{{ $dossier->governorate?->name ?? '—' }}</td>
+                                <th></th>
+                                <td></td>
+                            </tr>
+                        </table>
+                    </section>
+
+                    {{-- Documents versés au dossier — avec numérotation et complétude --}}
+                    <section class="fiche-sec">
+                        <h2 class="fiche-h2">
+                            {{ __('safety_file.fiche_section_documents') }}
+                            <span dir="ltr" style="font-weight:700;">— {{ $uploadedTypes }}/{{ $documentTypes->count() }}</span>
+                        </h2>
+                        <table class="fiche-table fiche-table-dark">
+                            <thead>
+                                <tr>
+                                    <th style="width:6%;">{{ __('safety_file.fiche_col_no') }}</th>
+                                    <th>{{ __('safety_file.fiche_col_document') }}</th>
+                                    <th style="width:auto;">{{ __('safety_file.fiche_col_file') }}</th>
+                                    <th style="width:11%;">{{ __('safety_file.fiche_col_size') }}</th>
+                                    <th style="width:13%;">{{ __('safety_file.fiche_col_date') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php $docNo = 0; @endphp
+                                @forelse ($documentTypes as $docType)
+                                    @php $files = $documents->get($docType->id, collect()); @endphp
+                                    @forelse ($files as $doc)
+                                        @php $docNo++; @endphp
+                                        <tr>
+                                            <td class="fiche-mono" dir="ltr" style="text-align:center;">{{ str_pad($docNo, 2, '0', STR_PAD_LEFT) }}</td>
+                                            <td>{{ $docType->name }}</td>
+                                            <td dir="ltr">{{ $doc->original_name ?: '—' }}</td>
+                                            <td class="fiche-mono" dir="ltr">{{ $fmtSize($doc->size) }}</td>
+                                            <td class="fiche-mono" dir="ltr">{{ $doc->created_at->format('d/m/Y') }}</td>
+                                        </tr>
+                                    @empty
+                                        @php $docNo++; @endphp
+                                        <tr>
+                                            <td class="fiche-mono" dir="ltr" style="text-align:center;">{{ str_pad($docNo, 2, '0', STR_PAD_LEFT) }}</td>
+                                            <td>
+                                                {{ $docType->name }}
+                                                @if ($docType->is_conditional)
+                                                    <span class="fiche-dim" style="font-size:9px;">({{ __('safety_file.conditional') }})</span>
+                                                @endif
+                                            </td>
+                                            <td class="fiche-missing">— {{ __('safety_file.fiche_missing_doc') }}</td>
+                                            <td class="fiche-dim">—</td>
+                                            <td class="fiche-dim">—</td>
+                                        </tr>
+                                    @endforelse
+                                @empty
+                                    <tr><td colspan="5" class="fiche-dim" style="text-align:center;">—</td></tr>
+                                @endforelse
+                                {{-- Fichiers hors checklist --}}
+                                @foreach ($documents->filter(fn ($group, $typeId) => ! $documentTypes->contains('id', $typeId))->flatten() as $doc)
+                                    @php $docNo++; @endphp
+                                    <tr>
+                                        <td class="fiche-mono" dir="ltr" style="text-align:center;">{{ str_pad($docNo, 2, '0', STR_PAD_LEFT) }}</td>
+                                        <td class="fiche-dim">{{ __('safety_file.other_files') }}</td>
+                                        <td dir="ltr">{{ $doc->original_name ?: '—' }}</td>
+                                        <td class="fiche-mono" dir="ltr">{{ $fmtSize($doc->size) }}</td>
+                                        <td class="fiche-mono" dir="ltr">{{ $doc->created_at->format('d/m/Y') }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5" class="fiche-tfoot">
+                                        {{ __('safety_file.fiche_docs_summary', ['done' => $uploadedTypes, 'total' => $documentTypes->count()]) }}
+                                        — {{ __('safety_file.fiche_total_files', ['n' => $uploads]) }}
+                                        • {{ __('safety_file.fiche_total_size', ['size' => $totalSize]) }}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </section>
+
+                    {{-- Certificat — le cas échéant (n° de document officiel) --}}
+                    @if ($dossier->certificate)
+                        <div class="fiche-cert fiche-sec">
+                            <div class="fiche-cert-title">{{ __('safety_file.fiche_section_certificate') }}</div>
+                            <table class="fiche-table" style="border:none;">
+                                <tr>
+                                    <td style="border:none; padding-inline-start:0;">
+                                        <strong>{{ __('safety_file.fiche_certificate_ref') }} :</strong>
+                                        <span class="fiche-mono" dir="ltr">{{ $dossier->certificate->reference }}</span>
+                                        @if ($dossier->certificate->issued_at)
+                                            — {{ __('safety_file.certificate_issued_on') }} {{ $dossier->certificate->issued_at->format('d/m/Y') }}
+                                        @endif
+                                        @if ($dossier->certificate->valid_until)
+                                            — {{ __('safety_file.certificate_valid_until') }} {{ $dossier->certificate->valid_until->format('d/m/Y') }}
+                                        @endif
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    @endif
+
+                    {{-- Signatures --}}
+                    <div class="fiche-sign-row fiche-sec">
+                        <div class="fiche-sign-col">
+                            <div class="fiche-sign-name">{{ __('safety_file.fiche_sign_applicant') }}</div>
+                            <div class="fiche-sign-line">{{ __('safety_file.fiche_sign_place', ['place' => $dossier->governorate?->name ?? '—']) }} — {{ __('safety_file.fiche_printed_on', ['date' => now()->format('d/m/Y')]) }}</div>
+                        </div>
+                        <div class="fiche-sign-col">
+                            <div class="fiche-sign-name">{{ __('safety_file.fiche_sign_service') }}</div>
+                            <div class="fiche-sign-line">{{ __('safety_file.fiche_sign_place', ['place' => $dossier->governorate?->name ?? '—']) }} — {{ __('safety_file.fiche_printed_on', ['date' => now()->format('d/m/Y')]) }}</div>
+                        </div>
+                    </div>
+
+                    {{-- Pied de fiche --}}
+                    <div class="fiche-foot">
+                        <span>{{ __('safety_file.fiche_footer_note') }}</span>
+                        <span dir="ltr">{{ url()->current() }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</x-app-layout>

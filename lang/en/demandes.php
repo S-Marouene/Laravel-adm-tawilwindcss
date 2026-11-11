@@ -4,6 +4,9 @@ return [
     'title'    => 'My requests',
     'subtitle' => 'All of your requests submitted to the Civil Protection, gathered in one place.',
 
+    'title_safety_public'   => 'Safety file - Public buildings #:ref',
+    'title_safety_hazardous'=> 'Safety file - Hazardous establishments #:ref',
+    'filter_safety'         => 'Safety file dossiers',
     'title_prevention' => 'Prevention dossier #:ref',
     'title_rescue'     => 'Rescue certificate #:ref',
     'title_presence'   => 'Presence request #:ref',

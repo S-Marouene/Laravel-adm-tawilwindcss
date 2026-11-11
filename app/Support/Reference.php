@@ -20,6 +20,10 @@ class Reference
         'presence'   => 'PRS', // Présence préventive
         'rescue'     => 'SEC', // Certificat de secours et sauvetage
         'works'      => 'TRV', // Notification de travaux
+
+        // Dossiers de sécurité (services jumeaux, séquences indépendantes) :
+        'safety-file-habitation' => 'DSH', // Bâtiments d'habitation / accueil du public
+        'safety-file-hazardous'  => 'DSR', // Établissements dangereux
     ];
 
     public static function prefix(string $service): string

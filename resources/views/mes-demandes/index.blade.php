@@ -5,7 +5,7 @@
          ================================================================ --}}
     @php
         // Normalisation sérialisable pour le filtre Alpine
-        $iconMap  = ['prevention' => 'fire_extinguisher', 'presence' => 'event_available', 'rescue' => 'ecg_heart', 'works' => 'construction'];
+        $iconMap  = ['prevention' => 'fire_extinguisher', 'safety' => 'apartment', 'presence' => 'event_available', 'rescue' => 'ecg_heart', 'works' => 'construction'];
         $badgeMap = [
             'draft'              => ['progress',  'text-red-700 bg-red-50 border-red-200'],
             'needs_correction'   => ['action',    'text-error bg-[#FFE8E4] border-error/30'],
@@ -153,6 +153,7 @@
                             <select x-model="kind" class="w-full sm:w-auto text-body-sm border border-surface-dim rounded-md py-2 px-3 bg-surface-container-lowest text-on-surface focus:outline-none focus:border-primary-container">
                                 <option value="all">{{ app()->getLocale() === 'ar' ? 'كل الطلبات' : 'Toutes les démarches' }}</option>
                                 <option value="prevention">{{ __('services.prevention_certificate') }}</option>
+                                <option value="safety">{{ __('demandes.filter_safety') }}</option>
                                 <option value="presence">{{ __('services.preventive_presence') }}</option>
                                 <option value="rescue">{{ __('services.rescue_certificate') }}</option>
                                 <option value="works">{{ __('services.works_notification') }}</option>

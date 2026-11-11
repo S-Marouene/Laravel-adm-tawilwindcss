@@ -6,6 +6,7 @@ use App\Models\PreventionDossier;
 use App\Models\PreventivePresenceRequest;
 use App\Models\RescueCertificate;
 use App\Models\BuildingWorksDeclaration;
+use App\Models\SafetyFileDossier;
 use Illuminate\Http\Request;
 
 class MesDemandesController extends Controller
@@ -73,6 +74,64 @@ class MesDemandesController extends Controller
                     status:    'draft',
                     createdAt: $dossier->created_at,
                     destroyUrl: route('prevention-requests.destroy', $dossier) . '?redirect=/mes-demandes',
+                ));
+            });
+
+        // ── Safety file dossiers (twin services: habitation / hazardous) ──
+        SafetyFileDossier::where('user_id', $user->id)
+            ->whereNotIn('status', ['draft'])
+            ->with(['governorate', 'delegation', 'buildingType', 'buildingActivity', 'appointments'])
+            ->withCount('documents')
+            ->latest()
+            ->get()
+            ->each(function ($dossier) use ($items) {
+                $pendingAppt = $dossier->appointments->first(fn ($a) => $a->isPending());
+                $rdv = $pendingAppt ? [
+                    'date' => $pendingAppt->visit_date->format(app()->getLocale() === 'ar' ? 'Y/m/d' : 'd/m/Y'),
+                    'time' => substr($pendingAppt->visit_time, 0, 5),
+                ] : null;
+
+                $titleKey = $dossier->isHabitation() ? 'title_safety_public' : 'title_safety_hazardous';
+
+                $items->push($this->makeItem(
+                    kind:  'safety',
+                    lang:  'safety_file',
+                    label: __($dossier->isHabitation() ? 'services.safety_file_public' : 'services.safety_file_hazardous'),
+                    url:   route($dossier->isHazardous() ? 'safety-file-hazardous.show' : 'safety-file-public.show', $dossier),
+                    title: __('demandes.' . $titleKey, ['ref' => $this->requestReference($dossier, $dossier->service)]),
+                    meta: [],
+                    details: $this->safetyDetails($dossier),
+                    status:    $dossier->status,
+                    createdAt: $dossier->created_at,
+                    rdv: $rdv,
+                ));
+            });
+
+        // ── Safety file dossiers — drafts (incomplete) ──
+        SafetyFileDossier::where('user_id', $user->id)
+            ->where('status', 'draft')
+            ->with(['governorate', 'delegation', 'buildingType', 'buildingActivity'])
+            ->withCount('documents')
+            ->latest()
+            ->get()
+            ->each(function ($dossier) use ($items) {
+                $resumeUrl = $dossier->current_step >= 2
+                    ? route($dossier->isHazardous() ? 'safety-file-hazardous.step3.show' : 'safety-file-public.step3.show', $dossier)
+                    : route($dossier->isHazardous() ? 'safety-file-hazardous.step2.show' : 'safety-file-public.step2.show', $dossier);
+
+                $titleKey = $dossier->isHabitation() ? 'title_safety_public' : 'title_safety_hazardous';
+
+                $items->push($this->makeItem(
+                    kind:  'safety',
+                    lang:  'safety_file',
+                    label: __($dossier->isHabitation() ? 'services.safety_file_public' : 'services.safety_file_hazardous'),
+                    url:   $resumeUrl,
+                    title: __('demandes.' . $titleKey, ['ref' => $this->requestReference($dossier, $dossier->service)]),
+                    meta: [],
+                    details: $this->safetyDetails($dossier),
+                    status:    'draft',
+                    createdAt: $dossier->created_at,
+                    destroyUrl: route($dossier->isHazardous() ? 'safety-file-hazardous.destroy' : 'safety-file-public.destroy', $dossier) . '?redirect=/mes-demandes',
                 ));
             });
 
@@ -302,6 +361,39 @@ class MesDemandesController extends Controller
 
         return array_values(array_filter([
             $this->referenceDetailText($dossier, 'prevention', $dossier->num_demande),
+            $dossier->buildingType
+                ? ['icon' => 'apartment', 'text' => trim(__('demandes.building_type') . ' : ' . $dossier->buildingType->name
+                    . ($dossier->buildingActivity ? ' · ' . $dossier->buildingActivity->name : ''))]
+                : null,
+            $dossier->building_address
+                ? ['icon' => 'location_on', 'text' => $dossier->building_address]
+                : null,
+            $this->place($dossier)
+                ? ['icon' => 'map', 'text' => $this->place($dossier)]
+                : null,
+            $identityParts
+                ? ['icon' => 'badge', 'text' => implode(' · ', $identityParts)]
+                : null,
+            $dossier->phone
+                ? ['icon' => 'call', 'text' => $dossier->phone]
+                : null,
+            ['icon' => 'description', 'text' => __('demandes.documents_count', ['n' => $dossier->documents_count ?? 0])],
+        ]));
+    }
+
+    /**
+     * Détails riches d'un dossier de sécurité (services jumeaux « dossier de
+     * sécurité »), affichés dans le panneau dépliable de la fiche « Mes demandes ».
+     */
+    private function safetyDetails(SafetyFileDossier $dossier): array
+    {
+        $identityParts = array_filter([
+            $dossier->nom_prenom,
+            $dossier->cin ? __('demandes.cin', ['cin' => $dossier->cin]) : null,
+        ]);
+
+        return array_values(array_filter([
+            $this->referenceDetailText($dossier, $dossier->service),
             $dossier->buildingType
                 ? ['icon' => 'apartment', 'text' => trim(__('demandes.building_type') . ' : ' . $dossier->buildingType->name
                     . ($dossier->buildingActivity ? ' · ' . $dossier->buildingActivity->name : ''))]

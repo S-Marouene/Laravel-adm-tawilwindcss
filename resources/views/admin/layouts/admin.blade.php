@@ -208,6 +208,30 @@
                     @endif
                     @endcan
 
+                    {{-- Safety File — Habitation (public / residential high-rise buildings) --}}
+                    @can('view safety-file-dossiers')
+                    @if(auth()->user()->hasService(App\Models\Service::SERVICE_SAFETY_FILE_HABITATION))
+                    <a href="{{ route('admin.safety-file-dossiers.index', ['service' => App\Models\Service::SERVICE_SAFETY_FILE_HABITATION]) }}" data-tooltip="{{ __('services.safety_file_public') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.safety-file-dossiers.*') && request('service') === App\Models\Service::SERVICE_SAFETY_FILE_HABITATION ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V7a2 2 0 00-2-2H5a2 2 0 00-2 2v14m9-14v14m-9-5h18M3 7l5-4h13a1 1 0 011 1v3"/>
+                        </svg>
+                        <span x-show="!collapsed" class="truncate">{{ __('services.safety_file_public') }}</span>
+                    </a>
+                    @endif
+                    @endcan
+
+                    {{-- Safety File — Hazardous (dangerous / unhealthy / nuisance establishments) --}}
+                    @can('view safety-file-dossiers')
+                    @if(auth()->user()->hasService(App\Models\Service::SERVICE_SAFETY_FILE_HAZARDOUS))
+                    <a href="{{ route('admin.safety-file-dossiers.index', ['service' => App\Models\Service::SERVICE_SAFETY_FILE_HAZARDOUS]) }}" data-tooltip="{{ __('services.safety_file_hazardous') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.safety-file-dossiers.*') && request('service') === App\Models\Service::SERVICE_SAFETY_FILE_HAZARDOUS ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <span x-show="!collapsed" class="truncate">{{ __('services.safety_file_hazardous') }}</span>
+                    </a>
+                    @endif
+                    @endcan
+
                     {{-- Rescue & Relief Certificates — permission + service assignment --}}
                     @can('view rescue-certificates')
                     @if(auth()->user()->hasService(App\Models\Service::SERVICE_RESCUE_CERTIFICATE))
