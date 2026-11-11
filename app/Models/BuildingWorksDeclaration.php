@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Models;
 
@@ -11,6 +11,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class BuildingWorksDeclaration extends Model
 {
     use HasTranslations;
+
+    /**
+     * The underlying DB table keeps its original name so no migration is needed.
+     * The class was renamed from WorksNotification to BuildingWorksDeclaration.
+     */
+    protected $table = 'works_notifications';
 
     protected $fillable = [
         'user_id', 'current_step', 'status', 'reference',
@@ -86,13 +92,13 @@ class BuildingWorksDeclaration extends Model
 
     public function documents(): HasMany
     {
-        return $this->hasMany(BuildingBuildingBuildingBuildingWorksDocument::class, 'works_notification_id');
+        return $this->hasMany(BuildingWorksDocument::class, 'works_notification_id');
     }
 
     /** Full audit log — chronological history of every action on this notification */
     public function events(): HasMany
     {
-        return $this->hasMany(BuildingBuildingBuildingBuildingWorksEvent::class, 'works_notification_id')
+        return $this->hasMany(BuildingWorksEvent::class, 'works_notification_id')
             ->orderBy('created_at')
             ->orderBy('id');
     }
@@ -102,7 +108,7 @@ class BuildingWorksDeclaration extends Model
      * The actor is the currently authenticated user (admin or applicant).
      * The note (when given) may be a legacy string or a bilingual {fr, ar} array.
      */
-    public function logEvent(string $type, string|array|null $note = null, array $data = []): BuildingBuildingBuildingBuildingWorksEvent
+    public function logEvent(string $type, string|array|null $note = null, array $data = []): BuildingWorksEvent
     {
         return $this->events()->create([
             'user_id' => auth()->id(),
@@ -169,7 +175,7 @@ class BuildingWorksDeclaration extends Model
     /** Event types that hold a full snapshot of a previous (old) version */
     public const SNAPSHOT_EVENT_TYPES = ['correction_requested', 'history_snapshot'];
 
-    public function lastCorrectionEvent(): ?BuildingBuildingBuildingBuildingWorksEvent
+    public function lastCorrectionEvent(): ?BuildingWorksEvent
     {
         return $this->events->last(
             fn ($e) => in_array($e->type, self::SNAPSHOT_EVENT_TYPES)

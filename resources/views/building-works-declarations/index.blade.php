@@ -1,16 +1,16 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between gap-4">
             <div>
-                <h2 class="text-xl font-bold text-on-surface dark:text-gray-100">{{ __('works_notification.index_title') }}</h2>
-                <p class="mt-0.5 text-sm text-secondary dark:text-gray-400">{{ __('works_notification.index_subtitle') }}</p>
+                <h2 class="text-xl font-bold text-on-surface dark:text-gray-100">{{ __('building-works-declarations.index_title') }}</h2>
+                <p class="mt-0.5 text-sm text-secondary dark:text-gray-400">{{ __('building-works-declarations.index_subtitle') }}</p>
             </div>
             <a href="{{ route('building-works-declarations.create') }}"
                class="ui-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
-                <span>{{ __('works_notification.new_request') }}</span>
+                <span>{{ __('building-works-declarations.new_request') }}</span>
             </a>
         </div>
     </x-slot>
@@ -21,7 +21,7 @@
             {{-- Validation errors --}}
             @if ($errors->any())
                 <div class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
-                    <p class="font-semibold">{{ __('works_notification.create_error_title') }}</p>
+                    <p class="font-semibold">{{ __('building-works-declarations.create_error_title') }}</p>
                     <ul class="mt-2 list-disc space-y-1 ps-5">
                         @foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach
                     </ul>
@@ -32,12 +32,12 @@
             @if ($submitted->isNotEmpty())
                 <section class="mb-8">
                     <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-secondary dark:text-gray-400">
-                        {{ __('works_notification.submitted_title') }}
+                        {{ __('building-works-declarations.submitted_title') }}
                     </h3>
                     <div class="space-y-4">
-                        @foreach ($submitted as $BuildingWorksDeclaration)
-                            @php $status = $BuildingWorksDeclaration->status; @endphp
-                            <a href="{{ route('building-works-declarations.show', $BuildingWorksDeclaration) }}"
+                        @foreach ($submitted as $buildingWorksDeclaration)
+                            @php $status = $buildingWorksDeclaration->status; @endphp
+                            <a href="{{ route('building-works-declarations.show', $buildingWorksDeclaration) }}"
                                class="block overflow-hidden rounded-2xl border transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gov-500/40
                                 {{ $status === 'needs_correction'   ? 'border-red-200 dark:border-red-800/50'       : '' }}
                                 {{ $status === 'under_consultation' ? 'border-purple-200 dark:border-purple-800/40' : '' }}
@@ -52,7 +52,7 @@
                                         <svg class="h-5 w-5 flex-none text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                                         </svg>
-                                        <p class="text-sm text-red-800 dark:text-red-200 font-semibold">{{ __('works_notification.needs_correction_banner') }}</p>
+                                        <p class="text-sm text-red-800 dark:text-red-200 font-semibold">{{ __('building-works-declarations.needs_correction_banner') }}</p>
                                     </div>
                                 @elseif ($status === 'under_consultation')
                                     <div class="flex items-start gap-3 border-b border-purple-100 bg-purple-50 px-5 py-3 dark:border-purple-800/30 dark:bg-purple-900/20">
@@ -60,8 +60,8 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                                         </svg>
                                         <p class="text-sm text-purple-800 dark:text-purple-200">
-                                            <span class="font-semibold">{{ __('works_notification.status_under_consultation') }} — </span>
-                                            {{ __('works_notification.under_consultation_banner') }}
+                                            <span class="font-semibold">{{ __('building-works-declarations.status_under_consultation') }} — </span>
+                                            {{ __('building-works-declarations.under_consultation_banner') }}
                                         </p>
                                     </div>
                                 @elseif ($status === 'approved')
@@ -69,14 +69,14 @@
                                         <svg class="h-5 w-5 flex-none text-emerald-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        <p class="text-sm text-emerald-800 dark:text-emerald-200 font-semibold">{{ __('works_notification.approved_banner') }}</p>
+                                        <p class="text-sm text-emerald-800 dark:text-emerald-200 font-semibold">{{ __('building-works-declarations.approved_banner') }}</p>
                                     </div>
                                 @elseif ($status === 'cancelled')
                                     <div class="flex items-start gap-3 border-b border-surface-dim bg-surface-container px-5 py-3 dark:border-gray-700 dark:bg-gray-700/30">
                                         <svg class="h-5 w-5 flex-none text-outline mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        <p class="text-sm text-secondary dark:text-gray-300 font-semibold">{{ __('works_notification.cancelled_banner') }}</p>
+                                        <p class="text-sm text-secondary dark:text-gray-300 font-semibold">{{ __('building-works-declarations.cancelled_banner') }}</p>
                                     </div>
                                 @else
                                     <div class="flex items-start gap-3 border-b border-blue-100 bg-blue-50 px-5 py-3 dark:border-blue-800/30 dark:bg-blue-900/20">
@@ -84,8 +84,8 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                         </svg>
                                         <p class="text-sm text-blue-800 dark:text-blue-200">
-                                            <span class="font-semibold">{{ __('works_notification.status_under_review') }} — </span>
-                                            {{ __('works_notification.under_review_banner') }}
+                                            <span class="font-semibold">{{ __('building-works-declarations.status_under_review') }} — </span>
+                                            {{ __('building-works-declarations.under_review_banner') }}
                                         </p>
                                     </div>
                                 @endif
@@ -96,7 +96,7 @@
                                         <div class="min-w-0 flex-1">
                                             <div class="flex items-center gap-2 flex-wrap">
                                                 <p class="text-sm font-semibold text-on-surface dark:text-gray-100">
-                                                    {{ $BuildingWorksDeclaration->owner_name ?: $BuildingWorksDeclaration->company_name }}
+                                                    {{ $buildingWorksDeclaration->owner_name ?: $buildingWorksDeclaration->company_name }}
                                                 </p>
                                                 @php
                                                     $badgeClass = match($status) {
@@ -116,39 +116,39 @@
                                                 @endphp
                                                 <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $badgeClass }}">
                                                     <span class="h-1.5 w-1.5 rounded-full {{ $dotClass }}"></span>
-                                                    {{ __('works_notification.status_' . str_replace('-', '_', $status)) }}
+                                                    {{ __('building-works-declarations.status_' . str_replace('-', '_', $status)) }}
                                                 </span>
-                                                @if ($BuildingWorksDeclaration->reference)
-                                                    <span class="font-mono text-[11px] font-bold text-secondary" dir="ltr">{{ $BuildingWorksDeclaration->reference }}</span>
+                                                @if ($buildingWorksDeclaration->reference)
+                                                    <span class="font-mono text-[11px] font-bold text-secondary" dir="ltr">{{ $buildingWorksDeclaration->reference }}</span>
                                                 @endif
                                             </div>
 
                                             {{-- Meta grid --}}
                                             <div class="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-secondary dark:text-gray-400 sm:grid-cols-3">
-                                                <span><span class="font-medium text-on-surface dark:text-gray-300">{{ __('works_notification.owner_cin') }}:</span> <span dir="ltr">{{ $BuildingWorksDeclaration->owner_cin }}</span></span>
-                                                @if ($BuildingWorksDeclaration->phone)
-                                                    <span><span class="font-medium text-on-surface dark:text-gray-300">{{ __('works_notification.phone') }}:</span> <span class="num-ltr" dir="ltr">{{ $BuildingWorksDeclaration->phone }}</span></span>
+                                                <span><span class="font-medium text-on-surface dark:text-gray-300">{{ __('building-works-declarations.owner_cin') }}:</span> <span dir="ltr">{{ $buildingWorksDeclaration->owner_cin }}</span></span>
+                                                @if ($buildingWorksDeclaration->phone)
+                                                    <span><span class="font-medium text-on-surface dark:text-gray-300">{{ __('building-works-declarations.phone') }}:</span> <span class="num-ltr" dir="ltr">{{ $buildingWorksDeclaration->phone }}</span></span>
                                                 @endif
-                                                @if ($BuildingWorksDeclaration->works_type)
-                                                    <span class="truncate"><span class="font-medium text-on-surface dark:text-gray-300">{{ __('works_notification.works_type') }}:</span> {{ $BuildingWorksDeclaration->works_type }}</span>
+                                                @if ($buildingWorksDeclaration->works_type)
+                                                    <span class="truncate"><span class="font-medium text-on-surface dark:text-gray-300">{{ __('building-works-declarations.works_type') }}:</span> {{ $buildingWorksDeclaration->works_type }}</span>
                                                 @endif
-                                                @if ($BuildingWorksDeclaration->works_start_date)
-                                                    <span dir="ltr">{{ $BuildingWorksDeclaration->works_start_date->format('d/m/Y') }}</span>
+                                                @if ($buildingWorksDeclaration->works_start_date)
+                                                    <span dir="ltr">{{ $buildingWorksDeclaration->works_start_date->format('d/m/Y') }}</span>
                                                 @endif
-                                                @if ($BuildingWorksDeclaration->governorate)
-                                                    <span>{{ $BuildingWorksDeclaration->governorate->name }}</span>
+                                                @if ($buildingWorksDeclaration->governorate)
+                                                    <span>{{ $buildingWorksDeclaration->governorate->name }}</span>
                                                 @endif
-                                                @if ($BuildingWorksDeclaration->delegation)
-                                                    <span>{{ $BuildingWorksDeclaration->delegation->name }}</span>
+                                                @if ($buildingWorksDeclaration->delegation)
+                                                    <span>{{ $buildingWorksDeclaration->delegation->name }}</span>
                                                 @endif
-                                                <span>{{ $BuildingWorksDeclaration->created_at->format('d/m/Y') }}</span>
+                                                <span>{{ $buildingWorksDeclaration->created_at->format('d/m/Y') }}</span>
                                             </div>
 
                                             {{-- Admin note (correction / cancelled) --}}
-                                            @if ($BuildingWorksDeclaration->admin_note && in_array($status, ['needs_correction', 'cancelled']))
+                                            @if ($buildingWorksDeclaration->admin_note && in_array($status, ['needs_correction', 'cancelled']))
                                                 <div class="mt-3 rounded-xl border {{ $status === 'needs_correction' ? 'border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/10' : 'border-surface-dim bg-surface-container dark:border-gray-600 dark:bg-gray-700/30' }} px-4 py-3">
-                                                    <p class="text-xs font-semibold {{ $status === 'needs_correction' ? 'text-red-700 dark:text-red-300' : 'text-secondary dark:text-gray-400' }} mb-1">{{ __('works_notification.admin_note_label') }}</p>
-                                                    <p class="text-sm {{ $status === 'needs_correction' ? 'text-red-800 dark:text-red-200' : 'text-on-surface dark:text-gray-300' }} whitespace-pre-line">{{ $BuildingWorksDeclaration->admin_note }}</p>
+                                                    <p class="text-xs font-semibold {{ $status === 'needs_correction' ? 'text-red-700 dark:text-red-300' : 'text-secondary dark:text-gray-400' }} mb-1">{{ __('building-works-declarations.admin_note_label') }}</p>
+                                                    <p class="text-sm {{ $status === 'needs_correction' ? 'text-red-800 dark:text-red-200' : 'text-on-surface dark:text-gray-300' }} whitespace-pre-line">{{ $buildingWorksDeclaration->admin_note }}</p>
                                                 </div>
                                             @endif
                                         </div>
@@ -156,14 +156,14 @@
                                         {{-- Fix & Resubmit button --}}
                                         @if ($status === 'needs_correction')
                                             <div class="relative z-10 flex-none w-full">
-                                                <form method="POST" action="{{ route('building-works-declarations.resubmit', $BuildingWorksDeclaration) }}">
+                                                <form method="POST" action="{{ route('building-works-declarations.resubmit', $buildingWorksDeclaration) }}">
                                                     @csrf
                                                     <button type="submit"
                                                         class="w-full flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/40">
                                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                         </svg>
-                                                        {{ __('works_notification.fix_and_resubmit') }}
+                                                        {{ __('building-works-declarations.fix_and_resubmit') }}
                                                     </button>
                                                 </form>
                                             </div>
@@ -172,13 +172,13 @@
 
                                     {{-- View details button --}}
                                     <div class="relative z-10 mt-4 flex items-center gap-2">
-                                        <a href="{{ route('building-works-declarations.show', $BuildingWorksDeclaration) }}"
+                                        <a href="{{ route('building-works-declarations.show', $buildingWorksDeclaration) }}"
                                             class="inline-flex items-center gap-2 rounded-lg border border-surface-dim dark:border-gray-600 bg-surface-container-lowest dark:bg-gray-800 px-4 py-2 text-sm font-semibold text-on-surface dark:text-gray-200 transition hover:bg-surface-container dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gov-500/40">
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                             </svg>
-                                            {{ __('works_notification.view_details') }}
+                                            {{ __('building-works-declarations.view_details') }}
                                         </a>
                                     </div>
 
@@ -187,9 +187,9 @@
                                         <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 dark:border-emerald-800/30 dark:bg-emerald-900/10">
                                             <p class="text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-1 flex items-center gap-1.5">
                                                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                                                {{ __('works_notification.approved_phone_notice') }}
+                                                {{ __('building-works-declarations.approved_phone_notice') }}
                                             </p>
-                                            <p class="text-xs text-emerald-700 dark:text-emerald-300">{{ __('works_notification.free_info') }}</p>
+                                            <p class="text-xs text-emerald-700 dark:text-emerald-300">{{ __('building-works-declarations.free_info') }}</p>
                                         </div>
                                     @endif
                                 </div>
@@ -206,7 +206,7 @@
                         <svg class="h-5 w-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                         </svg>
-                        <h3 class="text-sm font-semibold text-amber-800 dark:text-amber-300">{{ __('works_notification.drafts_title') }}</h3>
+                        <h3 class="text-sm font-semibold text-amber-800 dark:text-amber-300">{{ __('building-works-declarations.drafts_title') }}</h3>
                         <span class="ms-auto rounded-full bg-amber-200 px-2 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-800/40 dark:text-amber-300">{{ $drafts->count() }}</span>
                     </div>
                     <div class="divide-y divide-amber-100 dark:divide-amber-800/20">
@@ -214,7 +214,7 @@
                             <div class="flex items-center justify-between gap-4 px-6 py-4">
                                 <div class="min-w-0">
                                     <p class="text-sm font-semibold text-on-surface dark:text-gray-100 truncate">
-                                        {{ $draft->owner_name ?: ($draft->company_name ?: __('works_notification.card_title')) }}
+                                        {{ $draft->owner_name ?: ($draft->company_name ?: __('building-works-declarations.card_title')) }}
                                     </p>
                                     <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">
                                         <span dir="ltr">{{ $draft->owner_cin }}</span>
@@ -223,13 +223,13 @@
                                         @if($draft->delegation?->name) &bull; {{ $draft->delegation->name }} @endif
                                     </p>
                                     <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
-                                        {{ __('works_notification.draft_step', ['step' => $draft->current_step]) }} &bull; {{ $draft->created_at->diffForHumans() }}
+                                        {{ __('building-works-declarations.draft_step', ['step' => $draft->current_step]) }} &bull; {{ $draft->created_at->diffForHumans() }}
                                     </p>
                                 </div>
                                 <div class="flex items-center gap-2 flex-none">
                                     <a href="{{ route('building-works-declarations.step2.show', $draft) }}"
                                        class="inline-flex items-center gap-1 rounded-lg border border-gov-300 bg-gov-50 px-3 py-1.5 text-xs font-semibold text-gov-700 transition hover:bg-gov-100 dark:border-gov-700 dark:bg-gov-900/30 dark:text-gov-300">
-                                        {{ __('works_notification.continue') }} &rarr;
+                                        {{ __('building-works-declarations.continue') }} &rarr;
                                     </a>
                                     <form method="POST" action="{{ route('building-works-declarations.destroy', $draft) }}"
                                           data-confirm data-confirm-style="danger">
@@ -251,11 +251,11 @@
                 <div class="rounded-2xl border border-surface-dim bg-surface-container-lowest shadow-sm dark:border-gray-700 dark:bg-gray-800">
                     <div class="flex flex-col items-center justify-center px-6 py-16 text-center">
                         <span class="material-symbols-outlined text-5xl text-outline dark:text-gray-600 mb-4" aria-hidden="true">engineering</span>
-                        <p class="text-sm font-medium text-secondary dark:text-gray-400">{{ __('works_notification.no_requests') }}</p>
+                        <p class="text-sm font-medium text-secondary dark:text-gray-400">{{ __('building-works-declarations.no_requests') }}</p>
                         <a href="{{ route('building-works-declarations.create') }}"
                            class="mt-4 ui-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-sm">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            {{ __('works_notification.new_request') }}
+                            {{ __('building-works-declarations.new_request') }}
                         </a>
                     </div>
                 </div>

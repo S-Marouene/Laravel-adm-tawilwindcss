@@ -1,12 +1,14 @@
-﻿<?php
+<?php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BuildingBuildingBuildingBuildingWorksDocument extends Model
+class BuildingWorksDocument extends Model
 {
+    /** DB table kept at original name — class renamed from WorksDocument. */
+    protected $table = 'works_documents';
     protected $fillable = [
         'works_notification_id', 'document_type_id', 'file_path',
         'original_name', 'mime_type', 'size', 'status',

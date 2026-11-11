@@ -42,8 +42,8 @@ return [
 
     // Service 8
     'works_notification' => 'Notification de travaux ne nécessitant pas de permis de construire',
-    'works_notification.short' => 'Notification de travaux',
-    'works_notification.desc' => 'Notification de l\'achèvement de travaux de construction ne nécessitant pas de permis de construire',
+    'building_works_declaration.short' => 'Notification de travaux',
+    'building_works_declaration.desc' => 'Notification de l\'achèvement de travaux de construction ne nécessitant pas de permis de construire',
 
     // Service 9
     'rescue_certificate' => 'Certificat de secours et sauvetage',

@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     {{-- ================================================================
          PAGE D'ACCUEIL — Portail Citoyen ONPC (design/landing.html)
          Héros clair institutionnel + numéros d'urgence + 3 étapes
@@ -255,8 +255,8 @@
                             {{ __('services.free') }}
                         </span>
                     </div>
-                    <h3 class="text-headline-sm text-on-surface mb-1.5">{{ __('services.works_notification.short') }}</h3>
-                    <p class="text-body-sm text-secondary leading-relaxed flex-1">{{ __('services.works_notification.desc') }}</p>
+                    <h3 class="text-headline-sm text-on-surface mb-1.5">{{ __('services.building-works-declarations.short') }}</h3>
+                    <p class="text-body-sm text-secondary leading-relaxed flex-1">{{ __('services.building-works-declarations.desc') }}</p>
                     <span class="inline-flex items-center gap-1 mt-4 pt-3 border-t border-surface-dim text-body-sm font-bold text-primary group-hover:gap-2.5 transition-all">
                         {{ __('services.access_service') }}
                         <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
@@ -335,7 +335,7 @@
                     </span>
                     <div class="min-w-0">
                         <h3 class="text-body-md font-bold text-on-surface leading-snug mb-1">{{ __('services.works_notification') }}</h3>
-                        <p class="text-[13px] text-secondary leading-relaxed line-clamp-2">{{ __('services.works_notification.desc') }}</p>
+                        <p class="text-[13px] text-secondary leading-relaxed line-clamp-2">{{ __('services.building-works-declarations.desc') }}</p>
                     </div>
                 </div>
 

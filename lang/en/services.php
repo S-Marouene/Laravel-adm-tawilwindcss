@@ -42,8 +42,8 @@ return [
 
     // Service 8
     'works_notification' => 'Notification of Works Not Requiring a Building Permit',
-    'works_notification.short' => 'Works Notification',
-    'works_notification.desc' => 'Notification of completion of construction works that do not require a building permit',
+    'building_works_declaration.short' => 'Works Notification',
+    'building_works_declaration.desc' => 'Notification of completion of construction works that do not require a building permit',
 
     // Service 9
     'rescue_certificate' => 'Rescue & Salvage Certificate',

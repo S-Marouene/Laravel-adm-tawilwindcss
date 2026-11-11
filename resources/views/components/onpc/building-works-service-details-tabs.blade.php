@@ -1,15 +1,15 @@
-﻿{{-- ============================================================
+{{-- ============================================================
      CARTE À ONGLETS « Détails de la démarche » — Notification de travaux
      Onglet 1 : notification/brouillon en cours (reprise + suppression)
-     Onglets 2..6 : contenu réglementaire officiel (works_service_details.php)
+     Onglets 2..6 : contenu réglementaire officiel (building_works_service_details.php)
      Props : drafts (collection BuildingWorksDeclaration)
      ============================================================ --}}
 @php
-    $docs       = __('works_service_details.docs');
-    $legals     = __('works_service_details.legals');
-    $stepsData  = __('works_service_details.steps');
-    $entitiesRx = __('works_service_details.receiving_entities');
-    $entitiesTx = __('works_service_details.providing_entities');
+    $docs       = __('building_works_service_details.docs');
+    $legals     = __('building_works_service_details.legals');
+    $stepsData  = __('building_works_service_details.steps');
+    $entitiesRx = __('building_works_service_details.receiving_entities');
+    $entitiesTx = __('building_works_service_details.providing_entities');
 @endphp
 
 <div class="rounded-lg border border-surface-dim bg-surface-container-lowest shadow-sm overflow-hidden dark:border-gray-700 dark:bg-gray-800" data-svc-tabs>
@@ -23,30 +23,30 @@
             <span class="material-symbols-outlined filled text-xl text-primary" aria-hidden="true">engineering</span>
         </span>
         <div class="min-w-0">
-            <span class="text-label-caps text-primary uppercase tracking-wider block">{{ __('works_service_details.about_kicker') }}</span>
-            <h2 class="text-headline-sm text-on-surface">{{ __('works_service_details.about_title') }}</h2>
+            <span class="text-label-caps text-primary uppercase tracking-wider block">{{ __('building_works_service_details.about_kicker') }}</span>
+            <h2 class="text-headline-sm text-on-surface">{{ __('building_works_service_details.about_title') }}</h2>
         </div>
 
         @if (isset($drafts) && $drafts->isNotEmpty())
             <span class="ms-auto hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-200 text-[11px] font-bold text-amber-800 dark:bg-amber-800/40 dark:text-amber-300">
                 <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" aria-hidden="true"></span>
-                {{ $drafts->count() }} &bull; {{ __('works_notification.drafts_title') }}
+                {{ $drafts->count() }} &bull; {{ __('building-works-declarations.drafts_title') }}
             </span>
         @endif
     </div>
 
     {{-- ── Barre d'onglets ── --}}
     <div class="mt-3 border-b border-surface-dim dark:border-gray-700 px-2 sm:px-4">
-        <div role="tablist" aria-label="{{ __('works_service_details.about_title') }}"
+        <div role="tablist" aria-label="{{ __('building_works_service_details.about_title') }}"
              class="flex gap-1 overflow-x-auto -mb-px no-scrollbar">
 
             @foreach ([
-                'dossier'    => __('works_service_details.tab_current'),
-                'process'    => __('works_service_details.tab_process'),
-                'docs'       => __('works_service_details.tab_docs'),
-                'fees'       => __('works_service_details.tab_fees'),
-                'conditions' => __('works_service_details.tab_conditions'),
-                'more'       => __('works_service_details.tab_more'),
+                'dossier'    => __('building_works_service_details.tab_current'),
+                'process'    => __('building_works_service_details.tab_process'),
+                'docs'       => __('building_works_service_details.tab_docs'),
+                'fees'       => __('building_works_service_details.tab_fees'),
+                'conditions' => __('building_works_service_details.tab_conditions'),
+                'more'       => __('building_works_service_details.tab_more'),
             ] as $key => $label)
                 <button type="button" role="tab" id="wkTab-{{ $key }}"
                         data-tab="{{ $key }}"
@@ -69,13 +69,13 @@
     <div role="tabpanel" aria-labelledby="wkTab-dossier" id="wkPanel-dossier" tabindex="0"
          class="wk-panel p-4 sm:p-5 focus:outline-none">
         @if (isset($drafts) && $drafts->isNotEmpty())
-            <p class="text-body-sm text-secondary mb-3">{{ __('works_service_details.draft_saved_note') }}</p>
+            <p class="text-body-sm text-secondary mb-3">{{ __('building_works_service_details.draft_saved_note') }}</p>
             <div class="rounded border border-amber-200 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-900/10 divide-y divide-amber-100 dark:divide-amber-800/20">
                 @foreach ($drafts as $draft)
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5">
                         <div class="min-w-0">
                             <p class="text-body-sm font-bold text-on-surface dark:text-gray-100 truncate">
-                                {{ $draft->owner_name ?: ($draft->company_name ?: __('works_notification.card_title')) }}
+                                {{ $draft->owner_name ?: ($draft->company_name ?: __('building-works-declarations.card_title')) }}
                             </p>
                             <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">
                                 {{ $draft->created_at->diffForHumans() }}
@@ -90,14 +90,14 @@
                                 @method('DELETE')
                                 <button type="submit"
                                         class="inline-flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 cursor-pointer dark:border-red-800 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
-                                        title="{{ __('works_notification.cancel') }}">
+                                        title="{{ __('building-works-declarations.cancel') }}">
                                     <span class="material-symbols-outlined text-[15px]" aria-hidden="true">delete</span>
-                                    {{ __('works_notification.cancel') }}
+                                    {{ __('building-works-declarations.cancel') }}
                                 </button>
                             </form>
                             <a href="{{ route('building-works-declarations.step2.show', $draft) }}"
                                class="ui-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-body-sm cursor-pointer">
-                                {{ __('works_notification.continue') }}
+                                {{ __('building-works-declarations.continue') }}
                                 <svg class="h-3.5 w-3.5 {{ app()->getLocale() === 'ar' ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                 </svg>
@@ -110,19 +110,19 @@
                 <button type="button" data-start-new-works
                         class="inline-flex items-center justify-center gap-1.5 rounded border border-primary/30 bg-primary/5 px-4 py-2 text-body-sm font-semibold text-primary transition hover:bg-primary/10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
                     <span class="material-symbols-outlined text-[18px]" aria-hidden="true">note_add</span>
-                    {{ __('works_service_details.create_new_draft') }}
+                    {{ __('building_works_service_details.create_new_draft') }}
                 </button>
             </div>
         @else
             {{-- État vide : aucun brouillon — bouton rouge « créer un nouvel évaluation » --}}
-            <button type="button" data-start-new-works aria-label="{{ __('works_service_details.empty_draft_aria') }}"
+            <button type="button" data-start-new-works aria-label="{{ __('building_works_service_details.empty_draft_aria') }}"
                     class="group flex w-full items-start gap-4 rounded border border-red-300 bg-red-50 p-5 text-start transition hover:border-red-500 hover:bg-red-100 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-900/50 dark:bg-red-950/20 dark:hover:border-red-700 dark:hover:bg-red-950/40">
                 <span class="w-10 h-10 shrink-0 rounded flex items-center justify-center bg-red-100 transition dark:bg-red-900/30">
                     <span class="material-symbols-outlined filled text-xl text-red-600 transition group-hover:scale-110" aria-hidden="true">add</span>
                 </span>
                 <div class="min-w-0 flex-1">
-                    <p class="text-body-md font-bold text-red-700 transition dark:text-red-300">{{ __('works_service_details.empty_draft_title') }}</p>
-                    <p class="text-body-sm text-red-700/80 mt-1 leading-relaxed dark:text-red-200/80">{{ __('works_service_details.draft_saved_note') }}</p>
+                    <p class="text-body-md font-bold text-red-700 transition dark:text-red-300">{{ __('building_works_service_details.empty_draft_title') }}</p>
+                    <p class="text-body-sm text-red-700/80 mt-1 leading-relaxed dark:text-red-200/80">{{ __('building_works_service_details.draft_saved_note') }}</p>
                 </div>
                 <span class="material-symbols-outlined flex-none text-red-500 transition group-hover:translate-x-1 {{ app()->getLocale() === 'ar' ? 'rotate-180' : '' }}" aria-hidden="true">chevron_right</span>
             </button>
@@ -135,12 +135,12 @@
 
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded border border-surface-dim bg-surface-container-low p-4 dark:border-gray-700 dark:bg-gray-900/40">
             <div>
-                <span class="text-label-caps text-secondary uppercase tracking-wider block">{{ __('works_service_details.legal_name_label') }}</span>
-                <strong class="text-body-md text-on-surface dark:text-gray-100">{{ __('works_notification.card_title') }}</strong>
+                <span class="text-label-caps text-secondary uppercase tracking-wider block">{{ __('building_works_service_details.legal_name_label') }}</span>
+                <strong class="text-body-md text-on-surface dark:text-gray-100">{{ __('building-works-declarations.card_title') }}</strong>
             </div>
             <div class="text-end">
-                <span class="text-label-caps text-secondary uppercase tracking-wider block">{{ __('works_service_details.legal_name_ar_label') }}</span>
-                <strong class="text-body-md text-on-surface dark:text-gray-100" lang="ar" dir="rtl">{{ __('works_service_details.legal_name_ar_value') }}</strong>
+                <span class="text-label-caps text-secondary uppercase tracking-wider block">{{ __('building_works_service_details.legal_name_ar_label') }}</span>
+                <strong class="text-body-md text-on-surface dark:text-gray-100" lang="ar" dir="rtl">{{ __('building_works_service_details.legal_name_ar_value') }}</strong>
             </div>
         </div>
 
@@ -150,8 +150,8 @@
                 <span class="material-symbols-outlined filled text-primary text-[22px]" aria-hidden="true">move_to_inbox</span>
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-body-sm font-bold text-on-surface dark:text-gray-100">{{ __('works_service_details.receiving_label') }}</span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-primary/10 text-[11px] font-bold text-primary">{{ __('works_service_details.level_regional') }}</span>
+                        <span class="text-body-sm font-bold text-on-surface dark:text-gray-100">{{ __('building_works_service_details.receiving_label') }}</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-primary/10 text-[11px] font-bold text-primary">{{ __('building_works_service_details.level_regional') }}</span>
                     </div>
                     <ul class="mt-1.5 space-y-0.5">
                         @foreach ($entitiesRx as $entity)
@@ -168,8 +168,8 @@
                 <span class="material-symbols-outlined filled text-primary text-[22px]" aria-hidden="true">corporate_fare</span>
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-body-sm font-bold text-on-surface dark:text-gray-100">{{ __('works_service_details.providing_label') }}</span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-primary/10 text-[11px] font-bold text-primary">{{ __('works_service_details.level_regional') }}</span>
+                        <span class="text-body-sm font-bold text-on-surface dark:text-gray-100">{{ __('building_works_service_details.providing_label') }}</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-primary/10 text-[11px] font-bold text-primary">{{ __('building_works_service_details.level_regional') }}</span>
                     </div>
                     <ul class="mt-1.5 space-y-0.5">
                         @foreach ($entitiesTx as $entity)
@@ -193,11 +193,11 @@
                         @foreach ($doc['tags'] as $tag)
                             @if ($tag === 'required')
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 rounded border border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-900">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>{{ __('works_service_details.tag_required') }}
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>{{ __('building_works_service_details.tag_required') }}
                                 </span>
                             @elseif ($tag === 'form')
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-primary bg-primary/10 rounded border border-primary/20">
-                                    <span class="material-symbols-outlined text-[12px]" aria-hidden="true">edit_note</span>{{ __('works_service_details.tag_form') }}
+                                    <span class="material-symbols-outlined text-[12px]" aria-hidden="true">edit_note</span>{{ __('building_works_service_details.tag_form') }}
                                 </span>
                             @endif
                         @endforeach
@@ -214,29 +214,29 @@
             <div class="rounded border border-surface-dim bg-surface-container-low p-4 dark:border-gray-700 dark:bg-gray-900/40">
                 <div class="flex items-center gap-2 mb-1.5">
                     <span class="material-symbols-outlined filled text-lg text-primary" aria-hidden="true">payments</span>
-                    <span class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __('works_service_details.fees_payable_label') }}</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __('building_works_service_details.fees_payable_label') }}</span>
                 </div>
-                <p class="text-body-md font-bold text-on-surface dark:text-gray-100">{{ __('works_service_details.fees_payable_value') }}</p>
+                <p class="text-body-md font-bold text-on-surface dark:text-gray-100">{{ __('building_works_service_details.fees_payable_value') }}</p>
             </div>
             <div class="rounded border border-surface-dim bg-surface-container-low p-4 dark:border-gray-700 dark:bg-gray-900/40">
                 <div class="flex items-center gap-2 mb-1.5">
                     <span class="material-symbols-outlined filled text-lg text-primary" aria-hidden="true">receipt_long</span>
-                    <span class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __('works_service_details.fees_type_label') }}</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __('building_works_service_details.fees_type_label') }}</span>
                 </div>
-                <p class="text-body-md font-bold text-on-surface dark:text-gray-100">{{ __('works_service_details.fees_type_value') }}</p>
+                <p class="text-body-md font-bold text-on-surface dark:text-gray-100">{{ __('building_works_service_details.fees_type_value') }}</p>
             </div>
             <div class="rounded border border-surface-dim bg-surface-container-low p-4 dark:border-gray-700 dark:bg-gray-900/40">
                 <div class="flex items-center gap-2 mb-1.5">
                     <span class="material-symbols-outlined filled text-lg text-primary" aria-hidden="true">verified</span>
-                    <span class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __('works_service_details.fees_proof_label') }}</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __('building_works_service_details.fees_proof_label') }}</span>
                 </div>
-                <p class="text-body-md font-bold text-on-surface dark:text-gray-100">{{ __('works_service_details.fees_proof_value') }}</p>
+                <p class="text-body-md font-bold text-on-surface dark:text-gray-100">{{ __('building_works_service_details.fees_proof_value') }}</p>
             </div>
         </div>
         {{-- Gratuit — bannière verte --}}
         <div class="mt-4 flex items-center gap-3 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
             <span class="material-symbols-outlined filled text-emerald-600 text-lg" aria-hidden="true">check_circle</span>
-            <p class="text-body-sm font-semibold text-emerald-800 dark:text-emerald-300">{{ __('works_notification.free_info') }}</p>
+            <p class="text-body-sm font-semibold text-emerald-800 dark:text-emerald-300">{{ __('building-works-declarations.free_info') }}</p>
         </div>
     </div>
 
@@ -248,8 +248,8 @@
         <div class="flex items-start gap-3 rounded border border-surface-dim bg-surface-container-low p-4 dark:border-gray-700 dark:bg-gray-900/40">
             <span class="material-symbols-outlined filled text-primary text-[22px]" aria-hidden="true">checklist</span>
             <div>
-                <h3 class="text-label-caps text-secondary uppercase tracking-wider mb-0.5">{{ __('works_service_details.conditions_title') }}</h3>
-                <p class="text-body-sm text-on-surface dark:text-gray-200 leading-relaxed">{{ __('works_service_details.conditions_text') }}</p>
+                <h3 class="text-label-caps text-secondary uppercase tracking-wider mb-0.5">{{ __('building_works_service_details.conditions_title') }}</h3>
+                <p class="text-body-sm text-on-surface dark:text-gray-200 leading-relaxed">{{ __('building_works_service_details.conditions_text') }}</p>
             </div>
         </div>
 
@@ -257,7 +257,7 @@
         <div>
             <h3 class="flex items-center gap-2 text-label-caps text-secondary uppercase tracking-wider mb-2">
                 <span class="material-symbols-outlined text-[16px] text-outline" aria-hidden="true">gavel</span>
-                {{ __('works_service_details.legals_title') }}
+                {{ __('building_works_service_details.legals_title') }}
             </h3>
             <ol class="space-y-1.5">
                 @foreach ($legals as $legal)
@@ -274,22 +274,22 @@
             <div class="flex items-center gap-3 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900 dark:bg-emerald-950/30">
                 <span class="material-symbols-outlined filled text-emerald-600" aria-hidden="true">schedule</span>
                 <div>
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">{{ __('works_service_details.delay_label') }}</p>
-                    <p class="text-body-md font-black text-emerald-700 dark:text-emerald-400">{{ __('works_service_details.delay_value') }}</p>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">{{ __('building_works_service_details.delay_label') }}</p>
+                    <p class="text-body-md font-black text-emerald-700 dark:text-emerald-400">{{ __('building_works_service_details.delay_value') }}</p>
                 </div>
             </div>
             <div class="flex items-center gap-3 rounded border border-surface-dim bg-surface-container-low px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
                 <span class="material-symbols-outlined filled text-primary" aria-hidden="true">phone_in_talk</span>
                 <div>
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-secondary">{{ __('works_service_details.tracking_label') }}</p>
-                    <p class="text-body-md font-bold text-on-surface dark:text-gray-100">{{ __('works_service_details.tracking_value') }}</p>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-secondary">{{ __('building_works_service_details.tracking_label') }}</p>
+                    <p class="text-body-md font-bold text-on-surface dark:text-gray-100">{{ __('building_works_service_details.tracking_value') }}</p>
                 </div>
             </div>
         </div>
 
         {{-- Étapes (mini timeline) --}}
         <div>
-            <h3 class="text-label-caps text-secondary uppercase tracking-wider mb-2.5">{{ __('works_service_details.steps_title') }}</h3>
+            <h3 class="text-label-caps text-secondary uppercase tracking-wider mb-2.5">{{ __('building_works_service_details.steps_title') }}</h3>
             <ol class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 @foreach ($stepsData as $stepLabel)
                     <li class="relative flex flex-col items-start gap-2 rounded border border-surface-dim bg-surface-container-lowest p-3 dark:border-gray-700 dark:bg-gray-900/40">
@@ -307,8 +307,8 @@
         <div class="flex items-start gap-3 rounded border border-surface-dim bg-surface-container-low p-4 dark:border-gray-700 dark:bg-gray-900/40">
             <span class="material-symbols-outlined filled text-primary text-[22px]" aria-hidden="true">event_repeat</span>
             <div>
-                <p class="text-[11px] font-bold uppercase tracking-wider text-secondary">{{ __('works_service_details.validity_label') }}</p>
-                <p class="text-body-md font-bold text-on-surface dark:text-gray-100 mt-0.5">{{ __('works_service_details.validity_value') }}</p>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-secondary">{{ __('building_works_service_details.validity_label') }}</p>
+                <p class="text-body-md font-bold text-on-surface dark:text-gray-100 mt-0.5">{{ __('building_works_service_details.validity_value') }}</p>
             </div>
         </div>
     </div>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
     <head>
         <meta charset="utf-8">
@@ -235,11 +235,11 @@
                     {{-- Déclaration de travaux — permission + service assignment --}}
                     @can('view building-works-declarations')
                     @if(auth()->user()->hasService(App\Models\Service::SERVICE_WORKS_NOTIFICATION))
-                    <a href="{{ route('admin.building-works-declarations.index') }}" data-tooltip="{{ __('works_notification.card_title') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.building-works-declarations.*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.building-works-declarations.index') }}" data-tooltip="{{ __('building-works-declarations.card_title') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.building-works-declarations.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.35 2.25h3.3c1.227 0 2.317.59 3 1.501l3.449 4.598c.343.457.674 1.155.674 1.949v7.452c0 1.138-.586 2.408-1.677 3.14A4.482 4.482 0 0016.5 15h-9a4.5 4.5 0 00-2.595.82C3.814 15.088 3.228 13.818 3.228 12.68V5.228c0-1.138.586-2.408 1.677-3.14z"/>
                         </svg>
-                        <span x-show="!collapsed" class="truncate">{{ __('works_notification.card_title') }}</span>
+                        <span x-show="!collapsed" class="truncate">{{ __('building-works-declarations.card_title') }}</span>
                     </a>
                     @endif
                     @endcan

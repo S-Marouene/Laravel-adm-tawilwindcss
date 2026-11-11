@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace Database\Seeders;
 
@@ -45,7 +45,7 @@ class DatabaseSeeder extends Seeder
             DocumentTypeSeeder::class,       // prevention document types (needs building types)
             PreventivePresenceDocumentTypeSeeder::class,
             RescueDocumentTypeSeeder::class,
-            BuildingBuildingBuildingBuildingWorksDocumentTypeSeeder::class,
+            BuildingWorksDocumentTypeSeeder::class,
             NotificationTemplateSeeder::class, // notification templates (used by DossierNotification)
             TranslationSeeder::class,          // dictionary FR/AR/EN from lang/ files (editable by admins)
         ]);

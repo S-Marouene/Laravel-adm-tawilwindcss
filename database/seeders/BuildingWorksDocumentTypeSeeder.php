@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace Database\Seeders;
 
@@ -6,7 +6,7 @@ use App\Models\DocumentType;
 use Illuminate\Database\Seeder;
 
 /** Idempotent seeder for the works notification (الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء) document checklist. */
-class BuildingBuildingBuildingBuildingBuildingWorksDocumentTypeSeeder extends Seeder
+class BuildingWorksDocumentTypeSeeder extends Seeder
 {
     public function run(): void
     {

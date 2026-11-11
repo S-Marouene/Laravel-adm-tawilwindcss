@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MesDemandesController;
@@ -144,27 +144,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/rescue-certificates/documents/{rescueDocument}/download', [RescueCertificateController::class, 'downloadDocument'])->name('rescue-certificates.documents.download');
     Route::delete('/rescue-certificates/{rescueCertificate}', [RescueCertificateController::class, 'destroy'])->name('rescue-certificates.destroy');
 
-    // ── Works notification (الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء) ──
+    // ── Building Works Declaration (الإعلام عن إنجاز أشغال لا تستوجب رخصة بناء) ──
     Route::get('/building-works-declarations', [BuildingWorksDeclarationController::class, 'index'])->name('building-works-declarations.index');
     Route::get('/building-works-declarations/create', [BuildingWorksDeclarationController::class, 'create'])->name('building-works-declarations.create');
-    Route::get('/building-works-declarations/{BuildingWorksDeclaration}', [BuildingWorksDeclarationController::class, 'show'])->name('building-works-declarations.show');
+    Route::get('/building-works-declarations/{buildingWorksDeclaration}', [BuildingWorksDeclarationController::class, 'show'])->name('building-works-declarations.show');
 
     // Official form/template attached to a document type (download → fill → rescan → upload)
     Route::get('/building-works-declarations/document-template/{documentType}', [BuildingWorksDeclarationController::class, 'downloadTemplate'])
         ->name('building-works-declarations.document-template.download');
 
     // Targeted correction form (fields + documents flagged by the admin)
-    Route::get('/building-works-declarations/{BuildingWorksDeclaration}/correct', [BuildingWorksDeclarationController::class, 'showCorrectForm'])->name('building-works-declarations.correct');
-    Route::post('/building-works-declarations/{BuildingWorksDeclaration}/correct', [BuildingWorksDeclarationController::class, 'submitCorrection'])->name('building-works-declarations.correct.submit');
+    Route::get('/building-works-declarations/{buildingWorksDeclaration}/correct', [BuildingWorksDeclarationController::class, 'showCorrectForm'])->name('building-works-declarations.correct');
+    Route::post('/building-works-declarations/{buildingWorksDeclaration}/correct', [BuildingWorksDeclarationController::class, 'submitCorrection'])->name('building-works-declarations.correct.submit');
 
     Route::post('/building-works-declarations/step1', [BuildingWorksDeclarationController::class, 'storeStep1'])->name('building-works-declarations.step1.store');
-    Route::get('/building-works-declarations/{BuildingWorksDeclaration}/step1/edit', [BuildingWorksDeclarationController::class, 'editStep1'])->name('building-works-declarations.step1.edit');
-    Route::put('/building-works-declarations/{BuildingWorksDeclaration}/step1', [BuildingWorksDeclarationController::class, 'updateStep1'])->name('building-works-declarations.step1.update');
-    Route::get('/building-works-declarations/{BuildingWorksDeclaration}/step2', [BuildingWorksDeclarationController::class, 'showStep2'])->name('building-works-declarations.step2.show');
-    Route::post('/building-works-declarations/{BuildingWorksDeclaration}/step2', [BuildingWorksDeclarationController::class, 'storeStep2'])->name('building-works-declarations.step2.store');
-    Route::post('/building-works-declarations/{BuildingWorksDeclaration}/resubmit', [BuildingWorksDeclarationController::class, 'resubmit'])->name('building-works-declarations.resubmit');
-    Route::get('/building-works-declarations/{BuildingWorksDeclaration}/documents/{BuildingBuildingBuildingBuildingWorksDocument}/download', [BuildingWorksDeclarationController::class, 'downloadDocument'])->name('building-works-declarations.documents.download');
-    Route::delete('/building-works-declarations/{BuildingWorksDeclaration}', [BuildingWorksDeclarationController::class, 'destroy'])->name('building-works-declarations.destroy');
+    Route::get('/building-works-declarations/{buildingWorksDeclaration}/step1/edit', [BuildingWorksDeclarationController::class, 'editStep1'])->name('building-works-declarations.step1.edit');
+    Route::put('/building-works-declarations/{buildingWorksDeclaration}/step1', [BuildingWorksDeclarationController::class, 'updateStep1'])->name('building-works-declarations.step1.update');
+    Route::get('/building-works-declarations/{buildingWorksDeclaration}/step2', [BuildingWorksDeclarationController::class, 'showStep2'])->name('building-works-declarations.step2.show');
+    Route::post('/building-works-declarations/{buildingWorksDeclaration}/step2', [BuildingWorksDeclarationController::class, 'storeStep2'])->name('building-works-declarations.step2.store');
+    Route::post('/building-works-declarations/{buildingWorksDeclaration}/resubmit', [BuildingWorksDeclarationController::class, 'resubmit'])->name('building-works-declarations.resubmit');
+    Route::get('/building-works-declarations/{buildingWorksDeclaration}/documents/{buildingWorksDocument}/download', [BuildingWorksDeclarationController::class, 'downloadDocument'])->name('building-works-declarations.documents.download');
+    Route::delete('/building-works-declarations/{buildingWorksDeclaration}', [BuildingWorksDeclarationController::class, 'destroy'])->name('building-works-declarations.destroy');
 });
 
 Route::middleware('auth')->group(function () {

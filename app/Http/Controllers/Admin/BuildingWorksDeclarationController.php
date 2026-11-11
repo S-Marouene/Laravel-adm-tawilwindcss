@@ -1,11 +1,11 @@
-﻿<?php
+<?php
 
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DocumentType;
 use App\Models\BuildingWorksDeclaration;
-use App\Models\BuildingBuildingBuildingBuildingWorksDocument;
+use App\Models\BuildingWorksDocument;
 use App\Models\Service;
 use App\Services\DossierNotifier;
 use App\Support\AdminScope;
@@ -53,25 +53,25 @@ class BuildingWorksDeclarationController extends Controller
     // Show — full notification details
     // =========================================================================
 
-    public function show(BuildingWorksDeclaration $BuildingWorksDeclaration): View
+    public function show(BuildingWorksDeclaration $buildingWorksDeclaration): View
     {
         $this->authorize('view building-works-declarations');
         AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
-        AdminScope::authorize($BuildingWorksDeclaration);
+        AdminScope::authorize($buildingWorksDeclaration);
 
-        $BuildingWorksDeclaration->load(['user', 'governorate', 'delegation', 'reviewer', 'documents.documentType', 'events.actor']);
+        $buildingWorksDeclaration->load(['user', 'governorate', 'delegation', 'reviewer', 'documents.documentType', 'events.actor']);
 
         $documentTypes = DocumentType::service(DocumentType::SERVICE_WORKS_NOTIFICATION)
             ->orderBy('sort_order')
             ->get();
 
-        $activeDocuments = $BuildingWorksDeclaration->documents->filter(fn ($d) => $d->status !== 'archived');
+        $activeDocuments = $buildingWorksDeclaration->documents->filter(fn ($d) => $d->status !== 'archived');
         $documentsByType = $activeDocuments->groupBy('document_type_id');
-        $uploadedDocs    = $BuildingWorksDeclaration->documents->keyBy('document_type_id');
-        $archivedDocs    = $BuildingWorksDeclaration->documents->filter(fn ($d) => $d->status === 'archived');
+        $uploadedDocs    = $buildingWorksDeclaration->documents->keyBy('document_type_id');
+        $archivedDocs    = $buildingWorksDeclaration->documents->filter(fn ($d) => $d->status === 'archived');
 
         return view('admin.building-works-declarations.show', [
-            'notification'    => $BuildingWorksDeclaration,
+            'notification'    => $buildingWorksDeclaration,
             'documentTypes'   => $documentTypes,
             'uploadedDocs'    => $uploadedDocs,
             'documentsByType' => $documentsByType,
@@ -83,28 +83,28 @@ class BuildingWorksDeclarationController extends Controller
     // Advance to Processing (قيد الدراسة)
     // =========================================================================
 
-    public function advance(BuildingWorksDeclaration $BuildingWorksDeclaration): RedirectResponse
+    public function advance(BuildingWorksDeclaration $buildingWorksDeclaration): RedirectResponse
     {
         $this->authorize('manage building-works-declarations');
         AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
-        AdminScope::authorize($BuildingWorksDeclaration);
+        AdminScope::authorize($buildingWorksDeclaration);
 
-        if (! in_array($BuildingWorksDeclaration->status, ['completed', 'needs_correction'])) {
+        if (! in_array($buildingWorksDeclaration->status, ['completed', 'needs_correction'])) {
             return back()->withErrors(['status' => 'Cannot advance this notification from its current status.']);
         }
 
-        $BuildingWorksDeclaration->update([
+        $buildingWorksDeclaration->update([
             'status'      => 'under_consultation',
             'admin_note'  => null,
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
 
-        $BuildingWorksDeclaration->logEvent('advanced_to_consultation');
+        $buildingWorksDeclaration->logEvent('advanced_to_consultation');
 
-        DossierNotifier::notify($BuildingWorksDeclaration, 'under_consultation', 'user', Service::SERVICE_WORKS_NOTIFICATION);
+        DossierNotifier::notify($buildingWorksDeclaration, 'under_consultation', 'user', Service::SERVICE_WORKS_NOTIFICATION);
 
-        return redirect()->route('admin.building-works-declarations.show', $BuildingWorksDeclaration)
+        return redirect()->route('admin.building-works-declarations.show', $buildingWorksDeclaration)
             ->with('success', 'Notification moved to consultation. The applicant has been notified.');
     }
 
@@ -112,11 +112,11 @@ class BuildingWorksDeclarationController extends Controller
     // Request Correction — flag issues and send note to user
     // =========================================================================
 
-    public function requestCorrection(Request $request, BuildingWorksDeclaration $BuildingWorksDeclaration): RedirectResponse
+    public function requestCorrection(Request $request, BuildingWorksDeclaration $buildingWorksDeclaration): RedirectResponse
     {
         $this->authorize('manage building-works-declarations');
         AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
-        AdminScope::authorize($BuildingWorksDeclaration);
+        AdminScope::authorize($buildingWorksDeclaration);
 
         $validated = $request->validate([
             // Bilingual note — both languages are required (auto-translated
@@ -132,7 +132,7 @@ class BuildingWorksDeclarationController extends Controller
             'admin_note.ar' => 'Note (العربية)',
         ]);
 
-        if (! $BuildingWorksDeclaration->isActionable()) {
+        if (! $buildingWorksDeclaration->isActionable()) {
             return back()->withErrors(['status' => 'Cannot request correction for this notification.']);
         }
 
@@ -141,24 +141,24 @@ class BuildingWorksDeclarationController extends Controller
 
         // ── Snapshot of the values the applicant will have to update ──
         $previousParams = [
-            'owner_cin'         => $BuildingWorksDeclaration->owner_cin,
-            'owner_name'        => $BuildingWorksDeclaration->isMoral() ? ($BuildingWorksDeclaration->company_name ?? null) : ($BuildingWorksDeclaration->owner_name ?? null),
-            'company_name'      => $BuildingWorksDeclaration->company_name,
-            'jort_reference'    => $BuildingWorksDeclaration->jort_reference,
-            'phone'             => $BuildingWorksDeclaration->phone,
-            'governorate_id'    => $BuildingWorksDeclaration->governorate?->name_fr ?? $BuildingWorksDeclaration->governorate?->name_ar,
-            'delegation_id'     => $BuildingWorksDeclaration->delegation?->name_fr ?? $BuildingWorksDeclaration->delegation?->name_ar,
-            'property_address'  => $BuildingWorksDeclaration->property_address,
-            'works_type'        => $BuildingWorksDeclaration->works_type,
-            'works_start_date'  => $BuildingWorksDeclaration->works_start_date?->format('d/m/Y'),
-            'works_description' => $BuildingWorksDeclaration->works_description,
-            'notes'             => $BuildingWorksDeclaration->notes,
+            'owner_cin'         => $buildingWorksDeclaration->owner_cin,
+            'owner_name'        => $buildingWorksDeclaration->isMoral() ? ($buildingWorksDeclaration->company_name ?? null) : ($buildingWorksDeclaration->owner_name ?? null),
+            'company_name'      => $buildingWorksDeclaration->company_name,
+            'jort_reference'    => $buildingWorksDeclaration->jort_reference,
+            'phone'             => $buildingWorksDeclaration->phone,
+            'governorate_id'    => $buildingWorksDeclaration->governorate?->name_fr ?? $buildingWorksDeclaration->governorate?->name_ar,
+            'delegation_id'     => $buildingWorksDeclaration->delegation?->name_fr ?? $buildingWorksDeclaration->delegation?->name_ar,
+            'property_address'  => $buildingWorksDeclaration->property_address,
+            'works_type'        => $buildingWorksDeclaration->works_type,
+            'works_start_date'  => $buildingWorksDeclaration->works_start_date?->format('d/m/Y'),
+            'works_description' => $buildingWorksDeclaration->works_description,
+            'notes'             => $buildingWorksDeclaration->notes,
         ];
 
         // ── Archive ONLY the documents whose type was flagged for correction ──
         $archivedDocsMeta = [];
         if (! empty($docsToFix)) {
-            $docsToArchive = $BuildingWorksDeclaration->documents
+            $docsToArchive = $buildingWorksDeclaration->documents
                 ->filter(fn ($d) => $d->status !== 'archived' && in_array((int) $d->document_type_id, $docsToFix));
 
             foreach ($docsToArchive as $doc) {
@@ -172,29 +172,29 @@ class BuildingWorksDeclarationController extends Controller
             }
 
             if ($docsToArchive->isNotEmpty()) {
-                BuildingBuildingBuildingBuildingWorksDocument::whereIn('id', $docsToArchive->pluck('id'))
+                BuildingWorksDocument::whereIn('id', $docsToArchive->pluck('id'))
                     ->update(['status' => 'archived']);
             }
         }
 
-        $BuildingWorksDeclaration->update([
+        $buildingWorksDeclaration->update([
             'status'      => 'needs_correction',
             'admin_note'  => $validated['admin_note'],
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
 
-        $BuildingWorksDeclaration->logEvent('correction_requested', $validated['admin_note'], [
+        $buildingWorksDeclaration->logEvent('correction_requested', $validated['admin_note'], [
             'fields_to_fix'  => $fieldsToFix,
             'docs_to_fix'    => $docsToFix,
             'previous'       => $previousParams,
             'archived_files' => $archivedDocsMeta,
         ]);
-        $BuildingWorksDeclaration->refresh();
+        $buildingWorksDeclaration->refresh();
 
-        DossierNotifier::notify($BuildingWorksDeclaration, 'needs_correction', 'user', Service::SERVICE_WORKS_NOTIFICATION);
+        DossierNotifier::notify($buildingWorksDeclaration, 'needs_correction', 'user', Service::SERVICE_WORKS_NOTIFICATION);
 
-        return redirect()->route('admin.building-works-declarations.show', $BuildingWorksDeclaration)
+        return redirect()->route('admin.building-works-declarations.show', $buildingWorksDeclaration)
             ->with('success', 'Correction requested. The applicant will see your note and can fix and resubmit their notification.');
     }
 
@@ -202,28 +202,28 @@ class BuildingWorksDeclarationController extends Controller
     // Approve — final stage: the Civil Protection is informed of the works
     // =========================================================================
 
-    public function approve(BuildingWorksDeclaration $BuildingWorksDeclaration): RedirectResponse
+    public function approve(BuildingWorksDeclaration $buildingWorksDeclaration): RedirectResponse
     {
         $this->authorize('manage building-works-declarations');
         AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
-        AdminScope::authorize($BuildingWorksDeclaration);
+        AdminScope::authorize($buildingWorksDeclaration);
 
-        if (! $BuildingWorksDeclaration->isActionable()) {
+        if (! $buildingWorksDeclaration->isActionable()) {
             return back()->withErrors(['status' => 'Cannot approve this notification from its current status.']);
         }
 
-        $BuildingWorksDeclaration->update([
+        $buildingWorksDeclaration->update([
             'status'      => 'approved',
             'admin_note'  => null,
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
 
-        $BuildingWorksDeclaration->logEvent('approved');
+        $buildingWorksDeclaration->logEvent('approved');
 
-        DossierNotifier::notify($BuildingWorksDeclaration, 'approved', 'user', Service::SERVICE_WORKS_NOTIFICATION);
+        DossierNotifier::notify($buildingWorksDeclaration, 'approved', 'user', Service::SERVICE_WORKS_NOTIFICATION);
 
-        return redirect()->route('admin.building-works-declarations.show', $BuildingWorksDeclaration)
+        return redirect()->route('admin.building-works-declarations.show', $buildingWorksDeclaration)
             ->with('success', 'Notification approved. The Civil Protection is informed of the works — the applicant will be notified by phone.');
     }
 
@@ -231,11 +231,11 @@ class BuildingWorksDeclarationController extends Controller
     // Cancel — rejected notifications
     // =========================================================================
 
-    public function cancel(Request $request, BuildingWorksDeclaration $BuildingWorksDeclaration): RedirectResponse
+    public function cancel(Request $request, BuildingWorksDeclaration $buildingWorksDeclaration): RedirectResponse
     {
         $this->authorize('manage building-works-declarations');
         AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
-        AdminScope::authorize($BuildingWorksDeclaration);
+        AdminScope::authorize($buildingWorksDeclaration);
 
         $validated = $request->validate([
             // Bilingual cancellation reason — both languages are required.
@@ -246,23 +246,23 @@ class BuildingWorksDeclarationController extends Controller
             'admin_note.ar' => 'Note (العربية)',
         ]);
 
-        if (! $BuildingWorksDeclaration->isActionable()) {
+        if (! $buildingWorksDeclaration->isActionable()) {
             return back()->withErrors(['status' => 'Cannot cancel this notification from its current status.']);
         }
 
-        $BuildingWorksDeclaration->update([
+        $buildingWorksDeclaration->update([
             'status'      => 'cancelled',
             'admin_note'  => $validated['admin_note'],
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
 
-        $BuildingWorksDeclaration->logEvent('cancelled', $validated['admin_note']);
-        $BuildingWorksDeclaration->refresh();
+        $buildingWorksDeclaration->logEvent('cancelled', $validated['admin_note']);
+        $buildingWorksDeclaration->refresh();
 
-        DossierNotifier::notify($BuildingWorksDeclaration, 'cancelled', 'user', Service::SERVICE_WORKS_NOTIFICATION);
+        DossierNotifier::notify($buildingWorksDeclaration, 'cancelled', 'user', Service::SERVICE_WORKS_NOTIFICATION);
 
-        return redirect()->route('admin.building-works-declarations.show', $BuildingWorksDeclaration)
+        return redirect()->route('admin.building-works-declarations.show', $buildingWorksDeclaration)
             ->with('success', 'Notification cancelled. The applicant has been notified.');
     }
 
@@ -270,14 +270,14 @@ class BuildingWorksDeclarationController extends Controller
     // Download an uploaded document
     // =========================================================================
 
-    public function downloadDocument(BuildingBuildingBuildingBuildingWorksDocument $BuildingBuildingBuildingBuildingWorksDocument)
+    public function downloadDocument(BuildingWorksDocument $buildingWorksDocument)
     {
         $this->authorize('view building-works-declarations');
         AdminScope::authorizeService(Service::SERVICE_WORKS_NOTIFICATION);
-        AdminScope::authorize($BuildingBuildingBuildingBuildingWorksDocument->notification);
+        AdminScope::authorize($buildingWorksDocument->notification);
 
-        abort_unless(\Storage::disk('local')->exists($BuildingBuildingBuildingBuildingWorksDocument->file_path), 404);
+        abort_unless(\Storage::disk('local')->exists($buildingWorksDocument->file_path), 404);
 
-        return \Storage::disk('local')->download($BuildingBuildingBuildingBuildingWorksDocument->file_path, $BuildingBuildingBuildingBuildingWorksDocument->original_name);
+        return \Storage::disk('local')->download($buildingWorksDocument->file_path, $buildingWorksDocument->original_name);
     }
 }

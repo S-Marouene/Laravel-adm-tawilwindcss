@@ -1,4 +1,4 @@
-﻿@extends('admin.layouts.admin')
+@extends('admin.layouts.admin')
 @section('title', __('prevention.page_title', ['id' => $preventionDossier->id]))
 
 @php

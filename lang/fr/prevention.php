@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /* Admin — Dossiers de prévention (show / index) */
 

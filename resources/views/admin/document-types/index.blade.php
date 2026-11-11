@@ -44,7 +44,7 @@
                                     \App\Models\DocumentType::SERVICE_PREVENTION => __('admin.service_labels.prevention'),
                                     \App\Models\DocumentType::SERVICE_PREVENTIVE_PRESENCE => __('admin.service_labels.preventive-presence'),
                                     \App\Models\DocumentType::SERVICE_RESCUE_CERTIFICATE => __('rescue_certificate.index_title'),
-                                    \App\Models\DocumentType::SERVICE_WORKS_NOTIFICATION => __('works_notification.index_title'),
+                                    \App\Models\DocumentType::SERVICE_WORKS_NOTIFICATION => __('building_works_declaration.index_title'),
                                     default => $serviceKey,
                                 } }}
                             </span>

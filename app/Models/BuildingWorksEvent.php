@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Models;
 
@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BuildingBuildingBuildingBuildingWorksEvent extends Model
+class BuildingWorksEvent extends Model
 {
     use HasTranslations;
+
+    /** DB table kept at original name — class renamed from WorksEvent. */
+    protected $table = 'works_events';
 
     protected $fillable = [
         'works_notification_id', 'user_id', 'type', 'note', 'data',

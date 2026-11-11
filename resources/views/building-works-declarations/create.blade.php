@@ -1,22 +1,22 @@
-﻿@php
-    $isEditing   = isset($BuildingWorksDeclaration);
+@php
+    $isEditing   = isset($buildingWorksDeclaration);
     $formAction  = $isEditing
-        ? route('building-works-declarations.step1.update', $BuildingWorksDeclaration)
+        ? route('building-works-declarations.step1.update', $buildingWorksDeclaration)
         : route('building-works-declarations.step1.store');
 
-    $valOwnerType = old('owner_type', $isEditing ? $BuildingWorksDeclaration->owner_type : 'natural');
-    $valOwnerName = old('owner_name', $isEditing ? $BuildingWorksDeclaration->owner_name : '');
-    $valOwnerCin  = old('owner_cin', $isEditing ? $BuildingWorksDeclaration->owner_cin : '');
-    $valCompany   = old('company_name', $isEditing ? $BuildingWorksDeclaration->company_name : '');
-    $valJort      = old('jort_reference', $isEditing ? $BuildingWorksDeclaration->jort_reference : '');
-    $valPhone     = old('phone', $isEditing ? $BuildingWorksDeclaration->phone : '');
-    $valGov       = old('governorate_id', $isEditing ? $BuildingWorksDeclaration->governorate_id : '');
-    $valDelId     = old('delegation_id', $isEditing ? $BuildingWorksDeclaration->delegation_id : '');
-    $valPropAddr  = old('property_address', $isEditing ? $BuildingWorksDeclaration->property_address : '');
-    $valWorksType = old('works_type', $isEditing ? $BuildingWorksDeclaration->works_type : '');
-    $valWorksDate = old('works_start_date', $isEditing && $BuildingWorksDeclaration->works_start_date ? $BuildingWorksDeclaration->works_start_date->format('Y-m-d') : '');
-    $valWorksDesc = old('works_description', $isEditing ? $BuildingWorksDeclaration->works_description : '');
-    $valNotes     = old('notes', $isEditing ? $BuildingWorksDeclaration->notes : '');
+    $valOwnerType = old('owner_type', $isEditing ? $buildingWorksDeclaration->owner_type : 'natural');
+    $valOwnerName = old('owner_name', $isEditing ? $buildingWorksDeclaration->owner_name : '');
+    $valOwnerCin  = old('owner_cin', $isEditing ? $buildingWorksDeclaration->owner_cin : '');
+    $valCompany   = old('company_name', $isEditing ? $buildingWorksDeclaration->company_name : '');
+    $valJort      = old('jort_reference', $isEditing ? $buildingWorksDeclaration->jort_reference : '');
+    $valPhone     = old('phone', $isEditing ? $buildingWorksDeclaration->phone : '');
+    $valGov       = old('governorate_id', $isEditing ? $buildingWorksDeclaration->governorate_id : '');
+    $valDelId     = old('delegation_id', $isEditing ? $buildingWorksDeclaration->delegation_id : '');
+    $valPropAddr  = old('property_address', $isEditing ? $buildingWorksDeclaration->property_address : '');
+    $valWorksType = old('works_type', $isEditing ? $buildingWorksDeclaration->works_type : '');
+    $valWorksDate = old('works_start_date', $isEditing && $buildingWorksDeclaration->works_start_date ? $buildingWorksDeclaration->works_start_date->format('Y-m-d') : '');
+    $valWorksDesc = old('works_description', $isEditing ? $buildingWorksDeclaration->works_description : '');
+    $valNotes     = old('notes', $isEditing ? $buildingWorksDeclaration->notes : '');
 
     $isMoral = ($valOwnerType === 'moral');
 
@@ -24,15 +24,15 @@
     $wizardSteps = [
         [
             'state'   => 'active',
-            'title'   => __('works_notification.step_one_title'),
+            'title'   => __('building-works-declarations.step_one_title'),
             'editing' => $isEditing,
         ],
         [
             'state'   => $isEditing ? 'done' : 'upcoming',
-            'title'   => __('works_notification.step_two_title'),
+            'title'   => __('building-works-declarations.step_two_title'),
             'data'    => [],
-            'editUrl' => $isEditing ? route('building-works-declarations.step2.show', $BuildingWorksDeclaration) : null,
-            'editLabel' => __('works_notification.step_two_title'),
+            'editUrl' => $isEditing ? route('building-works-declarations.step2.show', $buildingWorksDeclaration) : null,
+            'editLabel' => __('building-works-declarations.step_two_title'),
         ],
     ];
 
@@ -45,7 +45,7 @@
 
             {{-- Service details tabs (hidden when editing an existing draft) --}}
             @unless ($isEditing)
-                <x-onpc.works-service-details-tabs :drafts="$drafts ?? collect()" />
+                <x-onpc.building-works-service-details-tabs :drafts="$drafts ?? collect()" />
             @endunless
 
             {{-- Form section (revealed by tab button or shown directly when editing) --}}
@@ -58,14 +58,14 @@
                 <div class="bg-surface-container-lowest p-5 rounded border border-surface-dim border-l-4 border-l-primary flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                     <div>
                         <span class="text-label-caps text-primary uppercase tracking-wider">
-                            {{ __('works_notification.step_of', ['step' => 1, 'total' => 2]) }}
-                            @if ($isEditing) · {{ __('works_notification.step_editing') }} @endif
+                            {{ __('building-works-declarations.step_of', ['step' => 1, 'total' => 2]) }}
+                            @if ($isEditing) · {{ __('building-works-declarations.step_editing') }} @endif
                         </span>
-                        <h2 class="text-headline-sm text-on-surface mt-0.5">{{ __('works_notification.step_heading') }} — {{ __('works_notification.step_one_title') }}</h2>
+                        <h2 class="text-headline-sm text-on-surface mt-0.5">{{ __('building-works-declarations.step_heading') }} — {{ __('building-works-declarations.step_one_title') }}</h2>
                     </div>
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container text-body-sm text-outline font-medium border border-surface-dim shrink-0 dark:text-gray-400">
                         <span class="text-red-500 font-bold" aria-hidden="true">*</span>
-                        {{ __('works_notification.required_note') }}
+                        {{ __('building-works-declarations.required_note') }}
                     </span>
                 </div>
 
@@ -79,7 +79,7 @@
                     <div class="p-6 pb-0">
                         @if ($errors->any())
                             <div class="rounded border-l-4 border-l-red-500 bg-red-50 px-4 py-3 text-body-sm text-red-800 dark:bg-red-900/30 dark:text-red-200" role="alert">
-                                <p class="font-bold">{{ __('works_notification.create_error_title') }}</p>
+                                <p class="font-bold">{{ __('building-works-declarations.create_error_title') }}</p>
                                 <ul class="mt-1.5 list-disc space-y-1 ps-5">
                                     @foreach ($errors->all() as $error)
                                         <li>{{ $error }}</li>
@@ -95,7 +95,7 @@
                     <div class="p-6 space-y-5">
                         <div class="flex items-center gap-2.5 pb-3 border-b border-surface-dim dark:border-gray-700">
                             <span class="w-7 h-7 rounded bg-primary text-white flex items-center justify-center text-label-caps shrink-0" aria-hidden="true">A</span>
-                            <h3 class="text-title-section text-on-surface uppercase tracking-wider">{{ __('works_notification.section_owner') }}</h3>
+                            <h3 class="text-title-section text-on-surface uppercase tracking-wider">{{ __('building-works-declarations.section_owner') }}</h3>
                         </div>
 
                         {{-- Owner type toggle --}}
@@ -106,8 +106,8 @@
                                     @click="ownerType = 'natural'"
                                     class="h-4 w-4 rounded-full border-surface-dim text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-800">
                                 <span>
-                                    <span class="block text-body-sm font-semibold text-on-surface dark:text-gray-100">{{ __('works_notification.owner_natural') }}</span>
-                                    <span class="block text-xs text-secondary dark:text-gray-400 mt-0.5">{{ __('works_notification.owner_natural_hint') }}</span>
+                                    <span class="block text-body-sm font-semibold text-on-surface dark:text-gray-100">{{ __('building-works-declarations.owner_natural') }}</span>
+                                    <span class="block text-xs text-secondary dark:text-gray-400 mt-0.5">{{ __('building-works-declarations.owner_natural_hint') }}</span>
                                 </span>
                             </label>
                             <label class="flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition hover:border-primary/40 dark:border-gray-700 dark:bg-gray-900/50 has-[:checked]:border-primary/60 has-[:checked]:bg-primary/5">
@@ -116,8 +116,8 @@
                                     @click="ownerType = 'moral'"
                                     class="h-4 w-4 rounded-full border-surface-dim text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-800">
                                 <span>
-                                    <span class="block text-body-sm font-semibold text-on-surface dark:text-gray-100">{{ __('works_notification.owner_moral') }}</span>
-                                    <span class="block text-xs text-secondary dark:text-gray-400 mt-0.5">{{ __('works_notification.owner_moral_hint') }}</span>
+                                    <span class="block text-body-sm font-semibold text-on-surface dark:text-gray-100">{{ __('building-works-declarations.owner_moral') }}</span>
+                                    <span class="block text-xs text-secondary dark:text-gray-400 mt-0.5">{{ __('building-works-declarations.owner_moral_hint') }}</span>
                                 </span>
                             </label>
                         </div>
@@ -127,11 +127,11 @@
                             {{-- Owner name (natural person) --}}
                             <div class="space-y-1.5" x-show="ownerType === 'natural'" x-cloak>
                                 <label for="owner_name" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
-                                    {{ __('works_notification.owner_name') }} <span class="text-primary" aria-hidden="true">*</span>
+                                    {{ __('building-works-declarations.owner_name') }} <span class="text-primary" aria-hidden="true">*</span>
                                 </label>
                                 <input id="owner_name" name="owner_name" type="text" maxlength="255"
                                     value="{{ $valOwnerName }}"
-                                    placeholder="{{ __('works_notification.owner_name_placeholder') }}"
+                                    placeholder="{{ __('building-works-declarations.owner_name_placeholder') }}"
                                     class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('owner_name') border-red-400 @enderror">
                                 @error('owner_name')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                             </div>
@@ -139,11 +139,11 @@
                             {{-- Company name (legal entity) --}}
                             <div class="space-y-1.5" x-show="ownerType === 'moral'" x-cloak>
                                 <label for="company_name" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
-                                    {{ __('works_notification.company_name') }} <span class="text-primary" aria-hidden="true">*</span>
+                                    {{ __('building-works-declarations.company_name') }} <span class="text-primary" aria-hidden="true">*</span>
                                 </label>
                                 <input id="company_name" name="company_name" type="text" maxlength="255"
                                     value="{{ $valCompany }}"
-                                    placeholder="{{ __('works_notification.company_name_placeholder') }}"
+                                    placeholder="{{ __('building-works-declarations.company_name_placeholder') }}"
                                     class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('company_name') border-red-400 @enderror">
                                 @error('company_name')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                             </div>
@@ -151,28 +151,28 @@
                             {{-- CIN --}}
                             <div class="space-y-1.5">
                                 <label for="owner_cin" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
-                                    {{ __('works_notification.owner_cin') }} <span class="text-primary" aria-hidden="true">*</span>
+                                    {{ __('building-works-declarations.owner_cin') }} <span class="text-primary" aria-hidden="true">*</span>
                                 </label>
                                 <input id="owner_cin" name="owner_cin" type="text" inputmode="numeric" maxlength="20"
                                     value="{{ $valOwnerCin }}"
-                                    placeholder="{{ __('works_notification.cin_placeholder') }}" required
+                                    placeholder="{{ __('building-works-declarations.cin_placeholder') }}" required
                                     class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('owner_cin') border-red-400 @enderror">
-                                <p class="text-xs text-secondary dark:text-gray-500">{{ __('works_notification.owner_cin_hint') }}</p>
+                                <p class="text-xs text-secondary dark:text-gray-500">{{ __('building-works-declarations.owner_cin_hint') }}</p>
                                 @error('owner_cin')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                             </div>
 
                             {{-- Phone --}}
                             <div class="space-y-1.5">
                                 <label for="phone" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
-                                    {{ __('works_notification.phone') }} <span class="text-primary" aria-hidden="true">*</span>
+                                    {{ __('building-works-declarations.phone') }} <span class="text-primary" aria-hidden="true">*</span>
                                 </label>
                                 <input id="phone" name="phone" type="tel" maxlength="20" inputmode="tel" dir="ltr"
                                     value="{{ $valPhone }}"
-                                    placeholder="{{ __('works_notification.phone_placeholder') }}" required
+                                    placeholder="{{ __('building-works-declarations.phone_placeholder') }}" required
                                     class="num-ltr block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('phone') border-red-400 @enderror">
                                 <p class="text-xs text-secondary dark:text-gray-500 flex items-center gap-1.5">
                                     <span class="material-symbols-outlined text-sm text-outline" aria-hidden="true">info</span>
-                                    {{ __('works_notification.phone_notification_hint') }}
+                                    {{ __('building-works-declarations.phone_notification_hint') }}
                                 </p>
                                 @error('phone')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                             </div>
@@ -181,13 +181,13 @@
                         {{-- JORT reference (legal entity only) --}}
                         <div class="space-y-1.5" x-show="ownerType === 'moral'" x-cloak>
                             <label for="jort_reference" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
-                                {{ __('works_notification.jort_reference') }}
+                                {{ __('building-works-declarations.jort_reference') }}
                             </label>
                             <input id="jort_reference" name="jort_reference" type="text" maxlength="100" dir="ltr"
                                 value="{{ $valJort }}"
-                                placeholder="{{ __('works_notification.jort_reference_placeholder') }}"
+                                placeholder="{{ __('building-works-declarations.jort_reference_placeholder') }}"
                                 class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('jort_reference') border-red-400 @enderror">
-                            <p class="text-xs text-secondary dark:text-gray-500">{{ __('works_notification.jort_reference_hint') }}</p>
+                            <p class="text-xs text-secondary dark:text-gray-500">{{ __('building-works-declarations.jort_reference_hint') }}</p>
                             @error('jort_reference')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                         </div>
                     </div>
@@ -201,7 +201,7 @@
                     <div class="p-6 space-y-5">
                         <div class="flex items-center gap-2.5 pb-3 border-b border-surface-dim dark:border-gray-700">
                             <span class="w-7 h-7 rounded bg-primary text-white flex items-center justify-center text-label-caps shrink-0" aria-hidden="true">B</span>
-                            <h3 class="text-title-section text-on-surface uppercase tracking-wider">{{ __('works_notification.section_location') }}</h3>
+                            <h3 class="text-title-section text-on-surface uppercase tracking-wider">{{ __('building-works-declarations.section_location') }}</h3>
                         </div>
 
                         {{-- Governorate + Delegation (searchable dropdowns) --}}
@@ -209,14 +209,14 @@
                             {{-- Governorate searchable dropdown --}}
                             <div class="space-y-1.5" id="gov-field">
                                 <label id="gov-label" class="block text-body-sm font-bold text-on-surface dark:text-gray-200" for="gov-trigger">
-                                    {{ __('works_notification.code_structure') }} <span class="text-primary" aria-hidden="true">*</span>
+                                    {{ __('building-works-declarations.code_structure') }} <span class="text-primary" aria-hidden="true">*</span>
                                 </label>
                                 <input type="hidden" name="governorate_id" id="gov-hidden" value="{{ $valGov }}">
                                 <div class="relative" id="gov-wrap">
                                     <button type="button" id="gov-trigger"
                                         class="flex w-full items-center justify-between rounded border border-surface-dim bg-surface-container-lowest px-3.5 h-11 text-body-md shadow-sm transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 @error('governorate_id') border-red-400 @enderror"
                                         aria-haspopup="listbox" aria-expanded="false" aria-labelledby="gov-label">
-                                        <span id="gov-trigger-label" class="truncate text-outline dark:text-gray-500">{{ __('works_notification.code_structure_select') }}</span>
+                                        <span id="gov-trigger-label" class="truncate text-outline dark:text-gray-500">{{ __('building-works-declarations.code_structure_select') }}</span>
                                         <svg class="h-4 w-4 flex-none text-outline transition-transform" id="gov-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                         </svg>
@@ -227,27 +227,27 @@
                                                 <span class="material-symbols-outlined absolute start-2.5 top-2.5 text-body-sm text-outline" aria-hidden="true">search</span>
                                                 <input type="text" id="gov-search" autocomplete="off"
                                                     class="block w-full rounded bg-surface-container py-1.5 ps-9 pe-3 text-body-sm text-on-surface placeholder:text-outline focus:ring-1 focus:ring-primary focus:outline-none dark:bg-gray-700 dark:text-gray-200"
-                                                    placeholder="{{ __('works_notification.search_placeholder') }}">
+                                                    placeholder="{{ __('building-works-declarations.search_placeholder') }}">
                                             </div>
                                         </div>
                                         <ul id="gov-list" class="max-h-56 overflow-y-auto py-1 text-body-sm" role="listbox"></ul>
                                     </div>
                                 </div>
-                                <p id="gov-inline-error" class="text-xs text-red-600 dark:text-red-400 hidden" role="alert">{{ __('works_notification.select_gov_del') }}</p>
+                                <p id="gov-inline-error" class="text-xs text-red-600 dark:text-red-400 hidden" role="alert">{{ __('building-works-declarations.select_gov_del') }}</p>
                                 @error('governorate_id')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                             </div>
 
                             {{-- Delegation searchable dropdown --}}
                             <div class="space-y-1.5" id="del-field">
                                 <label id="del-label" class="block text-body-sm font-bold text-on-surface dark:text-gray-200" for="del-trigger">
-                                    {{ __('works_notification.delegation') }} <span class="text-primary" aria-hidden="true">*</span>
+                                    {{ __('building-works-declarations.delegation') }} <span class="text-primary" aria-hidden="true">*</span>
                                 </label>
                                 <input type="hidden" name="delegation_id" id="del-hidden" value="{{ $valDelId }}">
                                 <div class="relative" id="del-wrap">
                                     <button type="button" id="del-trigger" disabled
                                         class="flex w-full items-center justify-between rounded border border-surface-dim bg-surface-container-lowest px-3.5 h-11 text-body-md shadow-sm transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 @error('delegation_id') border-red-400 @enderror"
                                         aria-haspopup="listbox" aria-expanded="false" aria-labelledby="del-label">
-                                        <span id="del-trigger-label" class="truncate text-outline dark:text-gray-500">{{ __('works_notification.delegation_select') }}</span>
+                                        <span id="del-trigger-label" class="truncate text-outline dark:text-gray-500">{{ __('building-works-declarations.delegation_select') }}</span>
                                         <svg class="h-4 w-4 flex-none text-outline transition-transform" id="del-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                         </svg>
@@ -258,13 +258,13 @@
                                                 <span class="material-symbols-outlined absolute start-2.5 top-2.5 text-body-sm text-outline" aria-hidden="true">search</span>
                                                 <input type="text" id="del-search" autocomplete="off"
                                                     class="block w-full rounded bg-surface-container py-1.5 ps-9 pe-3 text-body-sm text-on-surface placeholder:text-outline focus:ring-1 focus:ring-primary focus:outline-none dark:bg-gray-700 dark:text-gray-200"
-                                                    placeholder="{{ __('works_notification.search_placeholder') }}">
+                                                    placeholder="{{ __('building-works-declarations.search_placeholder') }}">
                                             </div>
                                         </div>
                                         <ul id="del-list" class="max-h-56 overflow-y-auto py-1 text-body-sm" role="listbox"></ul>
                                     </div>
                                 </div>
-                                <p id="del-inline-error" class="text-xs text-red-600 dark:text-red-400 hidden" role="alert">{{ __('works_notification.delegation_empty') }}</p>
+                                <p id="del-inline-error" class="text-xs text-red-600 dark:text-red-400 hidden" role="alert">{{ __('building-works-declarations.delegation_empty') }}</p>
                                 @error('delegation_id')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                             </div>
                         </div>
@@ -272,13 +272,13 @@
                         {{-- Property address --}}
                         <div class="space-y-1.5">
                             <label for="property_address" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
-                                {{ __('works_notification.property_address') }} <span class="text-primary" aria-hidden="true">*</span>
+                                {{ __('building-works-declarations.property_address') }} <span class="text-primary" aria-hidden="true">*</span>
                             </label>
                             <div class="relative">
                                 <span class="material-symbols-outlined filled absolute start-3 top-3 text-lg text-outline" aria-hidden="true">location_on</span>
                                 <input id="property_address" name="property_address" type="text" maxlength="500"
                                     value="{{ $valPropAddr }}"
-                                    placeholder="{{ __('works_notification.property_address_placeholder') }}" required
+                                    placeholder="{{ __('building-works-declarations.property_address_placeholder') }}" required
                                     class="ps-10 block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('property_address') border-red-400 @enderror">
                             </div>
                             @error('property_address')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
@@ -294,18 +294,18 @@
                     <div class="p-6 space-y-5">
                         <div class="flex items-center gap-2.5 pb-3 border-b border-surface-dim dark:border-gray-700">
                             <span class="w-7 h-7 rounded bg-primary text-white flex items-center justify-center text-label-caps shrink-0" aria-hidden="true">C</span>
-                            <h3 class="text-title-section text-on-surface uppercase tracking-wider">{{ __('works_notification.section_works') }}</h3>
+                            <h3 class="text-title-section text-on-surface uppercase tracking-wider">{{ __('building-works-declarations.section_works') }}</h3>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             {{-- Works type --}}
                             <div class="space-y-1.5">
                                 <label for="works_type" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
-                                    {{ __('works_notification.works_type') }}
+                                    {{ __('building-works-declarations.works_type') }}
                                 </label>
                                 <input id="works_type" name="works_type" type="text" maxlength="100"
                                     value="{{ $valWorksType }}"
-                                    placeholder="{{ __('works_notification.works_type_placeholder') }}"
+                                    placeholder="{{ __('building-works-declarations.works_type_placeholder') }}"
                                     class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('works_type') border-red-400 @enderror">
                                 @error('works_type')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                             </div>
@@ -313,7 +313,7 @@
                             {{-- Works start date --}}
                             <div class="space-y-1.5">
                                 <label for="works_start_date" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
-                                    {{ __('works_notification.works_start_date') }}
+                                    {{ __('building-works-declarations.works_start_date') }}
                                 </label>
                                 <input id="works_start_date" name="works_start_date" type="date"
                                     value="{{ $valWorksDate }}"
@@ -325,10 +325,10 @@
                         {{-- Works description --}}
                         <div class="space-y-1.5">
                             <label for="works_description" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
-                                {{ __('works_notification.works_description') }} <span class="text-primary" aria-hidden="true">*</span>
+                                {{ __('building-works-declarations.works_description') }} <span class="text-primary" aria-hidden="true">*</span>
                             </label>
                             <textarea id="works_description" name="works_description" rows="4" maxlength="5000" required
-                                placeholder="{{ __('works_notification.works_description_placeholder') }}"
+                                placeholder="{{ __('building-works-declarations.works_description_placeholder') }}"
                                 class="block w-full px-3.5 py-2.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('works_description') border-red-400 @enderror">{{ $valWorksDesc }}</textarea>
                             @error('works_description')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                         </div>
@@ -336,10 +336,10 @@
                         {{-- Notes --}}
                         <div class="space-y-1.5">
                             <label for="notes" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">
-                                {{ __('works_notification.notes') }}
+                                {{ __('building-works-declarations.notes') }}
                             </label>
                             <textarea id="notes" name="notes" rows="3" maxlength="3000"
-                                placeholder="{{ __('works_notification.notes_placeholder') }}"
+                                placeholder="{{ __('building-works-declarations.notes_placeholder') }}"
                                 class="block w-full px-3.5 py-2.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('notes') border-red-400 @enderror">{{ $valNotes }}</textarea>
                             @error('notes')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                         </div>
@@ -347,14 +347,14 @@
 
                     {{-- Form footer --}}
                     <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-surface-dim px-6 py-5 dark:border-gray-700">
-                        <a href="{{ $isEditing ? route('building-works-declarations.step2.show', $BuildingWorksDeclaration) : route('building-works-declarations.index') }}"
+                        <a href="{{ $isEditing ? route('building-works-declarations.step2.show', $buildingWorksDeclaration) : route('building-works-declarations.index') }}"
                            class="inline-flex items-center justify-center rounded border border-surface-dim bg-surface-container-lowest px-4 py-2.5 text-body-sm font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
-                            {{ __('works_notification.cancel') }}
+                            {{ __('building-works-declarations.cancel') }}
                         </a>
                         <button type="submit" id="works-submit-btn"
                             class="ui-btn-primary inline-flex items-center justify-center gap-2 px-5 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-gray-900"
-                            data-loading-text="{{ __('works_notification.submitting') }}">
-                            <span id="works-submit-label">{{ $isEditing ? __('works_notification.save_and_continue') : __('works_notification.continue') }}</span>
+                            data-loading-text="{{ __('building-works-declarations.submitting') }}">
+                            <span id="works-submit-label">{{ $isEditing ? __('building-works-declarations.save_and_continue') : __('building-works-declarations.continue') }}</span>
                             <svg class="h-4 w-4 {{ app()->getLocale() === 'ar' ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                             </svg>
@@ -385,10 +385,10 @@
         var delegationsMap = @json($delegations);
         var initGovId      = @json((string) $valGov);
         var initDelId      = @json((string) $valDelId);
-        var noResults      = @json(__('works_notification.activity_no_results'));
-        var govSelectLbl   = @json(__('works_notification.code_structure_select'));
-        var delSelectLbl   = @json(__('works_notification.delegation_select'));
-        var delEmptyLbl    = @json(__('works_notification.delegation_empty'));
+        var noResults      = @json(__('building-works-declarations.activity_no_results'));
+        var govSelectLbl   = @json(__('building-works-declarations.code_structure_select'));
+        var delSelectLbl   = @json(__('building-works-declarations.delegation_select'));
+        var delEmptyLbl    = @json(__('building-works-declarations.delegation_empty'));
 
         /* ── DOM ── */
         var govHidden  = document.getElementById('gov-hidden');

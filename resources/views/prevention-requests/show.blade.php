@@ -1,4 +1,4 @@
-﻿@php
+@php
     $status = $status ?? $dossier->status;
     // ── Référence affichée : reçu officiel > référence stockée > provisoire ──
     $viewRef = $dossier->num_demande ?: ($dossier->reference ?: \App\Support\Reference::provisional('prevention'));

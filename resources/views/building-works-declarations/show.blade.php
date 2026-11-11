@@ -1,4 +1,4 @@
-﻿@php
+@php
     $notification->loadMissing('user');
     $status  = $notification->status;
     $viewRef = $notification->reference ?: \App\Support\Reference::provisional('works');
@@ -46,20 +46,20 @@
         if ($state === 'done' && $i === 2 && $hadCorrection) $state = 'warning';
 
         $sub = match (true) {
-            $state === 'cancelled'            => __('works_notification.stepper_cancelled'),
-            $state === 'warning' && $i === 2  => __('works_notification.stepper_had_correction'),
-            $status === 'needs_correction' && $state === 'error' => __('works_notification.stepper_correction'),
-            $state === 'done'                 => __('works_notification.stepper_done'),
-            $state === 'pending'              => __('works_notification.stepper_pending'),
-            $i === 1                          => __('works_notification.draft_notice'),
-            $i === 2 && $status === 'completed'          => __('works_notification.stepper_verify_pending'),
-            $i === 2 && $status === 'under_consultation' => __('works_notification.stepper_verify_waiting'),
-            $i === 3                          => __('works_notification.stepper_approved'),
-            default                           => __('works_notification.stepper_current'),
+            $state === 'cancelled'            => __('building-works-declarations.stepper_cancelled'),
+            $state === 'warning' && $i === 2  => __('building-works-declarations.stepper_had_correction'),
+            $status === 'needs_correction' && $state === 'error' => __('building-works-declarations.stepper_correction'),
+            $state === 'done'                 => __('building-works-declarations.stepper_done'),
+            $state === 'pending'              => __('building-works-declarations.stepper_pending'),
+            $i === 1                          => __('building-works-declarations.draft_notice'),
+            $i === 2 && $status === 'completed'          => __('building-works-declarations.stepper_verify_pending'),
+            $i === 2 && $status === 'under_consultation' => __('building-works-declarations.stepper_verify_waiting'),
+            $i === 3                          => __('building-works-declarations.stepper_approved'),
+            default                           => __('building-works-declarations.stepper_current'),
         };
         $alert  = in_array($state, ['error', 'cancelled']);
         $steps[] = [
-            'num' => $i, 'title' => __('works_notification.stepper_' . $i),
+            'num' => $i, 'title' => __('building-works-declarations.stepper_' . $i),
             'sub' => $sub, 'state' => $state, 'alert' => $alert,
         ];
     }
@@ -98,15 +98,15 @@
     /* ── Timeline chip helper ── */
     $eventChip = fn ($type) => match (true) {
         in_array($type, ['submitted', 'resubmitted'])
-            => ['bg-secondary-container text-on-secondary-container', 'post_add', __('works_notification.chip_depot'), 'bg-surface-dim text-secondary'],
+            => ['bg-secondary-container text-on-secondary-container', 'post_add', __('building-works-declarations.chip_depot'), 'bg-surface-dim text-secondary'],
         $type === 'advanced_to_consultation'
-            => ['bg-violet-600 text-white', 'sync_alt', __('works_notification.chip_phase'), 'bg-surface-dim text-secondary'],
+            => ['bg-violet-600 text-white', 'sync_alt', __('building-works-declarations.chip_phase'), 'bg-surface-dim text-secondary'],
         $type === 'correction_requested'
-            => ['bg-amber-500 text-white', 'edit_note', __('works_notification.chip_correction'), 'bg-amber-100 text-amber-800'],
+            => ['bg-amber-500 text-white', 'edit_note', __('building-works-declarations.chip_correction'), 'bg-amber-100 text-amber-800'],
         $type === 'approved'
-            => ['bg-emerald-600 text-white', 'task_alt', __('works_notification.chip_favorable'), 'bg-emerald-100 text-emerald-800'],
+            => ['bg-emerald-600 text-white', 'task_alt', __('building-works-declarations.chip_favorable'), 'bg-emerald-100 text-emerald-800'],
         default
-            => ['bg-red-600 text-white', 'error', __('works_notification.chip_alert'), 'bg-red-100 text-red-700'],
+            => ['bg-red-600 text-white', 'error', __('building-works-declarations.chip_alert'), 'bg-red-100 text-red-700'],
     };
 
     $printDate = now()->locale(app()->getLocale())->isoFormat('dddd D MMMM YYYY, HH:mm');
@@ -157,8 +157,8 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('works_notification.correction_title') }}</h2>
-                                    <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded">{{ __('works_notification.chip_alert') }}</span>
+                                    <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('building-works-declarations.correction_title') }}</h2>
+                                    <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded">{{ __('building-works-declarations.chip_alert') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -166,25 +166,25 @@
                         <div class="rounded border border-red-200 bg-red-50 dark:bg-red-900/10 px-4 py-3 mb-4">
                             <p class="text-[11px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1 flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>
-                                {{ __('works_notification.admin_note_label') }}
+                                {{ __('building-works-declarations.admin_note_label') }}
                             </p>
                             <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $notification->admin_note }}</p>
                         </div>
                         @endif
                         @php
                             $worksFieldLabels = [
-                                'owner_cin'         => __('works_notification.owner_cin'),
-                                'owner_name'        => __('works_notification.owner_name'),
-                                'company_name'      => __('works_notification.company_name'),
-                                'jort_reference'    => __('works_notification.jort_reference'),
-                                'phone'             => __('works_notification.phone'),
-                                'governorate_id'    => __('works_notification.code_structure'),
-                                'delegation_id'     => __('works_notification.delegation'),
-                                'property_address'  => __('works_notification.property_address'),
-                                'works_type'        => __('works_notification.works_type'),
-                                'works_start_date'  => __('works_notification.works_start_date'),
-                                'works_description' => __('works_notification.works_description'),
-                                'notes'             => __('works_notification.notes'),
+                                'owner_cin'         => __('building-works-declarations.owner_cin'),
+                                'owner_name'        => __('building-works-declarations.owner_name'),
+                                'company_name'      => __('building-works-declarations.company_name'),
+                                'jort_reference'    => __('building-works-declarations.jort_reference'),
+                                'phone'             => __('building-works-declarations.phone'),
+                                'governorate_id'    => __('building-works-declarations.code_structure'),
+                                'delegation_id'     => __('building-works-declarations.delegation'),
+                                'property_address'  => __('building-works-declarations.property_address'),
+                                'works_type'        => __('building-works-declarations.works_type'),
+                                'works_start_date'  => __('building-works-declarations.works_start_date'),
+                                'works_description' => __('building-works-declarations.works_description'),
+                                'notes'             => __('building-works-declarations.notes'),
                             ];
                             $correctionDocs = ! empty($correction['docs_to_fix'])
                                 ? $documentTypes->filter(fn ($t) => in_array($t->id, $correction['docs_to_fix']))
@@ -209,7 +209,7 @@
                         <a href="{{ route('building-works-declarations.correct', $notification) }}"
                            class="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-3 px-5 rounded transition-colors shadow-sm">
                             <span class="material-symbols-outlined text-base" aria-hidden="true">edit_note</span>
-                            {{ __('works_notification.fix_and_resubmit') }}
+                            {{ __('building-works-declarations.fix_and_resubmit') }}
                         </a>
                     </div>
                 </section>
@@ -224,14 +224,14 @@
                                 <span class="material-symbols-outlined text-xl" aria-hidden="true">edit_note</span>
                             </div>
                             <div>
-                                <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('works_notification.status_draft') }}</h2>
-                                <p class="text-body-sm text-secondary mt-0.5">{{ __('works_notification.draft_notice') }}</p>
+                                <h2 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('building-works-declarations.status_draft') }}</h2>
+                                <p class="text-body-sm text-secondary mt-0.5">{{ __('building-works-declarations.draft_notice') }}</p>
                             </div>
                         </div>
                         <a href="{{ route('building-works-declarations.step2.show', $notification) }}"
                             class="inline-flex items-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-4 rounded transition-colors shadow-sm">
                             <span class="material-symbols-outlined text-base" aria-hidden="true">play_arrow</span>
-                            {{ __('works_notification.continue') }}
+                            {{ __('building-works-declarations.continue') }}
                         </a>
                     </div>
                 </section>
@@ -246,8 +246,8 @@
                                 <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">cancel</span>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h3 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('works_notification.cancelled_banner') }}</h3>
-                                <p class="text-body-sm text-secondary mt-1">{{ __('works_notification.status_cancelled') }}</p>
+                                <h3 class="text-sm font-extrabold text-on-surface uppercase tracking-wide">{{ __('building-works-declarations.cancelled_banner') }}</h3>
+                                <p class="text-body-sm text-secondary mt-1">{{ __('building-works-declarations.status_cancelled') }}</p>
                             </div>
                         </div>
                     </div>
@@ -256,14 +256,14 @@
                         <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-surface-dim">
                             <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-2">
                                 <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">route</span>
-                                {{ __('works_notification.stepper_title') }}
+                                {{ __('building-works-declarations.stepper_title') }}
                             </h3>
                             <div class="flex items-center gap-3 flex-1 sm:flex-none sm:min-w-64">
                                 @if ($isCancelled)
-                                <span class="text-xs font-bold text-white bg-red-600 px-2 py-0.5 rounded whitespace-nowrap">{{ __('works_notification.stepper_cancelled') }}</span>
+                                <span class="text-xs font-bold text-white bg-red-600 px-2 py-0.5 rounded whitespace-nowrap">{{ __('building-works-declarations.stepper_cancelled') }}</span>
                                 @else
                                 <span class="text-xs font-bold text-primary bg-primary-fixed/40 px-2 py-0.5 rounded whitespace-nowrap">
-                                    {{ __('works_notification.phase_instruction', ['step' => $currentStep ? min($currentStep, 3) : 1]) }}
+                                    {{ __('building-works-declarations.phase_instruction', ['step' => $currentStep ? min($currentStep, 3) : 1]) }}
                                 </span>
                                 @endif
                                 <div class="hidden sm:block flex-1 h-1.5 bg-surface-dim/50 rounded-full overflow-hidden">
@@ -313,7 +313,7 @@
                                             @if ($step['state'] === 'current')
                                                 <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true"></span>
                                             @elseif ($step['state'] === 'error' || $step['state'] === 'cancelled')
-                                                <span class="text-[10px] uppercase font-black text-red-800 bg-red-100 px-1.5 py-px rounded">{{ __('works_notification.chip_alert') }}</span>
+                                                <span class="text-[10px] uppercase font-black text-red-800 bg-red-100 px-1.5 py-px rounded">{{ __('building-works-declarations.chip_alert') }}</span>
                                             @endif
                                         </div>
                                         <p class="text-[11px] mt-0.5 leading-snug {{ $step['alert'] ? 'text-red-700 font-medium' : ($step['state'] === 'current' ? 'text-primary font-medium' : ($step['state'] === 'done' || $step['state'] === 'warning' ? 'text-primary/80 font-medium' : 'text-secondary')) }}">
@@ -342,17 +342,17 @@
                         <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
                             <div class="min-w-0">
                                 <h1 class="text-headline-md font-headline-md text-on-surface tracking-tight leading-tight" dir="ltr">
-                                    {{ __('works_notification.card_title') }} · <span class="font-mono">{{ $viewRef }}</span>
+                                    {{ __('building-works-declarations.card_title') }} · <span class="font-mono">{{ $viewRef }}</span>
                                 </h1>
                                 <p class="text-xs text-secondary mt-1 flex items-center gap-1.5">
                                     <span class="material-symbols-outlined text-xs" aria-hidden="true">calendar_today</span>
-                                    {{ __('works_notification.deposited_on', ['date' => $notification->created_at->isoFormat('D MMMM YYYY')]) }}
+                                    {{ __('building-works-declarations.deposited_on', ['date' => $notification->created_at->isoFormat('D MMMM YYYY')]) }}
                                 </p>
                             </div>
                             <div class="flex items-center gap-2.5 shrink-0">
                                 <span class="inline-flex items-center gap-1.5 text-label-caps font-label-caps px-2.5 py-1 rounded font-bold {{ $statusPillCls }}">
                                     <span class="material-symbols-outlined text-xs" aria-hidden="true">{{ $statusPillIcon }}</span>
-                                    {{ __('works_notification.status_' . $status) }}
+                                    {{ __('building-works-declarations.status_' . $status) }}
                                 </span>
                                 <a href="{{ route('building-works-declarations.index') }}"
                                     class="flex items-center gap-2 bg-surface-container-lowest hover:bg-surface-container text-on-surface border border-surface-dim text-xs font-semibold py-2 px-2.5 rounded transition-colors">
@@ -368,21 +368,21 @@
                         {{-- Key facts grid --}}
                         <div class="flex items-center gap-2 mb-3">
                             <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">fact_check</span>
-                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-secondary">{{ __('works_notification.details_title') }}</span>
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-secondary">{{ __('building-works-declarations.details_title') }}</span>
                         </div>
                         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                             @php
-                                $ownerLabel = $notification->isMoral() ? __('works_notification.company_name') : __('works_notification.owner_name');
+                                $ownerLabel = $notification->isMoral() ? __('building-works-declarations.company_name') : __('building-works-declarations.owner_name');
                                 $ownerValue = $notification->isMoral() ? $notification->company_name : $notification->owner_name;
                                 $keyFacts = [
                                     ['badge', $ownerLabel, $ownerValue, false],
-                                    ['fingerprint', __('works_notification.owner_cin'), $notification->owner_cin, true],
-                                    ['call', __('works_notification.phone'), $notification->phone, true],
+                                    ['fingerprint', __('building-works-declarations.owner_cin'), $notification->owner_cin, true],
+                                    ['call', __('building-works-declarations.phone'), $notification->phone, true],
                                     ['mail', __('rescue_certificate.email'), $notification->user?->email, true],
-                                    ['account_balance', __('works_notification.code_structure'), $notification->governorate?->name, false],
-                                    ['location_city', __('works_notification.delegation'), $notification->delegation?->name, false],
-                                    ['construction', __('works_notification.works_type'), $notification->works_type, false],
-                                    ['place', __('works_notification.property_address'), $notification->property_address, false],
+                                    ['account_balance', __('building-works-declarations.code_structure'), $notification->governorate?->name, false],
+                                    ['location_city', __('building-works-declarations.delegation'), $notification->delegation?->name, false],
+                                    ['construction', __('building-works-declarations.works_type'), $notification->works_type, false],
+                                    ['place', __('building-works-declarations.property_address'), $notification->property_address, false],
                                 ];
                             @endphp
                             @foreach ($keyFacts as [$icon, $label, $val, $isLtr])
@@ -403,7 +403,7 @@
                         <div class="mt-4 rounded-lg border border-surface-dim bg-surface-container-low px-4 py-3">
                             <p class="text-[11px] font-extrabold uppercase tracking-wider text-secondary mb-1 flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm" aria-hidden="true">sticky_note_2</span>
-                                {{ __('works_notification.admin_note_label') }}
+                                {{ __('building-works-declarations.admin_note_label') }}
                             </p>
                             <p class="text-body-sm text-on-surface whitespace-pre-line leading-relaxed">{{ $notification->admin_note }}</p>
                         </div>
@@ -415,29 +415,29 @@
                         @if ($heroAlert === 'info')
                             <div class="flex items-start gap-2.5 bg-blue-50 border border-blue-200 rounded px-3.5 py-2.5 text-xs">
                                 <span class="material-symbols-outlined text-blue-600 text-base mt-px" aria-hidden="true">manage_search</span>
-                                <div class="font-bold text-blue-900 leading-relaxed">{{ __('works_notification.under_consultation_banner') }}</div>
+                                <div class="font-bold text-blue-900 leading-relaxed">{{ __('building-works-declarations.under_consultation_banner') }}</div>
                             </div>
                         @elseif ($heroAlert === 'success')
                             <div class="flex items-start gap-2.5 bg-emerald-50 border border-emerald-200 rounded px-3.5 py-2.5 text-xs">
                                 <span class="material-symbols-outlined text-emerald-600 text-base mt-px" aria-hidden="true">task_alt</span>
-                                <div class="font-bold text-emerald-900 leading-relaxed">{{ __('works_notification.approved_banner') }}</div>
+                                <div class="font-bold text-emerald-900 leading-relaxed">{{ __('building-works-declarations.approved_banner') }}</div>
                             </div>
                         @elseif ($heroAlert === 'error')
                             <div class="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded px-3.5 py-2.5 text-xs">
                                 <span class="material-symbols-outlined text-red-600 text-base mt-px" aria-hidden="true">notification_important</span>
                                 <div class="font-bold text-red-900 leading-relaxed">
-                                    {{ $status === 'needs_correction' ? __('works_notification.needs_correction_banner') : __('works_notification.cancelled_banner') }}
+                                    {{ $status === 'needs_correction' ? __('building-works-declarations.needs_correction_banner') : __('building-works-declarations.cancelled_banner') }}
                                 </div>
                             </div>
                         @elseif ($heroAlert === 'draft')
                             <div class="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded px-3.5 py-2.5 text-xs">
                                 <span class="material-symbols-outlined text-red-600 text-base mt-px" aria-hidden="true">edit_note</span>
-                                <div class="font-bold text-red-900 leading-relaxed">{{ __('works_notification.draft_notice') }}</div>
+                                <div class="font-bold text-red-900 leading-relaxed">{{ __('building-works-declarations.draft_notice') }}</div>
                             </div>
                         @else
                             <div class="flex items-start gap-2.5 bg-surface-container-low border border-surface-dim rounded px-3.5 py-2.5 text-xs">
                                 <span class="material-symbols-outlined text-secondary text-base mt-px" aria-hidden="true">hourglass_top</span>
-                                <div class="font-bold text-on-surface leading-relaxed">{{ __('works_notification.under_review_banner') }}</div>
+                                <div class="font-bold text-on-surface leading-relaxed">{{ __('building-works-declarations.under_review_banner') }}</div>
                             </div>
                         @endif
 
@@ -445,19 +445,19 @@
                         <div class="mt-3 flex flex-wrap gap-2">
                             <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">
                                 <span class="material-symbols-outlined text-xs" aria-hidden="true">verified</span>
-                                {{ __('works_notification.free_info') }}
+                                {{ __('building-works-declarations.free_info') }}
                             </span>
                             <span class="inline-flex items-center gap-1.5 rounded-full border border-surface-dim bg-surface-container-low px-2.5 py-1 text-[11px] font-semibold text-secondary">
                                 <span class="material-symbols-outlined text-xs" aria-hidden="true">schedule</span>
-                                {{ __('works_notification.delay_info') }}
+                                {{ __('building-works-declarations.delay_info') }}
                             </span>
                             <span class="inline-flex items-center gap-1.5 rounded-full border border-surface-dim bg-surface-container-low px-2.5 py-1 text-[11px] font-semibold text-secondary">
                                 <span class="material-symbols-outlined text-xs" aria-hidden="true">call</span>
-                                {{ __('works_notification.phone_followup') }}
+                                {{ __('building-works-declarations.phone_followup') }}
                             </span>
                             <span class="inline-flex items-center gap-1.5 rounded-full border border-surface-dim bg-surface-container-low px-2.5 py-1 text-[11px] font-semibold text-secondary">
                                 <span class="material-symbols-outlined text-xs" aria-hidden="true">all_inclusive</span>
-                                {{ __('works_notification.validity_info') }}
+                                {{ __('building-works-declarations.validity_info') }}
                             </span>
                         </div>
                     </div>
@@ -469,11 +469,11 @@
                     <div class="border-s-4 border-s-primary p-5 space-y-3">
                         <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-2">
                             <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">construction</span>
-                            {{ __('works_notification.section_works') }}
+                            {{ __('building-works-declarations.section_works') }}
                         </h3>
                         @if (filled($notification->works_start_date))
                         <div class="flex items-center gap-2 text-xs">
-                            <span class="text-secondary font-semibold">{{ __('works_notification.works_start_date') }} :</span>
+                            <span class="text-secondary font-semibold">{{ __('building-works-declarations.works_start_date') }} :</span>
                             <span class="font-bold text-on-surface" dir="ltr">{{ $notification->works_start_date->format('d/m/Y') }}</span>
                         </div>
                         @endif
@@ -482,7 +482,7 @@
                         @endif
                         @if (filled($notification->notes))
                         <div class="rounded-lg border border-surface-dim bg-surface-container-low px-4 py-3 mt-2">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-secondary mb-1">{{ __('works_notification.notes') }}</p>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-secondary mb-1">{{ __('building-works-declarations.notes') }}</p>
                             <p class="text-body-sm text-secondary whitespace-pre-line leading-relaxed">{{ $notification->notes }}</p>
                         </div>
                         @endif
@@ -496,7 +496,7 @@
                     <div class="p-5 flex items-start gap-3">
                         <span class="material-symbols-outlined text-primary text-xl mt-px shrink-0" aria-hidden="true">article</span>
                         <div class="min-w-0">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-secondary mb-0.5">{{ __('works_notification.jort_reference') }}</p>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-secondary mb-0.5">{{ __('building-works-declarations.jort_reference') }}</p>
                             <p class="text-body-sm font-semibold text-on-surface" dir="ltr">{{ $notification->jort_reference }}</p>
                         </div>
                     </div>
@@ -509,11 +509,11 @@
                         <div>
                             <h3 class="text-sm font-extrabold uppercase tracking-wider text-secondary flex items-center gap-2">
                                 <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">folder_open</span>
-                                {{ __('works_notification.documents_title') }}
+                                {{ __('building-works-declarations.documents_title') }}
                             </h3>
                             <p class="text-xs text-secondary mt-0.5">
-                                {{ $activeDocuments->count() }} {{ __('works_notification.files_uploaded') }}
-                                @if ($archivedDocuments->isNotEmpty()) — {{ $archivedDocuments->count() }} {{ __('works_notification.files_archived') }} @endif
+                                {{ $activeDocuments->count() }} {{ __('building-works-declarations.files_uploaded') }}
+                                @if ($archivedDocuments->isNotEmpty()) — {{ $archivedDocuments->count() }} {{ __('building-works-declarations.files_archived') }} @endif
                             </p>
                         </div>
                         {{-- completeness ring --}}
@@ -542,14 +542,14 @@
                                         <div>
                                             <p class="text-xs font-semibold text-on-surface dark:text-gray-100">{{ $docType->name }}</p>
                                             @if ($files->isEmpty())
-                                                <p class="text-[10px] text-outline dark:text-gray-500">{{ __('works_notification.documents_not_uploaded') }}</p>
+                                                <p class="text-[10px] text-outline dark:text-gray-500">{{ __('building-works-declarations.documents_not_uploaded') }}</p>
                                             @elseif ($files->count() > 1)
-                                                <p class="text-[10px] text-secondary">{{ $files->count() }} {{ __('works_notification.files_count') }}</p>
+                                                <p class="text-[10px] text-secondary">{{ $files->count() }} {{ __('building-works-declarations.files_count') }}</p>
                                             @endif
                                         </div>
                                     </div>
                                     @if ($docType->is_conditional)
-                                        <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{{ __('works_notification.document_conditional') }}</span>
+                                        <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{{ __('building-works-declarations.document_conditional') }}</span>
                                     @endif
                                 </div>
                                 @if ($files->isNotEmpty())
@@ -565,7 +565,7 @@
                                             </div>
                                             <a href="{{ route('building-works-declarations.documents.download', [$notification, $doc]) }}"
                                                class="w-7 h-7 rounded bg-primary/10 text-primary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors"
-                                               title="{{ __('works_notification.download_label') }}">
+                                               title="{{ __('building-works-declarations.download_label') }}">
                                                 <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
                                             </a>
                                         </div>
@@ -574,7 +574,7 @@
                                 @endif
                             </div>
                         @empty
-                            <div class="px-5 py-6 text-center text-xs text-outline">{{ __('works_notification.admin_no_doctypes') }}</div>
+                            <div class="px-5 py-6 text-center text-xs text-outline">{{ __('building-works-declarations.admin_no_doctypes') }}</div>
                         @endforelse
                     </div>
 
@@ -583,11 +583,11 @@
                     <div class="border-t border-surface-dim px-5 py-4" x-data="{ archOpen: false }">
                         <button type="button" @click="archOpen = !archOpen" class="w-full flex items-center gap-2 text-start">
                             <span class="material-symbols-outlined text-base text-secondary" aria-hidden="true">inventory_2</span>
-                            <span class="text-xs font-bold uppercase tracking-wider text-secondary flex-1">{{ __('works_notification.archive_title') }} ({{ $archivedDocuments->count() }})</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-secondary flex-1">{{ __('building-works-declarations.archive_title') }} ({{ $archivedDocuments->count() }})</span>
                             <svg class="w-4 h-4 text-secondary transition-transform" :class="archOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="archOpen" x-cloak class="mt-3">
-                            <p class="text-xs text-secondary mb-2 leading-relaxed">{{ __('works_notification.archive_desc') }}</p>
+                            <p class="text-xs text-secondary mb-2 leading-relaxed">{{ __('building-works-declarations.archive_desc') }}</p>
                             <div class="space-y-1.5">
                                 @foreach ($archivedDocuments as $doc)
                                     <div class="flex items-center justify-between gap-3 rounded-lg border border-surface-dim/70 bg-surface-container-low px-3 py-2">
@@ -600,7 +600,7 @@
                                         </div>
                                         <a href="{{ route('building-works-declarations.documents.download', [$notification, $doc]) }}"
                                            class="w-7 h-7 rounded bg-surface-container text-secondary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors"
-                                           title="{{ __('works_notification.download_label') }}">
+                                           title="{{ __('building-works-declarations.download_label') }}">
                                             <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
                                         </a>
                                     </div>
@@ -616,7 +616,7 @@
                 <section class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm mb-6 overflow-hidden" x-data="{ histOpen: false }">
                     <button type="button" @click="histOpen = !histOpen" class="w-full flex items-center gap-3 px-5 py-4 text-start border-b border-surface-dim hover:bg-surface-container transition-colors">
                         <span class="material-symbols-outlined text-amber-600 text-base" aria-hidden="true">history</span>
-                        <span class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">{{ __('works_notification.timeline_title') }} ({{ count($allCorrectionRounds) }})</span>
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">{{ __('building-works-declarations.timeline_title') }} ({{ count($allCorrectionRounds) }})</span>
                         <svg class="w-4 h-4 text-secondary transition-transform" :class="histOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="histOpen" x-cloak class="divide-y divide-surface-dim">
@@ -624,20 +624,20 @@
                         <div class="px-5 py-4">
                             <p class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 mb-2 flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm" aria-hidden="true">sync_problem</span>
-                                {{ __('works_notification.old_version_title', ['round' => $round['round']]) }}
+                                {{ __('building-works-declarations.old_version_title', ['round' => $round['round']]) }}
                                 @if ($round['date'])
                                     <span class="font-normal normal-case tracking-normal text-secondary" dir="ltr">{{ $round['date']->format('d/m/Y') }}</span>
                                 @endif
                             </p>
                             @if ($round['note'])
                                 <div class="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs mb-3">
-                                    <p class="font-bold text-amber-900 mb-1">{{ __('works_notification.admin_note_label') }}</p>
+                                    <p class="font-bold text-amber-900 mb-1">{{ __('building-works-declarations.admin_note_label') }}</p>
                                     <p class="text-amber-800 whitespace-pre-line">{{ is_array($round['note']) ? ($round['note'][app()->getLocale()] ?? $round['note']['fr'] ?? $round['note']['ar'] ?? '') : $round['note'] }}</p>
                                 </div>
                             @endif
                             @if (!empty($round['previous']))
                                 <div class="rounded border border-surface-dim bg-surface-container-low px-3 py-2 text-xs space-y-1">
-                                    <p class="font-bold text-secondary">{{ __('works_notification.previous_values') }}</p>
+                                    <p class="font-bold text-secondary">{{ __('building-works-declarations.previous_values') }}</p>
                                     @foreach ($round['previous'] as $field => $val)
                                         @if (filled($val))
                                         <div class="flex gap-2">
@@ -650,7 +650,7 @@
                             @endif
                             @if (!empty($round['archived_files']))
                                 <div class="mt-2 space-y-1">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-secondary">{{ __('works_notification.archived_files_title') }}</p>
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-secondary">{{ __('building-works-declarations.archived_files_title') }}</p>
                                     @foreach ($round['archived_files'] as $af)
                                         <div class="flex items-center gap-2 text-xs text-secondary">
                                             <span class="material-symbols-outlined text-outline text-sm" aria-hidden="true">inventory_2</span>
@@ -671,9 +671,9 @@
                     <div class="border-b border-surface-dim px-5 py-4 flex items-center justify-between gap-3">
                         <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex items-center gap-2">
                             <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">timeline</span>
-                            {{ __('works_notification.timeline_title') }}
+                            {{ __('building-works-declarations.timeline_title') }}
                         </h3>
-                        <span class="text-[11px] font-semibold text-secondary">{{ $notification->events->count() }} {{ __('works_notification.timeline_events_count') }}</span>
+                        <span class="text-[11px] font-semibold text-secondary">{{ $notification->events->count() }} {{ __('building-works-declarations.timeline_events_count') }}</span>
                     </div>
                     <div class="px-5 py-4">
                         @forelse ($notification->events as $event)
@@ -694,7 +694,7 @@
                                         </span>
                                     </div>
                                     <p class="text-[11px] text-secondary">
-                                        {{ $event->actor?->name ?? __('works_notification.system_actor') }}
+                                        {{ $event->actor?->name ?? __('building-works-declarations.system_actor') }}
                                         · {{ $event->created_at->format('d/m/Y, H:i') }}
                                         <span class="opacity-60">({{ $event->created_at->diffForHumans() }})</span>
                                     </p>
@@ -705,14 +705,14 @@
                                             <span x-text="open ? '{{ __('action.hide') }}' : '{{ __('action.view') }}'"></span>
                                         </button>
                                         <div x-show="open" x-cloak x-transition class="mt-2 rounded-lg px-3 py-2 text-xs {{ $event->type === 'correction_requested' ? 'border border-amber-200 bg-amber-50 text-amber-800' : 'border border-red-200 bg-red-50 text-red-800' }}">
-                                            <p class="font-semibold mb-1">{{ __('works_notification.admin_note_label') }}</p>
+                                            <p class="font-semibold mb-1">{{ __('building-works-declarations.admin_note_label') }}</p>
                                             <p class="whitespace-pre-line">{{ $event->note }}</p>
                                         </div>
                                     @endif
                                 </div>
                             </div>
                         @empty
-                            <p class="text-xs text-outline text-center py-4">{{ __('works_notification.timeline_empty') }}</p>
+                            <p class="text-xs text-outline text-center py-4">{{ __('building-works-declarations.timeline_empty') }}</p>
                         @endforelse
                     </div>
                 </section>
@@ -725,45 +725,45 @@
                     <div class="fiche-band">
                         <div>
                             <div class="fiche-band-org">{{ config('app.name', 'ONPC') }}</div>
-                            <div class="fiche-band-sub">{{ __('works_notification.index_title') }}</div>
+                            <div class="fiche-band-sub">{{ __('building-works-declarations.index_title') }}</div>
                         </div>
                         <div class="fiche-band-ref">
-                            <div class="fiche-band-ref-label">{{ __('works_notification.card_title') }}</div>
+                            <div class="fiche-band-ref-label">{{ __('building-works-declarations.card_title') }}</div>
                             <div class="fiche-band-ref-value" dir="ltr">{{ $viewRef }}</div>
                         </div>
                     </div>
                     <div class="fiche-title-row">
-                        <div class="fiche-title">{{ __('works_notification.card_title') }}</div>
+                        <div class="fiche-title">{{ __('building-works-declarations.card_title') }}</div>
                         <div class="fiche-date">{{ $printDate }}</div>
                     </div>
                     <table class="fiche-table">
                         <tbody>
-                            <tr><th>{{ __('works_notification.owner_type_label') }}</th><td>{{ $notification->isMoral() ? __('works_notification.owner_moral') : __('works_notification.owner_natural') }}</td></tr>
-                            <tr><th>{{ $notification->isMoral() ? __('works_notification.company_name') : __('works_notification.owner_name') }}</th><td>{{ $notification->owner_name ?? '—' }}</td></tr>
-                            <tr><th>{{ __('works_notification.owner_cin') }}</th><td>{{ $notification->owner_cin ?? '—' }}</td></tr>
-                            <tr><th>{{ __('works_notification.phone') }}</th><td>{{ $notification->phone ?? '—' }}</td></tr>
-                            <tr><th>{{ __('works_notification.code_structure') }}</th><td>{{ $notification->governorate?->name ?? '—' }}</td></tr>
-                            <tr><th>{{ __('works_notification.delegation') }}</th><td>{{ $notification->delegation?->name ?? '—' }}</td></tr>
-                            <tr><th>{{ __('works_notification.property_address') }}</th><td>{{ $notification->property_address ?? '—' }}</td></tr>
-                            <tr><th>{{ __('works_notification.works_type') }}</th><td>{{ $notification->works_type ?? '—' }}</td></tr>
-                            <tr><th>{{ __('works_notification.works_start_date') }}</th><td>{{ $notification->works_start_date?->format('d/m/Y') ?? '—' }}</td></tr>
-                            <tr><th>{{ __('works_notification.works_description') }}</th><td style="white-space:pre-line;">{{ $notification->works_description ?? '—' }}</td></tr>
-                            @if ($notification->notes)<tr><th>{{ __('works_notification.notes') }}</th><td>{{ $notification->notes }}</td></tr>@endif
-                            <tr><th>{{ __('works_notification.free') }}</th><td>{{ __('works_notification.free_info') }}</td></tr>
+                            <tr><th>{{ __('building-works-declarations.owner_type_label') }}</th><td>{{ $notification->isMoral() ? __('building-works-declarations.owner_moral') : __('building-works-declarations.owner_natural') }}</td></tr>
+                            <tr><th>{{ $notification->isMoral() ? __('building-works-declarations.company_name') : __('building-works-declarations.owner_name') }}</th><td>{{ $notification->owner_name ?? '—' }}</td></tr>
+                            <tr><th>{{ __('building-works-declarations.owner_cin') }}</th><td>{{ $notification->owner_cin ?? '—' }}</td></tr>
+                            <tr><th>{{ __('building-works-declarations.phone') }}</th><td>{{ $notification->phone ?? '—' }}</td></tr>
+                            <tr><th>{{ __('building-works-declarations.code_structure') }}</th><td>{{ $notification->governorate?->name ?? '—' }}</td></tr>
+                            <tr><th>{{ __('building-works-declarations.delegation') }}</th><td>{{ $notification->delegation?->name ?? '—' }}</td></tr>
+                            <tr><th>{{ __('building-works-declarations.property_address') }}</th><td>{{ $notification->property_address ?? '—' }}</td></tr>
+                            <tr><th>{{ __('building-works-declarations.works_type') }}</th><td>{{ $notification->works_type ?? '—' }}</td></tr>
+                            <tr><th>{{ __('building-works-declarations.works_start_date') }}</th><td>{{ $notification->works_start_date?->format('d/m/Y') ?? '—' }}</td></tr>
+                            <tr><th>{{ __('building-works-declarations.works_description') }}</th><td style="white-space:pre-line;">{{ $notification->works_description ?? '—' }}</td></tr>
+                            @if ($notification->notes)<tr><th>{{ __('building-works-declarations.notes') }}</th><td>{{ $notification->notes }}</td></tr>@endif
+                            <tr><th>{{ __('building-works-declarations.free') }}</th><td>{{ __('building-works-declarations.free_info') }}</td></tr>
                         </tbody>
                     </table>
                     <div class="fiche-sign-row">
                         <div class="fiche-sign-col">
-                            <div class="fiche-sign-name">{{ __('works_notification.print_applicant') }}</div>
-                            <div class="fiche-sign-line">{{ __('works_notification.print_signature') }}</div>
+                            <div class="fiche-sign-name">{{ __('building-works-declarations.print_applicant') }}</div>
+                            <div class="fiche-sign-line">{{ __('building-works-declarations.print_signature') }}</div>
                         </div>
                         <div class="fiche-sign-col">
-                            <div class="fiche-sign-name">{{ __('works_notification.print_admin') }}</div>
-                            <div class="fiche-sign-line">{{ __('works_notification.print_stamp') }}</div>
+                            <div class="fiche-sign-name">{{ __('building-works-declarations.print_admin') }}</div>
+                            <div class="fiche-sign-line">{{ __('building-works-declarations.print_stamp') }}</div>
                         </div>
                     </div>
                     <div class="fiche-foot">
-                        <span>{{ __('works_notification.print_footer') }}</span>
+                        <span>{{ __('building-works-declarations.print_footer') }}</span>
                         <span dir="ltr">{{ $viewRef }}</span>
                     </div>
                 </div>

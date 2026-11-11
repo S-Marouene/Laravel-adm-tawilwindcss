@@ -1,11 +1,11 @@
-﻿<?php
+<?php
 
 namespace App\Http\Controllers;
 
 use App\Models\DocumentType;
 use App\Models\Governorate;
 use App\Models\BuildingWorksDeclaration;
-use App\Models\BuildingBuildingBuildingBuildingWorksDocument;
+use App\Models\BuildingWorksDocument;
 use App\Models\Service;
 use App\Services\DossierNotifier;
 use Illuminate\Http\RedirectResponse;
@@ -58,37 +58,37 @@ class BuildingWorksDeclarationController extends Controller
         ]);
     }
 
-    public function editStep1(BuildingWorksDeclaration $BuildingWorksDeclaration): View|RedirectResponse
+    public function editStep1(BuildingWorksDeclaration $buildingWorksDeclaration): View|RedirectResponse
     {
-        if ($BuildingWorksDeclaration->user_id !== auth()->id()) {
+        if ($buildingWorksDeclaration->user_id !== auth()->id()) {
             abort(403);
         }
 
         return view('building-works-declarations.create', [
             'gouvernorats'     => $this->gouvernorats(),
             'delegations'      => $this->delegations(),
-            'BuildingWorksDeclaration' => $BuildingWorksDeclaration, // pre-fills the form & unlocks "editing" mode
+            'buildingWorksDeclaration' => $buildingWorksDeclaration, // pre-fills the form & unlocks "editing" mode
         ]);
     }
 
-    public function updateStep1(Request $request, BuildingWorksDeclaration $BuildingWorksDeclaration): RedirectResponse
+    public function updateStep1(Request $request, BuildingWorksDeclaration $buildingWorksDeclaration): RedirectResponse
     {
-        if ($BuildingWorksDeclaration->user_id !== auth()->id()) {
+        if ($buildingWorksDeclaration->user_id !== auth()->id()) {
             abort(403);
         }
 
         $validated = $request->validate($this->step1Rules());
 
-        $BuildingWorksDeclaration->update($this->step1Data($validated));
+        $buildingWorksDeclaration->update($this->step1Data($validated));
 
-        return redirect()->route('building-works-declarations.step2.show', $BuildingWorksDeclaration);
+        return redirect()->route('building-works-declarations.step2.show', $buildingWorksDeclaration);
     }
 
     public function storeStep1(Request $request): RedirectResponse
     {
         $validated = $request->validate($this->step1Rules());
 
-        $BuildingWorksDeclaration = BuildingWorksDeclaration::create(array_merge(
+        $buildingWorksDeclaration = BuildingWorksDeclaration::create(array_merge(
             $this->step1Data($validated),
             [
                 'user_id'      => auth()->id(),
@@ -97,37 +97,37 @@ class BuildingWorksDeclarationController extends Controller
             ]
         ));
 
-        return redirect()->route('building-works-declarations.step2.show', $BuildingWorksDeclaration);
+        return redirect()->route('building-works-declarations.step2.show', $buildingWorksDeclaration);
     }
 
     // =========================================================================
     // Step 2 — Show document upload form
     // =========================================================================
 
-    public function showStep2(BuildingWorksDeclaration $BuildingWorksDeclaration): View|RedirectResponse
+    public function showStep2(BuildingWorksDeclaration $buildingWorksDeclaration): View|RedirectResponse
     {
-        if ($BuildingWorksDeclaration->user_id !== auth()->id()) {
+        if ($buildingWorksDeclaration->user_id !== auth()->id()) {
             abort(403);
         }
 
-        if ($BuildingWorksDeclaration->status !== 'draft') {
+        if ($buildingWorksDeclaration->status !== 'draft') {
             return redirect()->route('building-works-declarations.index')
-                ->withErrors(['status' => __('works_notification.not_editable')]);
+                ->withErrors(['status' => __('building-works-declarations.not_editable')]);
         }
 
-        $BuildingWorksDeclaration->load(['governorate', 'delegation']);
+        $buildingWorksDeclaration->load(['governorate', 'delegation']);
 
         $documentTypes = DocumentType::service(DocumentType::SERVICE_WORKS_NOTIFICATION)
             ->orderBy('sort_order')
             ->get();
 
-        $uploadedDocs = BuildingBuildingBuildingBuildingWorksDocument::where('works_notification_id', $BuildingWorksDeclaration->id)
+        $uploadedDocs = BuildingWorksDocument::where('works_notification_id', $buildingWorksDeclaration->id)
             ->where('status', '!=', 'archived')
             ->get()
             ->keyBy('document_type_id');
 
         return view('building-works-declarations.create-step2', [
-            'BuildingWorksDeclaration' => $BuildingWorksDeclaration,
+            'buildingWorksDeclaration' => $buildingWorksDeclaration,
             'documentTypes'     => $documentTypes,
             'uploadedDocs'      => $uploadedDocs,
         ]);
@@ -137,15 +137,15 @@ class BuildingWorksDeclarationController extends Controller
     // Step 2 — Save uploaded documents & submit the notification
     // =========================================================================
 
-    public function storeStep2(Request $request, BuildingWorksDeclaration $BuildingWorksDeclaration): RedirectResponse
+    public function storeStep2(Request $request, BuildingWorksDeclaration $buildingWorksDeclaration): RedirectResponse
     {
-        if ($BuildingWorksDeclaration->user_id !== auth()->id()) {
+        if ($buildingWorksDeclaration->user_id !== auth()->id()) {
             abort(403);
         }
 
-        if ($BuildingWorksDeclaration->status !== 'draft') {
+        if ($buildingWorksDeclaration->status !== 'draft') {
             return redirect()->route('building-works-declarations.index')
-                ->withErrors(['status' => __('works_notification.not_editable')]);
+                ->withErrors(['status' => __('building-works-declarations.not_editable')]);
         }
 
         $rules = [];
@@ -160,7 +160,7 @@ class BuildingWorksDeclarationController extends Controller
 
         $request->validate($rules);
 
-        $uploadDir = "building-building-building-building-works-documents/{$BuildingWorksDeclaration->id}";
+        $uploadDir = "building-building-building-building-works-documents/{$buildingWorksDeclaration->id}";
 
         foreach ($documentTypeIds as $docTypeId) {
             $files = $request->file("documents.{$docTypeId}");
@@ -174,8 +174,8 @@ class BuildingWorksDeclarationController extends Controller
 
                 // Always create a new row — multiple active files per type are
                 // allowed (same model as prevention & rescue documents).
-                BuildingBuildingBuildingBuildingWorksDocument::create([
-                    'works_notification_id' => $BuildingWorksDeclaration->id,
+                BuildingWorksDocument::create([
+                    'works_notification_id' => $buildingWorksDeclaration->id,
                     'document_type_id'      => $docTypeId,
                     'file_path'             => $path,
                     'original_name'         => $file->getClientOriginalName(),
@@ -186,60 +186,60 @@ class BuildingWorksDeclarationController extends Controller
             }
         }
 
-        $BuildingWorksDeclaration->update([
+        $buildingWorksDeclaration->update([
             'current_step' => 2,
             'status'       => 'completed',
-            'reference'    => $BuildingWorksDeclaration->reference ?: \App\Support\Reference::make('works', $BuildingWorksDeclaration),
+            'reference'    => $buildingWorksDeclaration->reference ?: \App\Support\Reference::make('works', $buildingWorksDeclaration),
         ]);
 
-        $BuildingWorksDeclaration->logEvent('submitted');
+        $buildingWorksDeclaration->logEvent('submitted');
 
-        DossierNotifier::notify($BuildingWorksDeclaration, 'submitted', 'admin', Service::SERVICE_WORKS_NOTIFICATION);
+        DossierNotifier::notify($buildingWorksDeclaration, 'submitted', 'admin', Service::SERVICE_WORKS_NOTIFICATION);
 
         return redirect()
-            ->route('building-works-declarations.show', $BuildingWorksDeclaration)
-            ->with('success', __('works_notification.submit_success'));
+            ->route('building-works-declarations.show', $buildingWorksDeclaration)
+            ->with('success', __('building-works-declarations.submit_success'));
     }
 
     // =========================================================================
     // Resubmit after correction — legacy POST now bounces to the correct page
     // =========================================================================
 
-    public function resubmit(Request $request, BuildingWorksDeclaration $BuildingWorksDeclaration): RedirectResponse
+    public function resubmit(Request $request, BuildingWorksDeclaration $buildingWorksDeclaration): RedirectResponse
     {
-        if ($BuildingWorksDeclaration->user_id !== auth()->id()) {
+        if ($buildingWorksDeclaration->user_id !== auth()->id()) {
             abort(403);
         }
 
-        if (! $BuildingWorksDeclaration->isNeedsCorrection()) {
+        if (! $buildingWorksDeclaration->isNeedsCorrection()) {
             return redirect()->route('building-works-declarations.index')
-                ->withErrors(['status' => __('works_notification.resubmit_forbidden')]);
+                ->withErrors(['status' => __('building-works-declarations.resubmit_forbidden')]);
         }
 
-        return redirect()->route('building-works-declarations.correct', $BuildingWorksDeclaration);
+        return redirect()->route('building-works-declarations.correct', $buildingWorksDeclaration);
     }
 
     // =========================================================================
     // Show — full lifecycle detail page (stepper, timeline, documents)
     // =========================================================================
 
-    public function show(Request $request, BuildingWorksDeclaration $BuildingWorksDeclaration): View
+    public function show(Request $request, BuildingWorksDeclaration $buildingWorksDeclaration): View
     {
-        if ($BuildingWorksDeclaration->user_id !== auth()->id()) {
+        if ($buildingWorksDeclaration->user_id !== auth()->id()) {
             abort(403);
         }
 
-        $BuildingWorksDeclaration->load(['governorate', 'delegation', 'documents.documentType', 'events.actor']);
+        $buildingWorksDeclaration->load(['governorate', 'delegation', 'documents.documentType', 'events.actor']);
 
         $documentTypes = DocumentType::service(DocumentType::SERVICE_WORKS_NOTIFICATION)
             ->orderBy('sort_order')
             ->get();
 
         return view('building-works-declarations.show', [
-            'notification'        => $BuildingWorksDeclaration,
+            'notification'        => $buildingWorksDeclaration,
             'documentTypes'       => $documentTypes,
-            'archivedDocuments'   => $BuildingWorksDeclaration->documents->filter(fn ($d) => $d->status === 'archived')->sortBy('created_at'),
-            'allCorrectionRounds' => $BuildingWorksDeclaration->allCorrectionRounds(),
+            'archivedDocuments'   => $buildingWorksDeclaration->documents->filter(fn ($d) => $d->status === 'archived')->sortBy('created_at'),
+            'allCorrectionRounds' => $buildingWorksDeclaration->allCorrectionRounds(),
         ]);
     }
 
@@ -247,16 +247,16 @@ class BuildingWorksDeclarationController extends Controller
     // Download an uploaded document (owner only)
     // =========================================================================
 
-    public function downloadDocument(BuildingWorksDeclaration $BuildingWorksDeclaration, BuildingBuildingBuildingBuildingWorksDocument $BuildingBuildingBuildingBuildingWorksDocument)
+    public function downloadDocument(BuildingWorksDeclaration $buildingWorksDeclaration, BuildingWorksDocument $buildingWorksDocument)
     {
-        if ($BuildingWorksDeclaration->user_id !== auth()->id()) {
+        if ($buildingWorksDeclaration->user_id !== auth()->id()) {
             abort(403);
         }
 
-        abort_unless($BuildingBuildingBuildingBuildingWorksDocument->works_notification_id === $BuildingWorksDeclaration->id, 404);
-        abort_unless(Storage::disk('local')->exists($BuildingBuildingBuildingBuildingWorksDocument->file_path), 404);
+        abort_unless($buildingWorksDocument->works_notification_id === $buildingWorksDeclaration->id, 404);
+        abort_unless(Storage::disk('local')->exists($buildingWorksDocument->file_path), 404);
 
-        return Storage::disk('local')->download($BuildingBuildingBuildingBuildingWorksDocument->file_path, $BuildingBuildingBuildingBuildingWorksDocument->original_name);
+        return Storage::disk('local')->download($buildingWorksDocument->file_path, $buildingWorksDocument->original_name);
     }
 
     // =========================================================================
@@ -280,20 +280,20 @@ class BuildingWorksDeclarationController extends Controller
     // Targeted correction — show the form (fields + documents flagged by admin)
     // =========================================================================
 
-    public function showCorrectForm(BuildingWorksDeclaration $BuildingWorksDeclaration): View|RedirectResponse
+    public function showCorrectForm(BuildingWorksDeclaration $buildingWorksDeclaration): View|RedirectResponse
     {
-        if ($BuildingWorksDeclaration->user_id !== auth()->id()) {
+        if ($buildingWorksDeclaration->user_id !== auth()->id()) {
             abort(403);
         }
 
-        if (! $BuildingWorksDeclaration->isNeedsCorrection()) {
-            return redirect()->route('building-works-declarations.show', $BuildingWorksDeclaration)
-                ->withErrors(['status' => __('works_notification.not_needs_correction')]);
+        if (! $buildingWorksDeclaration->isNeedsCorrection()) {
+            return redirect()->route('building-works-declarations.show', $buildingWorksDeclaration)
+                ->withErrors(['status' => __('building-works-declarations.not_needs_correction')]);
         }
 
-        $BuildingWorksDeclaration->load(['governorate', 'delegation', 'documents.documentType', 'events']);
+        $buildingWorksDeclaration->load(['governorate', 'delegation', 'documents.documentType', 'events']);
 
-        $correction = $BuildingWorksDeclaration->lastCorrectionData();
+        $correction = $buildingWorksDeclaration->lastCorrectionData();
 
         // Legacy fallback: no correction snapshot stored → everything stays editable
         $allFieldKeys = ['owner_cin', 'owner_name', 'company_name', 'jort_reference', 'phone', 'governorate_id', 'delegation_id', 'property_address', 'works_type', 'works_start_date', 'works_description', 'notes'];
@@ -309,13 +309,13 @@ class BuildingWorksDeclarationController extends Controller
         }
 
         // Archived docs (the ones replaced during previous correction rounds)
-        $archivedDocs = BuildingBuildingBuildingBuildingWorksDocument::where('works_notification_id', $BuildingWorksDeclaration->id)
+        $archivedDocs = BuildingWorksDocument::where('works_notification_id', $buildingWorksDeclaration->id)
             ->where('status', 'archived')
             ->orderBy('created_at', 'desc')
             ->get();
 
         return view('building-works-declarations.correct', [
-            'BuildingWorksDeclaration' => $BuildingWorksDeclaration,
+            'buildingWorksDeclaration' => $buildingWorksDeclaration,
             'correction'        => $correction,
             'fieldsToFix'       => $fieldsToFix,
             'docsToFix'         => $docsToFix,
@@ -330,18 +330,18 @@ class BuildingWorksDeclarationController extends Controller
     // Targeted correction — submit the fixes (only flagged items are validated)
     // =========================================================================
 
-    public function submitCorrection(Request $request, BuildingWorksDeclaration $BuildingWorksDeclaration): RedirectResponse
+    public function submitCorrection(Request $request, BuildingWorksDeclaration $buildingWorksDeclaration): RedirectResponse
     {
-        if ($BuildingWorksDeclaration->user_id !== auth()->id()) {
+        if ($buildingWorksDeclaration->user_id !== auth()->id()) {
             abort(403);
         }
 
-        if (! $BuildingWorksDeclaration->isNeedsCorrection()) {
-            return redirect()->route('building-works-declarations.show', $BuildingWorksDeclaration)
-                ->withErrors(['status' => __('works_notification.not_needs_correction')]);
+        if (! $buildingWorksDeclaration->isNeedsCorrection()) {
+            return redirect()->route('building-works-declarations.show', $buildingWorksDeclaration)
+                ->withErrors(['status' => __('building-works-declarations.not_needs_correction')]);
         }
 
-        $correction  = $BuildingWorksDeclaration->lastCorrectionData();
+        $correction  = $buildingWorksDeclaration->lastCorrectionData();
         $allFieldKeys = ['owner_cin', 'owner_name', 'company_name', 'jort_reference', 'phone', 'governorate_id', 'delegation_id', 'property_address', 'works_type', 'works_start_date', 'works_description', 'notes'];
         $fieldsToFix = $correction !== null ? ($correction['fields_to_fix'] ?? $allFieldKeys) : $allFieldKeys;
         $docsToFix   = array_map('intval', $correction['docs_to_fix'] ?? []);
@@ -387,11 +387,11 @@ class BuildingWorksDeclarationController extends Controller
         $update['owner_type'] = $validated['owner_type'];
 
         if (! empty($update)) {
-            $BuildingWorksDeclaration->update($update);
+            $buildingWorksDeclaration->update($update);
         }
 
         // ── Upload new files for flagged document types (multi-file per type) ──
-        $uploadDir = "building-building-building-building-works-documents/{$BuildingWorksDeclaration->id}";
+        $uploadDir = "building-building-building-building-works-documents/{$buildingWorksDeclaration->id}";
         $uploadedCount = 0;
 
         foreach ($docsToFix as $docTypeId) {
@@ -404,8 +404,8 @@ class BuildingWorksDeclarationController extends Controller
 
                 $path = $file->store($uploadDir, 'local');
 
-                BuildingBuildingBuildingBuildingWorksDocument::create([
-                    'works_notification_id' => $BuildingWorksDeclaration->id,
+                BuildingWorksDocument::create([
+                    'works_notification_id' => $buildingWorksDeclaration->id,
                     'document_type_id'      => $docTypeId,
                     'file_path'             => $path,
                     'original_name'         => $file->getClientOriginalName(),
@@ -418,50 +418,50 @@ class BuildingWorksDeclarationController extends Controller
         }
 
         // Mark request as completed (submitted for review) + keep the reference
-        $BuildingWorksDeclaration->update([
+        $buildingWorksDeclaration->update([
             'status'       => 'completed',
             'current_step' => 2,
-            'reference'    => $BuildingWorksDeclaration->reference ?: \App\Support\Reference::make('works', $BuildingWorksDeclaration),
+            'reference'    => $buildingWorksDeclaration->reference ?: \App\Support\Reference::make('works', $buildingWorksDeclaration),
         ]);
 
-        $BuildingWorksDeclaration->logEvent('resubmitted', null, [
+        $buildingWorksDeclaration->logEvent('resubmitted', null, [
             'updated'      => $update,
             'fields_fixed' => $fieldsToFix,
             'docs_fixed'   => $docsToFix,
         ]);
 
-        DossierNotifier::notify($BuildingWorksDeclaration, 'resubmitted', 'admin', Service::SERVICE_WORKS_NOTIFICATION);
+        DossierNotifier::notify($buildingWorksDeclaration, 'resubmitted', 'admin', Service::SERVICE_WORKS_NOTIFICATION);
 
-        return redirect()->route('building-works-declarations.show', $BuildingWorksDeclaration)
-            ->with('success', __('works_notification.correction_submitted_success'));
+        return redirect()->route('building-works-declarations.show', $buildingWorksDeclaration)
+            ->with('success', __('building-works-declarations.correction_submitted_success'));
     }
 
     // =========================================================================
     // Delete a local draft
     // =========================================================================
 
-    public function destroy(Request $request, BuildingWorksDeclaration $BuildingWorksDeclaration): RedirectResponse
+    public function destroy(Request $request, BuildingWorksDeclaration $buildingWorksDeclaration): RedirectResponse
     {
-        if ($BuildingWorksDeclaration->user_id !== auth()->id()) {
+        if ($buildingWorksDeclaration->user_id !== auth()->id()) {
             abort(403);
         }
 
-        if (! $BuildingWorksDeclaration->isDraft()) {
+        if (! $buildingWorksDeclaration->isDraft()) {
             return redirect()->route('building-works-declarations.index')
-                ->withErrors(['status' => __('works_notification.delete_forbidden')]);
+                ->withErrors(['status' => __('building-works-declarations.delete_forbidden')]);
         }
 
-        $BuildingWorksDeclaration->delete();
+        $buildingWorksDeclaration->delete();
 
         // Optional local override (e.g. delete from /mes-demandes)
         $redirect = $request->input('redirect');
         if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
             return redirect($redirect)
-                ->with('success', __('works_notification.delete_success'));
+                ->with('success', __('building-works-declarations.delete_success'));
         }
 
         return redirect()->route('building-works-declarations.index')
-            ->with('success', __('works_notification.delete_success'));
+            ->with('success', __('building-works-declarations.delete_success'));
     }
 
     // =========================================================================

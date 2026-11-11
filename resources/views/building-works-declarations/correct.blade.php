@@ -1,14 +1,14 @@
-﻿@php
+@php
 /**
  * Targeted correction form — mirrors rescue-certificates/correct.blade.php.
  *
  * Variables:
- *   $BuildingWorksDeclaration – BuildingWorksDeclaration (loaded: governorate, delegation, documents, events)
- *   $correction        – array|null from $BuildingWorksDeclaration->lastCorrectionData()
+ *   $buildingWorksDeclaration – BuildingWorksDeclaration (loaded: governorate, delegation, documents, events)
+ *   $correction        – array|null from $buildingWorksDeclaration->lastCorrectionData()
  *   $fieldsToFix       – string[] field keys that need editing
  *   $docsToFix         – int[]   document_type_id values that need re-upload
  *   $documentTypes     – Collection<DocumentType>   (flagged ones only)
- *   $archivedDocs      – Collection<BuildingBuildingBuildingBuildingWorksDocument>  (status=archived)
+ *   $archivedDocs      – Collection<BuildingWorksDocument>  (status=archived)
  *   $gouvernorats      – [id => name] governorates for the select
  *   $delegations       – { govId: [{id,name}, ...] } delegations map
  */
@@ -16,22 +16,22 @@
 $isField = fn (string $key) => in_array($key, $fieldsToFix);
 
 $fieldLabels = [
-    'owner_cin'         => __('works_notification.owner_cin'),
-    'owner_name'        => __('works_notification.owner_name'),
-    'company_name'      => __('works_notification.company_name'),
-    'jort_reference'    => __('works_notification.jort_reference'),
-    'phone'             => __('works_notification.phone'),
-    'governorate_id'    => __('works_notification.code_structure'),
-    'delegation_id'     => __('works_notification.delegation'),
-    'property_address'  => __('works_notification.property_address'),
-    'works_type'        => __('works_notification.works_type'),
-    'works_start_date'  => __('works_notification.works_start_date'),
-    'works_description' => __('works_notification.works_description'),
-    'notes'             => __('works_notification.notes'),
+    'owner_cin'         => __('building-works-declarations.owner_cin'),
+    'owner_name'        => __('building-works-declarations.owner_name'),
+    'company_name'      => __('building-works-declarations.company_name'),
+    'jort_reference'    => __('building-works-declarations.jort_reference'),
+    'phone'             => __('building-works-declarations.phone'),
+    'governorate_id'    => __('building-works-declarations.code_structure'),
+    'delegation_id'     => __('building-works-declarations.delegation'),
+    'property_address'  => __('building-works-declarations.property_address'),
+    'works_type'        => __('building-works-declarations.works_type'),
+    'works_start_date'  => __('building-works-declarations.works_start_date'),
+    'works_description' => __('building-works-declarations.works_description'),
+    'notes'             => __('building-works-declarations.notes'),
 ];
 
 // Displayed owner name = natural person name OR legal-entity company name
-$currentOwnerName = $BuildingWorksDeclaration->isMoral() ? $BuildingWorksDeclaration->company_name : $BuildingWorksDeclaration->owner_name;
+$currentOwnerName = $buildingWorksDeclaration->isMoral() ? $buildingWorksDeclaration->company_name : $buildingWorksDeclaration->owner_name;
 
 $hasFields = ! empty($fieldsToFix);
 $hasDocs   = $documentTypes->isNotEmpty();
@@ -45,16 +45,16 @@ $hasDocs   = $documentTypes->isNotEmpty();
     <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-secondary overflow-x-auto whitespace-nowrap">
         <a class="hover:text-primary transition-colors flex items-center gap-1" href="{{ route('dashboard') }}">
             <span class="material-symbols-outlined text-xs" aria-hidden="true">home</span>
-            {{ __('works_notification.index_title') }}
+            {{ __('building-works-declarations.index_title') }}
         </a>
         <span class="material-symbols-outlined text-xs text-surface-dim rtl:rotate-180" aria-hidden="true">chevron_right</span>
-        <a class="hover:text-primary transition-colors" href="{{ route('building-works-declarations.index') }}">{{ __('works_notification.my_requests') }}</a>
+        <a class="hover:text-primary transition-colors" href="{{ route('building-works-declarations.index') }}">{{ __('building-works-declarations.my_requests') }}</a>
         <span class="material-symbols-outlined text-xs text-surface-dim rtl:rotate-180" aria-hidden="true">chevron_right</span>
-        <a class="hover:text-primary transition-colors" href="{{ route('building-works-declarations.show', $BuildingWorksDeclaration) }}">
-            {{ $BuildingWorksDeclaration->reference ?? __('works_notification.card_title') }}
+        <a class="hover:text-primary transition-colors" href="{{ route('building-works-declarations.show', $buildingWorksDeclaration) }}">
+            {{ $buildingWorksDeclaration->reference ?? __('building-works-declarations.card_title') }}
         </a>
         <span class="material-symbols-outlined text-xs text-surface-dim rtl:rotate-180" aria-hidden="true">chevron_right</span>
-        <span class="text-on-surface font-bold">{{ __('works_notification.correction_page_title') }}</span>
+        <span class="text-on-surface font-bold">{{ __('building-works-declarations.correction_page_title') }}</span>
     </nav>
 
     {{-- Full-width correction status banner (replaces stepper) --}}
@@ -68,15 +68,15 @@ $hasDocs   = $documentTypes->isNotEmpty();
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-primary">
                             <span class="material-symbols-outlined text-[13px]" aria-hidden="true">sync</span>
-                            {{ __('works_notification.step_editing') }}
+                            {{ __('building-works-declarations.step_editing') }}
                         </span>
                         <span class="text-outline dark:text-gray-600 text-xs">·</span>
                         <span class="text-[11px] text-secondary dark:text-gray-400">
-                            {{ __('works_notification.correction_page_subtitle', ['round' => $correction['round'] ?? 1]) }}
+                            {{ __('building-works-declarations.correction_page_subtitle', ['round' => $correction['round'] ?? 1]) }}
                         </span>
                     </div>
                     <h1 class="text-headline-sm font-bold text-on-surface dark:text-gray-100 mt-0.5">
-                        {{ __('works_notification.correction_page_title') }}
+                        {{ __('building-works-declarations.correction_page_title') }}
                     </h1>
 
                     {{-- Admin correction note — shown right under the title so it's the first thing read --}}
@@ -84,7 +84,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
                     <div class="mt-3 rounded border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 px-3.5 py-2.5">
                         <p class="text-[10px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>
-                            {{ __('works_notification.admin_note_label') }}
+                            {{ __('building-works-declarations.admin_note_label') }}
                         </p>
                         <p class="text-sm text-red-900 dark:text-red-200 whitespace-pre-line leading-relaxed">{{ $correction['note'] }}</p>
                     </div>
@@ -127,7 +127,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
     @if ($errors->any())
     <div class="rounded border-l-4 border-l-red-500 bg-red-50 px-4 py-3 text-body-sm text-red-800
                 dark:bg-red-900/30 dark:text-red-200" role="alert">
-        <p class="font-bold">{{ __('works_notification.create_error_title') }}</p>
+        <p class="font-bold">{{ __('building-works-declarations.create_error_title') }}</p>
         <ul class="mt-1.5 list-disc space-y-1 ps-5">
             @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
@@ -140,11 +140,11 @@ $hasDocs   = $documentTypes->isNotEmpty();
          MAIN FORM
          ══════════════════════════════════════════════════════════════════════ --}}
     <form method="POST"
-          action="{{ route('building-works-declarations.correct.submit', $BuildingWorksDeclaration) }}"
+          action="{{ route('building-works-declarations.correct.submit', $buildingWorksDeclaration) }}"
           enctype="multipart/form-data"
           id="correction-form"
           class="space-y-6"
-          x-data="{ ownerType: '{{ old('owner_type', $BuildingWorksDeclaration->owner_type) }}' }">
+          x-data="{ ownerType: '{{ old('owner_type', $buildingWorksDeclaration->owner_type) }}' }">
         @csrf
         <input type="hidden" name="owner_type" :value="ownerType">
 
@@ -158,9 +158,9 @@ $hasDocs   = $documentTypes->isNotEmpty();
                            hover:bg-surface-container dark:hover:bg-gray-700/40 transition-colors rounded">
                 <span class="w-7 h-7 rounded bg-surface-container dark:bg-gray-700 text-secondary flex items-center justify-center text-label-caps shrink-0" aria-hidden="true">A</span>
                 <h2 class="text-title-section text-on-surface uppercase tracking-wider flex-1">
-                    {{ __('works_notification.correction_current_values') }}
+                    {{ __('building-works-declarations.correction_current_values') }}
                 </h2>
-                <span class="text-[10px] text-outline dark:text-gray-500 hidden sm:block">— {{ __('works_notification.correction_readonly_note') }}</span>
+                <span class="text-[10px] text-outline dark:text-gray-500 hidden sm:block">— {{ __('building-works-declarations.correction_readonly_note') }}</span>
                 <svg class="w-4 h-4 text-secondary dark:text-gray-400 shrink-0 transition-transform"
                      :class="openA ? 'rotate-180' : ''"
                      fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -174,18 +174,18 @@ $hasDocs   = $documentTypes->isNotEmpty();
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0 divide-y sm:divide-y-0 divide-surface-dim dark:divide-gray-700/60 pt-4">
                     @php
                         $snapshotRows = [
-                            ['owner_cin',         $BuildingWorksDeclaration->owner_cin,          true],
+                            ['owner_cin',         $buildingWorksDeclaration->owner_cin,          true],
                             ['owner_name',        $currentOwnerName,                      false],
-                            ['company_name',      $BuildingWorksDeclaration->company_name,       false],
-                            ['jort_reference',    $BuildingWorksDeclaration->jort_reference,     true],
-                            ['phone',             $BuildingWorksDeclaration->phone,              true],
-                            ['governorate_id',    $BuildingWorksDeclaration->governorate?->name_fr ?? $BuildingWorksDeclaration->governorate?->name_ar, false],
-                            ['delegation_id',     $BuildingWorksDeclaration->delegation?->name_fr ?? $BuildingWorksDeclaration->delegation?->name_ar,  false],
-                            ['property_address',  $BuildingWorksDeclaration->property_address,   false],
-                            ['works_type',        $BuildingWorksDeclaration->works_type,         false],
-                            ['works_start_date',  $BuildingWorksDeclaration->works_start_date?->format('d/m/Y'), true],
-                            ['works_description', $BuildingWorksDeclaration->works_description,  false],
-                            ['notes',             $BuildingWorksDeclaration->notes,              false],
+                            ['company_name',      $buildingWorksDeclaration->company_name,       false],
+                            ['jort_reference',    $buildingWorksDeclaration->jort_reference,     true],
+                            ['phone',             $buildingWorksDeclaration->phone,              true],
+                            ['governorate_id',    $buildingWorksDeclaration->governorate?->name_fr ?? $buildingWorksDeclaration->governorate?->name_ar, false],
+                            ['delegation_id',     $buildingWorksDeclaration->delegation?->name_fr ?? $buildingWorksDeclaration->delegation?->name_ar,  false],
+                            ['property_address',  $buildingWorksDeclaration->property_address,   false],
+                            ['works_type',        $buildingWorksDeclaration->works_type,         false],
+                            ['works_start_date',  $buildingWorksDeclaration->works_start_date?->format('d/m/Y'), true],
+                            ['works_description', $buildingWorksDeclaration->works_description,  false],
+                            ['notes',             $buildingWorksDeclaration->notes,              false],
                         ];
                     @endphp
                     @foreach ($snapshotRows as [$key, $val, $isLtr])
@@ -209,29 +209,29 @@ $hasDocs   = $documentTypes->isNotEmpty();
                         <span class="material-symbols-outlined text-base" aria-hidden="true">edit</span>
                     </span>
                     <h2 class="text-title-section text-on-surface uppercase tracking-wider">
-                        {{ __('works_notification.correction_fields_section') }}
+                        {{ __('building-works-declarations.correction_fields_section') }}
                     </h2>
                 </div>
 
                 {{-- Owner type toggle (always shown so the name/company pairing stays consistent) --}}
                 <div class="grid gap-3 sm:grid-cols-2">
                     <label class="flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition
-                                  {{ old('owner_type', $BuildingWorksDeclaration->owner_type) === 'natural'
+                                  {{ old('owner_type', $buildingWorksDeclaration->owner_type) === 'natural'
                                       ? 'border-gov-400 bg-gov-50 dark:border-gov-600 dark:bg-gov-900/20'
                                       : 'border-surface-dim bg-surface-container dark:border-gray-700 dark:bg-gray-900/50' }}">
-                        <input type="radio" value="natural" @checked(old('owner_type', $BuildingWorksDeclaration->owner_type) === 'natural')
+                        <input type="radio" value="natural" @checked(old('owner_type', $buildingWorksDeclaration->owner_type) === 'natural')
                             @click="ownerType = 'natural'"
                             class="h-4 w-4 text-gov-600 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-800">
-                        <span class="text-sm font-semibold text-on-surface dark:text-gray-100">{{ __('works_notification.owner_natural') }}</span>
+                        <span class="text-sm font-semibold text-on-surface dark:text-gray-100">{{ __('building-works-declarations.owner_natural') }}</span>
                     </label>
                     <label class="flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition
-                                  {{ old('owner_type', $BuildingWorksDeclaration->owner_type) === 'moral'
+                                  {{ old('owner_type', $buildingWorksDeclaration->owner_type) === 'moral'
                                       ? 'border-gov-400 bg-gov-50 dark:border-gov-600 dark:bg-gov-900/20'
                                       : 'border-surface-dim bg-surface-container dark:border-gray-700 dark:bg-gray-900/50' }}">
-                        <input type="radio" value="moral" @checked(old('owner_type', $BuildingWorksDeclaration->owner_type) === 'moral')
+                        <input type="radio" value="moral" @checked(old('owner_type', $buildingWorksDeclaration->owner_type) === 'moral')
                             @click="ownerType = 'moral'"
                             class="h-4 w-4 text-gov-600 focus:ring-gov-500 dark:border-gray-600 dark:bg-gray-800">
-                        <span class="text-sm font-semibold text-on-surface dark:text-gray-100">{{ __('works_notification.owner_moral') }}</span>
+                        <span class="text-sm font-semibold text-on-surface dark:text-gray-100">{{ __('building-works-declarations.owner_moral') }}</span>
                     </label>
                 </div>
 
@@ -243,8 +243,8 @@ $hasDocs   = $documentTypes->isNotEmpty();
                             {{ $fieldLabels['owner_name'] }} <span class="text-primary" aria-hidden="true">*</span>
                         </label>
                         <input id="owner_name" type="text" name="owner_name"
-                               value="{{ old('owner_name', $BuildingWorksDeclaration->owner_name) }}"
-                               placeholder="{{ __('works_notification.owner_name_placeholder') }}"
+                               value="{{ old('owner_name', $buildingWorksDeclaration->owner_name) }}"
+                               placeholder="{{ __('building-works-declarations.owner_name_placeholder') }}"
                                required maxlength="255" autocomplete="name"
                                class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('owner_name') border-red-400 @enderror">
                         @error('owner_name')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
@@ -259,8 +259,8 @@ $hasDocs   = $documentTypes->isNotEmpty();
                                 {{ $fieldLabels['company_name'] }} <span class="text-primary" aria-hidden="true">*</span>
                             </label>
                             <input id="company_name" type="text" name="company_name"
-                                   value="{{ old('company_name', $BuildingWorksDeclaration->company_name) }}"
-                                   placeholder="{{ __('works_notification.company_name_placeholder') }}"
+                                   value="{{ old('company_name', $buildingWorksDeclaration->company_name) }}"
+                                   placeholder="{{ __('building-works-declarations.company_name_placeholder') }}"
                                    required maxlength="255"
                                    class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('company_name') border-red-400 @enderror">
                             @error('company_name')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
@@ -272,11 +272,11 @@ $hasDocs   = $documentTypes->isNotEmpty();
                                 {{ $fieldLabels['jort_reference'] }}
                             </label>
                             <input id="jort_reference" type="text" name="jort_reference" dir="ltr"
-                                   value="{{ old('jort_reference', $BuildingWorksDeclaration->jort_reference) }}"
-                                   placeholder="{{ __('works_notification.jort_reference_placeholder') }}"
+                                   value="{{ old('jort_reference', $buildingWorksDeclaration->jort_reference) }}"
+                                   placeholder="{{ __('building-works-declarations.jort_reference_placeholder') }}"
                                    maxlength="100"
                                    class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('jort_reference') border-red-400 @enderror">
-                            <p class="text-xs text-secondary dark:text-gray-500">{{ __('works_notification.jort_reference_hint') }}</p>
+                            <p class="text-xs text-secondary dark:text-gray-500">{{ __('building-works-declarations.jort_reference_hint') }}</p>
                             @error('jort_reference')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                         </div>
                         @endif
@@ -289,11 +289,11 @@ $hasDocs   = $documentTypes->isNotEmpty();
                             {{ $fieldLabels['owner_cin'] }} <span class="text-primary" aria-hidden="true">*</span>
                         </label>
                         <input id="owner_cin" type="text" name="owner_cin" inputmode="numeric"
-                               value="{{ old('owner_cin', $BuildingWorksDeclaration->owner_cin) }}"
-                               placeholder="{{ __('works_notification.cin_placeholder') }}"
+                               value="{{ old('owner_cin', $buildingWorksDeclaration->owner_cin) }}"
+                               placeholder="{{ __('building-works-declarations.cin_placeholder') }}"
                                required maxlength="20"
                                class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('owner_cin') border-red-400 @enderror">
-                        <p class="text-xs text-secondary dark:text-gray-500">{{ __('works_notification.owner_cin_hint') }}</p>
+                        <p class="text-xs text-secondary dark:text-gray-500">{{ __('building-works-declarations.owner_cin_hint') }}</p>
                         @error('owner_cin')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                     </div>
                     @endif
@@ -304,13 +304,13 @@ $hasDocs   = $documentTypes->isNotEmpty();
                             {{ $fieldLabels['phone'] }} <span class="text-primary" aria-hidden="true">*</span>
                         </label>
                         <input id="phone" type="tel" name="phone"
-                               value="{{ old('phone', $BuildingWorksDeclaration->phone) }}"
-                               placeholder="{{ __('works_notification.phone_placeholder') }}"
+                               value="{{ old('phone', $buildingWorksDeclaration->phone) }}"
+                               placeholder="{{ __('building-works-declarations.phone_placeholder') }}"
                                required maxlength="20" inputmode="tel" dir="ltr"
                                class="num-ltr block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('phone') border-red-400 @enderror">
                         <p class="text-xs text-secondary dark:text-gray-500 flex items-center gap-1.5">
                             <span class="material-symbols-outlined text-sm text-outline" aria-hidden="true">info</span>
-                            {{ __('works_notification.phone_notification_hint') }}
+                            {{ __('building-works-declarations.phone_notification_hint') }}
                         </p>
                         @error('phone')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                     </div>
@@ -321,8 +321,8 @@ $hasDocs   = $documentTypes->isNotEmpty();
                 @if ($isField('governorate_id') || $isField('delegation_id'))
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5"
                      x-data="{
-                         gov: '{{ old('governorate_id', $BuildingWorksDeclaration->governorate_id) }}',
-                         del: '{{ old('delegation_id', $BuildingWorksDeclaration->delegation_id) }}',
+                         gov: '{{ old('governorate_id', $buildingWorksDeclaration->governorate_id) }}',
+                         del: '{{ old('delegation_id', $buildingWorksDeclaration->delegation_id) }}',
                          delegationsMap: {{ Illuminate\Support\Js::from($delegations) }}
                      }">
 
@@ -333,10 +333,10 @@ $hasDocs   = $documentTypes->isNotEmpty();
                         </label>
                         <select id="governorate_id" name="governorate_id" x-model="gov" required
                                 class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('governorate_id') border-red-400 @enderror">
-                            <option value="">{{ __('works_notification.code_structure_select') }}</option>
+                            <option value="">{{ __('building-works-declarations.code_structure_select') }}</option>
                             @foreach ($gouvernorats as $gov_id => $gov_name)
                                 <option value="{{ $gov_id }}"
-                                        {{ old('governorate_id', $BuildingWorksDeclaration->governorate_id) == $gov_id ? 'selected' : '' }}>
+                                        {{ old('governorate_id', $buildingWorksDeclaration->governorate_id) == $gov_id ? 'selected' : '' }}>
                                     {{ $gov_name }}
                                 </option>
                             @endforeach
@@ -352,7 +352,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
                         </label>
                         <select id="delegation_id" name="delegation_id" x-model="del" required
                                 class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('delegation_id') border-red-400 @enderror">
-                            <option value="">{{ __('works_notification.delegation_select') }}</option>
+                            <option value="">{{ __('building-works-declarations.delegation_select') }}</option>
                             <template x-for="d in (delegationsMap[gov] || [])" :key="d.id">
                                 <option :value="d.id" :selected="d.id == del" x-text="d.name"></option>
                             </template>
@@ -373,8 +373,8 @@ $hasDocs   = $documentTypes->isNotEmpty();
                         <div class="relative">
                             <span class="material-symbols-outlined filled absolute start-3 top-3 text-lg text-outline" aria-hidden="true">location_on</span>
                             <input id="property_address" name="property_address" type="text" maxlength="500"
-                                value="{{ old('property_address', $BuildingWorksDeclaration->property_address) }}"
-                                placeholder="{{ __('works_notification.property_address_placeholder') }}" required
+                                value="{{ old('property_address', $buildingWorksDeclaration->property_address) }}"
+                                placeholder="{{ __('building-works-declarations.property_address_placeholder') }}" required
                                 class="ps-10 block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('property_address') border-red-400 @enderror">
                         </div>
                         @error('property_address')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
@@ -387,8 +387,8 @@ $hasDocs   = $documentTypes->isNotEmpty();
                             {{ $fieldLabels['works_type'] }}
                         </label>
                         <input id="works_type" name="works_type" type="text" maxlength="100"
-                            value="{{ old('works_type', $BuildingWorksDeclaration->works_type) }}"
-                            placeholder="{{ __('works_notification.works_type_placeholder') }}"
+                            value="{{ old('works_type', $buildingWorksDeclaration->works_type) }}"
+                            placeholder="{{ __('building-works-declarations.works_type_placeholder') }}"
                             class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('works_type') border-red-400 @enderror">
                         @error('works_type')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                     </div>
@@ -402,7 +402,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
                         {{ $fieldLabels['works_start_date'] }}
                     </label>
                     <input id="works_start_date" name="works_start_date" type="date"
-                        value="{{ old('works_start_date', $BuildingWorksDeclaration->works_start_date?->format('Y-m-d')) }}"
+                        value="{{ old('works_start_date', $buildingWorksDeclaration->works_start_date?->format('Y-m-d')) }}"
                         class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('works_start_date') border-red-400 @enderror">
                     @error('works_start_date')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                 </div>
@@ -416,8 +416,8 @@ $hasDocs   = $documentTypes->isNotEmpty();
                             {{ $fieldLabels['works_description'] }} <span class="text-primary" aria-hidden="true">*</span>
                         </label>
                         <textarea id="works_description" name="works_description" rows="4" maxlength="5000" required
-                            placeholder="{{ __('works_notification.works_description_placeholder') }}"
-                            class="block w-full px-3.5 py-2.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('works_description') border-red-400 @enderror">{{ old('works_description', $BuildingWorksDeclaration->works_description) }}</textarea>
+                            placeholder="{{ __('building-works-declarations.works_description_placeholder') }}"
+                            class="block w-full px-3.5 py-2.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('works_description') border-red-400 @enderror">{{ old('works_description', $buildingWorksDeclaration->works_description) }}</textarea>
                         @error('works_description')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                     </div>
                     @endif
@@ -428,8 +428,8 @@ $hasDocs   = $documentTypes->isNotEmpty();
                             {{ $fieldLabels['notes'] }}
                         </label>
                         <textarea id="notes" name="notes" rows="3" maxlength="3000"
-                            placeholder="{{ __('works_notification.notes_placeholder') }}"
-                            class="block w-full px-3.5 py-2.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('notes') border-red-400 @enderror">{{ old('notes', $BuildingWorksDeclaration->notes) }}</textarea>
+                            placeholder="{{ __('building-works-declarations.notes_placeholder') }}"
+                            class="block w-full px-3.5 py-2.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('notes') border-red-400 @enderror">{{ old('notes', $buildingWorksDeclaration->notes) }}</textarea>
                         @error('notes')<p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ $message }}</p>@enderror
                     </div>
                     @endif
@@ -448,14 +448,14 @@ $hasDocs   = $documentTypes->isNotEmpty();
                 <div class="flex items-center gap-2.5 pb-3 border-b border-surface-dim dark:border-gray-700">
                     <span class="w-7 h-7 rounded bg-primary text-white flex items-center justify-center text-label-caps shrink-0" aria-hidden="true">C</span>
                     <h2 class="text-title-section text-on-surface uppercase tracking-wider">
-                        {{ __('works_notification.correction_docs_section') }}
+                        {{ __('building-works-declarations.correction_docs_section') }}
                     </h2>
                 </div>
 
                 {{-- Info bar --}}
                 <div class="flex items-start gap-3 rounded border border-surface-dim bg-surface-container-low p-4 text-body-sm dark:border-gray-700 dark:bg-gray-900/40" role="note">
                     <span class="material-symbols-outlined filled text-primary text-[22px]" aria-hidden="true">info</span>
-                    <p class="text-secondary dark:text-gray-300">{{ __('works_notification.documents_info') }}</p>
+                    <p class="text-secondary dark:text-gray-300">{{ __('building-works-declarations.documents_info') }}</p>
                 </div>
 
                 {{-- Document cards — same structure as create-step2 --}}
@@ -491,7 +491,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
                                                      text-accent-600 bg-accent-50 rounded border border-accent-500/20
                                                      dark:bg-accent-900/30 dark:text-accent-500">
                                             <span class="material-symbols-outlined text-[13px]" aria-hidden="true">help</span>
-                                            {{ __('works_notification.conditional') }}
+                                            {{ __('building-works-declarations.conditional') }}
                                         </span>
                                     @endif
                                     @if ($docType->template_path)
@@ -499,9 +499,9 @@ $hasDocs   = $documentTypes->isNotEmpty();
                                            class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold
                                                   text-primary bg-primary/10 rounded border border-primary/25 transition
                                                   hover:bg-primary/15 cursor-pointer dark:bg-primary/15 dark:border-primary/40"
-                                           title="{{ __('works_notification.download_form_hint') }}">
+                                           title="{{ __('building-works-declarations.download_form_hint') }}">
                                             <span class="material-symbols-outlined text-[13px]" aria-hidden="true">download</span>
-                                            {{ __('works_notification.download_form') }}
+                                            {{ __('building-works-declarations.download_form') }}
                                             <span class="text-primary/60">({{ $docType->templateExtension() }})</span>
                                         </a>
                                     @endif
@@ -515,16 +515,16 @@ $hasDocs   = $documentTypes->isNotEmpty();
                                         <span class="material-symbols-outlined text-outline dark:text-gray-500 text-sm" aria-hidden="true">inventory_2</span>
                                         <span class="text-secondary dark:text-gray-400 flex-1 truncate"
                                               title="{{ $oldDoc->original_name }}">
-                                            {{ __('works_notification.correction_old_file') }}:
+                                            {{ __('building-works-declarations.correction_old_file') }}:
                                             <span class="font-semibold">{{ $oldDoc->original_name }}</span>
                                         </span>
                                         <span class="text-outline dark:text-gray-500 font-mono" dir="ltr">
                                             {{ $oldDoc->size >= 1048576 ? round($oldDoc->size/1048576, 1).' Mo' : ($oldDoc->size >= 1024 ? round($oldDoc->size/1024, 1).' Ko' : $oldDoc->size.' o') }}
                                         </span>
-                                        <a href="{{ route('building-works-declarations.documents.download', [$BuildingWorksDeclaration, $oldDoc]) }}"
+                                        <a href="{{ route('building-works-declarations.documents.download', [$buildingWorksDeclaration, $oldDoc]) }}"
                                            class="w-6 h-6 rounded bg-surface-container-low dark:bg-gray-700 text-secondary
                                                   hover:bg-primary hover:text-on-primary flex items-center justify-center flex-shrink-0 transition-colors"
-                                           title="{{ __('works_notification.download_label') }}">
+                                           title="{{ __('building-works-declarations.download_label') }}">
                                             <span class="material-symbols-outlined text-xs" aria-hidden="true">download</span>
                                         </a>
                                     </div>
@@ -541,7 +541,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
                                                   transition hover:bg-surface-container
                                                   dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                         <span class="material-symbols-outlined text-[15px] text-primary" aria-hidden="true">upload_file</span>
-                                        <span class="upload-label">{{ __('works_notification.upload_file') }}</span>
+                                        <span class="upload-label">{{ __('building-works-declarations.upload_file') }}</span>
                                         <input type="file"
                                                name="documents[{{ $docType->id }}][]"
                                                class="sr-only file-input"
@@ -563,7 +563,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
         {{-- ── Footer bar: back + submit ── --}}
         <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3
                     border-t border-surface-dim pt-4 dark:border-gray-700">
-            <a href="{{ route('building-works-declarations.show', $BuildingWorksDeclaration) }}"
+            <a href="{{ route('building-works-declarations.show', $buildingWorksDeclaration) }}"
                class="inline-flex items-center gap-2 rounded border border-surface-dim bg-surface-container-lowest
                       px-4 py-2.5 text-body-sm font-semibold text-on-surface transition
                       hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
@@ -571,7 +571,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
                      fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
-                {{ __('works_notification.back') }}
+                {{ __('building-works-declarations.back') }}
             </a>
 
             <button type="submit"
@@ -579,9 +579,9 @@ $hasDocs   = $documentTypes->isNotEmpty();
                     class="ui-btn-primary inline-flex items-center justify-center gap-2 px-6 py-2.5 text-body-sm
                            focus:outline-none focus:ring-2 focus:ring-gov-500/40 focus:ring-offset-2 cursor-pointer
                            disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-gray-900"
-                    data-loading-text="{{ __('works_notification.submitting') }}">
+                    data-loading-text="{{ __('building-works-declarations.submitting') }}">
                 <span class="material-symbols-outlined filled text-[18px]" aria-hidden="true">send</span>
-                <span id="correction-submit-label">{{ __('works_notification.correction_submit_btn') }}</span>
+                <span id="correction-submit-label">{{ __('building-works-declarations.correction_submit_btn') }}</span>
             </button>
         </div>
 
@@ -597,7 +597,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
                 <span class="material-symbols-outlined text-base" aria-hidden="true">inventory_2</span>
             </span>
             <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">
-                {{ __('works_notification.old_version_title', ['round' => $correction['round'] ?? 1]) }}
+                {{ __('building-works-declarations.old_version_title', ['round' => $correction['round'] ?? 1]) }}
             </h3>
             <svg class="w-4 h-4 text-secondary shrink-0 transition-transform" :class="openOld ? 'rotate-180' : ''"
                  fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -612,7 +612,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
                 <span class="material-symbols-outlined filled text-red-300 mt-0.5" aria-hidden="true">form</span>
                 <div class="pt-1 flex-1">
                     <h4 class="text-xs leading-5 font-bold uppercase tracking-wider text-secondary mb-1.5 flex items-center gap-1.5">
-                        {{ __('works_notification.admin_note_label') }}
+                        {{ __('building-works-declarations.admin_note_label') }}
                     </h4>
                     <p class="text-body-sm text-secondary whitespace-pre-line leading-relaxed">{{ $correction['note'] }}</p>
                 </div>
@@ -624,7 +624,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
             <div class="p-4 rounded border border-surface-dim bg-surface-container-low dark:border-gray-700 dark:bg-gray-900/40">
                 <h4 class="text-xs leading-5 font-bold uppercase tracking-wider text-secondary mb-2 flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1" aria-hidden="true">manage_history</span>
-                    {{ __('works_notification.previous_values') }}
+                    {{ __('building-works-declarations.previous_values') }}
                 </h4>
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 divide-y sm:divide-y-0 divide-surface-dim dark:divide-gray-700/60">
                     @foreach ($correction['previous'] as $prevKey => $prevVal)
@@ -644,7 +644,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
             <div>
                 <h4 class="text-xs leading-5 font-bold uppercase tracking-wider text-secondary mb-2 flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-base" aria-hidden="true">attachment</span>
-                    {{ __('works_notification.archived_files_title') }} ({{ $archivedDocs->count() }})
+                    {{ __('building-works-declarations.archived_files_title') }} ({{ $archivedDocs->count() }})
                 </h4>
                 <div class="space-y-2">
                     @foreach ($archivedDocs as $doc)
@@ -653,7 +653,7 @@ $hasDocs   = $documentTypes->isNotEmpty();
                                 <span class="material-symbols-outlined text-outline text-base mt-0.5 shrink-0" aria-hidden="true">description</span>
                                 <div class="min-w-0">
                                     <h5 class="text-[11px] font-bold text-on-surface dark:text-gray-200 leading-snug">
-                                        {{ $doc->documentType?->name ?? __('works_notification.documents_title') }}
+                                        {{ $doc->documentType?->name ?? __('building-works-declarations.documents_title') }}
                                     </h5>
                                     <div class="flex items-center gap-2 text-[10px] text-secondary dark:text-gray-400 mt-0.5 flex-wrap" dir="ltr">
                                         <span class="font-mono">{{ $doc->original_name }}</span>
@@ -664,9 +664,9 @@ $hasDocs   = $documentTypes->isNotEmpty();
                                     </div>
                                 </div>
                             </div>
-                            <a href="{{ route('building-works-declarations.documents.download', [$BuildingWorksDeclaration, $doc]) }}"
+                            <a href="{{ route('building-works-declarations.documents.download', [$buildingWorksDeclaration, $doc]) }}"
                                class="w-7 h-7 rounded bg-surface-container text-secondary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors"
-                               title="{{ __('works_notification.download_label') }}">
+                               title="{{ __('building-works-declarations.download_label') }}">
                                 <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
                             </a>
                         </div>
@@ -695,9 +695,9 @@ $hasDocs   = $documentTypes->isNotEmpty();
     var progressCount = document.getElementById('docs-progress-count');
     var totalDocs     = document.querySelectorAll('.doc-card').length;
 
-    var LABEL_UPLOAD = '{{ __('works_notification.upload_file') }}';
-    var LABEL_ADD    = '{{ __('works_notification.add_file') }}';
-    var LABEL_REMOVE = '{{ __('works_notification.remove_file') }}';
+    var LABEL_UPLOAD = '{{ __('building-works-declarations.upload_file') }}';
+    var LABEL_ADD    = '{{ __('building-works-declarations.add_file') }}';
+    var LABEL_REMOVE = '{{ __('building-works-declarations.remove_file') }}';
 
     /* ── Live counter ── */
     function updateProgress() {
