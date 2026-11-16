@@ -121,8 +121,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/step1', [SafetyFileRequestController::class, 'storeStep1'])->name('step1.store');
         Route::get('/{dossier}/step1/edit', [SafetyFileRequestController::class, 'editStep1'])->name('step1.edit');
         Route::put('/{dossier}/step1', [SafetyFileRequestController::class, 'updateStep1'])->name('step1.update');
-        Route::get('/{dossier}/step2', [SafetyFileRequestController::class, 'showStep2'])->name('step2.show');
-        Route::post('/{dossier}/step2', [SafetyFileRequestController::class, 'storeStep2'])->name('step2.store');
         Route::get('/{dossier}/step3', [SafetyFileRequestController::class, 'showStep3'])->name('step3.show');
         Route::post('/{dossier}/step3', [SafetyFileRequestController::class, 'storeStep3'])->name('step3.store');
         Route::get('/{dossier}/correct', [SafetyFileRequestController::class, 'showCorrectForm'])->name('correct');
@@ -142,8 +140,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/step1', [SafetyFileRequestController::class, 'storeStep1'])->name('step1.store');
         Route::get('/{dossier}/step1/edit', [SafetyFileRequestController::class, 'editStep1'])->name('step1.edit');
         Route::put('/{dossier}/step1', [SafetyFileRequestController::class, 'updateStep1'])->name('step1.update');
-        Route::get('/{dossier}/step2', [SafetyFileRequestController::class, 'showStep2'])->name('step2.show');
-        Route::post('/{dossier}/step2', [SafetyFileRequestController::class, 'storeStep2'])->name('step2.store');
         Route::get('/{dossier}/step3', [SafetyFileRequestController::class, 'showStep3'])->name('step3.show');
         Route::post('/{dossier}/step3', [SafetyFileRequestController::class, 'storeStep3'])->name('step3.store');
         Route::get('/{dossier}/correct', [SafetyFileRequestController::class, 'showCorrectForm'])->name('correct');
@@ -155,6 +151,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{dossier}/documents/{document}/download', [SafetyFileRequestController::class, 'downloadDocument'])->name('documents.download');
         Route::delete('/{dossier}/documents/{document}', [SafetyFileRequestController::class, 'deleteDocument'])->name('documents.delete');
     });
+
+    // ── Internal Intervention Plan (المصادقة على مخطط التدخل الداخلي) — separate service ──
+    Route::prefix('internal-intervention-plan')->name('internal-intervention-plan.')->group(function () {
+        Route::get('/', [SafetyFileRequestController::class, 'index'])->name('index');
+        Route::get('/create', [SafetyFileRequestController::class, 'create'])->name('create');
+        Route::post('/step1', [SafetyFileRequestController::class, 'storeStep1'])->name('step1.store');
+        Route::get('/{dossier}/step1/edit', [SafetyFileRequestController::class, 'editStep1'])->name('step1.edit');
+        Route::put('/{dossier}/step1', [SafetyFileRequestController::class, 'updateStep1'])->name('step1.update');
+        Route::get('/{dossier}/step3', [SafetyFileRequestController::class, 'showStep3'])->name('step3.show');
+        Route::post('/{dossier}/step3', [SafetyFileRequestController::class, 'storeStep3'])->name('step3.store');
+        Route::get('/{dossier}/correct', [SafetyFileRequestController::class, 'showCorrectForm'])->name('correct');
+        Route::post('/{dossier}/correct', [SafetyFileRequestController::class, 'submitCorrection'])->name('correct.submit');
+        Route::post('/{dossier}/delivery', [SafetyFileRequestController::class, 'chooseDelivery'])->name('delivery');
+        Route::get('/document-template/{documentType}', [SafetyFileRequestController::class, 'downloadTemplate'])->name('document-template.download');
+        Route::delete('/{id}', [SafetyFileRequestController::class, 'destroy'])->name('destroy');
+        Route::get('/{dossier}', [SafetyFileRequestController::class, 'show'])->name('show');
+        Route::get('/{dossier}/documents/{document}/download', [SafetyFileRequestController::class, 'downloadDocument'])->name('documents.download');
+        Route::delete('/{dossier}/documents/{document}', [SafetyFileRequestController::class, 'deleteDocument'])->name('documents.delete');
+    });
+
     Route::get('/preventive-presence', [PreventivePresenceController::class, 'index'])->name('preventive-presence.index');
 
     // Multi-step create

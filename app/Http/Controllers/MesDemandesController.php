@@ -91,13 +91,13 @@ class MesDemandesController extends Controller
                     'time' => substr($pendingAppt->visit_time, 0, 5),
                 ] : null;
 
-                $titleKey = $dossier->isHabitation() ? 'title_safety_public' : 'title_safety_hazardous';
+                $titleKey = $dossier->isHabitation() ? 'title_safety_public' : ($dossier->isInterventionPlan() ? 'title_iip' : 'title_safety_hazardous');
 
                 $items->push($this->makeItem(
                     kind:  'safety',
                     lang:  'safety_file',
-                    label: __($dossier->isHabitation() ? 'services.safety_file_public' : 'services.safety_file_hazardous'),
-                    url:   route($dossier->isHazardous() ? 'safety-file-hazardous.show' : 'safety-file-public.show', $dossier),
+                    label: __($dossier->isHabitation() ? 'services.safety_file_public' : ($dossier->isInterventionPlan() ? 'services.internal_intervention_plan' : 'services.safety_file_hazardous')),
+                    url:   route($dossier->isHazardous() ? 'safety-file-hazardous.show' : ($dossier->isInterventionPlan() ? 'internal-intervention-plan.show' : 'safety-file-public.show'), $dossier),
                     title: __('demandes.' . $titleKey, ['ref' => $this->requestReference($dossier, $dossier->service)]),
                     meta: [],
                     details: $this->safetyDetails($dossier),
@@ -115,23 +115,29 @@ class MesDemandesController extends Controller
             ->latest()
             ->get()
             ->each(function ($dossier) use ($items) {
-                $resumeUrl = $dossier->current_step >= 2
-                    ? route($dossier->isHazardous() ? 'safety-file-hazardous.step3.show' : 'safety-file-public.step3.show', $dossier)
-                    : route($dossier->isHazardous() ? 'safety-file-hazardous.step2.show' : 'safety-file-public.step2.show', $dossier);
+                $resumeUrl = route(
+                    $dossier->isHazardous() ? 'safety-file-hazardous.step3.show'
+                        : ($dossier->isInterventionPlan() ? 'internal-intervention-plan.step3.show' : 'safety-file-public.step3.show'),
+                    $dossier
+                );
 
-                $titleKey = $dossier->isHabitation() ? 'title_safety_public' : 'title_safety_hazardous';
+                $titleKey = $dossier->isHabitation() ? 'title_safety_public' : ($dossier->isInterventionPlan() ? 'title_iip' : 'title_safety_hazardous');
 
                 $items->push($this->makeItem(
                     kind:  'safety',
                     lang:  'safety_file',
-                    label: __($dossier->isHabitation() ? 'services.safety_file_public' : 'services.safety_file_hazardous'),
+                    label: __($dossier->isHabitation() ? 'services.safety_file_public' : ($dossier->isInterventionPlan() ? 'services.internal_intervention_plan' : 'services.safety_file_hazardous')),
                     url:   $resumeUrl,
                     title: __('demandes.' . $titleKey, ['ref' => $this->requestReference($dossier, $dossier->service)]),
                     meta: [],
                     details: $this->safetyDetails($dossier),
                     status:    'draft',
                     createdAt: $dossier->created_at,
-                    destroyUrl: route($dossier->isHazardous() ? 'safety-file-hazardous.destroy' : 'safety-file-public.destroy', $dossier) . '?redirect=/mes-demandes',
+                    destroyUrl: route(
+                        $dossier->isHazardous() ? 'safety-file-hazardous.destroy'
+                            : ($dossier->isInterventionPlan() ? 'internal-intervention-plan.destroy' : 'safety-file-public.destroy'),
+                        $dossier
+                    ) . '?redirect=/mes-demandes',
                 ));
             });
 

@@ -4,6 +4,7 @@ return [
     // الخدمتان التوأمان لملف السلامة (الاختيار عبر ?variant=)
     'variant_habitation' => 'ملف السلامة - البنايات العمومية',
     'variant_hazardous'  => 'ملف السلامة - المؤسسات الخطرة',
+    'variant_intervention_plan' => 'مخطط التدخل الداخلي',
 
     'dashboard_title' => 'لوحة القيادة',
     'dashboard_subtitle' => 'فضاء طالب الخدمة',

@@ -27,26 +27,17 @@ class SafetyFileDossierController extends Controller
     {
         $this->authorize('view safety-file-dossiers');
 
-        // The two twin services share this module — restrict the list to the
-        // services the administrator is assigned to (?service= narrows further).
-        $allowedServices = collect(SafetyFileDossier::SERVICE_BY_VARIANT)
-            ->filter(fn ($key) => auth()->user()->hasService($key))
-            ->values();
-        if ($allowedServices->isEmpty()) {
+        // Each admin route group maps to one service — determine it from the route name.
+        $service = $this->currentService();
+
+        if (! auth()->user()->hasService($service)) {
             abort(403, 'You are not assigned to this service.');
         }
 
         $query = SafetyFileDossier::with(['user', 'governorate', 'delegation', 'buildingType'])
             ->whereNotIn('status', ['draft'])
-            ->whereIn('service', $allowedServices->all())
+            ->where('service', $service)
             ->latest();
-
-        // Twin-service filter (dropdown in the index header)
-        if ($service = $request->get('service')) {
-            if ($allowedServices->contains($service)) {
-                $query->where('service', $service);
-            }
-        }
 
         // Territory scope: delegation admins see only their delegation,
         // gouvernorat admins only their governorate, everyone else everything.
@@ -64,18 +55,9 @@ class SafetyFileDossierController extends Controller
             $query->where('status', $status);
         }
 
-        $dossiers = $query->paginate(20)->appends($request->only('q', 'status', 'service'));
+        $dossiers = $query->paginate(20)->appends($request->only('q', 'status'));
 
-        // Service filter options (twin services the admin is assigned to)
-        $serviceOptions = collect(SafetyFileDossier::SERVICE_BY_VARIANT)
-            ->filter(fn ($key) => auth()->user()->hasService($key))
-            ->mapWithKeys(fn ($serviceKey, $variant) => [
-                $serviceKey => SafetyFileDossier::serviceKeyForVariant($variant) === Service::SERVICE_SAFETY_FILE_HAZARDOUS
-                    ? __('services.safety_file_hazardous')
-                    : __('services.safety_file_public'),
-            ]);
-
-        return view('admin.safety-file-dossiers.index', compact('dossiers', 'serviceOptions'));
+        return view('admin.safety-file-dossiers.index', compact('dossiers') + ['arp' => $this->arp()]);
     }
 
     // =========================================================================
@@ -128,7 +110,7 @@ class SafetyFileDossierController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        return view('admin.safety-file-dossiers.show', compact('safetyFileDossier', 'documentTypes', 'uploadedDocs', 'governorates', 'allCorrectionRounds', 'archivedDocuments'));
+        return view('admin.safety-file-dossiers.show', compact('safetyFileDossier', 'documentTypes', 'uploadedDocs', 'governorates', 'allCorrectionRounds', 'archivedDocuments') + ['arp' => $this->arp($safetyFileDossier)]);
     }
 
     public function advanceToConsultation(SafetyFileDossier $safetyFileDossier): RedirectResponse
@@ -157,7 +139,7 @@ class SafetyFileDossierController extends Controller
 
         DossierNotifier::notify($safetyFileDossier, 'under_consultation', 'user', $safetyFileDossier->service);
 
-        return redirect()->route('admin.safety-file-dossiers.show', $safetyFileDossier);
+        return redirect()->route($this->arp($safetyFileDossier) . '.show', $safetyFileDossier);
     }
 
     // =========================================================================
@@ -178,7 +160,7 @@ class SafetyFileDossierController extends Controller
             'admin_note.ar' => ['required', 'string', 'max:2000'],
             // Which dossier fields need fixing (e.g. 'phone', 'cin', 'building_type_id'…)
             'fields_to_fix' => ['nullable', 'array'],
-            'fields_to_fix.*' => ['string', 'in:cin,nom_prenom,phone,governorate_id,delegation_id,building_address,building_type_id,building_activity_id,map_position'],
+            'fields_to_fix.*' => ['string', 'in:cin,nom_prenom,phone,governorate_id,delegation_id,building_address,map_position'],
             // Which document types need a new upload (array of document_type_id integers)
             'docs_to_fix'   => ['nullable', 'array'],
             'docs_to_fix.*' => ['integer', 'exists:document_types,id'],
@@ -262,7 +244,7 @@ class SafetyFileDossierController extends Controller
 
         DossierNotifier::notify($safetyFileDossier, 'needs_correction', 'user', $safetyFileDossier->service);
 
-        return redirect()->route('admin.safety-file-dossiers.show', $safetyFileDossier);
+        return redirect()->route($this->arp($safetyFileDossier) . '.show', $safetyFileDossier);
     }
 
     // =========================================================================
@@ -295,7 +277,7 @@ class SafetyFileDossierController extends Controller
 
         DossierNotifier::notify($safetyFileDossier, 'approved', 'user', $safetyFileDossier->service);
 
-        return redirect()->route('admin.safety-file-dossiers.show', $safetyFileDossier);
+        return redirect()->route($this->arp($safetyFileDossier) . '.show', $safetyFileDossier);
     }
 
     // =========================================================================
@@ -338,7 +320,7 @@ class SafetyFileDossierController extends Controller
 
         DossierNotifier::notify($safetyFileDossier, 'cancelled', 'user', $safetyFileDossier->service);
 
-        return redirect()->route('admin.safety-file-dossiers.show', $safetyFileDossier);
+        return redirect()->route($this->arp($safetyFileDossier) . '.show', $safetyFileDossier);
     }
 
     // =========================================================================
@@ -384,7 +366,7 @@ class SafetyFileDossierController extends Controller
 
         DossierNotifier::notify($safetyFileDossier, 'appointment_scheduled', 'user', $safetyFileDossier->service);
 
-        return redirect()->route('admin.safety-file-dossiers.show', $safetyFileDossier);
+        return redirect()->route($this->arp($safetyFileDossier) . '.show', $safetyFileDossier);
     }
 
     // =========================================================================
@@ -475,7 +457,7 @@ class SafetyFileDossierController extends Controller
             DossierNotifier::notify($safetyFileDossier, 'appointment_failed', 'user', $safetyFileDossier->service);
         }
 
-        return redirect()->route('admin.safety-file-dossiers.show', $safetyFileDossier);
+        return redirect()->route($this->arp($safetyFileDossier) . '.show', $safetyFileDossier);
     }
 
     // =========================================================================
@@ -531,7 +513,7 @@ class SafetyFileDossierController extends Controller
 
         DossierNotifier::notify($safetyFileDossier, 'appointment_cancelled', 'user', $safetyFileDossier->service);
 
-        return redirect()->route('admin.safety-file-dossiers.show', $safetyFileDossier);
+        return redirect()->route($this->arp($safetyFileDossier) . '.show', $safetyFileDossier);
     }
 
     // =========================================================================
@@ -649,7 +631,7 @@ class SafetyFileDossierController extends Controller
 
         DossierNotifier::notify($safetyFileDossier, 'certificate_issued', 'user', $safetyFileDossier->service);
 
-        return redirect()->route('admin.safety-file-dossiers.show', $safetyFileDossier);
+        return redirect()->route($this->arp($safetyFileDossier) . '.show', $safetyFileDossier);
     }
 
     // =========================================================================
@@ -763,7 +745,7 @@ class SafetyFileDossierController extends Controller
                 break;
         }
 
-        return redirect()->route('admin.safety-file-dossiers.show', $safetyFileDossier);
+        return redirect()->route($this->arp($safetyFileDossier) . '.show', $safetyFileDossier);
     }
 
     // =========================================================================
@@ -806,7 +788,39 @@ class SafetyFileDossierController extends Controller
 
         DossierNotifier::notify($safetyFileDossier, 'certificate_revoked', 'user', $safetyFileDossier->service);
 
-        return redirect()->route('admin.safety-file-dossiers.show', $safetyFileDossier);
+        return redirect()->route($this->arp($safetyFileDossier) . '.show', $safetyFileDossier);
+    }
+
+    // =========================================================================
+    // Route-prefix helpers — each admin route group maps to one service
+    // =========================================================================
+
+    /** Service key inferred from the current admin route name */
+    private function currentService(): string
+    {
+        $route = request()->route()?->getName() ?? '';
+        return match (true) {
+            str_contains($route, 'internal-intervention-plan') => Service::SERVICE_INTERNAL_INTERVENTION_PLAN,
+            str_contains($route, 'safety-file-hazardous') => Service::SERVICE_SAFETY_FILE_HAZARDOUS,
+            default => Service::SERVICE_SAFETY_FILE_HABITATION,
+        };
+    }
+
+    /** Admin route-name prefix for redirects and views */
+    private function arp(?SafetyFileDossier $dossier = null): string
+    {
+        if ($dossier) {
+            return match ($dossier->serviceKey()) {
+                Service::SERVICE_INTERNAL_INTERVENTION_PLAN => 'admin.internal-intervention-plan',
+                Service::SERVICE_SAFETY_FILE_HAZARDOUS => 'admin.safety-file-hazardous',
+                default => 'admin.safety-file-public',
+            };
+        }
+        return match ($this->currentService()) {
+            Service::SERVICE_INTERNAL_INTERVENTION_PLAN => 'admin.internal-intervention-plan',
+            Service::SERVICE_SAFETY_FILE_HAZARDOUS => 'admin.safety-file-hazardous',
+            default => 'admin.safety-file-public',
+        };
     }
 
     // =========================================================================

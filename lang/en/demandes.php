@@ -6,6 +6,7 @@ return [
 
     'title_safety_public'   => 'Safety file - Public buildings #:ref',
     'title_safety_hazardous'=> 'Safety file - Hazardous establishments #:ref',
+    'title_iip'             => 'Internal intervention plan #:ref',
     'filter_safety'         => 'Safety file dossiers',
     'title_prevention' => 'Prevention dossier #:ref',
     'title_rescue'     => 'Rescue certificate #:ref',

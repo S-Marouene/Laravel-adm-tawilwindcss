@@ -343,7 +343,7 @@
 
                 <div class="flex flex-col gap-3">
                     {{-- Advance to consultation — the only forward move in this phase --}}
-                    <form method="POST" action="{{ route('admin.safety-file-dossiers.advance', $d) }}"
+                    <form method="POST" action="{{ route($arp . '.advance', $d) }}"
                           data-confirm data-confirm-style="info"
                           data-confirm-title="{{ __('safety.confirm_advance') }}">
                         @csrf
@@ -364,7 +364,7 @@
 
                 {{-- Correction form ───────────────────────────────────────────── --}}
                 <div x-show="fixOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-900/10 p-4">
-                    <form method="POST" action="{{ route('admin.safety-file-dossiers.correction', $d) }}"
+                    <form method="POST" action="{{ route($arp . '.correction', $d) }}"
                           x-data="{ picked: 0 }">
                         @csrf
 
@@ -406,8 +406,6 @@
                                 'building_address'     => ['label' => __('safety.f_building_address'),'icon' => 'home_work'],
                                 // Map position (latitude/longitude) — pinned via Google Maps; correctable on its own.
                                 'map_position'         => ['label' => __('safety.f_map'),             'icon' => 'map'],
-                                'building_type_id'     => ['label' => __('safety.f_building_type'),   'icon' => 'domain'],
-                                'building_activity_id' => ['label' => __('safety.f_activity'),        'icon' => 'category'],
                             ];
                         @endphp
                         <div class="grid gap-1.5"
@@ -421,8 +419,6 @@
                                         'governorate_id'       => $d->governorate?->name_fr ?? $d->governorate?->name_ar,
                                         'delegation_id'        => $d->delegation?->name_fr ?? $d->delegation?->name_ar,
                                         'building_address'     => $d->building_address,
-                                        'building_type_id'     => $d->buildingType?->name,
-                                        'building_activity_id' => $d->buildingActivity?->name ?? $d->activity_other,
                                         // Coordinates as "lat, lng" — mono display, LTR in any locale.
                                         'map_position'         => ($d->latitude !== null && $d->longitude !== null)
                                             ? number_format((float) $d->latitude, 6, '.', '').', '.number_format((float) $d->longitude, 6, '.', '')
@@ -569,7 +565,7 @@
                 </div>
 
                 @can('manage safety-file-dossiers')
-                    <form method="POST" action="{{ route('admin.safety-file-dossiers.appointments.store', $d) }}" class="grid grid-cols-1 sm:grid-cols-[1fr,1fr,auto] items-end gap-3">
+                    <form method="POST" action="{{ route($arp . '.appointments.store', $d) }}" class="grid grid-cols-1 sm:grid-cols-[1fr,1fr,auto] items-end gap-3">
                     @csrf
                     <div>
                         <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('safety.visit_date') }} <span class="text-red-500">*</span></label>
@@ -707,7 +703,7 @@
                             <span class="material-symbols-outlined text-primary text-sm" aria-hidden="true">event_available</span>
                             {{ __('safety.schedule_new_rdv_title') }}
                         </p>
-                        <form method="POST" action="{{ route('admin.safety-file-dossiers.appointments.store', $d) }}" class="grid grid-cols-1 sm:grid-cols-[1fr,1fr] gap-3">
+                        <form method="POST" action="{{ route($arp . '.appointments.store', $d) }}" class="grid grid-cols-1 sm:grid-cols-[1fr,1fr] gap-3">
                             @csrf
                             <div>
                                 <label class="block text-[10px] font-extrabold uppercase tracking-wider text-secondary mb-1">{{ __('safety.new_visit_date') }} <span class="text-red-500">*</span></label>
@@ -774,7 +770,7 @@
                 @endif
 
                 <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
-                    <form method="POST" action="{{ route('admin.safety-file-dossiers.certificate.store', $d) }}">
+                    <form method="POST" action="{{ route($arp . '.certificate.store', $d) }}">
                         @csrf
                         <div class="space-y-3"
                              x-data="{
@@ -1099,7 +1095,7 @@
                 <div class="space-y-2 pt-1 border-t border-surface-dim">
                     <p class="text-[10px] font-extrabold uppercase tracking-wider text-secondary pt-2">{{ $act5Title }}</p>
                     @if ($cert->isPickup() && $cert->isReady())
-                        <form method="POST" action="{{ route('admin.safety-file-dossiers.certificate.update', $d) }}"
+                        <form method="POST" action="{{ route($arp . '.certificate.update', $d) }}"
                               data-confirm data-confirm-style="success"
                               data-confirm-title="{{ __('safety.confirm_collected') }}">
                             @csrf @method('PUT')
@@ -1111,7 +1107,7 @@
                             </button>
                         </form>
                     @elseif ($cert->isPickup())
-                        <form method="POST" action="{{ route('admin.safety-file-dossiers.certificate.update', $d) }}">
+                        <form method="POST" action="{{ route($arp . '.certificate.update', $d) }}">
                             @csrf @method('PUT')
                             <input type="hidden" name="action" value="ready">
                             <button type="submit"
@@ -1121,7 +1117,7 @@
                             </button>
                         </form>
                     @elseif ($cert->isPost() && $cert->isReady())
-                        <form method="POST" action="{{ route('admin.safety-file-dossiers.certificate.update', $d) }}">
+                        <form method="POST" action="{{ route($arp . '.certificate.update', $d) }}">
                             @csrf @method('PUT')
                             <input type="hidden" name="action" value="sent">
                             <label class="mb-1 block text-[10px] uppercase tracking-wider font-bold text-secondary">{{ __('safety.tracking_b3') }} <span class="text-red-500">*</span></label>
@@ -1135,7 +1131,7 @@
                             </button>
                         </form>
                     @elseif ($cert->isPostSent())
-                        <form method="POST" action="{{ route('admin.safety-file-dossiers.certificate.update', $d) }}"
+                        <form method="POST" action="{{ route($arp . '.certificate.update', $d) }}"
                               data-confirm data-confirm-style="success"
                               data-confirm-title="{{ __('safety.confirm_delivered') }}">
                             @csrf @method('PUT')
@@ -1146,7 +1142,7 @@
                                 {{ __('safety.confirm_post_delivery') }}
                             </button>
                         </form>
-                        <form method="POST" action="{{ route('admin.safety-file-dossiers.certificate.update', $d) }}">
+                        <form method="POST" action="{{ route($arp . '.certificate.update', $d) }}">
                             @csrf @method('PUT')
                             <input type="hidden" name="action" value="ready">
                             <button type="submit" class="inline-flex w-full items-center justify-center gap-2 border border-surface-dim bg-surface-container-lowest hover:bg-surface-container text-secondary text-[11px] font-bold py-2 px-4 rounded transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
@@ -1177,7 +1173,7 @@
                             <p class="text-[11px] leading-relaxed text-red-800 dark:text-red-300">
                                 {{ __('safety.revoke_warning', ['ref' => $cert->reference]) }}
                             </p>
-                            <form method="POST" action="{{ route('admin.safety-file-dossiers.certificate.destroy', $d) }}"
+                            <form method="POST" action="{{ route($arp . '.certificate.destroy', $d) }}"
                                   data-confirm data-confirm-style="danger"
                                   data-confirm-title="{{ __('safety.confirm_revoke', ['ref' => $cert->reference]) }}">
                                 @csrf @method('DELETE')
@@ -1338,7 +1334,7 @@
                             <span class="material-symbols-outlined text-xs" aria-hidden="true">{{ $statusPillIcon }}</span>
                             {{ $statusLabel[$status] ?? ucfirst(str_replace('_', ' ', $status)) }}
                         </span>
-                        <a href="{{ route('admin.safety-file-dossiers.index') }}"
+                        <a href="{{ route($arp . '.index') }}"
                             class="flex items-center gap-2 bg-surface-container-lowest hover:bg-surface-container text-on-surface border border-surface-dim text-xs font-semibold py-2 px-2.5 rounded transition-colors">
                             <span class="material-symbols-outlined text-base text-secondary rtl:rotate-180" aria-hidden="true">arrow_back</span>
                         </a>
@@ -1942,7 +1938,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <a href="{{ route('admin.safety-file-dossiers.documents.download', ['document' => $doc]) }}"
+                                        <a href="{{ route($arp . '.documents.download', ['document' => $doc]) }}"
                                            class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors"
                                            title="{{ __('safety.title_download', ['name' => $doc->original_name]) }}">
                                             <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
@@ -1996,7 +1992,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <a href="{{ route('admin.safety-file-dossiers.documents.download', ['document' => $doc]) }}"
+                                            <a href="{{ route($arp . '.documents.download', ['document' => $doc]) }}"
                                                class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors" title="{{ __('safety.download') }}">
                                                 <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
                                             </a>
@@ -2041,7 +2037,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <a href="{{ route('admin.safety-file-dossiers.documents.download', ['document' => $doc]) }}"
+                                        <a href="{{ route($arp . '.documents.download', ['document' => $doc]) }}"
                                            class="w-7 h-7 rounded bg-surface-container text-secondary hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors" title="{{ __('safety.download') }}">
                                             <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
                                         </a>
@@ -2083,7 +2079,7 @@
         {{-- Formulaire d'annulation (déplié) --}}
         <div x-show="cancelOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
              class="border-t border-red-200 dark:border-red-800/40 p-5">
-            <form method="POST" action="{{ route('admin.safety-file-dossiers.cancel', $d) }}"
+            <form method="POST" action="{{ route($arp . '.cancel', $d) }}"
                   data-confirm data-confirm-style="danger"
                   data-confirm-title="{{ __('safety.confirm_cancel_dossier') }}"
                   data-confirm-focus-cancel="false">

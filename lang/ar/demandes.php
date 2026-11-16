@@ -6,7 +6,9 @@ return [
 
     'title_safety_public'   => 'ملف السلامة - البنايات العمومية :ref',
     'title_safety_hazardous'=> 'ملف السلامة - المؤسسات الخطرة :ref',
+    'title_iip'             => 'مخطط التدخل الداخلي :ref',
     'filter_safety'         => 'ملفات السلامة',
+    'filter_iip'            => 'مخطط التدخل الداخلي',
     'title_prevention' => 'ملف الوقاية رقم :ref',
     'title_rescue'     => 'شهادة النجدة رقم :ref',
     'title_presence'   => 'طلب الحضور الوقائي رقم :ref',

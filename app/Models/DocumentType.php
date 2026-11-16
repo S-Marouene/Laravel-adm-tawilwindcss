@@ -18,6 +18,9 @@ class DocumentType extends Model
     public const SERVICE_SAFETY_FILE_HABITATION = 'safety-file-habitation';
     public const SERVICE_SAFETY_FILE_HAZARDOUS  = 'safety-file-hazardous';
 
+    // Safety file — Internal intervention plan (same module, different checklist):
+    public const SERVICE_INTERNAL_INTERVENTION_PLAN = 'internal-intervention-plan';
+
     protected $fillable = [
         'name_ar', 'name_fr', 'name_en',
         'service_key',

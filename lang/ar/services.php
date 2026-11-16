@@ -30,7 +30,7 @@ return [
 
     // Service 5
     'internal_intervention_plan' => 'المصادقة على مخطط التدخل الداخلي',
-    'internal_intervention_plan.desc' => 'المصادقة على المخطط الداخلي للتدخل من طرف مصالح الحماية المدنية',
+    'internal_intervention_plan.desc' => 'المصادقة على مخطط التدخل الداخلي من قِبل مصالح الحماية المدنية',
 
     // Service 6
     'safety_file_public' => 'المصادقة على ملف السلامة - البنايات العمومية',

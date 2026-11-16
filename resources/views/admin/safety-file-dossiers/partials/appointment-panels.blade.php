@@ -4,7 +4,7 @@
 @if ($appt->isPending())
     {{-- Résultat de visite --}}
     <div x-show="openResult" x-cloak class="mt-3 rounded-lg border border-surface-dim bg-surface-container-lowest p-3">
-        <form method="POST" action="{{ route('admin.safety-file-dossiers.appointments.update', [$d, $appt]) }}">
+        <form method="POST" action="{{ route($arp . '.appointments.update', [$d, $appt]) }}">
             @csrf @method('PUT')
             <div class="flex gap-2 mb-2">
                 <label class="flex-1 flex items-center gap-1.5 cursor-pointer rounded-lg border border-amber-300 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-300 has-[:checked]:bg-amber-50 dark:has-[:checked]:bg-amber-900/20">
@@ -30,7 +30,7 @@
             <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
             {{ __('safety.cancel_panel_title') }}
         </p>
-        <form method="POST" action="{{ route('admin.safety-file-dossiers.appointments.cancel', [$d, $appt]) }}"
+        <form method="POST" action="{{ route($arp . '.appointments.cancel', [$d, $appt]) }}"
               data-confirm data-confirm-style="danger"
               data-confirm-title="{{ __('safety.cancel_panel_title') }}"
               data-confirm-focus-cancel="false">

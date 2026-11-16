@@ -4,9 +4,7 @@
 @section('content')
 <div class="mb-6 flex items-center justify-between">
     <div>
-        <h1 class="text-2xl font-bold text-on-surface dark:text-gray-100">
-            {{ request('service') === 'safety-file-hazardous' ? __('services.safety_file_hazardous') : (request('service') === 'safety-file-habitation' ? __('services.safety_file_public') : __('safety.idx_title')) }}
-        </h1>
+        <h1 class="text-2xl font-bold text-on-surface dark:text-gray-100">{{ __('safety.idx_title') }}</h1>
         <p class="text-sm text-secondary dark:text-gray-400 mt-1">{{ __('safety.idx_sub') }}</p>
     </div>
 </div>
@@ -26,17 +24,9 @@
         <option value="approved"           {{ request('status') === 'approved'           ? 'selected' : '' }}>{{ __('safety.st_approved') }}</option>
         <option value="cancelled"          {{ request('status') === 'cancelled'          ? 'selected' : '' }}>{{ __('safety.st_cancelled') }}</option>
     </select>
-    @if ($serviceOptions->count() > 1)
-    <select name="service" class="px-4 py-2 text-sm bg-surface-container-lowest dark:bg-gray-900/50 border border-surface-dim dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-gov-500/30 focus:border-gov-500 dark:text-gray-100">
-        <option value="">{{ __('safety.idx_all_services') }}</option>
-        @foreach ($serviceOptions as $serviceKey => $label)
-            <option value="{{ $serviceKey }}" {{ request('service') === $serviceKey ? 'selected' : '' }}>{{ $label }}</option>
-        @endforeach
-    </select>
-    @endif
     <button type="submit" class="px-4 py-2 text-sm font-semibold bg-gov-600 text-white rounded-xl hover:bg-gov-700">{{ __('safety.idx_search') }}</button>
-    @if(request('q') || request('status') || request('service'))
-        <a href="{{ route('admin.safety-file-dossiers.index') }}" class="px-4 py-2 text-sm font-semibold border border-surface-dim dark:border-gray-600 rounded-xl text-secondary dark:text-gray-300 hover:bg-surface-container dark:hover:bg-gray-700">{{ __('safety.idx_reset') }}</a>
+    @if(request('q') || request('status'))
+        <a href="{{ route($arp . '.index') }}" class="px-4 py-2 text-sm font-semibold border border-surface-dim dark:border-gray-600 rounded-xl text-secondary dark:text-gray-300 hover:bg-surface-container dark:hover:bg-gray-700">{{ __('safety.idx_reset') }}</a>
     @endif
 </form>
 
@@ -102,7 +92,7 @@
                             {{ $dossier->created_at->format('d M Y') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            <a href="{{ route('admin.safety-file-dossiers.show', $dossier) }}"
+                            <a href="{{ route($arp . '.show', $dossier) }}"
                                class="admin-action-link">{{ __('safety.idx_view') }}</a>
                         </td>
                     </tr>

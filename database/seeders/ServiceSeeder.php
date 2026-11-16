@@ -14,6 +14,7 @@ class ServiceSeeder extends Seeder
         ['key' => Service::SERVICE_WORKS_NOTIFICATION, 'name_ar' => 'الإعلام عن إنجاز أشغال', 'name_fr' => 'Notification de travaux', 'name_en' => 'Works notification', 'sort_order' => 4],
         ['key' => Service::SERVICE_SAFETY_FILE_HABITATION, 'name_ar' => 'المصادقة على ملف السلامة - البنايات العمومية', 'name_fr' => 'Validation du dossier sécurité - Bâtiments publics', 'name_en' => 'Safety File Approval - Public Buildings', 'sort_order' => 5],
         ['key' => Service::SERVICE_SAFETY_FILE_HAZARDOUS, 'name_ar' => 'المصادقة على ملف السلامة - المؤسسات الخطرة', 'name_fr' => 'Validation du dossier sécurité - Établissements dangereux', 'name_en' => 'Safety File Approval - Hazardous Establishments', 'sort_order' => 6],
+        ['key' => Service::SERVICE_INTERNAL_INTERVENTION_PLAN, 'name_ar' => 'المصادقة على مخطط التدخل الداخلي', 'name_fr' => 'Validation du plan d\'intervention interne', 'name_en' => 'Internal Intervention Plan Approval', 'sort_order' => 7],
     ];
 
     public function run(): void

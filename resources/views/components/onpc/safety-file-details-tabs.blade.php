@@ -83,10 +83,8 @@
             <div class="rounded border border-amber-200 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-900/10 divide-y divide-amber-100 dark:divide-amber-800/20">
                 @foreach ($drafts as $draft)
                     @php
-                        $draftResumeUrl = $draft->current_step >= 2
-                            ? route($rp . '.step3.show', $draft)
-                            : route($rp . '.step2.show', $draft);
-                        $draftNextStep  = min($draft->current_step + 1, 3);
+                        $draftResumeUrl = route($rp . '.step3.show', $draft);
+                        $draftNextStep  = 2; // 2-step wizard: identity → documents
                     @endphp
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5">
                         <div class="min-w-0">

@@ -351,8 +351,8 @@
                                     </p>
                                 </div>
                                 <div class="flex items-center gap-2 flex-none">
-                                    @if ($draft->current_step === 1)
-                                        <a href="{{ route($rp . '.step2.show', $draft) }}" class="inline-flex items-center gap-1 rounded-lg border border-gov-300 bg-gov-50 px-3 py-1.5 text-xs font-semibold text-gov-700 transition hover:bg-gov-100 dark:border-gov-700 dark:bg-gov-900/30 dark:text-gov-300">
+                                    @if ($draft->current_step >= 1)
+                                        <a href="{{ route($rp . '.step3.show', $draft) }}" class="inline-flex items-center gap-1 rounded-lg border border-gov-300 bg-gov-50 px-3 py-1.5 text-xs font-semibold text-gov-700 transition hover:bg-gov-100 dark:border-gov-700 dark:bg-gov-900/30 dark:text-gov-300">
                                             {{ __('safety_file.continue') }} &rarr;
                                         </a>
                                     @elseif ($draft->current_step >= 2)

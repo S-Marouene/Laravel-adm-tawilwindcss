@@ -763,7 +763,7 @@
                                 <p class="text-body-sm text-secondary mt-0.5">{{ __('safety_file.draft_notice') }}</p>
                             </div>
                         </div>
-                        <a href="{{ $dossier->current_step >= 2 ? route($rp . '.step3.show', $dossier) : route($rp . '.step2.show', $dossier) }}"
+                        <a href="{{ route($rp . '.step3.show', $dossier) }}"
                             class="inline-flex items-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-4 rounded transition-colors shadow-sm">
                             <span class="material-symbols-outlined text-base" aria-hidden="true">play_arrow</span>
                             {{ __('safety_file.draft_continue_step', ['step' => $dossier->current_step >= 2 ? 3 : 2]) }}

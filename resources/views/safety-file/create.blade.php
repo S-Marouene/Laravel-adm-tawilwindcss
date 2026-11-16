@@ -1,5 +1,5 @@
 @php
-    $totalSteps = 3;
+    $totalSteps = 2;
 
     $isEditing  = isset($dossier);
     $returnTo   = $returnTo ?? null; // step the user came from (edit flow)
@@ -16,22 +16,12 @@
     $valLat     = old('latitude',  $isEditing ? ($dossier->latitude  ?? '') : '');
     $valLng     = old('longitude', $isEditing ? ($dossier->longitude ?? '') : '');
 
-    // ── Récapitulatif des étapes pour la barre de progression ──
+    // ── 2-step wizard: identity → documents (no building-type step) ──
     $wizardSteps = [
         [
             'state'   => 'active',
             'title'   => __('safety_file.step_one_title'),
             'editing' => $isEditing,
-        ],
-        [
-            'state'   => $isEditing ? 'done' : 'upcoming',
-            'title'   => __('safety_file.step_two_title'),
-            'data'    => $isEditing ? array_filter([
-                            $dossier->buildingType?->name,
-                            $dossier->buildingActivity?->name ?: $dossier->activity_other,
-                        ]) : [],
-            'editUrl' => $isEditing ? route($rp . '.step2.show', ['dossier' => $dossier, 'editing' => 1]) : null,
-            'editLabel' => __('safety_file.step_two_title'),
         ],
         [
             'state' => ($isEditing && ($hasDocuments ?? false)) ? 'done' : 'upcoming',
@@ -47,7 +37,11 @@
             {{-- Carte à onglets — votre dossier + détails officiels de la démarche
                  (masquée pendant l'édition d'un dossier existant) --}}
             @unless ($isEditing)
-                <x-onpc.safety-file-details-tabs :drafts="$drafts" :variant="$variant" :rp="$rp" />
+                @if ($variant === \App\Models\SafetyFileDossier::VARIANT_INTERVENTION_PLAN)
+                    <x-onpc.iip-details-tabs :drafts="$drafts" :rp="$rp" />
+                @else
+                    <x-onpc.safety-file-details-tabs :drafts="$drafts" :variant="$variant" :rp="$rp" />
+                @endif
             @endunless
 
             {{-- ===========================================================
@@ -267,7 +261,7 @@
 
                         {{-- Pied de formulaire --}}
                         <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-surface-dim px-6 py-5 dark:border-gray-700">
-                            <a href="{{ $isEditing ? route($rp . '.step2.show', ['dossier' => $dossier, 'editing' => 1]) : url('/') }}"
+                            <a href="{{ $isEditing ? route($rp . '.step3.show', $dossier) : url('/') }}"
                                class="inline-flex items-center justify-center rounded border border-surface-dim bg-surface-container-lowest px-4 py-2.5 text-body-sm font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                 {{ __('safety_file.cancel') }}
                             </a>

@@ -1,15 +1,11 @@
 @php
-    $totalSteps = 3;
+    $totalSteps = 2;
     $step1Lines = [
         $dossier->nom_prenom,
         $dossier->cin,
     ];
-    $step2Lines = array_filter([
-        $dossier->buildingType?->name,
-        $dossier->buildingActivity?->name ?: $dossier->activity_other,
-    ]);
 
-    // ── Récapitulatif des étapes pour la barre de progression ──
+    // ── 2-step wizard: identity → documents (no building-type step) ──
     $wizardSteps = [
         [
             'state'     => 'done',
@@ -17,13 +13,6 @@
             'data'      => $step1Lines,
             'editUrl'   => route($rp . '.step1.edit', ['dossier' => $dossier, 'return' => 'step3']),
             'editLabel' => __('safety_file.edit_step1'),
-        ],
-        [
-            'state'     => 'done',
-            'title'     => __('safety_file.step_two_title'),
-            'data'      => $step2Lines,
-            'editUrl'   => route($rp . '.step2.show', ['dossier' => $dossier, 'editing' => 1]),
-            'editLabel' => __('safety_file.edit_step2'),
         ],
         [
             'state' => 'active',
@@ -209,7 +198,7 @@
                                 {{ __('safety_file.required_note') }}
                             </div>
                             <div class="flex flex-col-reverse sm:flex-row items-center gap-3">
-                                <a href="{{ route($rp . '.step2.show', ['dossier' => $dossier, 'editing' => 1]) }}"
+                                <a href="{{ route($rp . '.step1.edit', ['dossier' => $dossier, 'return' => 'step3']) }}"
                                    class="inline-flex items-center gap-2 rounded border border-surface-dim bg-surface-container-lowest px-4 py-2.5 text-body-sm font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                     <svg class="h-4 w-4 {{ app()->getLocale() === 'ar' ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>

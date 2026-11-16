@@ -27,16 +27,19 @@ class SafetyFileDossier extends Model
 
     public const VARIANT_HABITATION = 'habitation';
     public const VARIANT_HAZARDOUS  = 'hazardous';
+    public const VARIANT_INTERVENTION_PLAN = 'intervention-plan';
 
     public const VARIANTS = [
         self::VARIANT_HABITATION,
         self::VARIANT_HAZARDOUS,
+        self::VARIANT_INTERVENTION_PLAN,
     ];
 
     /** Variant slug → canonical Service key stored in the `service` column. */
     public const SERVICE_BY_VARIANT = [
-        self::VARIANT_HABITATION => Service::SERVICE_SAFETY_FILE_HABITATION,
-        self::VARIANT_HAZARDOUS  => Service::SERVICE_SAFETY_FILE_HAZARDOUS,
+        self::VARIANT_HABITATION       => Service::SERVICE_SAFETY_FILE_HABITATION,
+        self::VARIANT_HAZARDOUS        => Service::SERVICE_SAFETY_FILE_HAZARDOUS,
+        self::VARIANT_INTERVENTION_PLAN => Service::SERVICE_INTERNAL_INTERVENTION_PLAN,
     ];
 
     public static function serviceKeyForVariant(string $variant): string
@@ -60,11 +63,16 @@ class SafetyFileDossier extends Model
 
     public function isHabitation(): bool { return $this->variant() === self::VARIANT_HABITATION; }
     public function isHazardous(): bool  { return $this->variant() === self::VARIANT_HAZARDOUS; }
+    public function isInterventionPlan(): bool { return $this->variant() === self::VARIANT_INTERVENTION_PLAN; }
 
     /** Localized display name of the twin service (variant). */
     public function variantLabel(): string
     {
-        return __($this->isHabitation() ? 'safety_file.variant_habitation' : 'safety_file.variant_hazardous');
+        return match($this->variant()) {
+            self::VARIANT_HAZARDOUS => __('safety_file.variant_hazardous'),
+            self::VARIANT_INTERVENTION_PLAN => __('safety_file.variant_intervention_plan'),
+            default => __('safety_file.variant_habitation'),
+        };
     }
 
     protected $fillable = [

@@ -24,6 +24,7 @@ class Reference
         // Dossiers de sécurité (services jumeaux, séquences indépendantes) :
         'safety-file-habitation' => 'DSH', // Bâtiments d'habitation / accueil du public
         'safety-file-hazardous'  => 'DSR', // Établissements dangereux
+        'internal-intervention-plan' => 'MDI', // مخطط التدخل الداخلي
     ];
 
     public static function prefix(string $service): string

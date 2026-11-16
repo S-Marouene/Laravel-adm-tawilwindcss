@@ -4,6 +4,7 @@ return [
     // Jumeaux « dossier de sécurité » (sélection via ?variant=)
     'variant_habitation' => 'Dossier de sécurité - Bâtiments publics',
     'variant_hazardous'  => 'Dossier de sécurité - Établissements dangereux',
+    'variant_intervention_plan' => 'Plan d\'intervention interne',
 
     'dashboard_title' => 'Tableau de bord',
     'dashboard_subtitle' => 'Espace demandeur',

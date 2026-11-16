@@ -192,12 +192,17 @@ class DossierNotifier
         // service-scoped templates (safety_submitted, safety_under_consultation…):
         // same pipeline as prevention (site visit → study → approval) but a
         // free procedure (fee = 0) and the applicant is tracked by phone.
-        if (in_array($serviceKey, [Service::SERVICE_SAFETY_FILE_HABITATION, Service::SERVICE_SAFETY_FILE_HAZARDOUS], true)) {
-            $tpl = \App\Models\NotificationTemplate::forEvent("safety_{$event}");
+        if (in_array($serviceKey, [Service::SERVICE_SAFETY_FILE_HABITATION, Service::SERVICE_SAFETY_FILE_HAZARDOUS, Service::SERVICE_INTERNAL_INTERVENTION_PLAN], true)) {
+            $prefix = $serviceKey === Service::SERVICE_INTERNAL_INTERVENTION_PLAN ? 'iip' : 'safety';
+            $tpl = \App\Models\NotificationTemplate::forEvent("{$prefix}_{$event}");
             if ($tpl) {
                 [$title_fr, $body_fr, $level] = $tpl->resolve('fr', $ref, $name);
                 [$title_ar, $body_ar]         = array_slice($tpl->resolve('ar', $ref, $name), 0, 2);
                 return [$title_fr, $body_fr, $title_ar, $body_ar, $level];
+            }
+
+            if ($serviceKey === Service::SERVICE_INTERNAL_INTERVENTION_PLAN) {
+                return self::iipFallback($event, $ref, $name);
             }
 
             return self::safetyFallback($event, $ref, $name);
@@ -274,8 +279,8 @@ class DossierNotifier
         return match ($serviceKey) {
             Service::SERVICE_RESCUE_CERTIFICATE => route('admin.rescue-certificates.show', $dossier),
             Service::SERVICE_WORKS_NOTIFICATION => route('admin.building-works-declarations.show', $dossier),
-            Service::SERVICE_SAFETY_FILE_HABITATION,
-            Service::SERVICE_SAFETY_FILE_HAZARDOUS => route('admin.safety-file-dossiers.show', $dossier),
+            Service::SERVICE_INTERNAL_INTERVENTION_PLAN => route('admin.internal-intervention-plan.show', $dossier),
+            Service::SERVICE_SAFETY_FILE_HABITATION => route('admin.safety-file-public.show', $dossier),
             default => route('admin.prevention-dossiers.show', $dossier),
         };
     }
@@ -285,8 +290,8 @@ class DossierNotifier
         return match ($serviceKey) {
             Service::SERVICE_RESCUE_CERTIFICATE => route('rescue-certificates.show', $dossier),
             Service::SERVICE_WORKS_NOTIFICATION => route('building-works-declarations.show', $dossier),
+            Service::SERVICE_INTERNAL_INTERVENTION_PLAN => route('internal-intervention-plan.show', $dossier),
             Service::SERVICE_SAFETY_FILE_HABITATION => route('safety-file-public.show', $dossier),
-            Service::SERVICE_SAFETY_FILE_HAZARDOUS => route('safety-file-hazardous.show', $dossier),
             default => route('prevention-requests.show', $dossier),
         };
     }
@@ -480,6 +485,23 @@ class DossierNotifier
                 "تم تحديث الإعلام {$ref}.",
                 'info',
             ],
+        };
+    }
+
+    // ------------------------------------------------------------------
+    // Internal intervention plan fallback content
+    // ------------------------------------------------------------------
+
+    private static function iipFallback(string $event, string $ref, string $name): array
+    {
+        return match ($event) {
+            'submitted'          => ['Nouveau dossier de plan d\'intervention soumis', "Le dossier {$ref} ({$name}) vient d'être soumis.", 'ملف جديد لمخطط التدخل الداخلي', "تم تقديم الملف {$ref} ({$name}) وهو في انتظار المراجعة.", 'info'],
+            'resubmitted'        => ['Plan d\'intervention re-soumis', "Le dossier {$ref} a été corrigé et re-soumis.", 'إعادة تقديم ملف مخطط التدخل', "أعاد المتقدم تقديم الملف {$ref} بعد إجراء التصحيحات.", 'warning'],
+            'under_consultation' => ['Plan d\'intervention en cours d\'étude', "Votre dossier {$ref} est en cours d'étude. Vous serez informé par courrier.", 'الملف قيد الدراسة', "ملف مخطط التدخل {$ref} قيد الدراسة. سيتم إبلاغكم بالبريد.", 'info'],
+            'needs_correction'   => ['Correction requise', "Votre dossier {$ref} nécessite des corrections.", 'مطلوب تصحيح', "يستلزم الملف {$ref} إجراء تصحيحات. يرجى الاطلاع على ملاحظة الإدارة.", 'warning'],
+            'approved'           => ['Plan d\'intervention approuvé', "Votre plan d\'intervention {$ref} a été approuvé. Procédure gratuite — vous serez contacté par courrier pour le retrait.", 'تمت المصادقة على مخطط التدخل الداخلي', "تمت المصادقة على مخطط التدخل الداخلي {$ref}. الإجراء مجاني — سيتم التواصل معكم بالبريد.", 'success'],
+            'cancelled'          => ['Dossier annulé', "Le dossier {$ref} a été annulé.", 'تم إلغاء الملف', "تم إلغاء ملف مخطط التدخل الداخلي {$ref}.", 'danger'],
+            default              => ['Dossier mis à jour', "Le dossier {$ref} a été mis à jour.", 'تم تحديث الملف', "تم تحديث الملف {$ref}.", 'info'],
         };
     }
 }

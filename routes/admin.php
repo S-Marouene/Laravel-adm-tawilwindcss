@@ -108,23 +108,40 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::get('prevention-dossiers/documents/{document}/download', [PreventionDossierController::class, 'downloadDocument'])->name('prevention-dossiers.documents.download');
     Route::resource('prevention-dossiers', PreventionDossierController::class)->only(['index', 'show']);
 
-    // Safety file dossiers (twin services: habitation / hazardous)
-    Route::post('safety-file-dossiers/{safetyFileDossier}/advance', [SafetyFileDossierController::class, 'advanceToConsultation'])->name('safety-file-dossiers.advance');
-    Route::post('safety-file-dossiers/{safetyFileDossier}/correction', [SafetyFileDossierController::class, 'requestCorrection'])->name('safety-file-dossiers.correction');
-    Route::post('safety-file-dossiers/{safetyFileDossier}/approve', [SafetyFileDossierController::class, 'approve'])->name('safety-file-dossiers.approve');
-    Route::post('safety-file-dossiers/{safetyFileDossier}/cancel', [SafetyFileDossierController::class, 'cancel'])->name('safety-file-dossiers.cancel');
-    // Appointments (RDV)
-    Route::post('safety-file-dossiers/{safetyFileDossier}/appointments', [SafetyFileDossierController::class, 'scheduleAppointment'])->name('safety-file-dossiers.appointments.store');
-    Route::put('safety-file-dossiers/{safetyFileDossier}/appointments/{appointment}', [SafetyFileDossierController::class, 'updateAppointment'])->name('safety-file-dossiers.appointments.update');
-    Route::post('safety-file-dossiers/{safetyFileDossier}/appointments/{appointment}/cancel', [SafetyFileDossierController::class, 'cancelAppointment'])->name('safety-file-dossiers.appointments.cancel');
-    // Safety file certificate (issued after a passed RDV — the applicant picks it up at a delegation)
-    Route::post('safety-file-dossiers/{safetyFileDossier}/certificate', [SafetyFileDossierController::class, 'issueCertificate'])->name('safety-file-dossiers.certificate.store');
-    Route::put('safety-file-dossiers/{safetyFileDossier}/certificate', [SafetyFileDossierController::class, 'updateCertificate'])->name('safety-file-dossiers.certificate.update');
-    Route::delete('safety-file-dossiers/{safetyFileDossier}/certificate', [SafetyFileDossierController::class, 'revokeCertificate'])->name('safety-file-dossiers.certificate.destroy');
-    Route::get('safety-file-dossiers/documents/{document}/download', [SafetyFileDossierController::class, 'downloadDocument'])->name('safety-file-dossiers.documents.download');
-    Route::resource('safety-file-dossiers', SafetyFileDossierController::class)
-        ->only(['index', 'show'])
-        ->parameters(['safety-file-dossiers' => 'safetyFileDossier']);
+    // Safety file dossiers — TWO SEPARATE admin sections (no shared routes)
+    foreach (['safety-file-public' => \App\Models\Service::SERVICE_SAFETY_FILE_HABITATION, 'safety-file-hazardous' => \App\Models\Service::SERVICE_SAFETY_FILE_HAZARDOUS] as $sfPrefix => $sfKey) {
+        Route::prefix($sfPrefix)->name("{$sfPrefix}.")->group(function () use ($sfPrefix) {            Route::get('/', [SafetyFileDossierController::class, 'index'])->name('index');
+            Route::get('/{safetyFileDossier}', [SafetyFileDossierController::class, 'show'])->name('show');
+            Route::post('/{safetyFileDossier}/advance', [SafetyFileDossierController::class, 'advanceToConsultation'])->name('advance');
+            Route::post('/{safetyFileDossier}/correction', [SafetyFileDossierController::class, 'requestCorrection'])->name('correction');
+            Route::post('/{safetyFileDossier}/approve', [SafetyFileDossierController::class, 'approve'])->name('approve');
+            Route::post('/{safetyFileDossier}/cancel', [SafetyFileDossierController::class, 'cancel'])->name('cancel');
+            Route::post('/{safetyFileDossier}/appointments', [SafetyFileDossierController::class, 'scheduleAppointment'])->name('appointments.store');
+            Route::put('/{safetyFileDossier}/appointments/{appointment}', [SafetyFileDossierController::class, 'updateAppointment'])->name('appointments.update');
+            Route::post('/{safetyFileDossier}/appointments/{appointment}/cancel', [SafetyFileDossierController::class, 'cancelAppointment'])->name('appointments.cancel');
+            Route::post('/{safetyFileDossier}/certificate', [SafetyFileDossierController::class, 'issueCertificate'])->name('certificate.store');
+            Route::put('/{safetyFileDossier}/certificate', [SafetyFileDossierController::class, 'updateCertificate'])->name('certificate.update');
+            Route::delete('/{safetyFileDossier}/certificate', [SafetyFileDossierController::class, 'revokeCertificate'])->name('certificate.destroy');
+            Route::get('/documents/{document}/download', [SafetyFileDossierController::class, 'downloadDocument'])->name('documents.download');
+        });
+    }
+
+    // Internal intervention plan (المصادقة على مخطط التدخل الداخلي) — same pipeline as safety file
+    Route::prefix('internal-intervention-plan')->name('internal-intervention-plan.')->group(function () {
+        Route::get('/', [SafetyFileDossierController::class, 'index'])->name('index');
+        Route::get('/{safetyFileDossier}', [SafetyFileDossierController::class, 'show'])->name('show');
+        Route::post('/{safetyFileDossier}/advance', [SafetyFileDossierController::class, 'advanceToConsultation'])->name('advance');
+        Route::post('/{safetyFileDossier}/correction', [SafetyFileDossierController::class, 'requestCorrection'])->name('correction');
+        Route::post('/{safetyFileDossier}/approve', [SafetyFileDossierController::class, 'approve'])->name('approve');
+        Route::post('/{safetyFileDossier}/cancel', [SafetyFileDossierController::class, 'cancel'])->name('cancel');
+        Route::post('/{safetyFileDossier}/appointments', [SafetyFileDossierController::class, 'scheduleAppointment'])->name('appointments.store');
+        Route::put('/{safetyFileDossier}/appointments/{appointment}', [SafetyFileDossierController::class, 'updateAppointment'])->name('appointments.update');
+        Route::post('/{safetyFileDossier}/appointments/{appointment}/cancel', [SafetyFileDossierController::class, 'cancelAppointment'])->name('appointments.cancel');
+        Route::post('/{safetyFileDossier}/certificate', [SafetyFileDossierController::class, 'issueCertificate'])->name('certificate.store');
+        Route::put('/{safetyFileDossier}/certificate', [SafetyFileDossierController::class, 'updateCertificate'])->name('certificate.update');
+        Route::delete('/{safetyFileDossier}/certificate', [SafetyFileDossierController::class, 'revokeCertificate'])->name('certificate.destroy');
+        Route::get('/documents/{document}/download', [SafetyFileDossierController::class, 'downloadDocument'])->name('documents.download');
+    });
 
     // Preventive Presence (الحضور الوقائي) workflow actions
     Route::post('preventive-presence/{preventivePresence}/advance', [PreventivePresenceController::class, 'advance'])->name('preventive-presence.advance');

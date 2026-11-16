@@ -6,6 +6,7 @@ return [
 
     'title_safety_public'   => 'Dossier de sécurité - Bâtiments publics #:ref',
     'title_safety_hazardous'=> 'Dossier de sécurité - Établissements dangereux #:ref',
+    'title_iip'             => 'Plan d\'intervention interne #:ref',
     'filter_safety'         => 'Dossiers de sécurité',
     'title_prevention' => 'Dossier de prévention #:ref',
     'title_rescue'     => 'Certificat de secours #:ref',

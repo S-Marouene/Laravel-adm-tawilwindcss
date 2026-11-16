@@ -4,6 +4,7 @@ return [
     // Twin safety-file services (selected via ?variant=)
     'variant_habitation' => 'Safety file - Public buildings',
     'variant_hazardous'  => 'Safety file - Hazardous establishments',
+    'variant_intervention_plan' => 'Internal Intervention Plan',
 
     'dashboard_title' => 'Dashboard',
     'dashboard_subtitle' => 'Applicant space',

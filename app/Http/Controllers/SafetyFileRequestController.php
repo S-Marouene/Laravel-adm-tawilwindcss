@@ -164,12 +164,8 @@ class SafetyFileRequestController extends Controller
             'delegation' => $dossier->delegation?->name,
         ]);
 
-        // Return the user to the step they came from (default: step 2 in editing mode)
-        if ($request->input('return_to') === 'step3') {
-            return redirect()->route($this->rp($dossier) . '.step3.show', $dossier);
-        }
-
-        return redirect()->route($this->rp($dossier) . '.step2.show', ['dossier' => $dossier, 'editing' => 1]);
+        // No Step 2 (building type) for safety file services — go straight to documents
+        return redirect()->route($this->rp($dossier) . '.step3.show', $dossier);
     }
 
     // =========================================================================
@@ -215,7 +211,8 @@ class SafetyFileRequestController extends Controller
             'address'    => $dossier->building_address,
         ]);
 
-        return redirect()->route($this->rp($dossier) . '.step2.show', $dossier);
+        // No Step 2 (building type) — go straight to the documents step
+        return redirect()->route($this->rp($dossier) . '.step3.show', $dossier);
     }
 
     // =========================================================================
@@ -908,13 +905,15 @@ class SafetyFileRequestController extends Controller
     // controller always knows which service it's serving.
     // =========================================================================
 
-    /** Variant inferred from the current route name (safety-file-public.* | safety-file-hazardous.*) */
+    /** Variant inferred from the current route name */
     private function currentVariant(): string
     {
         $route = request()->route()?->getName() ?? '';
-        return str_contains($route, 'safety-file-hazardous')
-            ? SafetyFileDossier::VARIANT_HAZARDOUS
-            : SafetyFileDossier::VARIANT_HABITATION;
+        return match (true) {
+            str_contains($route, 'internal-intervention-plan') => SafetyFileDossier::VARIANT_INTERVENTION_PLAN,
+            str_contains($route, 'safety-file-hazardous') => SafetyFileDossier::VARIANT_HAZARDOUS,
+            default => SafetyFileDossier::VARIANT_HABITATION,
+        };
     }
 
     /**
@@ -924,11 +923,17 @@ class SafetyFileRequestController extends Controller
     private function rp(?SafetyFileDossier $dossier = null): string
     {
         if ($dossier) {
-            return $dossier->isHazardous() ? 'safety-file-hazardous' : 'safety-file-public';
+            return match ($dossier->variant()) {
+                SafetyFileDossier::VARIANT_INTERVENTION_PLAN => 'internal-intervention-plan',
+                SafetyFileDossier::VARIANT_HAZARDOUS => 'safety-file-hazardous',
+                default => 'safety-file-public',
+            };
         }
-        return $this->currentVariant() === SafetyFileDossier::VARIANT_HAZARDOUS
-            ? 'safety-file-hazardous'
-            : 'safety-file-public';
+        return match ($this->currentVariant()) {
+            SafetyFileDossier::VARIANT_INTERVENTION_PLAN => 'internal-intervention-plan',
+            SafetyFileDossier::VARIANT_HAZARDOUS => 'safety-file-hazardous',
+            default => 'safety-file-public',
+        };
     }
 
     // =========================================================================

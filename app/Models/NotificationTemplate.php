@@ -76,6 +76,21 @@ class NotificationTemplate extends Model
             'safety_certificate_post_sent'  => 'info',
             'safety_certificate_delivered'  => 'success',
             'safety_certificate_revoked'    => 'danger',
+            // Internal intervention plan (service-scoped templates)
+            'iip_submitted'              => 'info',
+            'iip_resubmitted'            => 'warning',
+            'iip_under_consultation'     => 'info',
+            'iip_needs_correction'       => 'warning',
+            'iip_approved'               => 'success',
+            'iip_cancelled'              => 'danger',
+            'iip_appointment_scheduled'  => 'info',
+            'iip_appointment_cancelled'  => 'warning',
+            'iip_appointment_failed'     => 'warning',
+            'iip_waiting_delivery'       => 'success',
+            'iip_delivery_chosen'        => 'info',
+            'iip_certificate_issued'     => 'success',
+            'iip_certificate_collected'  => 'success',
+            'iip_certificate_revoked'    => 'danger',
             default                  => 'info',
         };
     }
@@ -134,6 +149,21 @@ class NotificationTemplate extends Model
             'safety_certificate_post_sent'  => 'Sécurité — certificat envoyé par courrier',
             'safety_certificate_delivered'  => 'Sécurité — certificat remis',
             'safety_certificate_revoked'    => 'Sécurité — certificat révoqué',
+            // Internal intervention plan (service-scoped templates)
+            'iip_submitted'              => 'Plan d\'intervention — dossier soumis',
+            'iip_resubmitted'            => 'Plan d\'intervention — re-soumission',
+            'iip_under_consultation'     => 'Plan d\'intervention — en cours d\'étude',
+            'iip_needs_correction'       => 'Plan d\'intervention — correction demandée',
+            'iip_approved'               => 'Plan d\'intervention — approuvé (authentifié)',
+            'iip_cancelled'              => 'Plan d\'intervention — dossier annulé',
+            'iip_appointment_scheduled'  => 'Plan d\'intervention — visite planifiée',
+            'iip_appointment_cancelled'  => 'Plan d\'intervention — visite annulée',
+            'iip_appointment_failed'     => 'Plan d\'intervention — visite échouée',
+            'iip_waiting_delivery'       => 'Plan d\'intervention — visite réussie, document en préparation',
+            'iip_delivery_chosen'        => 'Plan d\'intervention — mode de retrait choisi',
+            'iip_certificate_issued'     => 'Plan d\'intervention — attestation émise',
+            'iip_certificate_collected'  => 'Plan d\'intervention — attestation retirée',
+            'iip_certificate_revoked'    => 'Plan d\'intervention — attestation révoquée',
             default                  => $this->event_key,
         };
     }
