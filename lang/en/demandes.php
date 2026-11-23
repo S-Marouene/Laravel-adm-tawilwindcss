@@ -12,6 +12,7 @@ return [
     'title_rescue'     => 'Rescue certificate #:ref',
     'title_presence'   => 'Presence request #:ref',
     'title_works'      => 'Works notification #:ref',
+    'title_special_intervention' => 'Special intervention #:ref',
     'title_generic'    => 'Submitted request',
 
     'reference' => 'Reference',
@@ -19,7 +20,9 @@ return [
 
     'submitted_on'    => 'Submitted on :date',
     'incident_on'     => 'Incident on :date',
+    'intervention_on' => 'Intervention on :date',
     'works_on'        => 'Works from :date',
+    'total_amount'    => 'Total amount: :amount',
     'action_required' => 'This request requires your action',
 
     'building_type'   => 'Building type',

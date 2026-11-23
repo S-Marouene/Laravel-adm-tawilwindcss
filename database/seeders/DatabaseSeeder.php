@@ -48,6 +48,7 @@ class DatabaseSeeder extends Seeder
             BuildingWorksDocumentTypeSeeder::class,
             SafetyFileDocumentTypeSeeder::class,
             InternalInterventionPlanDocumentTypeSeeder::class, // safety file document types — twin services (needs building types)
+            TrainingDocumentTypeSeeder::class,                 // training / formation document types
             NotificationTemplateSeeder::class, // notification templates (used by DossierNotification)
             TranslationSeeder::class,          // dictionary FR/AR/EN from lang/ files (editable by admins)
         ]);

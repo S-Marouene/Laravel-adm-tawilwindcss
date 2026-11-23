@@ -9,9 +9,13 @@ use App\Models\PreventivePresenceRequest;
 use App\Models\RescueCertificate;
 use App\Models\BuildingWorksDeclaration;
 use App\Models\SafetyFileDossier;
+use App\Models\SpecialIntervention;
+use App\Models\TrainingRequest;
 use App\Http\Controllers\PreventivePresenceController;
 use App\Http\Controllers\RescueCertificateController;
 use App\Http\Controllers\BuildingWorksDeclarationController;
+use App\Http\Controllers\SpecialInterventionController;
+use App\Http\Controllers\TrainingController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\App;
@@ -48,6 +52,8 @@ Route::get('/', function () {
         || RescueCertificate::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
         || BuildingWorksDeclaration::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
         || SafetyFileDossier::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
+        || SpecialIntervention::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
+        || TrainingRequest::where('user_id', auth()->id())->whereNotIn('status', ['draft'])->exists()
     );
 
     return view('welcome', ['hasRequests' => $hasRequests]);
@@ -231,6 +237,46 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/building-works-declarations/{buildingWorksDeclaration}/resubmit', [BuildingWorksDeclarationController::class, 'resubmit'])->name('building-works-declarations.resubmit');
     Route::get('/building-works-declarations/{buildingWorksDeclaration}/documents/{buildingWorksDocument}/download', [BuildingWorksDeclarationController::class, 'downloadDocument'])->name('building-works-declarations.documents.download');
     Route::delete('/building-works-declarations/{buildingWorksDeclaration}', [BuildingWorksDeclarationController::class, 'destroy'])->name('building-works-declarations.destroy');
+
+    // ── Special paid interventions (التدخلات والعمليات والخدمات الخاصة بمقابل) ──
+    Route::get('/special-interventions', [SpecialInterventionController::class, 'index'])->name('special-interventions.index');
+    Route::get('/special-interventions/create', [SpecialInterventionController::class, 'create'])->name('special-interventions.create');
+    Route::get('/special-interventions/{specialIntervention}', [SpecialInterventionController::class, 'show'])->name('special-interventions.show');
+
+    // Official form/template attached to a document type
+    Route::get('/special-interventions/document-template/{documentType}', [SpecialInterventionController::class, 'downloadTemplate'])
+        ->name('special-interventions.document-template.download');
+
+    // Targeted correction form (fields + documents flagged by the admin)
+    Route::get('/special-interventions/{specialIntervention}/correct', [SpecialInterventionController::class, 'showCorrectForm'])->name('special-interventions.correct');
+    Route::post('/special-interventions/{specialIntervention}/correct', [SpecialInterventionController::class, 'submitCorrection'])->name('special-interventions.correct.submit');
+
+    Route::post('/special-interventions/step1', [SpecialInterventionController::class, 'storeStep1'])->name('special-interventions.step1.store');
+    Route::get('/special-interventions/{specialIntervention}/step1/edit', [SpecialInterventionController::class, 'editStep1'])->name('special-interventions.step1.edit');
+    Route::put('/special-interventions/{specialIntervention}/step1', [SpecialInterventionController::class, 'updateStep1'])->name('special-interventions.step1.update');
+    Route::get('/special-interventions/{specialIntervention}/step2', [SpecialInterventionController::class, 'showStep2'])->name('special-interventions.step2.show');
+    Route::post('/special-interventions/{specialIntervention}/step2', [SpecialInterventionController::class, 'storeStep2'])->name('special-interventions.step2.store');
+    Route::get('/special-interventions/{specialIntervention}/step3', [SpecialInterventionController::class, 'showStep3'])->name('special-interventions.step3.show');
+    Route::post('/special-interventions/{specialIntervention}/step3', [SpecialInterventionController::class, 'storeStep3'])->name('special-interventions.step3.store');
+    Route::post('/special-interventions/{specialIntervention}/resubmit', [SpecialInterventionController::class, 'resubmit'])->name('special-interventions.resubmit');
+    Route::get('/special-interventions/documents/{specialInterventionDocument}/download', [SpecialInterventionController::class, 'downloadDocument'])->name('special-interventions.documents.download');
+    Route::delete('/special-interventions/{specialIntervention}', [SpecialInterventionController::class, 'destroy'])->name('special-interventions.destroy');
+
+    // ── Training / formation (خدمات التكوين والرسكلة بمقابل) ──
+    Route::get('/training', [TrainingController::class, 'index'])->name('training.index');
+    Route::get('/training/create', [TrainingController::class, 'create'])->name('training.create');
+    Route::get('/training/{trainingRequest}', [TrainingController::class, 'show'])->name('training.show');
+    Route::get('/training/document-template/{documentType}', [TrainingController::class, 'downloadTemplate'])->name('training.document-template.download');
+    Route::get('/training/{trainingRequest}/correct', [TrainingController::class, 'showCorrectForm'])->name('training.correct');
+    Route::post('/training/{trainingRequest}/correct', [TrainingController::class, 'submitCorrection'])->name('training.correct.submit');
+    Route::post('/training/step1', [TrainingController::class, 'storeStep1'])->name('training.step1.store');
+    Route::get('/training/{trainingRequest}/step1/edit', [TrainingController::class, 'editStep1'])->name('training.step1.edit');
+    Route::put('/training/{trainingRequest}/step1', [TrainingController::class, 'updateStep1'])->name('training.step1.update');
+    Route::get('/training/{trainingRequest}/step2', [TrainingController::class, 'showStep2'])->name('training.step2.show');
+    Route::post('/training/{trainingRequest}/step2', [TrainingController::class, 'storeStep2'])->name('training.step2.store');
+    Route::post('/training/{trainingRequest}/resubmit', [TrainingController::class, 'resubmit'])->name('training.resubmit');
+    Route::get('/training/documents/{trainingDocument}/download', [TrainingController::class, 'downloadDocument'])->name('training.documents.download');
+    Route::delete('/training/{trainingRequest}', [TrainingController::class, 'destroy'])->name('training.destroy');
 });
 
 Route::middleware('auth')->group(function () {

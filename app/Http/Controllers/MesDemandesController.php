@@ -7,6 +7,8 @@ use App\Models\PreventivePresenceRequest;
 use App\Models\RescueCertificate;
 use App\Models\BuildingWorksDeclaration;
 use App\Models\SafetyFileDossier;
+use App\Models\SpecialIntervention;
+use App\Models\TrainingRequest;
 use Illuminate\Http\Request;
 
 class MesDemandesController extends Controller
@@ -230,6 +232,95 @@ class MesDemandesController extends Controller
                     status:    'draft',
                     createdAt: $rescueCertificate->created_at,
                     destroyUrl: route('rescue-certificates.destroy', $rescueCertificate) . '?redirect=/mes-demandes',
+                ));
+            });
+
+        // ── Special paid interventions (التدخلات والعمليات والخدمات الخاصة بمقابل) ──
+        SpecialIntervention::where('user_id', $user->id)
+            ->whereNotIn('status', ['draft'])
+            ->with(['governorate', 'delegation'])
+            ->latest()
+            ->get()
+            ->each(function ($intervention) use ($items) {
+                $items->push($this->makeItem(
+                    kind:  'special-intervention',
+                    lang:  'special_intervention',
+                    label: __('services.special_interventions'),
+                    url:   route('special-interventions.show', $intervention),
+                    title: __('demandes.title_special_intervention', ['ref' => $this->requestReference($intervention, 'special-intervention', $intervention->reference)]),
+                    meta: $this->specialInterventionSummary($intervention),
+                    details: $this->specialInterventionDetails($intervention),
+                    status:    $intervention->status,
+                    createdAt: $intervention->created_at,
+                ));
+            });
+
+        // ── Special paid interventions — drafts (incomplete) ──
+        SpecialIntervention::where('user_id', $user->id)
+            ->where('status', 'draft')
+            ->with(['governorate', 'delegation'])
+            ->latest()
+            ->get()
+            ->each(function ($intervention) use ($items) {
+                $resumeUrl = $intervention->current_step >= 3
+                    ? route('special-interventions.step3.show', $intervention)
+                    : ($intervention->current_step >= 2
+                        ? route('special-interventions.step2.show', $intervention)
+                        : route('special-interventions.step1.edit', $intervention));
+                $items->push($this->makeItem(
+                    kind:  'special-intervention',
+                    lang:  'special_intervention',
+                    label: __('services.special_interventions'),
+                    url:   $resumeUrl,
+                    title: __('demandes.title_special_intervention', ['ref' => $this->requestReference($intervention, 'special-intervention', $intervention->reference)]),
+                    meta: $this->specialInterventionSummary($intervention),
+                    details: $this->specialInterventionDetails($intervention),
+                    status:    'draft',
+                    createdAt: $intervention->created_at,
+                    destroyUrl: route('special-interventions.destroy', $intervention) . '?redirect=/mes-demandes',
+                ));
+            });
+
+        // ── Training / formation (خدمات التكوين والرسكلة بمقابل) ──
+        TrainingRequest::where('user_id', $user->id)
+            ->whereNotIn('status', ['draft'])
+            ->with(['governorate', 'delegation'])
+            ->latest()
+            ->get()
+            ->each(function ($tr) use ($items) {
+                $items->push($this->makeItem(
+                    kind:  'training',
+                    lang:  'training',
+                    label: __('services.training'),
+                    url:   route('training.show', $tr),
+                    title: __('demandes.title_training', ['ref' => $this->requestReference($tr, 'training', $tr->reference)]),
+                    meta:  $this->trainingSummary($tr),
+                    details: $this->trainingDetails($tr),
+                    status:    $tr->status,
+                    createdAt: $tr->created_at,
+                ));
+            });
+
+        TrainingRequest::where('user_id', $user->id)
+            ->where('status', 'draft')
+            ->with(['governorate', 'delegation'])
+            ->latest()
+            ->get()
+            ->each(function ($tr) use ($items) {
+                $resumeUrl = $tr->current_step >= 2
+                    ? route('training.step2.show', $tr)
+                    : route('training.step1.edit', $tr);
+                $items->push($this->makeItem(
+                    kind:  'training',
+                    lang:  'training',
+                    label: __('services.training'),
+                    url:   $resumeUrl,
+                    title: __('demandes.title_training', ['ref' => $this->requestReference($tr, 'training', $tr->reference)]),
+                    meta:  $this->trainingSummary($tr),
+                    details: $this->trainingDetails($tr),
+                    status:    'draft',
+                    createdAt: $tr->created_at,
+                    destroyUrl: route('training.destroy', $tr) . '?redirect=/mes-demandes',
                 ));
             });
 
@@ -505,6 +596,55 @@ class MesDemandesController extends Controller
     }
 
     /**
+     * Ligne de synthèse courte d'une intervention spéciale.
+     */
+    private function specialInterventionSummary(SpecialIntervention $intervention): array
+    {
+        return array_values(array_filter([
+            $intervention->intervention_date
+                ? __('demandes.intervention_on', ['date' => $intervention->intervention_date->format('d/m/Y')])
+                : null,
+            $this->place($intervention),
+            $intervention->total_amount > 0
+                ? __('demandes.total_amount', ['amount' => number_format($intervention->total_amount, 0) . ' TND'])
+                : null,
+        ]));
+    }
+
+    /**
+     * Détails complets d'une intervention spéciale (panneau dépliable).
+     */
+    private function specialInterventionDetails(SpecialIntervention $intervention): array
+    {
+        $identityParts = array_filter([
+            $intervention->nom_prenom,
+            $intervention->cin ? __('demandes.cin', ['cin' => $intervention->cin]) : null,
+        ]);
+
+        $details = array_values(array_filter([
+            $this->referenceDetailText($intervention, 'special-intervention', $intervention->reference),
+            $intervention->intervention_date
+                ? ['icon' => 'event', 'text' => $intervention->intervention_date->format('d/m/Y') . ($intervention->intervention_time ? ' · ' . $intervention->intervention_time->format('H:i') : '')]
+                : null,
+            $this->place($intervention)
+                ? ['icon' => 'map', 'text' => $this->place($intervention)]
+                : null,
+            $identityParts
+                ? ['icon' => 'badge', 'text' => implode(' · ', $identityParts)]
+                : null,
+            $intervention->phone
+                ? ['icon' => 'call', 'text' => $intervention->phone]
+                : null,
+            $intervention->total_amount > 0
+                ? ['icon' => 'payments', 'text' => __('demandes.total_amount', ['amount' => number_format($intervention->total_amount, 0) . ' TND'])]
+                : null,
+            ['icon' => 'description', 'text' => __('demandes.documents_count', ['n' => $intervention->documents->count()])],
+        ]));
+
+        return $details;
+    }
+
+    /**
      * Ligne de synthèse courte d'une notification de travaux.
      */
     private function worksSummary(BuildingWorksDeclaration $BuildingWorksDeclaration): array
@@ -541,6 +681,31 @@ class MesDemandesController extends Controller
             $BuildingWorksDeclaration->phone
                 ? ['icon' => 'call', 'text' => $BuildingWorksDeclaration->phone]
                 : null,
+        ]));
+    }
+
+    private function trainingSummary(\App\Models\TrainingRequest $tr): array
+    {
+        return array_values(array_filter([
+            $tr->training_type ? __('training.type_' . $tr->training_type) : null,
+            $tr->training_kind ? __('training.kind_' . $tr->training_kind) : null,
+            $this->place($tr),
+        ]));
+    }
+
+    private function trainingDetails(\App\Models\TrainingRequest $tr): array
+    {
+        $identityParts = array_filter([
+            $tr->nom_prenom,
+            $tr->cin ? __('demandes.cin', ['cin' => $tr->cin]) : null,
+        ]);
+
+        return array_values(array_filter([
+            $this->referenceDetailText($tr, 'training', $tr->reference),
+            $tr->training_type ? ['icon' => 'school', 'text' => __('training.type_' . $tr->training_type)] : null,
+            $identityParts ? ['icon' => 'badge', 'text' => implode(' · ', $identityParts)] : null,
+            $this->place($tr) ? ['icon' => 'map', 'text' => $this->place($tr)] : null,
+            $tr->phone ? ['icon' => 'call', 'text' => $tr->phone] : null,
         ]));
     }
 }

@@ -21,6 +21,12 @@ class DocumentType extends Model
     // Safety file — Internal intervention plan (same module, different checklist):
     public const SERVICE_INTERNAL_INTERVENTION_PLAN = 'internal-intervention-plan';
 
+    // Paid special interventions:
+    public const SERVICE_SPECIAL_INTERVENTIONS = 'special-interventions';
+
+    // Training / formation:
+    public const SERVICE_TRAINING = 'training';
+
     protected $fillable = [
         'name_ar', 'name_fr', 'name_en',
         'service_key',

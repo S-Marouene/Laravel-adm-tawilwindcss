@@ -6,6 +6,8 @@ use App\Models\PreventionDossier;
 use App\Models\RescueCertificate;
 use App\Models\SafetyFileDossier;
 use App\Models\Service;
+use App\Models\SpecialIntervention;
+use App\Models\TrainingRequest;
 use App\Models\User;
 use App\Models\BuildingWorksDeclaration;
 use App\Notifications\DossierNotification;
@@ -40,7 +42,7 @@ class DossierNotifier
      * @param  string             $serviceKey  Which service this notification is about
      */
     public static function notify(
-        PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier,
+        PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier|SpecialIntervention|TrainingRequest $dossier,
         string $eventType,
         string $audience = 'both',
         string $serviceKey = Service::SERVICE_PREVENTION,
@@ -93,7 +95,7 @@ class DossierNotifier
      * @return Collection<int, User>
      */
     public static function eligibleAdmins(
-        PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier,
+        PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier|SpecialIntervention|TrainingRequest $dossier,
         string $serviceKey = Service::SERVICE_PREVENTION,
     ): Collection {
         return User::with(['roles', 'territories', 'services'])
@@ -125,7 +127,7 @@ class DossierNotifier
     /**
      * Check if a manager's territory assignments cover this dossier's location.
      */
-    private static function managerCoversDossier(User $manager, PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier): bool
+    private static function managerCoversDossier(User $manager, PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier|SpecialIntervention|TrainingRequest $dossier): bool
     {
         foreach ($manager->territories as $territory) {
             if ($territory->delegation_id) {
@@ -154,7 +156,7 @@ class DossierNotifier
     // Returns: [title_fr, body_fr, title_ar, body_ar, level]
     // ------------------------------------------------------------------
 
-    private static function buildContent(PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier, string $event, string $serviceKey): array
+    private static function buildContent(PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier|SpecialIntervention|TrainingRequest $dossier, string $event, string $serviceKey): array
     {
         $ref  = $dossier->reference ?? "#{$dossier->id}";
         $name = $dossier->nom_prenom;
@@ -206,6 +208,28 @@ class DossierNotifier
             }
 
             return self::safetyFallback($event, $ref, $name);
+        }
+
+        if ($serviceKey === Service::SERVICE_SPECIAL_INTERVENTIONS) {
+            $tpl = \App\Models\NotificationTemplate::forEvent("special_{$event}");
+            if ($tpl) {
+                [$title_fr, $body_fr, $level] = $tpl->resolve('fr', $ref, $name);
+                [$title_ar, $body_ar]         = array_slice($tpl->resolve('ar', $ref, $name), 0, 2);
+                return [$title_fr, $body_fr, $title_ar, $body_ar, $level];
+            }
+
+            return self::specialInterventionFallback($event, $ref, $name);
+        }
+
+        if ($serviceKey === Service::SERVICE_TRAINING) {
+            $tpl = \App\Models\NotificationTemplate::forEvent("training_{$event}");
+            if ($tpl) {
+                [$title_fr, $body_fr, $level] = $tpl->resolve('fr', $ref, $name);
+                [$title_ar, $body_ar]         = array_slice($tpl->resolve('ar', $ref, $name), 0, 2);
+                return [$title_fr, $body_fr, $title_ar, $body_ar, $level];
+            }
+
+            return self::trainingFallback($event, $ref, $name);
         }
 
         // Try the editable DB template first
@@ -274,24 +298,28 @@ class DossierNotifier
     // URL helpers
     // ------------------------------------------------------------------
 
-    private static function adminUrl(PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier, string $serviceKey): string
+    private static function adminUrl(PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier|SpecialIntervention|TrainingRequest $dossier, string $serviceKey): string
     {
         return match ($serviceKey) {
             Service::SERVICE_RESCUE_CERTIFICATE => route('admin.rescue-certificates.show', $dossier),
             Service::SERVICE_WORKS_NOTIFICATION => route('admin.building-works-declarations.show', $dossier),
             Service::SERVICE_INTERNAL_INTERVENTION_PLAN => route('admin.internal-intervention-plan.show', $dossier),
             Service::SERVICE_SAFETY_FILE_HABITATION => route('admin.safety-file-public.show', $dossier),
+            Service::SERVICE_SPECIAL_INTERVENTIONS => route('admin.special-interventions.show', $dossier),
+            Service::SERVICE_TRAINING               => route('admin.training.show', $dossier),
             default => route('admin.prevention-dossiers.show', $dossier),
         };
     }
 
-    private static function citizenUrl(PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier $dossier, string $serviceKey): string
+    private static function citizenUrl(PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier|SpecialIntervention|TrainingRequest $dossier, string $serviceKey): string
     {
         return match ($serviceKey) {
             Service::SERVICE_RESCUE_CERTIFICATE => route('rescue-certificates.show', $dossier),
             Service::SERVICE_WORKS_NOTIFICATION => route('building-works-declarations.show', $dossier),
             Service::SERVICE_INTERNAL_INTERVENTION_PLAN => route('internal-intervention-plan.show', $dossier),
             Service::SERVICE_SAFETY_FILE_HABITATION => route('safety-file-public.show', $dossier),
+            Service::SERVICE_SPECIAL_INTERVENTIONS => route('special-interventions.show', $dossier),
+            Service::SERVICE_TRAINING               => route('training.show', $dossier),
             default => route('prevention-requests.show', $dossier),
         };
     }
@@ -502,6 +530,180 @@ class DossierNotifier
             'approved'           => ['Plan d\'intervention approuvé', "Votre plan d\'intervention {$ref} a été approuvé. Procédure gratuite — vous serez contacté par courrier pour le retrait.", 'تمت المصادقة على مخطط التدخل الداخلي', "تمت المصادقة على مخطط التدخل الداخلي {$ref}. الإجراء مجاني — سيتم التواصل معكم بالبريد.", 'success'],
             'cancelled'          => ['Dossier annulé', "Le dossier {$ref} a été annulé.", 'تم إلغاء الملف', "تم إلغاء ملف مخطط التدخل الداخلي {$ref}.", 'danger'],
             default              => ['Dossier mis à jour', "Le dossier {$ref} a été mis à jour.", 'تم تحديث الملف', "تم تحديث الملف {$ref}.", 'info'],
+        };
+    }
+
+    // ------------------------------------------------------------------
+    // Special paid interventions fallback content
+    // Returns: [title_fr, body_fr, title_ar, body_ar, level]
+    // ------------------------------------------------------------------
+
+    private static function specialInterventionFallback(string $event, string $ref, string $name): array
+    {
+        return match ($event) {
+            'submitted' => [
+                'Nouvelle demande d\'intervention spéciale',
+                "La demande {$ref} ({$name}) vient d'être soumise et est en attente d'examen.",
+                'طلب تدخل خاص جديد',
+                "تم تقديم الطلب {$ref} ({$name}) وهو في انتظار المراجعة.",
+                'info',
+            ],
+            'resubmitted' => [
+                'Demande re-soumise après correction',
+                "La demande {$ref} ({$name}) a été corrigée et re-soumise par le demandeur.",
+                'إعادة تقديم الطلب بعد التصحيح',
+                "أعاد المتقدم {$name} تقديم الطلب {$ref} بعد إجراء التصحيحات المطلوبة.",
+                'warning',
+            ],
+            'under_consultation' => [
+                'Vérification des données en cours',
+                "Votre demande {$ref} est en cours de vérification. Vous serez contacté par téléphone pour fixer la date de l'intervention.",
+                'جارٍ التحقق من المعطيات',
+                "يجري حاليًا التحقق من طلبكم {$ref}. سيتم الاتصال بكم هاتفيًا لتحديد تاريخ التدخل.",
+                'info',
+            ],
+            'needs_correction' => [
+                'Correction requise',
+                "Votre demande {$ref} nécessite des corrections. Veuillez consulter la note de l'administration.",
+                'مطلوب تصحيح',
+                "يستلزم طلبكم {$ref} إجراء تصحيحات. يرجى الاطلاع على ملاحظة الإدارة.",
+                'warning',
+            ],
+            'approved' => [
+                'Demande approuvée',
+                "Votre demande d'intervention spéciale {$ref} a été approuvée. L'administration vous contactera pour fixer la date et percevoir le montant dû.",
+                'تمت الموافقة على الطلب',
+                "تمت الموافقة على طلب التدخل الخاص {$ref}. سيتم التواصل معكم لتحديد تاريخ التدخل وتحصيل المبلغ المستحق.",
+                'success',
+            ],
+            'cancelled' => [
+                'Demande annulée',
+                "La demande {$ref} a été annulée. Veuillez consulter la raison communiquée par l'administration.",
+                'تم إلغاء الطلب',
+                "تم إلغاء الطلب {$ref}. يرجى الاطلاع على السبب المُبلَّغ من الإدارة.",
+                'danger',
+            ],
+            'served' => [
+                'Intervention réalisée',
+                "Votre intervention spéciale {$ref} a été réalisée. Cette demande est maintenant terminée.",
+                'تم إنجاز التدخل',
+                "تم إنجاز التدخل الخاص {$ref}. اكتمل هذا الطلب.",
+                'success',
+            ],
+            default => [
+                'Demande mise à jour',
+                "La demande {$ref} a été mise à jour.",
+                'تم تحديث الطلب',
+                "تم تحديث الطلب {$ref}.",
+                'info',
+            ],
+        };
+    }
+    // ------------------------------------------------------------------
+    // Training / formation fallback content
+    // ------------------------------------------------------------------
+
+    private static function trainingFallback(string $event, string $ref, string $name): array
+    {
+        return match ($event) {
+            'submitted' => [
+                'Nouvelle demande de formation',
+                "La demande de formation {$ref} ({$name}) vient d'être soumise et est en attente d'examen.",
+                'طلب تكوين جديد',
+                "تم تقديم طلب التكوين {$ref} ({$name}) وهو في انتظار المراجعة.",
+                'info',
+            ],
+            'resubmitted' => [
+                'Demande de formation re-soumise',
+                "La demande {$ref} a été corrigée et re-soumise.",
+                'إعادة تقديم طلب التكوين',
+                "أعاد المتقدم {$name} تقديم طلب التكوين {$ref} بعد إجراء التصحيحات.",
+                'warning',
+            ],
+            'under_consultation' => [
+                'Demande de formation en cours d\'examen',
+                "Votre demande de formation {$ref} est en cours d'examen par l'administration.",
+                'طلب التكوين قيد الدراسة',
+                "طلب التكوين {$ref} قيد الدراسة من طرف الإدارة.",
+                'info',
+            ],
+            'needs_correction' => [
+                'Correction requise',
+                "Votre demande de formation {$ref} nécessite des corrections.",
+                'مطلوب تصحيح',
+                "يستلزم طلب التكوين {$ref} إجراء تصحيحات. يرجى الاطلاع على ملاحظة الإدارة.",
+                'warning',
+            ],
+            'payment_pending' => [
+                'Demande approuvée — paiement requis',
+                "Votre demande de formation {$ref} a été approuvée. Veuillez vous présenter à l'administration pour régler les frais de formation.",
+                'مقبول — الرجاء أداء معلوم التكوين',
+                "تم قبول طلب التكوين {$ref}. يرجى التوجه إلى الإدارة لأداء معلوم التكوين.",
+                'success',
+            ],
+            'payment_confirmed' => [
+                'Paiement confirmé',
+                "Le paiement de votre formation {$ref} a été confirmé. La date de début vous sera communiquée prochainement.",
+                'تم تأكيد الدفع',
+                "تم تأكيد دفع معلوم التكوين {$ref}. سيتم إعلامكم بتاريخ انطلاق الدورة قريبًا.",
+                'success',
+            ],
+            'scheduled' => [
+                'Date de formation fixée',
+                "Votre formation {$ref} a été planifiée. Vous recevrez les détails de la date et du lieu par téléphone.",
+                'تم تحديد تاريخ التكوين',
+                "تم تحديد تاريخ دورة التكوين {$ref}. سيتم إعلامكم بالتفاصيل هاتفيًا.",
+                'info',
+            ],
+            'in_progress' => [
+                'Formation en cours',
+                "Votre formation {$ref} a démarré. Assistez à toutes les sessions pour valider votre participation.",
+                'الدورة التكوينية جارية',
+                "انطلقت دورة التكوين {$ref}. يرجى الحضور في جميع الجلسات لإتمام التكوين.",
+                'info',
+            ],
+            'passed' => [
+                'Formation réussie — certificat en cours',
+                "Félicitations ! Vous avez réussi la formation {$ref}. Votre certificat sera prêt prochainement.",
+                'نجاح في التكوين — الشهادة قيد الإعداد',
+                "تهانينا! لقد نجحتم في دورة التكوين {$ref}. شهادتكم قيد الإعداد وستكون جاهزة قريبًا.",
+                'success',
+            ],
+            'failed' => [
+                'Formation non validée',
+                "Votre formation {$ref} n'a pas été validée. Consultez la note de l'administration pour plus de détails.",
+                'لم يتم اجتياز التكوين',
+                "لم يتم اجتياز دورة التكوين {$ref}. يرجى الاطلاع على ملاحظة الإدارة للمزيد من التفاصيل.",
+                'danger',
+            ],
+            'certificate_issued' => [
+                'Certificat de formation émis',
+                "Votre certificat de formation {$ref} a été émis et est prêt à être retiré.",
+                'صدرت شهادة التكوين',
+                "صدرت شهادة التكوين الخاصة بالطلب {$ref} وهي جاهزة للاستلام.",
+                'success',
+            ],
+            'certificate_delivered' => [
+                'Certificat remis',
+                "Votre certificat de formation {$ref} vous a été remis. Cette demande est terminée.",
+                'تم تسليم الشهادة',
+                "تم تسليم شهادة التكوين {$ref}. اكتمل هذا الطلب.",
+                'success',
+            ],
+            'cancelled' => [
+                'Demande annulée',
+                "La demande de formation {$ref} a été annulée.",
+                'تم إلغاء الطلب',
+                "تم إلغاء طلب التكوين {$ref}.",
+                'danger',
+            ],
+            default => [
+                'Demande de formation mise à jour',
+                "La demande {$ref} a été mise à jour.",
+                'تم تحديث طلب التكوين',
+                "تم تحديث طلب التكوين {$ref}.",
+                'info',
+            ],
         };
     }
 }

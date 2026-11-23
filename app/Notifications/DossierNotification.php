@@ -5,6 +5,9 @@ namespace App\Notifications;
 use App\Models\PreventionDossier;
 use App\Models\RescueCertificate;
 use App\Models\BuildingWorksDeclaration;
+use App\Models\SafetyFileDossier;
+use App\Models\SpecialIntervention;
+use App\Models\TrainingRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -24,7 +27,7 @@ class DossierNotification extends Notification
     use Queueable;
 
     public function __construct(
-        public readonly PreventionDossier|RescueCertificate|BuildingWorksDeclaration $dossier,
+        public readonly PreventionDossier|RescueCertificate|BuildingWorksDeclaration|SafetyFileDossier|SpecialIntervention|TrainingRequest $dossier,
         public readonly string $event,
         public readonly string $title_fr,
         public readonly string $body_fr,

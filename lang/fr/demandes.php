@@ -12,6 +12,8 @@ return [
     'title_rescue'     => 'Certificat de secours #:ref',
     'title_presence'   => 'Demande de présence #:ref',
     'title_works'      => 'Notification de travaux #:ref',
+    'title_special_intervention' => 'Intervention spéciale #:ref',
+    'title_training'             => 'Formation #:ref',
     'title_generic'    => 'Demande déposée',
 
     'reference' => 'Référence',
@@ -19,7 +21,9 @@ return [
 
     'submitted_on'  => 'Déposée le :date',
     'incident_on'   => 'Incident le :date',
+    'intervention_on' => 'Intervention le :date',
     'works_on'      => 'Travaux du :date',
+    'total_amount'    => 'Montant total : :amount',
     'action_required' => 'Une action est requise sur cette demande',
 
     'building_type'    => 'Type de bâtiment',

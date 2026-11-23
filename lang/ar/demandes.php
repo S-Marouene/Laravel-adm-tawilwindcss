@@ -13,6 +13,8 @@ return [
     'title_rescue'     => 'شهادة النجدة رقم :ref',
     'title_presence'   => 'طلب الحضور الوقائي رقم :ref',
     'title_works'      => 'إشعار الأشغال رقم :ref',
+    'title_special_intervention' => 'التدخل الخاص رقم :ref',
+    'title_training'             => 'طلب تكوين رقم :ref',
     'title_generic'    => 'طلب مقدم',
 
     'reference' => 'المرجع',
@@ -20,7 +22,9 @@ return [
 
     'submitted_on'    => 'مقدم بتاريخ :date',
     'incident_on'     => 'الحادث بتاريخ :date',
+    'intervention_on' => 'التدخل بتاريخ :date',
     'works_on'        => 'الأشغال بتاريخ :date',
+    'total_amount'    => 'المبلغ الإجمالي: :amount',
     'action_required' => 'يتطلب هذا الطلب إجراء منك',
 
     'building_type'   => 'نوع البناية',

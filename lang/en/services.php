@@ -11,6 +11,7 @@ return [
     'upcoming' => 'Coming soon',
     'access_service' => 'Access service',
     'free' => 'Free',
+    'paid' => 'Paid',
 
     // Service 1
     'prevention_certificate' => 'Prevention Certificate',

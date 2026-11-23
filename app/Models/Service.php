@@ -18,6 +18,12 @@ class Service extends Model
     public const SERVICE_RESCUE_CERTIFICATE  = 'rescue-certificate';
     public const SERVICE_WORKS_NOTIFICATION  = 'works-notification';
 
+    // Paid special interventions (التدخلات والعمليات والخدمات الخاصة بمقابل)
+    public const SERVICE_SPECIAL_INTERVENTIONS = 'special-interventions';
+
+    // Training / formation (خدمات التكوين والرسكلة بمقابل)
+    public const SERVICE_TRAINING = 'training';
+
     // Twin "safety file approval" services (same module, different checklist):
     public const SERVICE_SAFETY_FILE_HABITATION = 'safety-file-habitation';
     public const SERVICE_SAFETY_FILE_HAZARDOUS  = 'safety-file-hazardous';
@@ -30,9 +36,11 @@ class Service extends Model
         self::SERVICE_PREVENTIVE_PRESENCE,
         self::SERVICE_RESCUE_CERTIFICATE,
         self::SERVICE_WORKS_NOTIFICATION,
+        self::SERVICE_SPECIAL_INTERVENTIONS,
         self::SERVICE_SAFETY_FILE_HABITATION,
         self::SERVICE_SAFETY_FILE_HAZARDOUS,
         self::SERVICE_INTERNAL_INTERVENTION_PLAN,
+        self::SERVICE_TRAINING,
     ];
 
     protected $fillable = ['key', 'name_ar', 'name_fr', 'name_en', 'sort_order', 'is_active'];
@@ -76,6 +84,8 @@ class Service extends Model
             self::SERVICE_INTERNAL_INTERVENTION_PLAN => 'admin.internal-intervention-plan.index',
             self::SERVICE_SAFETY_FILE_HABITATION => 'admin.safety-file-public.index',
             self::SERVICE_SAFETY_FILE_HAZARDOUS => 'admin.safety-file-hazardous.index',
+            self::SERVICE_SPECIAL_INTERVENTIONS => 'admin.special-interventions.index',
+            self::SERVICE_TRAINING              => 'admin.training.index',
             default                           => 'admin.prevention-dossiers.index',
         };
     }
@@ -92,6 +102,8 @@ class Service extends Model
             self::SERVICE_INTERNAL_INTERVENTION_PLAN => 'internal-intervention-plan',
             self::SERVICE_SAFETY_FILE_HABITATION,
             self::SERVICE_SAFETY_FILE_HAZARDOUS  => 'safety-file-dossiers',
+            self::SERVICE_SPECIAL_INTERVENTIONS => 'special-interventions',
+            self::SERVICE_TRAINING              => 'training',
             default                           => 'prevention-dossiers',
         };
     }

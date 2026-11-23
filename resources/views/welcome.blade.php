@@ -244,6 +244,44 @@
                     </span>
                 </a>
 
+                {{-- Services de formation et recyclage --}}
+                <a href="{{ route('training.create') }}" class="group relative onpc-kpi flex flex-col">
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <span class="w-12 h-12 shrink-0 rounded flex items-center justify-center bg-sky-50" aria-hidden="true">
+                            <span class="material-symbols-outlined filled text-2xl text-sky-700">school</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-orange-900 bg-orange-50 rounded border border-orange-200 dark:text-orange-400 dark:bg-orange-950/40 dark:border-orange-900">
+                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">payments</span>
+                            {{ __('services.paid') }}
+                        </span>
+                    </div>
+                    <h3 class="text-headline-sm text-on-surface mb-1.5">{{ __('services.training') }}</h3>
+                    <p class="text-body-sm text-secondary leading-relaxed flex-1">{{ __('services.training.desc') }}</p>
+                    <span class="inline-flex items-center gap-1 mt-4 pt-3 border-t border-surface-dim text-body-sm font-bold text-primary group-hover:gap-2.5 transition-all">
+                        {{ __('services.access_service') }}
+                        <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+                    </span>
+                </a>
+
+                {{-- Interventions et opérations spéciales payantes --}}
+                <a href="{{ route('special-interventions.create') }}" class="group relative onpc-kpi flex flex-col">
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <span class="w-12 h-12 shrink-0 rounded flex items-center justify-center bg-orange-50" aria-hidden="true">
+                            <span class="material-symbols-outlined filled text-2xl text-orange-700">build</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-orange-900 bg-orange-50 rounded border border-orange-200 dark:text-orange-400 dark:bg-orange-950/40 dark:border-orange-900">
+                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">payments</span>
+                            {{ __('services.paid') }}
+                        </span>
+                    </div>
+                    <h3 class="text-headline-sm text-on-surface mb-1.5">{{ __('services.special_interventions') }}</h3>
+                    <p class="text-body-sm text-secondary leading-relaxed flex-1">{{ __('services.special_interventions.desc') }}</p>
+                    <span class="inline-flex items-center gap-1 mt-4 pt-3 border-t border-surface-dim text-body-sm font-bold text-primary group-hover:gap-2.5 transition-all">
+                        {{ __('services.access_service') }}
+                        <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+                    </span>
+                </a>
+
                 {{-- Notification de travaux (sans permis de construire) --}}
                 <a href="{{ route('building-works-declarations.create') }}" class="group relative onpc-kpi flex flex-col">
                     <div class="flex items-start justify-between gap-3 mb-3">
@@ -255,8 +293,8 @@
                             {{ __('services.free') }}
                         </span>
                     </div>
-                    <h3 class="text-headline-sm text-on-surface mb-1.5">{{ __('services.building-works-declarations.short') }}</h3>
-                    <p class="text-body-sm text-secondary leading-relaxed flex-1">{{ __('services.building-works-declarations.desc') }}</p>
+                    <h3 class="text-headline-sm text-on-surface mb-1.5">{{ __('services.building_works_declaration.short') }}</h3>
+                    <p class="text-body-sm text-secondary leading-relaxed flex-1">{{ __('services.building_works_declaration.desc') }}</p>
                     <span class="inline-flex items-center gap-1 mt-4 pt-3 border-t border-surface-dim text-body-sm font-bold text-primary group-hover:gap-2.5 transition-all">
                         {{ __('services.access_service') }}
                         <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
@@ -301,7 +339,8 @@
                     </span>
                 </a>
 
-
+                {{-- Validation du dossier sécurité - Établissements dangereux --}}
+                <a href="{{ route('safety-file-hazardous.create') }}" class="group relative onpc-kpi flex flex-col">
                     <div class="flex items-start justify-between gap-3 mb-3">
                         <span class="w-12 h-12 shrink-0 rounded flex items-center justify-center bg-orange-50" aria-hidden="true">
                             <span class="material-symbols-outlined filled text-2xl text-orange-700">report</span>
@@ -348,28 +387,6 @@
                     <div class="min-w-0">
                         <h3 class="text-body-md font-bold text-on-surface leading-snug mb-1">{{ __('services.training') }}</h3>
                         <p class="text-[13px] text-secondary leading-relaxed line-clamp-2">{{ __('services.training.desc') }}</p>
-                    </div>
-                </div>
-
-                {{-- Notification de travaux --}}
-                <div class="flex items-start gap-4 rounded border border-dashed border-surface-dim bg-surface-container-lowest/70 p-4">
-                    <span class="w-10 h-10 shrink-0 rounded flex items-center justify-center bg-surface-container" aria-hidden="true">
-                        <span class="material-symbols-outlined filled text-xl text-secondary">edit_note</span>
-                    </span>
-                    <div class="min-w-0">
-                        <h3 class="text-body-md font-bold text-on-surface leading-snug mb-1">{{ __('services.works_notification') }}</h3>
-                        <p class="text-[13px] text-secondary leading-relaxed line-clamp-2">{{ __('services.building-works-declarations.desc') }}</p>
-                    </div>
-                </div>
-
-                {{-- Interventions spéciales --}}
-                <div class="flex items-start gap-4 rounded border border-dashed border-surface-dim bg-surface-container-lowest/70 p-4">
-                    <span class="w-10 h-10 shrink-0 rounded flex items-center justify-center bg-surface-container" aria-hidden="true">
-                        <span class="material-symbols-outlined filled text-xl text-secondary">bolt</span>
-                    </span>
-                    <div class="min-w-0">
-                        <h3 class="text-body-md font-bold text-on-surface leading-snug mb-1">{{ __('services.special_interventions') }}</h3>
-                        <p class="text-[13px] text-secondary leading-relaxed line-clamp-2">{{ __('services.special_interventions.desc') }}</p>
                     </div>
                 </div>
             </div>

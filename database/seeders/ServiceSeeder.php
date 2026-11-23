@@ -15,6 +15,8 @@ class ServiceSeeder extends Seeder
         ['key' => Service::SERVICE_SAFETY_FILE_HABITATION, 'name_ar' => 'المصادقة على ملف السلامة - البنايات العمومية', 'name_fr' => 'Validation du dossier sécurité - Bâtiments publics', 'name_en' => 'Safety File Approval - Public Buildings', 'sort_order' => 5],
         ['key' => Service::SERVICE_SAFETY_FILE_HAZARDOUS, 'name_ar' => 'المصادقة على ملف السلامة - المؤسسات الخطرة', 'name_fr' => 'Validation du dossier sécurité - Établissements dangereux', 'name_en' => 'Safety File Approval - Hazardous Establishments', 'sort_order' => 6],
         ['key' => Service::SERVICE_INTERNAL_INTERVENTION_PLAN, 'name_ar' => 'المصادقة على مخطط التدخل الداخلي', 'name_fr' => 'Validation du plan d\'intervention interne', 'name_en' => 'Internal Intervention Plan Approval', 'sort_order' => 7],
+        ['key' => Service::SERVICE_SPECIAL_INTERVENTIONS, 'name_ar' => 'التدخلات والعمليات والخدمات الخاصة بمقابل', 'name_fr' => 'Interventions, opérations et services spéciaux payants', 'name_en' => 'Paid Special Interventions & Services', 'sort_order' => 8],
+        ['key' => Service::SERVICE_TRAINING, 'name_ar' => 'خدمات التكوين والرسكلة بمقابل', 'name_fr' => 'Services de formation et recyclage payants', 'name_en' => 'Paid Training & Recycling Services', 'sort_order' => 9],
     ];
 
     public function run(): void

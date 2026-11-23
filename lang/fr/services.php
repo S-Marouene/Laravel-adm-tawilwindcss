@@ -7,6 +7,7 @@ return [
     'coming_soon' => 'Bientôt disponible',
     'access_service' => 'Accéder au service',
     'free' => 'Gratuit',
+    'paid' => 'Payant',
     'kicker' => 'Nos services en ligne',
     'available' => 'Services disponibles',
     'status_available' => 'Disponible',

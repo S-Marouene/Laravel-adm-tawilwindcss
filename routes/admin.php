@@ -21,6 +21,8 @@ use App\Http\Controllers\Admin\TranslationController;
 use App\Http\Controllers\Admin\TranslateController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\BuildingWorksDeclarationController as AdminBuildingWorksDeclarationController;
+use App\Http\Controllers\Admin\SpecialInterventionController as AdminSpecialInterventionController;
+use App\Http\Controllers\Admin\TrainingController as AdminTrainingController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin'])->group(function () {
@@ -176,6 +178,35 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::resource('building-works-declarations', AdminBuildingWorksDeclarationController::class)
         ->only(['index', 'show'])
         ->parameters(['building-works-declarations' => 'buildingWorksDeclaration']);
+
+    // Paid special interventions (التدخلات والعمليات والخدمات الخاصة بمقابل) workflow actions
+    Route::post('special-interventions/{specialIntervention}/advance', [AdminSpecialInterventionController::class, 'advance'])->name('special-interventions.advance');
+    Route::post('special-interventions/{specialIntervention}/correction', [AdminSpecialInterventionController::class, 'requestCorrection'])->name('special-interventions.correction');
+    Route::post('special-interventions/{specialIntervention}/approve', [AdminSpecialInterventionController::class, 'approve'])->name('special-interventions.approve');
+    Route::post('special-interventions/{specialIntervention}/cancel', [AdminSpecialInterventionController::class, 'cancel'])->name('special-interventions.cancel');
+    Route::post('special-interventions/{specialIntervention}/serve', [AdminSpecialInterventionController::class, 'serve'])->name('special-interventions.serve');
+    Route::get('special-interventions/documents/{specialInterventionDocument}/download', [AdminSpecialInterventionController::class, 'downloadDocument'])->name('special-interventions.documents.download');
+    Route::resource('special-interventions', AdminSpecialInterventionController::class)
+        ->only(['index', 'show'])
+        ->parameters(['special-interventions' => 'specialIntervention']);
+
+    // Training / formation (خدمات التكوين والرسكلة بمقابل) workflow actions
+    Route::post('training/{trainingRequest}/advance', [AdminTrainingController::class, 'advance'])->name('training.advance');
+    Route::post('training/{trainingRequest}/correction', [AdminTrainingController::class, 'requestCorrection'])->name('training.correction');
+    Route::post('training/{trainingRequest}/approve', [AdminTrainingController::class, 'approve'])->name('training.approve');
+    Route::post('training/{trainingRequest}/cancel', [AdminTrainingController::class, 'cancel'])->name('training.cancel');
+    Route::post('training/{trainingRequest}/payment', [AdminTrainingController::class, 'recordPayment'])->name('training.payment');
+    Route::post('training/{trainingRequest}/schedule', [AdminTrainingController::class, 'schedule'])->name('training.schedule');
+    Route::post('training/{trainingRequest}/start', [AdminTrainingController::class, 'start'])->name('training.start');
+    Route::post('training/{trainingRequest}/attendance', [AdminTrainingController::class, 'recordAttendance'])->name('training.attendance');
+    Route::post('training/{trainingRequest}/result', [AdminTrainingController::class, 'recordResult'])->name('training.result');
+    Route::post('training/{trainingRequest}/certificate', [AdminTrainingController::class, 'issueCertificate'])->name('training.certificate.store');
+    Route::put('training/{trainingRequest}/certificate', [AdminTrainingController::class, 'updateCertificate'])->name('training.certificate.update');
+    Route::delete('training/{trainingRequest}/certificate', [AdminTrainingController::class, 'revokeCertificate'])->name('training.certificate.destroy');
+    Route::get('training/documents/{trainingDocument}/download', [AdminTrainingController::class, 'downloadDocument'])->name('training.documents.download');
+    Route::resource('training', AdminTrainingController::class)
+        ->only(['index', 'show'])
+        ->parameters(['training' => 'trainingRequest']);
 
     // Settings
     Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');

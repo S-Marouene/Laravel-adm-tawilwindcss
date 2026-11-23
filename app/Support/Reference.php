@@ -21,6 +21,12 @@ class Reference
         'rescue'     => 'SEC', // Certificat de secours et sauvetage
         'works'      => 'TRV', // Notification de travaux
 
+        // Paid special interventions (التدخلات والعمليات الخاصة بمقابل)
+        'special-intervention' => 'INTV',
+
+        // Training / formation (التكوين والرسكلة)
+        'training' => 'TRN',
+
         // Dossiers de sécurité (services jumeaux, séquences indépendantes) :
         'safety-file-habitation' => 'DSH', // Bâtiments d'habitation / accueil du public
         'safety-file-hazardous'  => 'DSR', // Établissements dangereux

@@ -11,6 +11,7 @@ return [
     'upcoming' => 'قريباً',
     'access_service' => 'الوصول إلى الخدمة',
     'free' => 'مجاني',
+    'paid' => 'مقابل',
 
     // Service 1
     'prevention_certificate' => 'شهادة الوقاية',
@@ -23,6 +24,7 @@ return [
     // Service 3
     'training' => 'خدمات التكوين والرسكلة بمقابل',
     'training.desc' => 'الاستفادة من دورات التكوين والرسكلة في مجال الوقاية والإسعاف',
+    'training.route' => 'training',
 
     // Service 4
     'preventive_presence' => 'الحضور الوقائي',

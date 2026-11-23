@@ -161,6 +161,31 @@ class DocumentTypeSeeder extends Seeder
                 'en' => "Copy of the national identity card",
                 'service' => DocumentType::SERVICE_PREVENTIVE_PRESENCE,
             ],
+            // ── Special paid interventions (التدخلات والعمليات والخدمات الخاصة بمقابل) ──
+            [
+                'ar' => 'مطبوعة طلب القيام بخدمة : إستمارة',
+                'fr' => 'Imprimé de demande de prestation : formulaire',
+                'en' => 'Service request form',
+                'service' => DocumentType::SERVICE_SPECIAL_INTERVENTIONS,
+            ],
+            [
+                'ar' => 'نسخة من بطاقة التعريف الوطنية',
+                'fr' => "Copie de la carte d'identité nationale",
+                'en' => "Copy of the national identity card",
+                'service' => DocumentType::SERVICE_SPECIAL_INTERVENTIONS,
+            ],
+            [
+                'ar' => 'طلب كتابي باسم المدير الجهوي مرجع نظر',
+                'fr' => 'Demande écrite adressée au directeur régional compétent',
+                'en' => 'Written request addressed to the competent regional director',
+                'service' => DocumentType::SERVICE_SPECIAL_INTERVENTIONS,
+            ],
+            [
+                'ar' => 'إذن شراء بالنسبة للمؤسسات العمومية والخاصة',
+                'fr' => 'Bon d\'achat pour les établissements publics et privés',
+                'en' => 'Purchase order for public and private establishments',
+                'service' => DocumentType::SERVICE_SPECIAL_INTERVENTIONS,
+            ],
         ];
     }
 }

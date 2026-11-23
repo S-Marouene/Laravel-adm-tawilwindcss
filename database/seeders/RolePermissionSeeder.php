@@ -37,6 +37,8 @@ class RolePermissionSeeder extends Seeder
             'view preventive-presence', 'manage preventive-presence',
             'view rescue-certificates', 'manage rescue-certificates',
             'view building-works-declarations', 'manage building-works-declarations',
+            // Paid special interventions
+            'view special-interventions', 'manage special-interventions',
         ],
 
         'manager' => [
@@ -46,6 +48,8 @@ class RolePermissionSeeder extends Seeder
             'view preventive-presence', 'manage preventive-presence',
             'view rescue-certificates', 'manage rescue-certificates',
             'view building-works-declarations', 'manage building-works-declarations',
+            // Paid special interventions
+            'view special-interventions', 'manage special-interventions',
         ],
 
         'user' => [],
@@ -96,6 +100,8 @@ class RolePermissionSeeder extends Seeder
             'view rescue-certificates', 'manage rescue-certificates',
             // Works notifications
             'view building-works-declarations', 'manage building-works-declarations',
+            // Paid special interventions
+            'view special-interventions', 'manage special-interventions',
             // Activity logs
             'view activity-logs', 'delete activity-logs',
             // Website settings (super-admin only)
