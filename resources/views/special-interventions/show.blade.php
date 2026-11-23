@@ -708,6 +708,51 @@
                     {{-- COLONNE DROITE (4 colonnes) --}}
                     <div class="lg:col-span-4 space-y-6">
 
+                        {{-- Status summary card --}}
+                        <div class="bg-surface-container-lowest border border-surface-dim rounded-lg p-5 shadow-sm space-y-3 no-print">
+                            <div class="flex items-center gap-2.5">
+                                <span class="inline-flex items-center justify-center w-9 h-9 rounded-full {{ $statusPillCls }}">
+                                    <span class="material-symbols-outlined text-lg" aria-hidden="true">{{ $statusPillIcon }}</span>
+                                </span>
+                                <div>
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-secondary">{{ __('special_intervention.idx_status') }}</p>
+                                    <p class="text-sm font-extrabold text-on-surface">{{ __('special_intervention.status_' . $status) }}</p>
+                                </div>
+                            </div>
+                            <div class="border-t border-surface-dim pt-3 space-y-2 text-xs">
+                                <div class="flex justify-between gap-2">
+                                    <span class="text-secondary">{{ __('special_intervention.print_ref_label') }}</span>
+                                    <span class="font-mono font-bold text-on-surface" dir="ltr">{{ $viewRef }}</span>
+                                </div>
+                                <div class="flex justify-between gap-2">
+                                    <span class="text-secondary">{{ __('special_intervention.idx_submitted') }}</span>
+                                    <span class="text-on-surface">{{ $specialIntervention->created_at->format('d/m/Y') }}</span>
+                                </div>
+                                @if ($specialIntervention->intervention_date)
+                                <div class="flex justify-between gap-2">
+                                    <span class="text-secondary">{{ __('special_intervention.intervention_date') }}</span>
+                                    <span class="text-on-surface" dir="ltr">{{ $specialIntervention->intervention_date->format('d/m/Y') }}</span>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Fees summary card --}}
+                        @if ($totalAmount > 0)
+                        <div class="bg-amber-50 border border-amber-200 dark:border-amber-800/40 dark:bg-amber-900/10 rounded-lg p-5 shadow-sm no-print">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-800 mb-3 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-amber-600 text-sm" aria-hidden="true">payments</span>
+                                {{ __('special_intervention.fees_title') }}
+                            </p>
+                            <p class="text-2xl font-black text-amber-700 dark:text-amber-400 tabular-nums" dir="ltr">
+                                {{ number_format($totalAmount, 0) }}
+                                <span class="text-sm font-semibold text-amber-600 ms-1">{{ __('special_intervention.currency_tnd') }}</span>
+                            </p>
+                            <p class="text-[10px] text-amber-600 mt-2 leading-relaxed">{{ __('special_intervention.billing_note') }}</p>
+                            <p class="text-[10px] text-amber-600 mt-1">{{ __('special_intervention.payment_proof') }}</p>
+                        </div>
+                        @endif
+
                         {{-- DOCUMENTS JOINTS --}}
                         <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print" x-data="{ open: false }">
                             <button type="button" @click="open = !open"
@@ -730,47 +775,36 @@
 
                                 <div class="space-y-2.5">
                                     @forelse ($documentTypes as $docType)
-                                        @php $files = $documentsByType->get($docType->id, collect()); @endphp
-                                        @forelse ($files as $doc)
-                                            <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5 group hover:border-primary/40 transition-colors">
-                                                <div class="flex items-start gap-2.5 min-w-0">
-                                                    <span class="material-symbols-outlined text-red-600 text-lg mt-0.5 shrink-0" aria-hidden="true">{{ str_contains((string) $doc->mime_type, 'pdf') ? 'picture_as_pdf' : 'description' }}</span>
-                                                    <div class="min-w-0">
-                                                        <h4 class="text-xs font-bold text-on-surface leading-snug">{{ $docType->name }}</h4>
-                                                        <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap" dir="ltr">
-                                                            <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
-                                                            <span class="text-surface-dim">•</span>
-                                                            <span>{{ $doc->updated_at->format('d/m/Y') }}</span>
-                                                            @if ($doc->original_name)
-                                                                <span class="truncate max-w-36 text-secondary/80" title="{{ $doc->original_name }}">— {{ $doc->original_name }}</span>
-                                                            @endif
-                                                        </div>
+                                        @php $files = $documentsByType->get($docType->id, collect()); $hasDoc = $files->isNotEmpty(); @endphp
+                                        <div class="flex items-start gap-3 rounded-lg border {{ $hasDoc ? 'border-gov-300/60 bg-gov-50/40 dark:border-gov-800/30 dark:bg-gov-900/10' : 'border-surface-dim bg-surface-container-low/40' }} p-3">
+                                            <span class="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-full {{ $hasDoc ? 'bg-gov-100 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300' : 'bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500' }}">
+                                                @if ($hasDoc)
+                                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                @else
+                                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
+                                                @endif
+                                            </span>
+                                            <div class="min-w-0 flex-1">
+                                                <p class="text-body-sm font-semibold {{ $hasDoc ? 'text-on-surface dark:text-gray-100' : 'text-secondary dark:text-gray-400' }}">
+                                                    {{ $docType->name }}
+                                                    @if ($docType->is_conditional)<span class="ms-1 text-[10px] font-bold text-accent-600 bg-accent-50 px-1.5 py-0.5 rounded">{{ __('special_intervention.document_conditional') }}</span>@endif
+                                                </p>
+                                                @if ($hasDoc)
+                                                    @foreach ($files as $doc)
+                                                    <div class="flex items-center gap-2 mt-1">
+                                                        <span class="text-[10px] font-mono text-secondary truncate max-w-[140px]">{{ $doc->original_name }}</span>
+                                                        <span class="text-[10px] text-outline shrink-0" dir="ltr">{{ $fmtSize($doc->size) }}</span>
+                                                        <a href="{{ route('special-interventions.documents.download', $doc) }}"
+                                                           class="ms-auto w-6 h-6 rounded bg-gov-100 text-gov-700 hover:bg-primary hover:text-on-primary flex items-center justify-center shrink-0 transition-colors">
+                                                            <span class="material-symbols-outlined text-xs" aria-hidden="true">download</span>
+                                                        </a>
                                                     </div>
-                                                </div>
-                                                <a href="{{ route('special-interventions.documents.download', $doc) }}"
-                                                   class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors"
-                                                   title="{{ __('special_intervention.download_label') }}">
-                                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
-                                                </a>
+                                                    @endforeach
+                                                @else
+                                                    <p class="text-[11px] {{ $docType->is_conditional ? 'text-secondary' : 'text-red-500 dark:text-red-400' }} mt-0.5">{{ __('special_intervention.documents_not_uploaded') }}</p>
+                                                @endif
                                             </div>
-                                        @empty
-                                            <div class="p-3 border border-dashed border-surface-dim rounded flex items-start justify-between gap-2.5">
-                                                <div class="flex items-start gap-2.5 min-w-0">
-                                                    <span class="w-7 h-7 rounded bg-surface-dim/40 text-outline flex items-center justify-center shrink-0" aria-hidden="true">
-                                                        <span class="material-symbols-outlined text-sm">{{ $docType->is_conditional ? 'help_outline' : 'error_outline' }}</span>
-                                                    </span>
-                                                    <div class="min-w-0">
-                                                        <h4 class="text-xs font-bold {{ $docType->is_conditional ? 'text-secondary' : 'text-on-surface' }}">{{ $docType->name }}</h4>
-                                                        <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap">
-                                                            @if ($docType->is_conditional)
-                                                                <span class="font-semibold text-amber-900 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/40 px-1.5 rounded">{{ __('special_intervention.document_conditional') }}</span>
-                                                            @endif
-                                                            <span class="{{ $docType->is_conditional ? '' : 'text-red-600 dark:text-red-400' }}">{{ __('special_intervention.documents_not_uploaded') }}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endforelse
+                                        </div>
                                     @empty
                                         <div class="p-4 text-center">
                                             <span class="material-symbols-outlined text-2xl text-outline" aria-hidden="true">folder_off</span>

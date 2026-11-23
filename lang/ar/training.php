@@ -291,6 +291,10 @@ return [
 
     // ── Misc ──
     'review_note'    => 'طلبكم مسجَّل ويتبعته الإدارة الجهوية للحماية المدنية.',
+    'details_title'  => 'معطيات أساسية عن الطلب',
+    'stepper_had_correction' => 'تم إجراء التصحيح',
+    'stepper_verify_pending' => 'في انتظار الفحص',
+    'stepper_verify_waiting' => 'الفحص جارٍ',
     'note_fix_placeholder'    => 'صِف ما يجب تصحيحه…',
     'note_cancel_placeholder' => 'اشرح لماذا يتم إلغاء هذا الطلب…',
 ];

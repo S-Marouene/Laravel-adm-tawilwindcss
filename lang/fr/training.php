@@ -267,6 +267,10 @@ return [
     'download_label'         => 'Télécharger',
     'view_details'           => 'Voir le détail',
     'review_note'            => 'Votre demande est enregistrée et suivie par la Direction Régionale de la Protection Civile.',
+    'details_title'          => 'Données essentielles de la demande',
+    'stepper_had_correction' => 'Correction traitée',
+    'stepper_verify_pending' => 'En attente d\'examen',
+    'stepper_verify_waiting' => 'Examen en cours',
     'note_fix_placeholder'    => 'Décrivez ce qui doit être corrigé…',
     'note_cancel_placeholder' => 'Expliquez pourquoi cette demande est annulée…',
 ];
