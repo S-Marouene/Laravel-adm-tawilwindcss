@@ -115,7 +115,11 @@
                                     <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">{{ __('training.draft_step', ['step' => $draft->current_step]) }}</p>
                                 </div>
                                 <div class="flex items-center gap-2 flex-none">
-                                    <a href="{{ route('training.step2.show', $draft) }}" class="inline-flex items-center gap-1 rounded-lg border border-gov-300 bg-gov-50 px-3 py-1.5 text-xs font-semibold text-gov-700 transition hover:bg-gov-100 dark:border-gov-700 dark:bg-gov-900/30 dark:text-gov-300">
+                                    <a href="{{ $draft->current_step >= 3
+                                            ? route('training.step3.show', $draft)
+                                            : ($draft->current_step >= 2
+                                                ? route('training.step2.show', $draft)
+                                                : route('training.step1.edit', $draft)) }}" class="inline-flex items-center gap-1 rounded-lg border border-gov-300 bg-gov-50 px-3 py-1.5 text-xs font-semibold text-gov-700 transition hover:bg-gov-100 dark:border-gov-700 dark:bg-gov-900/30 dark:text-gov-300">
                                         {{ __('training.continue') }} &rarr;
                                     </a>
                                     <form method="POST" action="{{ route('training.destroy', $draft) }}" data-confirm data-confirm-style="danger">

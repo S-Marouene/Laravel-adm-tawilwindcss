@@ -32,6 +32,14 @@ class TrainingRequest extends Model
     public const KIND_NEW       = 'new';
     public const KIND_RECYCLING = 'recycling';
 
+    // Depositor type: real person vs society enrolling several people
+    public const DEPOSITOR_INDIVIDUAL = 'individual';
+    public const DEPOSITOR_COMPANY    = 'company';
+
+    // Centralized formations — held at the centrale (Tunis – Ben Arous),
+    // planned yearly; the chosen regional direction is only the contact point.
+    public const CENTRALIZED_TYPES = ['prevention_level1', 'prevention_level2'];
+
     // -----------------------------------------------------------------------
     // Status constants
     // -----------------------------------------------------------------------
@@ -64,9 +72,10 @@ class TrainingRequest extends Model
 
     protected $fillable = [
         'user_id', 'current_step', 'status', 'reference',
+        'depositor_type', 'company_name',
         'cin', 'nom_prenom', 'phone',
         'governorate_id', 'delegation_id',
-        'training_type', 'training_kind', 'notes',
+        'training_type', 'training_kind', 'notes', 'planned_session_id',
         // Payment
         'fee_amount', 'receipt_number', 'paid_at',
         'payment_method', 'payment_online_ref',
@@ -171,6 +180,37 @@ class TrainingRequest extends Model
             ->orderBy('session_date');
     }
 
+    public function participants(): HasMany
+    {
+        return $this->hasMany(TrainingParticipant::class, 'training_request_id')
+            ->orderBy('id');
+    }
+
+    public function plannedSession()
+    {
+        return $this->belongsTo(TrainingPlannedSession::class, 'planned_session_id');
+    }
+
+    public function isCentralized(): bool
+    {
+        return in_array($this->training_type, self::CENTRALIZED_TYPES, true);
+    }
+
+    public function isWaitListed(): bool
+    {
+        return $this->isCentralized() && $this->planned_session_id === null;
+    }
+
+    public function isIndividual(): bool
+    {
+        return $this->depositor_type !== self::DEPOSITOR_COMPANY;
+    }
+
+    public function isCompany(): bool
+    {
+        return $this->depositor_type === self::DEPOSITOR_COMPANY;
+    }
+
     // -----------------------------------------------------------------------
     // Event log helper
     // -----------------------------------------------------------------------
@@ -241,10 +281,28 @@ class TrainingRequest extends Model
     public function computedFee(): float
     {
         $base = self::basePrice($this->training_type ?? '');
+
+        // Society deposit: fee = sum of each participant's fee (recycling = -25 %)
+        if ($this->isCompany()) {
+            $total = 0;
+            $this->participants()->each(function (TrainingParticipant $p) use (&$total, $base) {
+                $total += $p->training_kind === self::KIND_RECYCLING
+                    ? round($base * 0.75, 3)
+                    : $base;
+            });
+
+            return (float) $total;
+        }
+
         if ($this->training_kind === self::KIND_RECYCLING) {
             return round($base * 0.75, 3);
         }
         return (float) $base;
+    }
+
+    public function participantCount(): int
+    {
+        return $this->isCompany() ? $this->participants()->count() : 1;
     }
 
     public static function durationWeeks(string $type): int

@@ -6,20 +6,14 @@
         ? route('training.step1.update', $tr)
         : route('training.step1.store');
 
-    $valCin    = old('cin',            $tr?->cin       ?? '');
-    $valNom    = old('nom_prenom',      $tr?->nom_prenom ?? '');
-    $valPhone  = old('phone',           $tr?->phone     ?? '');
     $valGov    = old('governorate_id',  $tr?->governorate_id ?? '');
     $valDelId  = old('delegation_id',   $tr?->delegation_id  ?? '');
     $valType   = old('training_type',   $tr?->training_type  ?? '');
-    $valKind   = old('training_kind',   $tr?->training_kind  ?? 'new');
-    $valNotes  = old('notes',           $tr?->notes     ?? '');
 
     $wizardSteps = [
         ['state' => 'active',  'title' => __('training.step_one_title'), 'editing' => $isEditing],
-        ['state' => $isEditing ? 'done' : 'upcoming', 'title' => __('training.step_two_title'),
-         'editUrl'  => $isEditing ? route('training.step2.show', $tr) : null,
-         'editLabel'=> __('training.step_two_title')],
+        ['state' => 'upcoming', 'title' => __('training.step_two_title')],
+        ['state' => 'upcoming', 'title' => __('training.step_three_title')],
     ];
 
     $showForm = $isEditing || $errors->any() || !empty(old());
@@ -40,7 +34,7 @@
                 <div class="bg-surface-container-lowest p-5 rounded border border-surface-dim border-l-4 border-l-primary flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                     <div>
                         <span class="text-label-caps text-primary uppercase tracking-wider">
-                            {{ __('training.step_of', ['step' => 1, 'total' => 2]) }}
+                            {{ __('training.step_of', ['step' => 1, 'total' => 3]) }}
                             @if ($isEditing) · {{ __('training.step_editing') }} @endif
                         </span>
                         <h2 class="text-headline-sm text-on-surface mt-0.5">{{ __('training.step_heading') }} — {{ __('training.step_one_title') }}</h2>
@@ -67,44 +61,56 @@
                         @endif
                     </div>
 
-                    {{-- ═══ SECTION A — IDENTITÉ ═══ --}}
+                    {{-- ═══ SECTION 1 — TYPE DE FORMATION ═══ --}}
                     <div class="p-6 space-y-5">
                         <div class="flex items-center gap-2.5 pb-3 border-b border-surface-dim dark:border-gray-700">
-                            <span class="w-7 h-7 rounded bg-primary text-white flex items-center justify-center text-label-caps shrink-0" aria-hidden="true">A</span>
-                            <h3 class="text-title-section text-on-surface uppercase tracking-wider">{{ __('training.section_applicant') }}</h3>
+                            <span class="w-7 h-7 rounded bg-primary text-white flex items-center justify-center text-label-caps shrink-0" aria-hidden="true">1</span>
+                            <h3 class="text-title-section text-on-surface uppercase tracking-wider">{{ __('training.section_training') }}</h3>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div class="space-y-1.5">
-                                <label for="nom_prenom" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">{{ __('training.nom_prenom') }} <span class="text-primary">*</span></label>
-                                <input id="nom_prenom" name="nom_prenom" type="text" maxlength="255" value="{{ $valNom }}" placeholder="{{ __('training.nom_prenom_placeholder') }}" required
-                                    class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('nom_prenom') border-red-400 @enderror">
-                                @error('nom_prenom')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
+                        <div class="space-y-1.5">
+                            <label for="training_type" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">{{ __('training.training_type') }} <span class="text-primary">*</span></label>
+                            <select id="training_type" name="training_type" required
+                                class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('training_type') border-red-400 @enderror">
+                                <option value="" disabled @selected(! $valType)>{{ __('training.training_type_select') }}</option>
+                                @foreach (\App\Models\TrainingRequest::TYPES as $key => $data)
+                                    <option value="{{ $key }}" @selected($valType === $key)
+                                        data-price="{{ $data['price'] }}" data-weeks="{{ $data['weeks'] }}">
+                                        {{ __('training.type_' . $key) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('training_type')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
+                        </div>
+
+                        {{-- Centralized formations (prévention 1/2) — centrale + session picker --}}
+                        <div id="centralized-box" class="hidden space-y-4 rounded border border-primary/30 bg-primary/5 p-4 dark:border-primary/40 dark:bg-primary/10">
+                            <div class="flex items-start gap-3">
+                                <span class="material-symbols-outlined text-primary text-[20px] mt-px shrink-0" aria-hidden="true">hub</span>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs font-bold text-primary uppercase tracking-wider mb-1">{{ __('training.centralized_title') }}</p>
+                                    <p class="text-body-sm text-on-surface dark:text-gray-200 leading-relaxed">{{ __('training.centralized_hint') }}</p>
+                                </div>
                             </div>
-                            <div class="space-y-1.5">
-                                <label for="cin" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">{{ __('training.cin') }} <span class="text-primary">*</span></label>
-                                <input id="cin" name="cin" type="text" inputmode="numeric" maxlength="20" value="{{ $valCin }}" placeholder="{{ __('training.cin_placeholder') }}" required
-                                    class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('cin') border-red-400 @enderror">
-                                @error('cin')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
+
+                            {{-- Planned sessions of the selected type --}}
+                            <div id="planned-sessions-list" class="space-y-2"></div>
+
+                            {{-- Wait list notice --}}
+                            <div id="waitlist-notice" class="hidden flex items-start gap-3 rounded border border-amber-300 bg-amber-50 p-3 dark:border-amber-700/50 dark:bg-amber-900/20">
+                                <span class="material-symbols-outlined text-amber-600 text-[18px] mt-px shrink-0" aria-hidden="true">hourglass_top</span>
+                                <p class="text-body-sm text-amber-900 dark:text-amber-200 leading-relaxed">{{ __('training.waitlist_notice') }}</p>
                             </div>
-                            <div class="space-y-1.5 md:col-span-2">
-                                <label for="phone" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">{{ __('training.phone') }} <span class="text-primary">*</span></label>
-                                <input id="phone" name="phone" type="tel" maxlength="20" inputmode="tel" dir="ltr" value="{{ $valPhone }}" placeholder="{{ __('training.phone_placeholder') }}" required
-                                    class="num-ltr block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('phone') border-red-400 @enderror">
-                                <p class="text-xs text-secondary flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-sm text-outline" aria-hidden="true">info</span>{{ __('training.phone_notification_hint') }}
-                                </p>
-                                @error('phone')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
-                            </div>
+                            @error('planned_session_id')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
                         </div>
                     </div>
 
                     <div class="mx-6 border-t border-dashed border-surface-dim dark:border-gray-700"></div>
 
-                    {{-- ═══ SECTION B — LOCALISATION ═══ --}}
+                    {{-- ═══ SECTION 2 — DIRECTION RÉGIONALE / DÉLÉGATION ═══ --}}
                     <div class="p-6 space-y-5">
                         <div class="flex items-center gap-2.5 pb-3 border-b border-surface-dim dark:border-gray-700">
-                            <span class="w-7 h-7 rounded bg-primary text-white flex items-center justify-center text-label-caps shrink-0" aria-hidden="true">B</span>
+                            <span class="w-7 h-7 rounded bg-primary text-white flex items-center justify-center text-label-caps shrink-0" aria-hidden="true">2</span>
                             <h3 class="text-title-section text-on-surface uppercase tracking-wider">{{ __('training.code_structure') }}</h3>
                         </div>
 
@@ -156,78 +162,16 @@
                                 </div>
                                 @error('delegation_id')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
                             </div>
+                            {{-- For centralized formations: the region is the contact point --}}
                         </div>
+
+                        <p id="region-visavis" class="hidden flex items-start gap-2 rounded border border-primary/30 bg-primary/5 p-3 text-body-sm text-on-surface dark:border-primary/40 dark:bg-primary/10 dark:text-gray-200">
+                            <span class="material-symbols-outlined text-primary text-[18px] mt-px shrink-0" aria-hidden="true">forward_to_inbox</span>
+                            <span>{{ __('training.region_visavis_hint') }}</span>
+                        </p>
                     </div>
-
-                    <div class="mx-6 border-t border-dashed border-surface-dim dark:border-gray-700"></div>
-
-                    {{-- ═══ SECTION C — TYPE DE FORMATION ═══ --}}
-                    <div class="p-6 space-y-5">
-                        <div class="flex items-center gap-2.5 pb-3 border-b border-surface-dim dark:border-gray-700">
-                            <span class="w-7 h-7 rounded bg-primary text-white flex items-center justify-center text-label-caps shrink-0" aria-hidden="true">C</span>
-                            <h3 class="text-title-section text-on-surface uppercase tracking-wider">{{ __('training.section_training') }}</h3>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            {{-- Training type --}}
-                            <div class="space-y-1.5">
-                                <label for="training_type" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">{{ __('training.training_type') }} <span class="text-primary">*</span></label>
-                                <select id="training_type" name="training_type" required
-                                    class="block w-full h-11 px-3.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('training_type') border-red-400 @enderror">
-                                    <option value="" disabled @selected(! $valType)>{{ __('training.training_type_select') }}</option>
-                                    @foreach (\App\Models\TrainingRequest::TYPES as $key => $data)
-                                        <option value="{{ $key }}" @selected($valType === $key)
-                                            data-price="{{ $data['price'] }}" data-weeks="{{ $data['weeks'] }}">
-                                            {{ __('training.type_' . $key) }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('training_type')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
-                            </div>
-
-                            {{-- Training kind (new / recycling) --}}
-                            <div class="space-y-1.5">
-                                <label class="block text-body-sm font-bold text-on-surface dark:text-gray-200">{{ __('training.training_kind') }} <span class="text-primary">*</span></label>
-                                <div class="grid grid-cols-2 gap-3 mt-1">
-                                    @foreach (['new' => 'kind_new', 'recycling' => 'kind_recycling'] as $val => $labelKey)
-                                        <label class="flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-container px-4 py-3 cursor-pointer transition hover:border-primary/40 has-[:checked]:border-primary/60 has-[:checked]:bg-primary/5 dark:border-gray-700 dark:bg-gray-900/50">
-                                            <input type="radio" name="training_kind" value="{{ $val }}" @checked($valKind === $val)
-                                                class="h-4 w-4 border-surface-dim text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-800">
-                                            <span class="text-body-sm font-semibold text-on-surface dark:text-gray-100">{{ __('training.' . $labelKey) }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                                @error('training_kind')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
-                            </div>
-                        </div>
-
-                        {{-- Live fee estimate --}}
-                        <div id="fee-estimate" class="hidden rounded border border-amber-200 bg-amber-50 p-4 dark:bg-amber-900/10 dark:border-amber-800/40">
-                            <div class="flex items-start gap-3">
-                                <span class="material-symbols-outlined text-amber-600 text-[20px] mt-px shrink-0" aria-hidden="true">payments</span>
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-xs font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider mb-1">{{ __('training.estimated_fee') }}</p>
-                                    <p class="text-body-md font-black text-amber-700 dark:text-amber-400">
-                                        <span id="fee-amount" dir="ltr">—</span> {{ __('training.fee_tnd') }}
-                                        &nbsp;·&nbsp; <span id="fee-duration">—</span> {{ __('training.fee_weeks') }}
-                                    </p>
-                                    <p class="text-[11px] text-amber-600 dark:text-amber-400 mt-1">{{ __('training.fee_note') }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Notes --}}
-                        <div class="space-y-1.5">
-                            <label for="notes" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">{{ __('training.notes') }}</label>
-                            <textarea id="notes" name="notes" rows="3" maxlength="3000" placeholder="{{ __('training.notes_placeholder') }}"
-                                class="block w-full px-3.5 py-2.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('notes') border-red-400 @enderror">{{ $valNotes }}</textarea>
-                            @error('notes')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
-                        </div>
-                    </div>
-
-                    {{-- Footer --}}
                     <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-surface-dim px-6 py-5 dark:border-gray-700">
-                        <a href="{{ $isEditing ? route('training.step2.show', $tr) : route('training.index') }}"
+                        <a href="{{ $isEditing ? route('training.index') : route('training.index') }}"
                            class="inline-flex items-center justify-center rounded border border-surface-dim bg-surface-container-lowest px-4 py-2.5 text-body-sm font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
                             {{ __('training.cancel') }}
                         </a>
@@ -252,7 +196,7 @@
                 if (!formSection) return;
                 formSection.classList.remove('hidden');
                 formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                setTimeout(function () { var f = document.getElementById('nom_prenom'); if (f) f.focus({ preventScroll: true }); }, 350);
+                setTimeout(function () { var s = document.getElementById('training_type'); if (s) s.focus({ preventScroll: true }); }, 350);
             });
         });
 
@@ -306,7 +250,7 @@
         document.addEventListener('click',function(e){if(govOpen&&!document.getElementById('gov-wrap').contains(e.target))closePanel(govPanel,govChevron,function(v){govOpen=v;});});
 
         function loadDel(gId){var list=delegationsMap[String(gId)]||[];delItems=Array.isArray(list)?list:buildItems(list);delHidden.value='';delTrigLbl.textContent=delSelectLbl;delTrigLbl.classList.add('text-outline','dark:text-gray-500');delTrigger.disabled=(delItems.length===0);}
-        function renderDel(f){var items=f?delItems.filter(function(i){return i.name.toLowerCase().includes(f.toLowerCase());}):delItems;renderList(delList,items,delHidden.value,function(item){delHidden.value=item.id;delTrigLbl.textContent=item.name;delTrigLbl.classList.remove('text-outline','dark:text-gray-500');closePanel(delPanel,delChevron,function(v){delOpen=v;});}); }
+        function renderDel(f){ var items=f?delItems.filter(function(i){return i.name.toLowerCase().includes(f.toLowerCase());}):delItems;renderList(delList,items,delHidden.value,function(item){delHidden.value=item.id;delTrigLbl.textContent=item.name;delTrigLbl.classList.remove('text-outline','dark:text-gray-500');closePanel(delPanel,delChevron,function(v){delOpen=v;});}); }
         delTrigger.addEventListener('click',function(){if(delOpen){closePanel(delPanel,delChevron,function(v){delOpen=v;});return;}openPanel(delPanel,delChevron,delSearch,function(v){delOpen=v;});renderDel('');});
         delSearch.addEventListener('input',function(){renderDel(this.value);});
         document.addEventListener('click',function(e){if(delOpen&&!document.getElementById('del-wrap').contains(e.target))closePanel(delPanel,delChevron,function(v){delOpen=v;});});
@@ -315,28 +259,83 @@
             if(initGovId){var gov=govItems.find(function(i){return String(i.id)===String(initGovId);});if(gov){govHidden.value=gov.id;govTrigLbl.textContent=gov.name;govTrigLbl.classList.remove('text-outline','dark:text-gray-500');loadDel(gov.id);if(initDelId){var del=delItems.find(function(i){return String(i.id)===String(initDelId);});if(del){delHidden.value=del.id;delTrigLbl.textContent=del.name;delTrigLbl.classList.remove('text-outline','dark:text-gray-500');}}}}
         })();
 
-        /* ── Live fee estimate ── */
+        /* ── Type select: centralized hint & session picker ── */
         var typeSelect = document.getElementById('training_type');
-        var kindRadios = document.querySelectorAll('input[name="training_kind"]');
-        var feeBox     = document.getElementById('fee-estimate');
-        var feeAmt     = document.getElementById('fee-amount');
-        var feeDur     = document.getElementById('fee-duration');
 
-        function updateFee(){
-            var opt=typeSelect.options[typeSelect.selectedIndex];
-            var price=opt?parseInt(opt.dataset.price||'0',10):0;
-            var weeks=opt?parseInt(opt.dataset.weeks||'1',10):1;
-            var kind='new';
-            kindRadios.forEach(function(r){if(r.checked)kind=r.value;});
-            if(!price){feeBox.classList.add('hidden');return;}
-            var fee=kind==='recycling'?Math.round(price*0.75):price;
-            feeAmt.textContent=fee.toLocaleString();
-            feeDur.textContent=weeks;
-            feeBox.classList.remove('hidden');
+        var CENTRALIZED    = @json(\App\Models\TrainingRequest::CENTRALIZED_TYPES);
+        var PLANNED         = @json($plannedSessions ?? []);
+        var initialSession  = @json((string) ($tr?->planned_session_id ?? old('planned_session_id') ?? ''));
+        var lblSeatLeft     = @json(__('training.seats_left'));
+        var lblUnlimited    = @json(__('training.seats_unlimited'));
+        var lblFull         = @json(__('training.seats_full'));
+        var lblFrom         = @json(__('training.from'));
+        var lblTo           = @json(__('training.to'));
+        var lblChoose       = @json(__('training.choose_planned_session'));
+        var lblChosen       = @json(__('training.chosen_session'));
+
+        var centBox   = document.getElementById('centralized-box');
+        var sessList  = document.getElementById('planned-sessions-list');
+        var waitBox   = document.getElementById('waitlist-notice');
+        var regionV   = document.getElementById('region-visavis');
+        var sessionHidden = document.querySelector('input[name="planned_session_id"]');
+
+        function buildSessionRadios(type) {
+            if (!sessList) return;
+            sessList.innerHTML = '';
+            waitBox.classList.add('hidden');
+            var list = (PLANNED && PLANNED[type]) || [];
+            if (!list.length) { waitBox.classList.remove('hidden'); return; }
+
+            var title = document.createElement('p');
+            title.className = 'text-body-sm font-bold text-on-surface dark:text-gray-100 mb-1';
+            title.textContent = lblChoose;
+            sessList.appendChild(title);
+
+            list.forEach(function (s) {
+                var id = String(s.id);
+                var left = s.seats_left; // null = unlimited
+                var full = (left === 0);
+                var chosen = (id === initialSession);
+                var wrap = document.createElement('label');
+                wrap.className = 'flex items-center gap-3 rounded border p-3 cursor-pointer transition '
+                    + (full ? 'border-surface-dim opacity-60 cursor-not-allowed dark:border-gray-700'
+                        : chosen ? 'border-primary bg-primary/10 dark:bg-primary/20'
+                        : 'border-surface-dim hover:border-primary/50 dark:border-gray-700');
+                var radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'planned_session_id';
+                radio.value = id;
+                radio.disabled = full;
+                radio.className = 'h-4 w-4 text-primary focus:ring-primary';
+                if (chosen) { radio.checked = true; }
+                var info = document.createElement('div');
+                info.className = 'min-w-0 flex-1';
+                var when = '<span dir="ltr">' + s.starts_at + '</span>'
+                    + (s.ends_at ? ' — <span dir="ltr">' + s.ends_at + '</span>' : '');
+                info.innerHTML = '<p class="text-body-sm font-semibold text-on-surface dark:text-gray-100">' + when + '</p>'
+                    + '<p class="text-[11px] text-outline mt-0.5">' + (left === null ? lblUnlimited : (full ? lblFull : lblSeatLeft + ': ' + left)) + '</p>';
+                wrap.appendChild(radio);
+                wrap.appendChild(info);
+                sessList.appendChild(wrap);
+            });
         }
-        typeSelect.addEventListener('change',updateFee);
-        kindRadios.forEach(function(r){r.addEventListener('change',updateFee);});
-        updateFee();
+
+        function handleTypeChange() {
+            if (!typeSelect) return;
+            var type = typeSelect.value;
+            var isCentralized = CENTRALIZED.indexOf(type) !== -1;
+
+            // Region contact-point hint (full width)
+            if (regionV) regionV.classList.toggle('hidden', !isCentralized);
+
+            // Centralized hint + session picker
+            if (centBox) centBox.classList.toggle('hidden', !isCentralized);
+            if (isCentralized) {
+                buildSessionRadios(type);
+            }
+        }
+        if (typeSelect) typeSelect.addEventListener('change', handleTypeChange);
+        handleTypeChange();
 
         /* ── Submit lock ── */
         var form=document.getElementById('training-create-form');

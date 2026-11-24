@@ -41,7 +41,7 @@ class TrainingController extends Controller
     {
         if ($trainingRequest->user_id !== auth()->id()) abort(403);
 
-        $trainingRequest->load(['user', 'governorate', 'delegation', 'documents.documentType', 'events.actor', 'sessions']);
+        $trainingRequest->load(['user', 'governorate', 'delegation', 'plannedSession', 'documents.documentType', 'events.actor', 'sessions']);
 
         $documentTypes = DocumentType::service(DocumentType::SERVICE_TRAINING)
             ->orderBy('sort_order')->get();
@@ -66,9 +66,10 @@ class TrainingController extends Controller
             ->latest()->get();
 
         return view('training.create', [
-            'gouvernorats' => $this->gouvernorats(),
-            'delegations'  => $this->delegations(),
-            'drafts'       => $drafts,
+            'gouvernorats'    => $this->gouvernorats(),
+            'delegations'     => $this->delegations(),
+            'drafts'           => $drafts,
+            'plannedSessions'  => $this->plannedSessionsForSelect(),
         ]);
     }
 
@@ -81,14 +82,15 @@ class TrainingController extends Controller
         if ($trainingRequest->user_id !== auth()->id()) abort(403);
 
         return view('training.create', [
-            'gouvernorats'   => $this->gouvernorats(),
-            'delegations'    => $this->delegations(),
+            'gouvernorats'    => $this->gouvernorats(),
+            'delegations'     => $this->delegations(),
             'trainingRequest' => $trainingRequest,
+            'plannedSessions' => $this->plannedSessionsForSelect($trainingRequest),
         ]);
     }
 
     // =========================================================================
-    // Step 1 — Store
+    // Step 1 — Store (type de formation + direction régionale)
     // =========================================================================
 
     public function storeStep1(Request $request): RedirectResponse
@@ -112,13 +114,14 @@ class TrainingController extends Controller
         if ($trainingRequest->user_id !== auth()->id()) abort(403);
 
         $validated = $request->validate($this->step1Rules());
+
         $trainingRequest->update($this->step1Data($validated));
 
         return redirect()->route('training.step2.show', $trainingRequest);
     }
 
     // =========================================================================
-    // Step 2 — Show document upload
+    // Step 2 — Identity (personne physique / société) — show
     // =========================================================================
 
     public function showStep2(TrainingRequest $trainingRequest): View|RedirectResponse
@@ -130,7 +133,59 @@ class TrainingController extends Controller
                 ->withErrors(['status' => __('training.not_editable')]);
         }
 
-        $trainingRequest->load(['governorate', 'delegation']);
+        $trainingRequest->load(['governorate', 'delegation', 'participants']);
+
+        return view('training.create-step2', [
+            'trainingRequest' => $trainingRequest,
+        ]);
+    }
+
+    // =========================================================================
+    // Step 2 — Identity — store
+    // =========================================================================
+
+    public function storeStep2(Request $request, TrainingRequest $trainingRequest): RedirectResponse
+    {
+        if ($trainingRequest->user_id !== auth()->id()) abort(403);
+
+        if ($trainingRequest->status !== 'draft') {
+            return redirect()->route('training.index')
+                ->withErrors(['status' => __('training.not_editable')]);
+        }
+
+        $validated = $request->validate(
+            $this->identityRules($request),
+            $this->step1Messages()
+        );
+
+        $trainingRequest->update(array_merge(
+            $this->identityData($validated),
+            ['current_step' => 2]
+        ));
+
+        if ($trainingRequest->isCompany()) {
+            $this->syncParticipants($trainingRequest, $validated['participants'] ?? []);
+        } else {
+            $trainingRequest->participants()->delete();
+        }
+
+        return redirect()->route('training.step3.show', $trainingRequest);
+    }
+
+    // =========================================================================
+    // Step 3 — Show document upload
+    // =========================================================================
+
+    public function showStep3(TrainingRequest $trainingRequest): View|RedirectResponse
+    {
+        if ($trainingRequest->user_id !== auth()->id()) abort(403);
+
+        if ($trainingRequest->status !== 'draft') {
+            return redirect()->route('training.index')
+                ->withErrors(['status' => __('training.not_editable')]);
+        }
+
+        $trainingRequest->load(['governorate', 'delegation', 'participants']);
 
         $documentTypes = DocumentType::service(DocumentType::SERVICE_TRAINING)
             ->orderBy('sort_order')->get();
@@ -139,7 +194,7 @@ class TrainingController extends Controller
             ->where('status', '!=', 'archived')
             ->get()->keyBy('document_type_id');
 
-        return view('training.create-step2', [
+        return view('training.create-step3', [
             'trainingRequest' => $trainingRequest,
             'documentTypes'   => $documentTypes,
             'uploadedDocs'    => $uploadedDocs,
@@ -147,10 +202,10 @@ class TrainingController extends Controller
     }
 
     // =========================================================================
-    // Step 2 — Store documents + submit
+    // Step 3 — Store documents + submit
     // =========================================================================
 
-    public function storeStep2(Request $request, TrainingRequest $trainingRequest): RedirectResponse
+    public function storeStep3(Request $request, TrainingRequest $trainingRequest): RedirectResponse
     {
         if ($trainingRequest->user_id !== auth()->id()) abort(403);
 
@@ -192,7 +247,7 @@ class TrainingController extends Controller
         $isResubmission = $trainingRequest->events()->where('type', 'correction_requested')->exists();
 
         $trainingRequest->update([
-            'current_step' => 2,
+            'current_step' => 3,
             'status'       => 'completed',
             'reference'    => $trainingRequest->reference
                 ?: \App\Support\Reference::make('training', $trainingRequest),
@@ -395,31 +450,155 @@ class TrainingController extends Controller
     private function gouvernorats(): array { return Governorate::forSelect(); }
     private function delegations(): array  { return Governorate::delegationsMap(); }
 
+    /**
+     * Selectable centralized sessions grouped by training_type,
+     * shaped for the step-1 view: type => [ [id, starts_at, ends_at, seats_left, capacity], ... ]
+     */
+    private function plannedSessionsForSelect(?TrainingRequest $tr = null): array
+    {
+        $query = \App\Models\TrainingPlannedSession::forCentralizedTypes()->selectable()
+            ->orderBy('starts_at');
+
+        $grouped = [];
+        $query->get()->each(function ($s) use (&$grouped) {
+            $grouped[$s->training_type][] = [
+                'id'        => $s->id,
+                'starts_at' => $s->starts_at->format('Y-m-d H:i'),
+                'ends_at'   => $s->ends_at?->format('Y-m-d H:i'),
+                'seats_left' => $s->seatsLeft(),
+                'capacity'  => $s->capacity,
+            ];
+        });
+
+        // When editing, always keep the currently chosen session in the list
+        if ($tr && $tr->planned_session_id) {
+            $chosen = $tr->plannedSession;
+            if ($chosen && ! in_array($chosen->id, array_column($grouped[$chosen->training_type] ?? [], 'id'))) {
+                $grouped[$chosen->training_type][] = [
+                    'id'        => $chosen->id,
+                    'starts_at' => $chosen->starts_at->format('Y-m-d H:i'),
+                    'ends_at'   => $chosen->ends_at?->format('Y-m-d H:i'),
+                    'seats_left' => $chosen->seatsLeft(),
+                    'capacity'  => $chosen->capacity,
+                ];
+            }
+        }
+
+        return $grouped;
+    }
+
+    // ── Step 1: type de formation + direction régionale ──
+
     private function step1Rules(): array
     {
         return [
-            'cin'            => ['required', 'string', 'max:20'],
-            'nom_prenom'     => ['required', 'string', 'max:255'],
-            'phone'          => ['required', 'string', 'max:20'],
             'governorate_id' => ['required', 'integer', 'exists:governorates,id'],
             'delegation_id'  => ['required', 'integer', 'exists:delegations,id'],
             'training_type'  => ['required', 'string', 'in:' . implode(',', array_keys(TrainingRequest::TYPES))],
-            'training_kind'  => ['required', 'in:new,recycling'],
-            'notes'          => ['nullable', 'string', 'max:3000'],
+            'planned_session_id' => [
+                'nullable', 'integer',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    $session = \App\Models\TrainingPlannedSession::find($value);
+                    if (! $session) { $fail(__('training.planned_session_invalid')); return; }
+                    if ($session->training_type !== request()->input('training_type')) { $fail(__('training.planned_session_type_mismatch')); return; }
+                    if (! $session->isSelectable()) { $fail(__('training.planned_session_unavailable')); return; }
+                },
+            ],
         ];
     }
 
     private function step1Data(array $validated): array
     {
+        $type = $validated['training_type'];
+
+        // Only centralized formations are linked to a planned session
+        $plannedSessionId = in_array($type, TrainingRequest::CENTRALIZED_TYPES, true)
+            ? ($validated['planned_session_id'] ?? null)
+            : null;
+
         return [
+            'governorate_id'     => $validated['governorate_id'],
+            'delegation_id'      => $validated['delegation_id'],
+            'training_type'     => $type,
+            'planned_session_id' => $plannedSessionId,
+        ];
+    }
+
+    // ── Step 2: identity (personne physique / société) ──
+
+    private function identityRules(Request $request): array
+    {
+        $isCompany = $request->input('depositor_type') === TrainingRequest::DEPOSITOR_COMPANY;
+
+        $rules = [
+            'depositor_type' => ['required', 'string', 'in:individual,company'],
+            'notes'          => ['nullable', 'string', 'max:3000'],
+        ];
+
+        if ($isCompany) {
+            $rules['company_name']                 = ['required', 'string', 'max:255'];
+            $rules['phone']                        = ['required', 'string', 'max:20'];
+            $rules['participants']                 = ['required', 'array', 'min:1'];
+            $rules['participants.*.nom_prenom']    = ['required', 'string', 'max:255'];
+            $rules['participants.*.cin']           = ['required', 'string', 'max:20', 'distinct'];
+            $rules['participants.*.phone']         = ['nullable', 'string', 'max:20'];
+            $rules['participants.*.training_kind'] = ['required', 'string', 'in:new,recycling'];
+        } else {
+            $rules['cin']           = ['required', 'string', 'max:20'];
+            $rules['nom_prenom']    = ['required', 'string', 'max:255'];
+            $rules['phone']         = ['required', 'string', 'max:20'];
+            $rules['training_kind'] = ['required', 'in:new,recycling'];
+        }
+
+        return $rules;
+    }
+
+    private function identityData(array $validated): array
+    {
+        if (($validated['depositor_type'] ?? '') === TrainingRequest::DEPOSITOR_COMPANY) {
+            return [
+                'depositor_type' => TrainingRequest::DEPOSITOR_COMPANY,
+                'company_name'   => $validated['company_name'],
+                // keep request-level display fields working
+                'cin'            => null,
+                'nom_prenom'     => $validated['company_name'],
+                'phone'          => $validated['phone'],
+                'training_kind'  => TrainingRequest::KIND_NEW, // actual kind lives on each participant
+                'notes'          => $validated['notes'] ?? null,
+            ];
+        }
+
+        return [
+            'depositor_type' => TrainingRequest::DEPOSITOR_INDIVIDUAL,
+            'company_name'   => null,
             'cin'            => $validated['cin'],
             'nom_prenom'     => $validated['nom_prenom'],
             'phone'          => $validated['phone'],
-            'governorate_id' => $validated['governorate_id'],
-            'delegation_id'  => $validated['delegation_id'],
-            'training_type'  => $validated['training_type'],
-            'training_kind'  => $validated['training_kind'],
+            'training_kind'  => $validated['training_kind'] ?? TrainingRequest::KIND_NEW,
             'notes'          => $validated['notes'] ?? null,
         ];
+    }
+
+    private function step1Messages(): array
+    {
+        return [
+            'participants.required'      => __('training.participants_required'),
+            'participants.min'           => __('training.participants_required'),
+            'participants.*.cin.distinct' => __('training.participants_cin_distinct'),
+        ];
+    }
+
+    private function syncParticipants(TrainingRequest $trainingRequest, array $participants): void
+    {
+        $trainingRequest->participants()->delete();
+
+        foreach ($participants as $participant) {
+            $trainingRequest->participants()->create([
+                'nom_prenom'    => $participant['nom_prenom'],
+                'cin'           => $participant['cin'],
+                'phone'         => $participant['phone'] ?? null,
+                'training_kind' => $participant['training_kind'],
+            ]);
+        }
     }
 }

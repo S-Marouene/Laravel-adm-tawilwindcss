@@ -84,6 +84,33 @@
                 @endforeach
             </div>
 
+            {{-- Centralized formation info (prévention 1/2 + BNS) --}}
+            @if ($tr->isCentralized())
+                @php
+                    $sess = $tr->plannedSession;
+                    $isWait = $tr->isWaitListed();
+                @endphp
+                <div class="mb-6 rounded-lg border @if($isWait) border-amber-300 bg-amber-50 dark:border-amber-700/50 dark:bg-amber-900/20 @else border-primary/30 bg-primary/5 dark:border-primary/40 dark:bg-primary/10 @endif p-4">
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-outlined text-[22px] @if($isWait) text-amber-600 @else text-primary @endif mt-px shrink-0" aria-hidden="true">hub</span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs font-bold uppercase tracking-wider @if($isWait) text-amber-800 dark:text-amber-300 @else text-primary @endif mb-1">{{ __('training.centralized_title') }}</p>
+                            <p class="text-sm text-on-surface dark:text-gray-200 mb-1">{{ __('training.centralized_hint_admin') }}</p>
+                            @if ($isWait)
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-200 text-amber-900 text-xs font-bold dark:bg-amber-900/40 dark:text-amber-200">
+                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">hourglass_top</span>{{ __('training.waitlist_badge') }}
+                                </span>
+                            @else
+                                <div class="text-sm text-on-surface dark:text-gray-100">
+                                    <span class="font-semibold">{{ __('training.chosen_session') }}:</span>
+                                    <span dir="ltr">{{ $sess->starts_at->format('d/m/Y H:i') }}@if($sess->ends_at) — {{ $sess->ends_at->format('d/m/Y H:i') }}@endif</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {{-- Left column --}}
                 <div class="lg:col-span-2 space-y-6">

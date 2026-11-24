@@ -307,9 +307,11 @@ class MesDemandesController extends Controller
             ->latest()
             ->get()
             ->each(function ($tr) use ($items) {
-                $resumeUrl = $tr->current_step >= 2
-                    ? route('training.step2.show', $tr)
-                    : route('training.step1.edit', $tr);
+                $resumeUrl = $tr->current_step >= 3
+                    ? route('training.step3.show', $tr)
+                    : ($tr->current_step >= 2
+                        ? route('training.step2.show', $tr)
+                        : route('training.step1.edit', $tr));
                 $items->push($this->makeItem(
                     kind:  'training',
                     lang:  'training',

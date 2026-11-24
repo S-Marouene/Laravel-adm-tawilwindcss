@@ -274,6 +274,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/training/{trainingRequest}/step1', [TrainingController::class, 'updateStep1'])->name('training.step1.update');
     Route::get('/training/{trainingRequest}/step2', [TrainingController::class, 'showStep2'])->name('training.step2.show');
     Route::post('/training/{trainingRequest}/step2', [TrainingController::class, 'storeStep2'])->name('training.step2.store');
+    Route::get('/training/{trainingRequest}/step3', [TrainingController::class, 'showStep3'])->name('training.step3.show');
+    Route::post('/training/{trainingRequest}/step3', [TrainingController::class, 'storeStep3'])->name('training.step3.store');
     Route::post('/training/{trainingRequest}/resubmit', [TrainingController::class, 'resubmit'])->name('training.resubmit');
     Route::get('/training/documents/{trainingDocument}/download', [TrainingController::class, 'downloadDocument'])->name('training.documents.download');
     Route::delete('/training/{trainingRequest}', [TrainingController::class, 'destroy'])->name('training.destroy');

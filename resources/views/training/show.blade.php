@@ -383,7 +383,9 @@
                                 <p class="text-body-sm text-secondary mt-0.5">{{ __('training.draft_notice') }}</p>
                             </div>
                         </div>
-                        <a href="{{ route('training.step2.show', $tr) }}"
+                            <a href="{{ route($tr->current_step >= 3
+                                        ? 'training.step3.show'
+                                        : ($tr->current_step >= 2 ? 'training.step2.show' : 'training.step1.edit'), $tr) }}"
                            class="inline-flex items-center gap-2 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 px-4 rounded transition-colors shadow-sm">
                             <span class="material-symbols-outlined text-base" aria-hidden="true">play_arrow</span>
                             {{ __('training.continue') }}
@@ -569,6 +571,22 @@
                                     <span class="block text-xs font-bold text-on-surface truncate">{{ $tr->training_kind ? __('training.kind_' . $tr->training_kind) : '—' }}</span>
                                 </div>
                             </div>
+                            {{-- Centralized formations (prévention 1/2 + BNS) — session / wait list --}}
+                            @if ($tr->isCentralized())
+                                @php $sess = $tr->plannedSession; @endphp
+                                <div class="col-span-2 sm:col-span-3 lg:col-span-4 rounded @if($tr->isWaitListed()) border border-amber-300 bg-amber-50 dark:border-amber-700/50 dark:bg-amber-900/20 @else border border-primary/30 bg-primary/5 dark:border-primary/40 dark:bg-primary/10 @endif p-3 flex items-start gap-2.5">
+                                    <span class="material-symbols-outlined text-base mt-px shrink-0 @if($tr->isWaitListed()) text-amber-600 @else text-primary @endif" aria-hidden="true">hub</span>
+                                    <div class="min-w-0">
+                                        <span class="block text-[10px] uppercase tracking-wider font-bold @if($tr->isWaitListed()) text-amber-800 dark:text-amber-300 @else text-primary @endif">{{ __('training.centralized_title') }}</span>
+                                        @if ($tr->isWaitListed())
+                                            <span class="block text-xs font-bold text-amber-900 dark:text-amber-200">{{ __('training.waitlist_badge') }}</span>
+                                        @else
+                                            <span class="block text-xs font-bold text-on-surface dark:text-gray-100" dir="ltr">{{ $sess->starts_at->format('d/m/Y H:i') }}@if($sess->ends_at) — {{ $sess->ends_at->format('d/m/Y H:i') }}@endif</span>
+                                        @endif
+                                        <span class="block text-[11px] text-secondary mt-0.5">{{ __('training.centralized_hint_short') }}</span>
+                                    </div>
+                                </div>
+                            @endif
                             @if ($tr->training_start_date)
                             <div class="bg-surface-container-low border border-surface-dim rounded p-2.5 flex items-start gap-2 min-w-0">
                                 <span class="material-symbols-outlined text-primary text-base mt-px shrink-0" aria-hidden="true">calendar_today</span>

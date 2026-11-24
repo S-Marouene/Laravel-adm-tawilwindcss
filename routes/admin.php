@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\BuildingWorksDeclarationController as AdminBuildingWorksDeclarationController;
 use App\Http\Controllers\Admin\SpecialInterventionController as AdminSpecialInterventionController;
 use App\Http\Controllers\Admin\TrainingController as AdminTrainingController;
+use App\Http\Controllers\Admin\TrainingPlannedSessionController as AdminTrainingPlannedSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin'])->group(function () {
@@ -191,6 +192,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
         ->parameters(['special-interventions' => 'specialIntervention']);
 
     // Training / formation (خدمات التكوين والرسكلة بمقابل) workflow actions
+    // Centralized formations yearly plan (prévention 1/2 + BNS)
+    Route::prefix('training/planned')->name('training.planned.')->group(function () {
+        Route::get('/', [AdminTrainingPlannedSessionController::class, 'index'])->name('index');
+        Route::post('/', [AdminTrainingPlannedSessionController::class, 'store'])->name('store');
+        Route::get('/{plannedSession}/edit', [AdminTrainingPlannedSessionController::class, 'edit'])->name('edit');
+        Route::put('/{plannedSession}', [AdminTrainingPlannedSessionController::class, 'update'])->name('update');
+        Route::delete('/{plannedSession}', [AdminTrainingPlannedSessionController::class, 'destroy'])->name('destroy');
+        Route::post('/assign', [AdminTrainingPlannedSessionController::class, 'assign'])->name('assign');
+    });
+
     Route::post('training/{trainingRequest}/advance', [AdminTrainingController::class, 'advance'])->name('training.advance');
     Route::post('training/{trainingRequest}/correction', [AdminTrainingController::class, 'requestCorrection'])->name('training.correction');
     Route::post('training/{trainingRequest}/approve', [AdminTrainingController::class, 'approve'])->name('training.approve');

@@ -62,7 +62,7 @@ class TrainingController extends Controller
         AdminScope::authorize($trainingRequest);
 
         $trainingRequest->load([
-            'user', 'governorate', 'delegation',
+            'user', 'governorate', 'delegation', 'plannedSession',
             'reviewer', 'issuer', 'resultReviewer',
             'documents.documentType', 'events.actor', 'sessions.recorder',
             'pickupGovernorate', 'pickupDelegation',

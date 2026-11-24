@@ -67,7 +67,9 @@
                                     {{ __('training.cancel') }}
                                 </button>
                             </form>
-                            <a href="{{ route('training.step2.show', $draft) }}" class="ui-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-body-sm cursor-pointer">
+                            <a href="{{ route($draft->current_step >= 3
+                                        ? 'training.step3.show'
+                                        : ($draft->current_step >= 2 ? 'training.step2.show' : 'training.step1.edit'), $draft) }}" class="ui-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-body-sm cursor-pointer">
                                 {{ __('training.continue') }}
                                 <svg class="h-3.5 w-3.5 {{ app()->getLocale() === 'ar' ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             </a>
