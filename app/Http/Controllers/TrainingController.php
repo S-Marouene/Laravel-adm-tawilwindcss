@@ -543,6 +543,7 @@ class TrainingController extends Controller
             $rules['participants.*.cin']           = ['required', 'string', 'max:20', 'distinct'];
             $rules['participants.*.phone']         = ['nullable', 'string', 'max:20'];
             $rules['participants.*.training_kind'] = ['required', 'string', 'in:new,recycling'];
+            $rules['participants.*.priority']      = ['nullable', 'integer'];
         } else {
             $rules['cin']           = ['required', 'string', 'max:20'];
             $rules['nom_prenom']    = ['required', 'string', 'max:255'];
@@ -598,6 +599,7 @@ class TrainingController extends Controller
                 'cin'           => $participant['cin'],
                 'phone'         => $participant['phone'] ?? null,
                 'training_kind' => $participant['training_kind'],
+                'priority'      => $participant['priority'] ?? 0,
             ]);
         }
     }

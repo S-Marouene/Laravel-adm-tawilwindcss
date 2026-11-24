@@ -78,12 +78,70 @@ class TrainingPlannedSession extends Model
         return $this->isPlanned() && $this->starts_at->isFuture() && $this->seatsLeft() !== 0;
     }
 
-    /** Number of requests enrolled in this session. */
+    /** Number of persons enrolled (a society counts its participants, an individual = 1). */
     public function seatsTaken(): int
     {
-        return $this->requests()
+        $sum = 0;
+        $this->requests()
             ->whereNotIn('status', [TrainingRequest::STATUS_CANCELLED])
-            ->count();
+            ->with('participants')
+            ->get()
+            ->each(function (TrainingRequest $r) use (&$sum) {
+                $sum += $r->isCompany() ? $r->participants->count() : 1;
+            });
+
+        return $sum;
+    }
+
+    /**
+     * All persons across the linked requests, ordered by request date then by
+     * the society's internal priority (the "top persons" come first).
+     */
+    public function personRoster(): \Illuminate\Support\Collection
+    {
+        $roster = collect();
+
+        $this->requests()
+            ->whereNotIn('status', [TrainingRequest::STATUS_CANCELLED])
+            ->with('participants')
+            ->orderBy('created_at')
+            ->get()
+            ->each(function (TrainingRequest $r) use (&$roster) {
+                if ($r->isCompany()) {
+                    foreach ($r->participants as $p) {
+                        $roster->push(['request' => $r, 'participant' => $p]);
+                    }
+                } else {
+                    // An individual has no participant row — synthesize one from the request.
+                    $roster->push([
+                        'request'    => $r,
+                        'participant' => (object) [
+                            'nom_prenom'    => $r->nom_prenom,
+                            'cin'           => $r->cin,
+                            'training_kind' => $r->training_kind,
+                            'priority'      => 1,
+                        ],
+                    ]);
+                }
+            });
+
+        return $roster;
+    }
+
+    /** Persons taken up to capacity (the top-ranked first). */
+    public function enrolledParticipants(): \Illuminate\Support\Collection
+    {
+        $roster = $this->personRoster();
+
+        return $this->capacity === null ? $roster : $roster->take($this->capacity);
+    }
+
+    /** Persons beyond the capacity (on the wait list). */
+    public function waitlistedParticipants(): \Illuminate\Support\Collection
+    {
+        if ($this->capacity === null) return collect();
+
+        return $this->personRoster()->slice($this->capacity);
     }
 
     /**

@@ -19,9 +19,6 @@ class TrainingPlannedSessionController extends Controller
         AdminScope::authorizeService(Service::SERVICE_TRAINING);
 
         $sessions = TrainingPlannedSession::forCentralizedTypes()
-            ->withCount(['requests' => function ($q) {
-                $q->whereNotIn('status', [TrainingRequest::STATUS_CANCELLED]);
-            }])
             ->orderBy('starts_at')
             ->get();
 

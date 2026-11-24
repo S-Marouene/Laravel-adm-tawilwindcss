@@ -13,6 +13,7 @@ class TrainingParticipant extends Model
         'cin',
         'phone',
         'training_kind',
+        'priority',
     ];
 
     // -----------------------------------------------------------------------

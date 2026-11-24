@@ -183,7 +183,7 @@ class TrainingRequest extends Model
     public function participants(): HasMany
     {
         return $this->hasMany(TrainingParticipant::class, 'training_request_id')
-            ->orderBy('id');
+            ->orderBy('priority');
     }
 
     public function plannedSession()

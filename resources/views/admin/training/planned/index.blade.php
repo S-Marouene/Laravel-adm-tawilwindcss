@@ -77,7 +77,7 @@
                         <span class="admin-badge">{{ $s->statusLabel() }}</span>
                     </td>
                     <td class="px-6 py-4 text-sm">
-                        <span class="admin-badge">{{ $s->requests_count }}</span>
+                        <span class="admin-badge">{{ $s->seatsTaken() }}</span>
                         / {{ $s->capacity ?? '∞' }}
                     </td>
                     <td class="px-6 py-4 text-right text-sm font-medium">
@@ -87,6 +87,38 @@
                         </form>
                     </td>
                 </tr>
+                @php
+                    $enrolled = $s->enrolledParticipants();
+                    $waitlist = $s->waitlistedParticipants();
+                @endphp
+                @if ($enrolled->isNotEmpty() || $waitlist->isNotEmpty())
+                <tr class="bg-surface-container/30 dark:bg-gray-700/10">
+                    <td colspan="6" class="px-6 py-3">
+                        <div class="flex flex-wrap gap-x-6 gap-y-1.5">
+                            @foreach ($enrolled as $row)
+                                @php $p = $row['participant']; @endphp
+                                <span class="inline-flex items-center gap-1 text-xs">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span class="font-semibold text-on-surface dark:text-gray-100">{{ $p->nom_prenom }}</span>
+                                    <span class="text-outline">·</span>
+                                    <span class="text-secondary">{{ $p->cin }}</span>
+                                    @if ($row['request']->isCompany())<span class="text-outline">·</span><span class="text-secondary">{{ $row['request']->company_name }}</span>@endif
+                                </span>
+                            @endforeach
+                            @foreach ($waitlist as $row)
+                                @php $p = $row['participant']; @endphp
+                                <span class="inline-flex items-center gap-1 text-xs">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                    <span class="font-semibold text-on-surface dark:text-gray-100">{{ $p->nom_prenom }}</span>
+                                    <span class="text-outline">·</span>
+                                    <span class="text-secondary">{{ $p->cin }}</span>
+                                    <span class="text-amber-700 dark:text-amber-400">({{ __('training.waitlist_badge') }})</span>
+                                </span>
+                            @endforeach
+                        </div>
+                    </td>
+                </tr>
+                @endif
                 @empty
                 <tr><td colspan="6" class="px-6 py-12 text-center text-secondary dark:text-gray-400">{{ __('training.planned_none') }}</td></tr>
                 @endforelse

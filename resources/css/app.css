@@ -402,8 +402,7 @@ input[type="search"],
 input[type="date"],
 input[type="time"],
 input[type="datetime-local"],
-textarea,
-select {
+textarea {
     border-radius: 0.25rem;
     border-width: 1px;
     border-color: var(--color-surface-dim);
@@ -413,8 +412,32 @@ select {
     line-height: 1.5rem;
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
-    padding-left: 0.875rem;
-    padding-right: 0.875rem;
+    padding-inline-start: 0.875rem;
+    padding-inline-end: 0.875rem;
+    width: 100%;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 1px 2px 0 rgba(19, 27, 46, 0.04);
+}
+
+/* Select needs extra end-padding for the browser's native dropdown arrow,
+   and uses logical (inline) properties so the arrow stays on the correct
+   side in both LTR and RTL. We restore appearance:auto so the browser
+   draws its own directional arrow (the forms plugin strips it). */
+select {
+    appearance: auto;
+    -webkit-appearance: auto;
+    border-radius: 0.25rem;
+    border-width: 1px;
+    border-color: var(--color-surface-dim);
+    background-color: var(--color-surface-container-lowest);
+    color: var(--color-on-surface);
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    padding-inline-start: 0.75rem;
+    /* The native arrow sits at inline-end; keep it at 0.25rem padding. */
+    padding-inline-end: 0.5rem;
     width: 100%;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     box-shadow: 0 1px 2px 0 rgba(19, 27, 46, 0.04);

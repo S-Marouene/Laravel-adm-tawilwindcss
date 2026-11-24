@@ -209,6 +209,12 @@
         </div>
     </div>
 
+    <style>
+        .participant-row { will-change: transform; }
+        #participants-container { position: relative; overflow: visible; }
+        .participant-row.drag-over { outline: 2px dashed var(--color-primary, #b91c1c); outline-offset: -2px; border-radius: .375rem; }
+    </style>
+
     <script>
     (function () {
         var basePrice = {{ (int) $basePrice }};
@@ -247,57 +253,222 @@
         var optNew  = @json(__('training.kind_new'));
         var optRec  = @json(__('training.kind_recycling'));
         var removeLbl = @json(__('training.remove_participant'));
+        var lblPriority = @json(__('training.priority'));
+        var lblUp   = @json(__('training.move_up'));
+        var lblDown = @json(__('training.move_down'));
+        var lblDrag = @json(__('training.drag_to_reorder'));
 
         function participantsCount() { return pContainer ? pContainer.querySelectorAll('.participant-row').length : 0; }
+
+        /** Re-number every row's priority (badge + hidden input) after any change. */
+        function renumberPriorities() {
+            if (!pContainer) return;
+            var rows = pContainer.querySelectorAll('.participant-row');
+            rows.forEach(function (row, idx) {
+                var n = idx + 1;
+                var num = row.querySelector('.priority-num');
+                var input = row.querySelector('.participant-priority-input');
+                if (num) num.textContent = '#' + n;
+                if (input) input.value = n;
+                var up = row.querySelector('.participant-up');
+                var down = row.querySelector('.participant-down');
+                if (up) up.disabled = (idx === 0);
+                if (down) down.disabled = (idx === rows.length - 1);
+            });
+        }
+
+        /** Animate any DOM reordering inside the container (FLIP). */
+        function flipReorder(mutation) {
+            var rows = Array.prototype.slice.call(pContainer.querySelectorAll('.participant-row'));
+            var firstTops = new Map();
+            rows.forEach(function (r) { firstTops.set(r, r.getBoundingClientRect().top); });
+            mutation();
+            Array.prototype.slice.call(pContainer.querySelectorAll('.participant-row')).forEach(function (r) {
+                var first = firstTops.get(r);
+                if (first === undefined) return;
+                var delta = first - r.getBoundingClientRect().top;
+                if (delta) {
+                    // Cancel any running animation on this row first (rapid clicks).
+                    r.getAnimations().forEach(function (a) { a.cancel(); });
+                    r.style.transform = '';
+                    var anim = r.animate(
+                        [{ transform: 'translateY(' + delta + 'px)' }, { transform: 'translateY(0px)' }],
+                        { duration: 240, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }
+                    );
+                    anim.onfinish = function () { r.style.transform = ''; };
+                    anim.oncancel = function () { r.style.transform = ''; };
+                }
+            });
+            renumberPriorities();
+        }
+
+        function moveRow(row, dir) {
+            if (!row) return;
+            var rows = Array.prototype.slice.call(pContainer.querySelectorAll('.participant-row'));
+            var i = rows.indexOf(row);
+            var j = dir === 'up' ? i - 1 : i + 1;
+            if (j < 0 || j >= rows.length) return;
+            flipReorder(function () {
+                if (dir === 'up') pContainer.insertBefore(row, rows[j]);
+                else pContainer.insertBefore(row, rows[j].nextSibling);
+            });
+            updateFee();
+        }
 
         function addParticipant(data) {
             if (!pContainer) return;
             var i = pIndex++;
             data = data || {};
             var row = document.createElement('div');
-            row.className = 'participant-row grid grid-cols-1 md:grid-cols-12 gap-3 items-start rounded border border-surface-dim bg-surface-container-lowest p-3 dark:border-gray-700 dark:bg-gray-900/40';
+            row.className = 'participant-row grid grid-cols-12 gap-x-2 gap-y-2 items-center rounded border border-surface-dim bg-surface-container-lowest p-2 dark:border-gray-700 dark:bg-gray-900/40';
+            row.setAttribute('draggable', 'true');
             row.innerHTML =
-                '<div class="md:col-span-4 space-y-1">' +
-                    '<label class="block text-body-sm font-bold text-on-surface dark:text-gray-200">' + lblNom + ' <span class="text-primary">*</span></label>' +
-                    '<input type="text" name="participants[' + i + '][nom_prenom]" maxlength="255" value="' + (data.nom_prenom || '') + '" placeholder="' + phNom + '" required class="block w-full h-10 px-3 text-body-sm text-on-surface rounded border border-surface-dim bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">' +
+                /* priority pill + up/down — 1 col mobile, 1 col md */
+                '<div class="col-span-1 flex items-center gap-1 self-center">' +
+                    '<div class="participant-priority drag-handle inline-flex items-center gap-0.5 rounded border border-primary/30 bg-primary/10 text-primary px-1 h-7 text-xs font-bold cursor-grab active:cursor-grabbing select-none shrink-0" title="' + lblDrag + '">' +
+                        '<span class="material-symbols-outlined text-[13px] leading-none" aria-hidden="true">drag_indicator</span>' +
+                        '<span class="priority-num text-[11px]">#</span>' +
+                    '</div>' +
+                    '<div class="flex flex-col -space-y-px">' +
+                        '<button type="button" class="participant-up inline-flex items-center justify-center w-5 h-3.5 rounded-t border border-surface-dim bg-surface-container-lowest text-outline hover:border-primary hover:text-primary transition" title="' + lblUp + '" aria-label="' + lblUp + '"><span class="material-symbols-outlined text-[11px] leading-none">keyboard_arrow_up</span></button>' +
+                        '<button type="button" class="participant-down inline-flex items-center justify-center w-5 h-3.5 rounded-b border border-surface-dim bg-surface-container-lowest text-outline hover:border-primary hover:text-primary transition" title="' + lblDown + '" aria-label="' + lblDown + '"><span class="material-symbols-outlined text-[11px] leading-none">keyboard_arrow_down</span></button>' +
+                    '</div>' +
+                    '<input type="hidden" name="participants[' + i + '][priority]" class="participant-priority-input" value="">' +
                 '</div>' +
-                '<div class="md:col-span-3 space-y-1">' +
-                    '<label class="block text-body-sm font-bold text-on-surface dark:text-gray-200">' + lblCin + ' <span class="text-primary">*</span></label>' +
-                    '<input type="text" inputmode="numeric" maxlength="20" name="participants[' + i + '][cin]" value="' + (data.cin || '') + '" placeholder="' + phCin + '" required class="block w-full h-10 px-3 text-body-sm text-on-surface rounded border border-surface-dim bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">' +
+                /* nom — 5 cols mobile, 4 cols md */
+                '<div class="col-span-5 md:col-span-4 space-y-0.5">' +
+                    '<label class="block text-[11px] font-bold text-secondary dark:text-gray-400">' + lblNom + ' <span class="text-primary">*</span></label>' +
+                    '<input type="text" name="participants[' + i + '][nom_prenom]" maxlength="255" value="' + (data.nom_prenom || '') + '" placeholder="' + phNom + '" required class="block w-full h-8 px-2 text-body-sm text-on-surface rounded border border-surface-dim bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">' +
                 '</div>' +
-                '<div class="md:col-span-2 space-y-1">' +
-                    '<label class="block text-body-sm font-bold text-on-surface dark:text-gray-200">' + lblTel + '</label>' +
-                    '<input type="tel" dir="ltr" maxlength="20" name="participants[' + i + '][phone]" value="' + (data.phone || '') + '" placeholder="' + phTel + '" class="num-ltr block w-full h-10 px-3 text-body-sm text-on-surface rounded border border-surface-dim bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">' +
+                /* cin — 3 cols mobile, 2 cols md */
+                '<div class="col-span-3 md:col-span-2 space-y-0.5">' +
+                    '<label class="block text-[11px] font-bold text-secondary dark:text-gray-400">' + lblCin + ' <span class="text-primary">*</span></label>' +
+                    '<input type="text" inputmode="numeric" maxlength="20" name="participants[' + i + '][cin]" value="' + (data.cin || '') + '" placeholder="' + phCin + '" required class="block w-full h-8 px-2 text-body-sm text-on-surface rounded border border-surface-dim bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">' +
                 '</div>' +
-                '<div class="md:col-span-2 space-y-1">' +
-                    '<label class="block text-body-sm font-bold text-on-surface dark:text-gray-200">' + lblKind + ' <span class="text-primary">*</span></label>' +
-                    '<select name="participants[' + i + '][training_kind]" required class="participant-kind block w-full h-10 px-2.5 text-body-sm text-on-surface rounded border border-surface-dim bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">' +
+                /* phone — hidden on mobile (xs), 2 cols md */
+                '<div class="hidden md:block md:col-span-2 space-y-0.5">' +
+                    '<label class="block text-[11px] font-bold text-secondary dark:text-gray-400">' + lblTel + '</label>' +
+                    '<input type="tel" dir="ltr" maxlength="20" name="participants[' + i + '][phone]" value="' + (data.phone || '') + '" placeholder="' + phTel + '" class="num-ltr block w-full h-8 px-2 text-body-sm text-on-surface rounded border border-surface-dim bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">' +
+                '</div>' +
+                /* kind — 2 cols mobile, 2 cols md */
+                '<div class="col-span-2 space-y-0.5">' +
+                    '<label class="block text-[11px] font-bold text-secondary dark:text-gray-400">' + lblKind + ' <span class="text-primary">*</span></label>' +
+                    '<select name="participants[' + i + '][training_kind]" required class="participant-kind block w-full h-8 text-body-sm text-on-surface rounded border border-surface-dim bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">' +
                         '<option value="new"' + (data.training_kind !== 'recycling' ? ' selected' : '') + '>' + optNew + '</option>' +
                         '<option value="recycling"' + (data.training_kind === 'recycling' ? ' selected' : '') + '>' + optRec + '</option>' +
                     '</select>' +
                 '</div>' +
-                '<div class="md:col-span-1 flex md:pt-6">' +
-                    '<button type="button" class="participant-remove inline-flex items-center gap-1 rounded border border-red-200 bg-red-50 px-2.5 py-1.5 text-body-sm font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300 w-full justify-center">' +
-                        '<span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>' +
-                        '<span class="md:hidden">' + removeLbl + '</span>' +
+                /* delete — 1 col mobile, 1 col md */
+                '<div class="col-span-1 flex items-center justify-center self-center">' +
+                    '<button type="button" class="participant-remove inline-flex items-center justify-center w-7 h-7 rounded border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300 shrink-0" title="' + removeLbl + '" aria-label="' + removeLbl + '">' +
+                        '<span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span>' +
                     '</button>' +
                 '</div>';
             row.querySelector('.participant-remove').addEventListener('click', function () {
-                row.remove();
+                flipReorder(function () { row.remove(); });
                 if (participantsCount() === 0) addParticipant();
                 updateFee();
             });
+            row.querySelector('.participant-up').addEventListener('click', function () { moveRow(row, 'up'); });
+            row.querySelector('.participant-down').addEventListener('click', function () { moveRow(row, 'down'); });
             row.querySelector('.participant-kind').addEventListener('change', updateFee);
             pContainer.appendChild(row);
+            // Form controls must not initiate a row drag — only the grip handle should.
+            row.querySelectorAll('input, select, textarea, button').forEach(function (el) {
+                el.setAttribute('draggable', 'false');
+            });
+            renumberPriorities();
             updateFee();
         }
+
+        /* ── Drag-and-drop reordering (via the grip handle) ── */
+        (function setupDragDrop() {
+            if (!pContainer) return;
+            var dragRow = null;
+            var allowDrag = false;
+            var pressRow = null;
+            var preDropTops = null; // positions snapshotted just before the drop lands
+
+            // Remember whether the press started on the grip handle (dragstart's
+            // e.target isn't reliable across browsers — it can be the row itself).
+            pContainer.addEventListener('mousedown', function (e) {
+                var handle = e.target.closest ? e.target.closest('.drag-handle') : null;
+                allowDrag = !!handle;
+                pressRow = handle ? (e.target.closest ? e.target.closest('.participant-row') : null) : null;
+            });
+            pContainer.addEventListener('dragstart', function (e) {
+                if (!allowDrag || !pressRow) { e.preventDefault(); return; } // only drag from the handle
+                dragRow = pressRow;
+                e.dataTransfer.effectAllowed = 'move';
+                try { e.dataTransfer.setData('text/plain', 'row'); } catch (_) {}
+                dragRow.classList.add('opacity-50', 'ring-2', 'ring-primary');
+            });
+            pContainer.addEventListener('dragend', function () {
+                if (dragRow) dragRow.classList.remove('opacity-50', 'ring-2', 'ring-primary');
+                pContainer.querySelectorAll('.drag-over').forEach(function (el) { el.classList.remove('drag-over'); });
+                dragRow = null;
+                allowDrag = false;
+            });
+            pContainer.addEventListener('dragover', function (e) {
+                if (!dragRow) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                var target = e.target.closest ? e.target.closest('.participant-row') : null;
+                pContainer.querySelectorAll('.drag-over').forEach(function (el) { el.classList.remove('drag-over'); });
+                if (target && target !== dragRow) {
+                    target.classList.add('drag-over');
+                    // Snapshot every row's position continuously so the drop handler
+                    // has fresh "before" coordinates and the FLIP delta is correct.
+                    preDropTops = new Map();
+                    Array.prototype.slice.call(pContainer.querySelectorAll('.participant-row')).forEach(function (r) {
+                        preDropTops.set(r, r.getBoundingClientRect().top);
+                    });
+                }
+            });
+            pContainer.addEventListener('drop', function (e) {
+                if (!dragRow) return;
+                e.preventDefault();
+                var target = e.target.closest ? e.target.closest('.participant-row') : null;
+                if (!target || target === dragRow) { preDropTops = null; return; }
+                var rect = target.getBoundingClientRect();
+                var after = (e.clientY - rect.top) > rect.height / 2;
+                // Use the positions recorded during the last dragover, then do the DOM move,
+                // then animate each row from its old position to its new one.
+                var tops = preDropTops;
+                preDropTops = null;
+                if (after) pContainer.insertBefore(dragRow, target.nextSibling);
+                else pContainer.insertBefore(dragRow, target);
+                if (tops) {
+                    Array.prototype.slice.call(pContainer.querySelectorAll('.participant-row')).forEach(function (r) {
+                        var first = tops.get(r);
+                        if (first === undefined) return;
+                        var delta = first - r.getBoundingClientRect().top;
+                        if (delta) {
+                            r.getAnimations().forEach(function (a) { a.cancel(); });
+                            r.style.transform = '';
+                            r.animate(
+                                [{ transform: 'translateY(' + delta + 'px)' }, { transform: 'translateY(0px)' }],
+                                { duration: 240, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }
+                            );
+                        }
+                    });
+                }
+                renumberPriorities();
+                updateFee();
+            });
+        })();
 
         if (addBtn) addBtn.addEventListener('click', function () { addParticipant(); });
 
         var initialParticipants = @json($initialParticipants ?? []);
-        (Array.isArray(initialParticipants) && initialParticipants.length ? initialParticipants : [{}]).forEach(function (p) {
-            if (p && (p.nom_prenom || p.cin || p.training_kind)) { addParticipant(p); }
-        });
+        // Sort existing participants by priority before rendering
+        (function () {
+            var arr = Array.isArray(initialParticipants) ? initialParticipants.slice() : [{}];
+            arr.sort(function (a, b) { return (a.priority || 0) - (b.priority || 0); });
+            arr.forEach(function (p) {
+                if (p && (p.nom_prenom || p.cin || p.training_kind)) { addParticipant(p); }
+            });
+        })();
 
         /* ── Fee estimate ── */
         var feeBox   = document.getElementById('fee-estimate');

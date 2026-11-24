@@ -9,6 +9,7 @@ use App\Models\SafetyFileDossier;
 use App\Models\SpecialIntervention;
 use App\Models\TrainingRequest;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -22,7 +23,7 @@ use Illuminate\Notifications\Notification;
  *  - 'database' : persists the record for the bell panel & "all notifications" page
  *  - 'broadcast': pushes immediately to open browser tabs via Reverb/WebSocket
  */
-class DossierNotification extends Notification
+class DossierNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
