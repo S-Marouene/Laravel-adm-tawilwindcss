@@ -8,13 +8,14 @@
         <meta name="description" content="{{ __('app.description') }}">
 
         {{-- Real-time notification meta (read by Laravel Echo in app.js) --}}
+        {{-- WS connects through nginx /app proxy on port 80 --}}
         @auth
         <meta name="auth-user-id" content="{{ auth()->id() }}">
         <meta name="unread-notifications" content="{{ auth()->user()->unreadNotifications()->count() }}">
-        <meta name="reverb-key" content="{{ env('REVERB_APP_KEY') }}">
-        <meta name="reverb-host" content="{{ env('REVERB_HOST', 'localhost') }}">
-        <meta name="reverb-port" content="{{ env('REVERB_PORT', 8080) }}">
-        <meta name="reverb-scheme" content="{{ env('REVERB_SCHEME', 'http') }}">
+        <meta name="reverb-key" content="{{ config('reverb.app_key') }}">
+        <meta name="reverb-host" content="{{ config('reverb.public_host') }}">
+        <meta name="reverb-port" content="{{ config('reverb.public_port') }}">
+        <meta name="reverb-scheme" content="{{ config('reverb.public_scheme') }}">
         @endauth
 
         <!-- Favicon -->

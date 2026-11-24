@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('building_building_building_building_works_documents', function (Blueprint $table) {
+        Schema::create('works_documents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('works_notification_id')->constrained('building_works_declarations')->onDelete('cascade');
             $table->foreignId('document_type_id')->constrained('document_types')->onDelete('cascade');
@@ -25,6 +25,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('building_building_building_building_works_documents');
+        Schema::dropIfExists('works_documents');
     }
 };

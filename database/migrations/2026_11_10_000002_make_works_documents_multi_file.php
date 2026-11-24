@@ -14,13 +14,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('building_building_building_building_works_documents', function (Blueprint $table) {
+        Schema::table('works_documents', function (Blueprint $table) {
             // MySQL keeps FK constraints backed by the unique index — drop them first
             $table->dropForeign(['works_notification_id']);
             $table->dropForeign(['document_type_id']);
 
             // Multiple files per (notification, document type) are allowed — no unique constraint
-            $table->dropUnique('building_building_building_building_works_documents_works_notification_id_document_type_id_unique');
+            $table->dropUnique('works_documents_works_notification_id_document_type_id_unique');
             $table->index('works_notification_id');
 
             $table->foreign('works_notification_id')->references('id')->on('building_works_declarations')->onDelete('cascade');
@@ -31,7 +31,7 @@ return new class extends Migration
     public function down(): void
     {
         // Archiving is irreversible; only restore the index when no duplicate pairs exist.
-        $duplicates = \Illuminate\Support\Facades\DB::table('building_building_building_building_works_documents')
+        $duplicates = \Illuminate\Support\Facades\DB::table('works_documents')
             ->select('works_notification_id', 'document_type_id')
             ->where('status', '!=', 'archived')
             ->groupBy('works_notification_id', 'document_type_id')
@@ -42,10 +42,10 @@ return new class extends Migration
             return; // cannot re-apply the unique index safely
         }
 
-        Schema::table('building_building_building_building_works_documents', function (Blueprint $table) {
+        Schema::table('works_documents', function (Blueprint $table) {
             $table->dropForeign(['works_notification_id']);
             $table->dropForeign(['document_type_id']);
-            $table->dropIndex('building_building_building_building_works_documents_works_notification_id_index');
+            $table->dropIndex('works_documents_works_notification_id_index');
             $table->unique(['works_notification_id', 'document_type_id']);
             $table->foreign('works_notification_id')->references('id')->on('building_works_declarations')->onDelete('cascade');
             $table->foreign('document_type_id')->references('id')->on('document_types')->onDelete('cascade');

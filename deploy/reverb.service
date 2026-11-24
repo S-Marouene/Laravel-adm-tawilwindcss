@@ -1,0 +1,14 @@
+[Unit]
+Description=Laravel Reverb WebSocket server
+After=network.target mysql.service
+
+[Service]
+User=onpc
+Group=www-data
+Restart=always
+RestartSec=3
+WorkingDirectory=/home/onpc/Laravel-adm-tawilwindcss
+ExecStart=/usr/bin/php artisan reverb:start
+
+[Install]
+WantedBy=multi-user.target

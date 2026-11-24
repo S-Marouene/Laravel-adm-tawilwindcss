@@ -13,10 +13,10 @@ class BuildingWorksDeclaration extends Model
     use HasTranslations;
 
     /**
-     * The underlying DB table keeps its original name so no migration is needed.
-     * The class was renamed from WorksNotification to BuildingWorksDeclaration.
+     * Table name matches the migration (2026_10_27_000020) which creates
+     * `building_works_declarations`.
      */
-    protected $table = 'works_notifications';
+    protected $table = 'building_works_declarations';
 
     protected $fillable = [
         'user_id', 'current_step', 'status', 'reference',

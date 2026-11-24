@@ -17,6 +17,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Browser-facing endpoint (for Laravel Echo)
+    |--------------------------------------------------------------------------
+    |
+    | What the browser's WebSocket connects to. With nginx proxying /app
+    | to Reverb this is the site's own host on port 80. The server-side
+    | event publisher keeps using REVERB_HOST/REVERB_PORT (direct to the
+    | Reverb HTTP API).
+    |
+    */
+
+    'public_host'   => env('REVERB_PUBLIC_HOST', env('REVERB_HOST', 'localhost')),
+    'public_port'   => (int) env('REVERB_PUBLIC_PORT', env('REVERB_PORT', 8080)),
+    'public_scheme' => env('REVERB_PUBLIC_SCHEME', env('REVERB_SCHEME', 'http')),
+    'app_key'       => env('REVERB_APP_KEY'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Reverb Servers
     |--------------------------------------------------------------------------
     |

@@ -24,8 +24,8 @@ return new class extends Migration
         'preventive_presence_events'         => ['note'],
         'rescue_certificates'                => ['admin_note', 'delivery_note'],
         'rescue_events'                      => ['note'],
-        'building_works_declarations'                => ['admin_note'],
-        'building_building_building_building_works_events'                       => ['note'],
+        'building_works_declarations'       => ['admin_note'],
+        'works_events'                      => ['note'],
         'prevention_dossier_events'          => ['note'],
     ];
 
