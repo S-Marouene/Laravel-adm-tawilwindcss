@@ -268,6 +268,7 @@ return [
     'view_details'           => 'Voir le détail',
     'review_note'            => 'Votre demande est enregistrée et suivie par la Direction Régionale de la Protection Civile.',
     'details_title'          => 'Données essentielles de la demande',
+    'deposited_on'           => 'Déposée le :date',
     'stepper_had_correction' => 'Correction traitée',
     'stepper_verify_pending' => 'En attente d\'examen',
     'stepper_verify_waiting' => 'Examen en cours',

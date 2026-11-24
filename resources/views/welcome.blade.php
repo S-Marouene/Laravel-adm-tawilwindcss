@@ -378,17 +378,6 @@
                         <p class="text-[13px] text-secondary leading-relaxed line-clamp-2">{{ __('services.volunteering.desc') }}</p>
                     </div>
                 </div>
-
-                {{-- Formation et recyclage --}}
-                <div class="flex items-start gap-4 rounded border border-dashed border-surface-dim bg-surface-container-lowest/70 p-4">
-                    <span class="w-10 h-10 shrink-0 rounded flex items-center justify-center bg-surface-container" aria-hidden="true">
-                        <span class="material-symbols-outlined filled text-xl text-secondary">school</span>
-                    </span>
-                    <div class="min-w-0">
-                        <h3 class="text-body-md font-bold text-on-surface leading-snug mb-1">{{ __('services.training') }}</h3>
-                        <p class="text-[13px] text-secondary leading-relaxed line-clamp-2">{{ __('services.training.desc') }}</p>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
