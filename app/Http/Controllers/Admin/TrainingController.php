@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Delegation;
-use App\Models\DocumentType;
 use App\Models\Governorate;
 use App\Models\Service;
 use App\Models\TrainingDocument;
@@ -64,13 +63,14 @@ class TrainingController extends Controller
         $trainingRequest->load([
             'user', 'governorate', 'delegation', 'plannedSession',
             'reviewer', 'issuer', 'resultReviewer',
-            'documents.documentType', 'events.actor', 'sessions.recorder',
+            'documents', 'participants', 'events.actor', 'sessions.recorder',
             'pickupGovernorate', 'pickupDelegation',
         ]);
 
-        $documentTypes = DocumentType::service(DocumentType::SERVICE_TRAINING)
-            ->orderBy('sort_order')->get();
-        $uploadedDocs  = $trainingRequest->documents->keyBy('document_type_id');
+        $documentGroups = $trainingRequest->documentGroups();
+        $uploadedDocs = $trainingRequest->documents
+            ->where('status', 'uploaded')
+            ->keyBy('document_key');
 
         $user = auth()->user();
         if ($user->adminScope() === 'manager') {
@@ -90,7 +90,7 @@ class TrainingController extends Controller
 
         return view('admin.training.show', [
             'trainingRequest' => $trainingRequest,
-            'documentTypes'   => $documentTypes,
+            'documentGroups'  => $documentGroups,
             'uploadedDocs'    => $uploadedDocs,
             'governorates'    => $governorates,
             'gouvernorats'    => Governorate::forSelect(),
@@ -143,7 +143,7 @@ class TrainingController extends Controller
             'fields_to_fix'   => ['nullable', 'array'],
             'fields_to_fix.*' => ['string', 'in:cin,nom_prenom,phone,governorate_id,delegation_id,training_type,training_kind,notes'],
             'docs_to_fix'     => ['nullable', 'array'],
-            'docs_to_fix.*'   => ['integer', 'exists:document_types,id'],
+            'docs_to_fix.*'   => ['string', 'max:100'],
         ], [], ['admin_note.fr' => 'Note (Français)', 'admin_note.ar' => 'Note (العربية)']);
 
         if (! $trainingRequest->isActionable()) {
@@ -151,7 +151,7 @@ class TrainingController extends Controller
         }
 
         $fieldsToFix = $validated['fields_to_fix'] ?? [];
-        $docsToFix   = array_map('intval', $validated['docs_to_fix'] ?? []);
+        $docsToFix   = array_values(array_unique($validated['docs_to_fix'] ?? []));
 
         $previousParams = [
             'cin'           => $trainingRequest->cin,
@@ -167,14 +167,14 @@ class TrainingController extends Controller
         $archivedDocsMeta = [];
         if (! empty($docsToFix)) {
             $docsToArchive = $trainingRequest->documents
-                ->filter(fn ($d) => $d->status !== 'archived' && in_array((int) $d->document_type_id, $docsToFix));
+                ->filter(fn ($d) => $d->status !== 'archived' && in_array($d->document_key, $docsToFix, true));
             foreach ($docsToArchive as $doc) {
                 $archivedDocsMeta[] = [
-                    'document_type_id' => $doc->document_type_id,
-                    'type'        => $doc->documentType?->name,
-                    'file'        => $doc->original_name,
-                    'size'        => $doc->size,
-                    'uploaded_at' => $doc->created_at?->format('d/m/Y H:i'),
+                    'document_key' => $doc->document_key,
+                    'type'         => $trainingRequest->documentKeyLabel($doc->document_key),
+                    'file'         => $doc->original_name,
+                    'size'         => $doc->size,
+                    'uploaded_at'  => $doc->created_at?->format('d/m/Y H:i'),
                 ];
             }
             if ($docsToArchive->isNotEmpty()) {

@@ -32,6 +32,13 @@ class TrainingRequest extends Model
     public const KIND_NEW       = 'new';
     public const KIND_RECYCLING = 'recycling';
 
+    // Static required documents (not stored in the document_types table).
+    public const DOC_CIN_FRONT       = 'cin_front';
+    public const DOC_CIN_BACK        = 'cin_back';
+    public const DOC_OLD_CERTIFICATE = 'old_certificate';
+    // Legacy key kept only so older labels still resolve.
+    public const DOC_CIN             = 'cin';
+
     // Depositor type: real person vs society enrolling several people
     public const DEPOSITOR_INDIVIDUAL = 'individual';
     public const DEPOSITOR_COMPANY    = 'company';
@@ -303,6 +310,120 @@ class TrainingRequest extends Model
     public function participantCount(): int
     {
         return $this->isCompany() ? $this->participants()->count() : 1;
+    }
+
+    // -----------------------------------------------------------------------
+    // Static required documents
+    // -----------------------------------------------------------------------
+
+    /**
+     * Documents required for this request, grouped per participant.
+     *
+     * Each participant needs the front and back of their national ID card,
+     * plus the old training certificate when registered for recycling.
+     *
+     * @return array<int, array{participant_id:int|null, name:string|null, cin:string|null, training_kind:string|null, documents:array<int, array{key:string, type:string, participant_id:int|null, name:string}>}>
+     */
+    public function documentGroups(): array
+    {
+        $this->loadMissing('participants');
+
+        if ($this->isCompany()) {
+            return $this->participants->map(function (TrainingParticipant $participant) {
+                return [
+                    'participant_id' => $participant->id,
+                    'name'           => $participant->nom_prenom,
+                    'cin'            => $participant->cin,
+                    'training_kind'  => $participant->training_kind,
+                    'documents'      => $this->documentsForParticipant(
+                        $participant->id,
+                        $participant->isRecycling()
+                    ),
+                ];
+            })->values()->all();
+        }
+
+        return [[
+            'participant_id' => null,
+            'name'           => $this->nom_prenom,
+            'cin'            => $this->cin,
+            'training_kind'  => $this->training_kind,
+            'documents'      => $this->documentsForParticipant(
+                null,
+                $this->training_kind === self::KIND_RECYCLING
+            ),
+        ]];
+    }
+
+    /**
+     * Flat list of every required document (used for validation and counting).
+     *
+     * @return array<int, array{key:string, type:string, participant_id:int|null, name:string}>
+     */
+    public function documentRequirements(): array
+    {
+        return collect($this->documentGroups())
+            ->flatMap(fn (array $group) => $group['documents'])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{key:string, type:string, participant_id:int|null, name:string}>
+     */
+    private function documentsForParticipant(?int $participantId, bool $recycling): array
+    {
+        $keySuffix = $participantId !== null ? '_' . $participantId : '';
+
+        $documents = [
+            [
+                'key'            => self::DOC_CIN_FRONT . $keySuffix,
+                'type'           => self::DOC_CIN_FRONT,
+                'participant_id' => $participantId,
+                'name'           => __('training.doc_cin_front'),
+            ],
+            [
+                'key'            => self::DOC_CIN_BACK . $keySuffix,
+                'type'           => self::DOC_CIN_BACK,
+                'participant_id' => $participantId,
+                'name'           => __('training.doc_cin_back'),
+            ],
+        ];
+
+        if ($recycling) {
+            $documents[] = [
+                'key'            => self::DOC_OLD_CERTIFICATE . $keySuffix,
+                'type'           => self::DOC_OLD_CERTIFICATE,
+                'participant_id' => $participantId,
+                'name'           => __('training.doc_old_certificate'),
+            ];
+        }
+
+        return $documents;
+    }
+
+    /**
+     * Human label for a stored document key (also works for archived docs of
+     * participants that have since been removed).
+     */
+    public function documentKeyLabel(?string $key): string
+    {
+        if (! $key) {
+            return __('training.documents_title');
+        }
+
+        foreach ($this->documentRequirements() as $doc) {
+            if ($doc['key'] === $key) {
+                return $doc['name'];
+            }
+        }
+
+        return match (true) {
+            str_starts_with($key, self::DOC_OLD_CERTIFICATE) => __('training.doc_old_certificate'),
+            str_starts_with($key, self::DOC_CIN_FRONT)       => __('training.doc_cin_front'),
+            str_starts_with($key, self::DOC_CIN_BACK)        => __('training.doc_cin_back'),
+            default                                          => __('training.doc_cin'),
+        };
     }
 
     public static function durationWeeks(string $type): int

@@ -131,21 +131,38 @@
                     @endif
 
                     {{-- Docs to fix --}}
-                    @if ($documentTypes->isNotEmpty())
+                    @if ($documentGroups->isNotEmpty())
                     <div>
                         <h4 class="text-xs font-bold uppercase tracking-wider text-secondary mb-3 flex items-center gap-2">
                             <span class="material-symbols-outlined text-primary text-base">upload_file</span>
                             {{ __('training.correction_docs_section') }}
                         </h4>
                         <div class="space-y-3">
-                            @foreach ($documentTypes as $docType)
-                                <div class="p-3 rounded border border-surface-dim bg-surface-container-low flex items-center justify-between gap-3">
-                                    <p class="text-xs font-bold text-on-surface">{{ $docType->name }}</p>
-                                    <label class="inline-flex cursor-pointer items-center gap-2 rounded border border-surface-dim bg-surface-container-lowest px-3 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container">
-                                        <span class="material-symbols-outlined text-[15px] text-primary">upload_file</span>
-                                        {{ __('training.upload_file') }}
-                                        <input type="file" name="documents[{{ $docType->id }}][]" class="sr-only" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple>
-                                    </label>
+                            @foreach ($documentGroups as $group)
+                                <div class="rounded border border-surface-dim dark:border-gray-700 overflow-hidden">
+                                    <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-surface-dim bg-surface-container-low dark:border-gray-700 dark:bg-gray-900/40">
+                                        <div class="min-w-0">
+                                            <p class="truncate text-xs font-bold text-on-surface">{{ $group['name'] ?: __('training.participants_section') }}</p>
+                                            @if ($group['cin'])
+                                                <p class="text-[10px] text-secondary" dir="ltr">{{ __('training.cin') }} : {{ $group['cin'] }}</p>
+                                            @endif
+                                        </div>
+                                        @if ($group['training_kind'] === \App\Models\TrainingRequest::KIND_RECYCLING)
+                                            <span class="shrink-0 rounded border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">{{ __('training.kind_recycling') }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="space-y-2 p-3">
+                                        @foreach ($group['documents'] as $requirement)
+                                            <div class="p-3 rounded border border-surface-dim bg-surface-container-low flex items-center justify-between gap-3">
+                                                <p class="text-xs font-bold text-on-surface">{{ $requirement['name'] }}</p>
+                                                <label class="inline-flex cursor-pointer items-center gap-2 rounded border border-surface-dim bg-surface-container-lowest px-3 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container">
+                                                    <span class="material-symbols-outlined text-[15px] text-primary">upload_file</span>
+                                                    {{ __('training.upload_file') }}
+                                                    <input type="file" name="documents[{{ $requirement['key'] }}][]" class="sr-only" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple>
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
                             @endforeach
                         </div>

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DocumentType;
 use App\Models\Governorate;
 use App\Models\TrainingDocument;
 use App\Models\TrainingRequest;
@@ -41,16 +40,14 @@ class TrainingController extends Controller
     {
         if ($trainingRequest->user_id !== auth()->id()) abort(403);
 
-        $trainingRequest->load(['user', 'governorate', 'delegation', 'plannedSession', 'documents.documentType', 'events.actor', 'sessions']);
-
-        $documentTypes = DocumentType::service(DocumentType::SERVICE_TRAINING)
-            ->orderBy('sort_order')->get();
+        $trainingRequest->load(['user', 'governorate', 'delegation', 'plannedSession', 'documents', 'participants', 'events.actor', 'sessions']);
 
         return view('training.show', [
-            'trainingRequest'     => $trainingRequest,
-            'documentTypes'       => $documentTypes,
-            'archivedDocuments'   => $trainingRequest->documents->filter(fn ($d) => $d->status === 'archived')->sortBy('created_at'),
-            'allCorrectionRounds' => $trainingRequest->allCorrectionRounds(),
+            'trainingRequest'      => $trainingRequest,
+            'documentGroups'       => $trainingRequest->documentGroups(),
+            'documentRequirements' => $trainingRequest->documentRequirements(),
+            'archivedDocuments'    => $trainingRequest->documents->filter(fn ($d) => $d->status === 'archived')->sortBy('created_at'),
+            'allCorrectionRounds'  => $trainingRequest->allCorrectionRounds(),
         ]);
     }
 
@@ -187,17 +184,16 @@ class TrainingController extends Controller
 
         $trainingRequest->load(['governorate', 'delegation', 'participants']);
 
-        $documentTypes = DocumentType::service(DocumentType::SERVICE_TRAINING)
-            ->orderBy('sort_order')->get();
-
         $uploadedDocs = TrainingDocument::where('training_request_id', $trainingRequest->id)
             ->where('status', '!=', 'archived')
-            ->get()->keyBy('document_type_id');
+            ->whereNotNull('document_key')
+            ->get()->keyBy('document_key');
 
         return view('training.create-step3', [
-            'trainingRequest' => $trainingRequest,
-            'documentTypes'   => $documentTypes,
-            'uploadedDocs'    => $uploadedDocs,
+            'trainingRequest'      => $trainingRequest,
+            'documentGroups'       => $trainingRequest->documentGroups(),
+            'documentRequirements' => $trainingRequest->documentRequirements(),
+            'uploadedDocs'         => $uploadedDocs,
         ]);
     }
 
@@ -214,19 +210,18 @@ class TrainingController extends Controller
                 ->withErrors(['status' => __('training.not_editable')]);
         }
 
-        $documentTypeIds = DocumentType::service(DocumentType::SERVICE_TRAINING)
-            ->orderBy('sort_order')->pluck('id');
+        $requirements = collect($trainingRequest->documentRequirements())->keyBy('key');
 
         $rules = [];
-        foreach ($documentTypeIds as $id) {
-            $rules['documents.' . $id]        = ['nullable', 'array'];
-            $rules['documents.' . $id . '.*'] = ['nullable', 'file', 'max:10240'];
+        foreach ($requirements as $key => $requirement) {
+            $rules["documents.{$key}"]   = ['nullable', 'array', 'max:10'];
+            $rules["documents.{$key}.*"] = ['nullable', 'file', 'max:10240'];
         }
         $request->validate($rules);
 
         $uploadDir = "training-documents/{$trainingRequest->id}";
-        foreach ($documentTypeIds as $id) {
-            $files = $request->file("documents.{$id}");
+        foreach ($requirements as $key => $requirement) {
+            $files = $request->file("documents.{$key}");
             if (! $files) continue;
             if (! is_array($files)) $files = [$files];
             foreach ($files as $file) {
@@ -234,7 +229,9 @@ class TrainingController extends Controller
                 $path = $file->store($uploadDir, 'local');
                 TrainingDocument::create([
                     'training_request_id' => $trainingRequest->id,
-                    'document_type_id'    => $id,
+                    'document_type_id'    => null,
+                    'document_key'        => $key,
+                    'participant_id'      => $requirement['participant_id'],
                     'file_path'           => $path,
                     'original_name'       => $file->getClientOriginalName(),
                     'mime_type'           => $file->getMimeType(),
@@ -273,19 +270,24 @@ class TrainingController extends Controller
                 ->withErrors(['status' => __('training.not_needs_correction')]);
         }
 
-        $trainingRequest->load(['governorate', 'delegation', 'documents.documentType', 'events']);
+        $trainingRequest->load(['governorate', 'delegation', 'documents', 'participants', 'events']);
 
         $correction   = $trainingRequest->lastCorrectionData();
         $allFieldKeys = ['cin', 'nom_prenom', 'phone', 'governorate_id', 'delegation_id', 'training_type', 'training_kind', 'notes'];
         $fieldsToFix  = $correction !== null ? ($correction['fields_to_fix'] ?? $allFieldKeys) : $allFieldKeys;
         $docsToFix    = $correction['docs_to_fix'] ?? [];
 
-        $documentTypes = collect();
-        if (! empty($docsToFix)) {
-            $documentTypes = DocumentType::service(DocumentType::SERVICE_TRAINING)
-                ->orderBy('sort_order')->get()
-                ->filter(fn ($t) => in_array($t->id, $docsToFix))->values();
-        }
+        $documentGroups = collect($trainingRequest->documentGroups())
+            ->map(function (array $group) use ($docsToFix) {
+                $group['documents'] = array_values(array_filter(
+                    $group['documents'],
+                    fn (array $document) => in_array($document['key'], $docsToFix, true)
+                ));
+
+                return $group;
+            })
+            ->filter(fn (array $group) => ! empty($group['documents']))
+            ->values();
 
         $archivedDocs = TrainingDocument::where('training_request_id', $trainingRequest->id)
             ->where('status', 'archived')->orderBy('created_at', 'desc')->get();
@@ -295,7 +297,7 @@ class TrainingController extends Controller
             'correction'      => $correction,
             'fieldsToFix'     => $fieldsToFix,
             'docsToFix'       => $docsToFix,
-            'documentTypes'   => $documentTypes,
+            'documentGroups'  => $documentGroups,
             'archivedDocs'    => $archivedDocs,
             'gouvernorats'    => Governorate::with('delegations')->orderBy('id')->get(),
         ]);
@@ -317,7 +319,12 @@ class TrainingController extends Controller
         $correction   = $trainingRequest->lastCorrectionData();
         $allFieldKeys = ['cin', 'nom_prenom', 'phone', 'governorate_id', 'delegation_id', 'training_type', 'training_kind', 'notes'];
         $fieldsToFix  = $correction !== null ? ($correction['fields_to_fix'] ?? $allFieldKeys) : $allFieldKeys;
-        $docsToFix    = array_map('intval', $correction['docs_to_fix'] ?? []);
+
+        $requirements = collect($trainingRequest->documentRequirements())->keyBy('key');
+        $docsToFix    = array_values(array_filter(
+            $correction['docs_to_fix'] ?? [],
+            fn ($key) => is_string($key) && $requirements->has($key)
+        ));
 
         $rules = [];
         if (in_array('cin', $fieldsToFix))            $rules['cin']           = ['required', 'string', 'max:20'];
@@ -328,9 +335,9 @@ class TrainingController extends Controller
         if (in_array('training_type', $fieldsToFix))  $rules['training_type'] = ['required', 'string', 'in:' . implode(',', array_keys(TrainingRequest::TYPES))];
         if (in_array('training_kind', $fieldsToFix))  $rules['training_kind'] = ['required', 'in:new,recycling'];
         if (in_array('notes', $fieldsToFix))          $rules['notes']         = ['nullable', 'string', 'max:3000'];
-        foreach ($docsToFix as $docTypeId) {
-            $rules["documents.{$docTypeId}"]   = ['nullable', 'array', 'max:10'];
-            $rules["documents.{$docTypeId}.*"] = ['file', 'max:10240'];
+        foreach ($docsToFix as $key) {
+            $rules["documents.{$key}"]   = ['nullable', 'array', 'max:10'];
+            $rules["documents.{$key}.*"] = ['file', 'max:10240'];
         }
 
         $validated = $request->validate($rules);
@@ -348,8 +355,9 @@ class TrainingController extends Controller
         if (! empty($update)) $trainingRequest->update($update);
 
         $uploadDir = "training-documents/{$trainingRequest->id}";
-        foreach ($docsToFix as $docTypeId) {
-            $files = $request->file("documents.{$docTypeId}");
+        foreach ($docsToFix as $key) {
+            $requirement = $requirements->get($key);
+            $files = $request->file("documents.{$key}");
             if (! $files) continue;
             $files = is_array($files) ? $files : [$files];
             foreach ($files as $file) {
@@ -357,7 +365,9 @@ class TrainingController extends Controller
                 $path = $file->store($uploadDir, 'local');
                 TrainingDocument::create([
                     'training_request_id' => $trainingRequest->id,
-                    'document_type_id'    => $docTypeId,
+                    'document_type_id'    => null,
+                    'document_key'        => $key,
+                    'participant_id'      => $requirement['participant_id'] ?? null,
                     'file_path'           => $path,
                     'original_name'       => $file->getClientOriginalName(),
                     'mime_type'           => $file->getMimeType(),

@@ -314,18 +314,35 @@
                                 {{ __('training.documents_title') }}
                             </h3>
                         </div>
-                        <div class="p-4 space-y-2">
-                            @forelse ($documentTypes as $docType)
-                                @php $doc = $uploadedDocs->get($docType->id); @endphp
-                                <div class="p-2 rounded border {{ $doc && $doc->status === 'uploaded' ? 'border-emerald-200 bg-emerald-50/60' : 'border-surface-dim bg-surface-container-low' }} flex items-center justify-between gap-2">
-                                    <p class="text-xs font-bold {{ $doc && $doc->status === 'uploaded' ? 'text-emerald-700' : 'text-secondary' }} truncate">{{ $docType->name }}</p>
-                                    @if ($doc && $doc->status === 'uploaded')
-                                        <a href="{{ route('admin.training.documents.download', $doc) }}" class="w-6 h-6 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                                            <span class="material-symbols-outlined text-xs">download</span>
-                                        </a>
-                                    @else
-                                        <span class="text-[10px] text-red-500">{{ __('training.documents_not_uploaded') }}</span>
-                                    @endif
+                        <div class="p-4 space-y-3">
+                            @forelse ($documentGroups as $group)
+                                <div class="rounded border border-surface-dim overflow-hidden">
+                                    <div class="flex items-center justify-between gap-2 px-2.5 py-2 border-b border-surface-dim bg-surface-container-low">
+                                        <div class="min-w-0">
+                                            <p class="truncate text-[11px] font-bold text-on-surface">{{ $group['name'] ?: __('training.participants_section') }}</p>
+                                            @if ($group['cin'])
+                                                <p class="text-[10px] text-secondary" dir="ltr">{{ __('training.cin') }} : {{ $group['cin'] }}</p>
+                                            @endif
+                                        </div>
+                                        @if ($group['training_kind'] === \App\Models\TrainingRequest::KIND_RECYCLING)
+                                            <span class="shrink-0 rounded border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/30 dark:text-amber-300">{{ __('training.kind_recycling') }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="p-2 space-y-2">
+                                        @foreach ($group['documents'] as $requirement)
+                                            @php $doc = $uploadedDocs->get($requirement['key']); @endphp
+                                            <div class="p-2 rounded border {{ $doc && $doc->status === 'uploaded' ? 'border-emerald-200 bg-emerald-50/60' : 'border-surface-dim bg-surface-container-low' }} flex items-center justify-between gap-2">
+                                                <p class="text-xs font-bold {{ $doc && $doc->status === 'uploaded' ? 'text-emerald-700' : 'text-secondary' }} truncate">{{ $requirement['name'] }}</p>
+                                                @if ($doc && $doc->status === 'uploaded')
+                                                    <a href="{{ route('admin.training.documents.download', $doc) }}" class="w-6 h-6 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                                                        <span class="material-symbols-outlined text-xs">download</span>
+                                                    </a>
+                                                @else
+                                                    <span class="text-[10px] text-red-500">{{ __('training.documents_not_uploaded') }}</span>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
                             @empty
                                 <p class="text-xs text-secondary text-center py-4">{{ __('training.admin_no_doctypes') }}</p>
@@ -377,13 +394,18 @@
                                                 @endforeach
                                             </div>
                                         </div>
-                                        @if ($documentTypes->isNotEmpty())
-                                        <div class="mt-3 space-y-1">
-                                            @foreach ($documentTypes as $dt)
-                                                <label class="flex items-center gap-1.5 text-[11px] text-amber-800 cursor-pointer">
-                                                    <input type="checkbox" name="docs_to_fix[]" value="{{ $dt->id }}" class="rounded text-amber-600">
-                                                    {{ $dt->name }}
-                                                </label>
+                                        @if (!empty($documentGroups))
+                                        <div class="mt-3 space-y-2">
+                                            @foreach ($documentGroups as $group)
+                                                <div class="rounded border border-amber-200/70 p-2">
+                                                    <p class="mb-1 text-[10px] font-extrabold uppercase tracking-wide text-amber-900">{{ $group['name'] ?: __('training.participants_section') }}</p>
+                                                    @foreach ($group['documents'] as $requirement)
+                                                        <label class="flex items-center gap-1.5 text-[11px] text-amber-800 cursor-pointer">
+                                                            <input type="checkbox" name="docs_to_fix[]" value="{{ $requirement['key'] }}" class="rounded text-amber-600">
+                                                            {{ $requirement['name'] }}
+                                                        </label>
+                                                    @endforeach
+                                                </div>
                                             @endforeach
                                         </div>
                                         @endif

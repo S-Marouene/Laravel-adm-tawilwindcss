@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TrainingDocument extends Model
 {
     protected $fillable = [
-        'training_request_id', 'document_type_id', 'file_path',
-        'original_name', 'mime_type', 'size', 'status',
+        'training_request_id', 'document_type_id', 'document_key', 'participant_id',
+        'file_path', 'original_name', 'mime_type', 'size', 'status',
     ];
 
     public function isActive(): bool   { return $this->status !== 'archived'; }
@@ -19,6 +19,11 @@ class TrainingDocument extends Model
     public function trainingRequest(): BelongsTo
     {
         return $this->belongsTo(TrainingRequest::class, 'training_request_id');
+    }
+
+    public function participant(): BelongsTo
+    {
+        return $this->belongsTo(TrainingParticipant::class, 'participant_id');
     }
 
     public function documentType(): BelongsTo

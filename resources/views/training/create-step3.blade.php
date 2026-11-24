@@ -38,7 +38,7 @@
                 </div>
                 <span id="docs-progress" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-gov-50 text-gov-800 text-body-sm font-semibold border border-gov-300 dark:bg-gov-900/30 dark:text-gov-300 dark:border-gov-800">
                     <span class="material-symbols-outlined filled text-[15px]" aria-hidden="true">task_alt</span>
-                    <span id="docs-progress-count">{{ $uploadedCount }}/{{ $documentTypes->count() }}</span>
+                    <span id="docs-progress-count">{{ $uploadedCount }}/{{ count($documentRequirements) }}</span>
                 </span>
             </div>
 
@@ -63,74 +63,95 @@
                             <h3 class="text-title-section text-on-surface uppercase tracking-wider">{{ __('training.step_three_title') }}</h3>
                         </div>
 
-                        {{-- Fee reminder --}}
-                        <div class="flex items-start gap-3 rounded border border-amber-200 bg-amber-50 p-4 text-body-sm dark:border-amber-800/40 dark:bg-amber-900/10">
-                            <span class="material-symbols-outlined filled text-amber-600 text-[22px]" aria-hidden="true">payments</span>
-                            <div>
-                                <p class="font-bold text-amber-800 dark:text-amber-300">{{ __('training.fees_title') }} — {{ __('training.payment_proof') }}</p>
-                                <p class="text-secondary dark:text-gray-300 mt-0.5">{{ __('training.fees_info') }}</p>
-                            </div>
-                        </div>
-
                         {{-- Info banner --}}
                         <div class="flex items-start gap-3 rounded border border-surface-dim bg-surface-container-low p-4 text-body-sm dark:border-gray-700 dark:bg-gray-900/40">
                             <span class="material-symbols-outlined filled text-primary text-[22px]" aria-hidden="true">info</span>
                             <p class="text-secondary dark:text-gray-300">{{ __('training.documents_info') }}</p>
                         </div>
 
-                        {{-- Document list --}}
-                        <ol id="doc-list" class="space-y-3">
-                            @foreach ($documentTypes as $doc)
-                                @php $uploadedFile = $uploadedDocs->get($doc->id); $hasUploaded = $uploadedFile !== null; @endphp
-                                <li class="doc-card rounded border p-4 transition dark:border-gray-700 {{ $hasUploaded ? 'border-gov-300 bg-gov-50/30 dark:border-gov-800/40 dark:bg-gov-900/10' : 'border-surface-dim' }}"
-                                    data-doc-id="{{ $doc->id }}" data-has-server="{{ $hasUploaded ? '1' : '0' }}">
-                                    <div class="flex items-start gap-3">
-                                        <span class="status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full {{ $hasUploaded ? 'bg-gov-100 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300' : 'bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500' }}">
-                                            @if ($hasUploaded)
-                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                            @else
-                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                                            @endif
-                                        </span>
-                                        <div class="min-w-0 flex-1">
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <p class="text-body-sm font-bold text-on-surface dark:text-gray-100">{{ $loop->iteration }}. {{ $doc->name }}</p>
-                                                @if ($doc->is_conditional)
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-accent-600 bg-accent-50 rounded border border-accent-500/20">
-                                                        <span class="material-symbols-outlined text-[13px]" aria-hidden="true">help</span>{{ __('training.conditional') }}
-                                                    </span>
-                                                @endif
-                                                @if ($doc->template_path)
-                                                    <a href="{{ route('training.document-template.download', $doc) }}"
-                                                       class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-primary bg-primary/10 rounded border border-primary/25 hover:bg-primary/15 transition">
-                                                        <span class="material-symbols-outlined text-[13px]" aria-hidden="true">download</span>{{ __('training.download_form') }}
-                                                    </a>
-                                                @endif
-                                            </div>
-                                            @if ($hasUploaded)
-                                                <div class="mt-2 flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-container-lowest p-2.5 dark:border-gray-700 dark:bg-gray-800/60">
-                                                    <span class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-gov-50 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300">
-                                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
-                                                    </span>
-                                                    <div class="min-w-0 flex-1">
-                                                        <p class="truncate text-xs font-semibold text-on-surface dark:text-gray-100">{{ $uploadedFile->original_name }}</p>
-                                                        <p class="text-[11px] text-outline">{{ number_format($uploadedFile->size / 1024, 0) }} KB</p>
-                                                    </div>
+                        {{-- Document list — static requirements, grouped per participant --}}
+                        <div class="space-y-4">
+                            @foreach ($documentGroups as $group)
+                                <div class="rounded-lg border border-surface-dim dark:border-gray-700 overflow-hidden">
+                                    {{-- Participant header --}}
+                                    <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-surface-dim bg-surface-container-low dark:border-gray-700 dark:bg-gray-900/40">
+                                        <div class="flex min-w-0 items-center gap-2.5">
+                                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">person</span>
+                                            </span>
+                                            <div class="min-w-0">
+                                                <p class="truncate text-body-sm font-bold text-on-surface dark:text-gray-100">
+                                                    {{ $group['name'] ?: __('training.participants_section') }}
+                                                </p>
+                                                <div class="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-secondary">
+                                                    @if ($group['cin'])
+                                                        <span dir="ltr">{{ __('training.cin') }} : {{ $group['cin'] }}</span>
+                                                    @endif
+                                                    @if ($group['training_kind'] === \App\Models\TrainingRequest::KIND_RECYCLING)
+                                                        <span class="inline-flex items-center rounded border border-amber-200 bg-amber-100 px-1.5 py-0.5 font-bold text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/30 dark:text-amber-300">
+                                                            {{ __('training.kind_recycling') }}
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center rounded border border-gov-200 bg-gov-50 px-1.5 py-0.5 font-bold text-gov-800 dark:border-gov-800/40 dark:bg-gov-900/30 dark:text-gov-300">
+                                                            {{ __('training.kind_new') }}
+                                                        </span>
+                                                    @endif
                                                 </div>
-                                            @endif
-                                            <div class="preview-list mt-3 hidden space-y-1.5"></div>
-                                            <div class="mt-3 upload-area">
-                                                <label class="inline-flex cursor-pointer items-center gap-2 rounded border border-surface-dim bg-surface-container-lowest px-3 py-2 text-xs font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
-                                                    <span class="material-symbols-outlined text-[15px] text-primary" aria-hidden="true">upload_file</span>
-                                                    <span class="upload-label">{{ $hasUploaded ? __('training.replace_file') : __('training.upload_file') }}</span>
-                                                    <input type="file" name="documents[{{ $doc->id }}][]" class="sr-only file-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple>
-                                                </label>
                                             </div>
                                         </div>
+                                        <span class="inline-flex shrink-0 items-center gap-1 rounded bg-surface-container px-2 py-1 text-[11px] font-semibold text-secondary dark:bg-gray-800">
+                                            <span class="material-symbols-outlined text-[14px]" aria-hidden="true">attach_file</span>
+                                            {{ count($group['documents']) }}
+                                        </span>
                                     </div>
-                                </li>
+
+                                    <ol class="doc-list space-y-3 p-3 sm:p-4">
+                                        @foreach ($group['documents'] as $doc)
+                                            @php $uploadedFile = $uploadedDocs->get($doc['key']); $hasUploaded = $uploadedFile !== null; @endphp
+                                            <li class="doc-card rounded border p-4 transition dark:border-gray-700 {{ $hasUploaded ? 'border-gov-300 bg-gov-50/30 dark:border-gov-800/40 dark:bg-gov-900/10' : 'border-surface-dim' }}"
+                                                data-doc-id="{{ $doc['key'] }}" data-has-server="{{ $hasUploaded ? '1' : '0' }}">
+                                                <div class="flex items-start gap-3">
+                                                    <span class="status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full {{ $hasUploaded ? 'bg-gov-100 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300' : 'bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500' }}">
+                                                        @if ($hasUploaded)
+                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                        @else
+                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                                        @endif
+                                                    </span>
+                                                    <div class="min-w-0 flex-1">
+                                                        <div class="flex flex-wrap items-center gap-2">
+                                                            <p class="text-body-sm font-bold text-on-surface dark:text-gray-100">{{ $loop->iteration }}. {{ $doc['name'] }}</p>
+                                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-accent-600 bg-accent-50 rounded border border-accent-500/20">
+                                                                <span class="material-symbols-outlined text-[13px]" aria-hidden="true">priority_high</span>{{ __('training.document_required') }}
+                                                            </span>
+                                                        </div>
+                                                        @if ($hasUploaded)
+                                                            <div class="mt-2 flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-container-lowest p-2.5 dark:border-gray-700 dark:bg-gray-800/60">
+                                                                <span class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-gov-50 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300">
+                                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
+                                                                </span>
+                                                                <div class="min-w-0 flex-1">
+                                                                    <p class="truncate text-xs font-semibold text-on-surface dark:text-gray-100">{{ $uploadedFile->original_name }}</p>
+                                                                    <p class="text-[11px] text-outline">{{ number_format($uploadedFile->size / 1024, 0) }} KB</p>
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                        <div class="preview-list mt-3 hidden space-y-1.5"></div>
+                                                        <div class="mt-3 upload-area">
+                                                            <label class="inline-flex cursor-pointer items-center gap-2 rounded border border-surface-dim bg-surface-container-lowest px-3 py-2 text-xs font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                                                                <span class="material-symbols-outlined text-[15px] text-primary" aria-hidden="true">upload_file</span>
+                                                                <span class="upload-label">{{ $hasUploaded ? __('training.replace_file') : __('training.upload_file') }}</span>
+                                                                <input type="file" name="documents[{{ $doc['key'] }}][]" class="sr-only file-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        @endforeach
+                                    </ol>
+                                </div>
                             @endforeach
-                        </ol>
+                        </div>
                     </div>
 
                     {{-- Footer --}}

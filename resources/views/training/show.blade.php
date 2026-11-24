@@ -115,14 +115,16 @@
         default                                           => 'neutral',
     };
 
-    // ── Documents completeness ──
+    // ── Documents completeness (static per-participant requirements) ──
     $activeDocuments = $tr->documents->filter(fn ($d) => $d->status !== 'archived');
-    $documentsByType = $activeDocuments->groupBy('document_type_id');
-    $uploadedDocs    = $activeDocuments->keyBy('document_type_id');
-    $uploadedTypes   = $documentsByType->filter(fn ($files, $typeId) => $documentTypes->contains('id', $typeId) && $files->isNotEmpty())->count();
+    $documentsByKey  = $activeDocuments->groupBy('document_key');
+    $totalDocTypes   = count($documentRequirements);
+    $uploadedTypes   = collect($documentRequirements)
+        ->filter(fn ($req) => $documentsByKey->get($req['key'], collect())->isNotEmpty())
+        ->count();
     $fmtSize         = fn ($b) => $b >= 1048576 ? number_format($b / 1048576, 1) . ' Mo' : number_format($b / 1024, 0) . ' Ko';
-    $isDocComplete   = $documentTypes->count() > 0 && $uploadedTypes >= $documentTypes->count();
-    $docPct          = $documentTypes->count() > 0 ? (int) round(min($uploadedTypes, $documentTypes->count()) / $documentTypes->count() * 100) : 0;
+    $isDocComplete   = $totalDocTypes > 0 && $uploadedTypes >= $totalDocTypes;
+    $docPct          = $totalDocTypes > 0 ? (int) round(min($uploadedTypes, $totalDocTypes) / $totalDocTypes * 100) : 0;
     $correction      = $tr->lastCorrectionData();
 
     // ── Timeline chips ──
@@ -231,7 +233,7 @@
                                 'notes'         => __('training.notes'),
                             ];
                             $correctionDocs = !empty($correction['docs_to_fix'])
-                                ? $documentTypes->filter(fn ($t) => in_array($t->id, $correction['docs_to_fix']))
+                                ? collect($documentRequirements)->filter(fn ($req) => in_array($req['key'], $correction['docs_to_fix'], true))
                                 : collect();
                         @endphp
                         @if (!empty($correction['fields_to_fix']) || $correctionDocs->isNotEmpty())
@@ -242,10 +244,10 @@
                                     {{ $fieldLabels[$fk] ?? $fk }}
                                 </span>
                             @endforeach
-                            @foreach ($correctionDocs as $dt)
+                            @foreach ($correctionDocs as $docRequirement)
                                 <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700/40">
                                     <span class="material-symbols-outlined text-[11px]" aria-hidden="true">upload_file</span>
-                                    {{ $dt->name }}
+                                    {{ $docRequirement['name'] }}
                                 </span>
                             @endforeach
                         </div>
@@ -846,7 +848,7 @@
                                     <span class="material-symbols-outlined text-base" aria-hidden="true">attach_file</span>
                                 </span>
                                 <h3 class="text-xs font-extrabold uppercase tracking-wider text-secondary flex-1">{{ __('training.documents_title') }}</h3>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap {{ $isDocComplete ? 'text-amber-900 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300' : 'text-secondary bg-surface-dim' }}" dir="ltr">{{ $uploadedTypes }}/{{ $documentTypes->count() }}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap {{ $isDocComplete ? 'text-amber-900 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300' : 'text-secondary bg-surface-dim' }}" dir="ltr">{{ $uploadedTypes }}/{{ $totalDocTypes }}</span>
                                 <svg class="w-4 h-4 text-secondary transition-transform shrink-0 ms-1" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </button>
 
@@ -856,50 +858,77 @@
                                     <div class="h-full rounded-full transition-all duration-500 {{ $isDocComplete ? 'bg-amber-500' : 'bg-primary' }}" style="width: {{ $docPct }}%"></div>
                                 </div>
                                 <p class="text-[10px] font-semibold mb-4 {{ $isDocComplete ? 'text-amber-800 dark:text-amber-400' : 'text-secondary' }}">
-                                    {{ $isDocComplete ? __('training.documents_title') : $uploadedTypes . ' / ' . $documentTypes->count() }}
+                                    {{ $isDocComplete ? __('training.documents_title') : $uploadedTypes . ' / ' . $totalDocTypes }}
                                 </p>
 
-                                <div class="space-y-2.5">
-                                    @forelse ($documentTypes as $docType)
-                                        @php $files = $documentsByType->get($docType->id, collect()); @endphp
-                                        @forelse ($files as $doc)
-                                            <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5 group hover:border-primary/40 transition-colors">
-                                                <div class="flex items-start gap-2.5 min-w-0">
-                                                    <span class="material-symbols-outlined text-red-600 text-lg mt-0.5 shrink-0" aria-hidden="true">{{ str_contains((string) $doc->mime_type, 'pdf') ? 'picture_as_pdf' : 'description' }}</span>
+                                <div class="space-y-4">
+                                    @forelse ($documentGroups as $group)
+                                        @php
+                                            $groupTotal = count($group['documents']);
+                                            $groupDone  = collect($group['documents'])->filter(fn ($d) => $documentsByKey->get($d['key'], collect())->isNotEmpty())->count();
+                                            $groupComplete = $groupTotal > 0 && $groupDone >= $groupTotal;
+                                        @endphp
+                                        <div class="rounded border border-surface-dim dark:border-gray-700 overflow-hidden">
+                                            {{-- Participant header --}}
+                                            <div class="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-surface-dim bg-surface-container-low dark:border-gray-700 dark:bg-gray-900/40">
+                                                <div class="flex min-w-0 items-center gap-2">
+                                                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                                        <span class="material-symbols-outlined text-[16px]" aria-hidden="true">person</span>
+                                                    </span>
                                                     <div class="min-w-0">
-                                                        <h4 class="text-xs font-bold text-on-surface leading-snug">{{ $docType->name }}</h4>
-                                                        <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap" dir="ltr">
-                                                            <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
-                                                            <span class="text-surface-dim">•</span>
-                                                            <span>{{ $doc->updated_at->format('d/m/Y') }}</span>
-                                                            @if ($doc->original_name)
-                                                                <span class="truncate max-w-36 text-secondary/80" title="{{ $doc->original_name }}">— {{ $doc->original_name }}</span>
+                                                        <p class="truncate text-xs font-bold text-on-surface dark:text-gray-100">{{ $group['name'] ?: __('training.participants_section') }}</p>
+                                                        <div class="flex flex-wrap items-center gap-1.5 text-[10px] text-secondary">
+                                                            @if ($group['cin'])<span dir="ltr">{{ __('training.cin') }} : {{ $group['cin'] }}</span>@endif
+                                                            @if ($group['training_kind'] === \App\Models\TrainingRequest::KIND_RECYCLING)
+                                                                <span class="rounded border border-amber-200 bg-amber-100 px-1.5 py-0.5 font-bold text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/30 dark:text-amber-300">{{ __('training.kind_recycling') }}</span>
                                                             @endif
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <a href="{{ route('training.documents.download', $doc) }}"
-                                                   class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors"
-                                                   title="{{ __('training.download_label') }}">
-                                                    <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
-                                                </a>
+                                                <span class="shrink-0 rounded px-2 py-0.5 text-[10px] font-bold {{ $groupComplete ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-surface-dim text-secondary' }}" dir="ltr">{{ $groupDone }}/{{ $groupTotal }}</span>
                                             </div>
-                                        @empty
-                                            <div class="p-3 border border-dashed border-surface-dim rounded flex items-start gap-2.5">
-                                                <span class="w-7 h-7 rounded bg-surface-dim/40 text-outline flex items-center justify-center shrink-0">
-                                                    <span class="material-symbols-outlined text-sm">{{ $docType->is_conditional ? 'help_outline' : 'error_outline' }}</span>
-                                                </span>
-                                                <div class="min-w-0">
-                                                    <h4 class="text-xs font-bold {{ $docType->is_conditional ? 'text-secondary' : 'text-on-surface' }}">{{ $docType->name }}</h4>
-                                                    <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap">
-                                                        @if ($docType->is_conditional)
-                                                            <span class="font-semibold text-amber-900 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/40 px-1.5 rounded">{{ __('training.conditional') }}</span>
-                                                        @endif
-                                                        <span class="{{ $docType->is_conditional ? '' : 'text-red-600 dark:text-red-400' }}">{{ __('training.documents_not_uploaded') }}</span>
-                                                    </div>
-                                                </div>
+
+                                            <div class="space-y-2.5 p-3">
+                                                @foreach ($group['documents'] as $requirement)
+                                                    @php $files = $documentsByKey->get($requirement['key'], collect()); @endphp
+                                                    @forelse ($files as $doc)
+                                                        <div class="p-3 bg-surface-container-low rounded border border-surface-dim flex items-start justify-between gap-2.5 group hover:border-primary/40 transition-colors">
+                                                            <div class="flex items-start gap-2.5 min-w-0">
+                                                                <span class="material-symbols-outlined text-red-600 text-lg mt-0.5 shrink-0" aria-hidden="true">{{ str_contains((string) $doc->mime_type, 'pdf') ? 'picture_as_pdf' : 'description' }}</span>
+                                                                <div class="min-w-0">
+                                                                    <h4 class="text-xs font-bold text-on-surface leading-snug">{{ $requirement['name'] }}</h4>
+                                                                    <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap" dir="ltr">
+                                                                        <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
+                                                                        <span class="text-surface-dim">•</span>
+                                                                        <span>{{ $doc->updated_at->format('d/m/Y') }}</span>
+                                                                        @if ($doc->original_name)
+                                                                            <span class="truncate max-w-36 text-secondary/80" title="{{ $doc->original_name }}">— {{ $doc->original_name }}</span>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <a href="{{ route('training.documents.download', $doc) }}"
+                                                               class="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center shrink-0 transition-colors"
+                                                               title="{{ __('training.download_label') }}">
+                                                                <span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>
+                                                            </a>
+                                                        </div>
+                                                    @empty
+                                                        <div class="p-3 border border-dashed border-surface-dim rounded flex items-start gap-2.5">
+                                                            <span class="w-7 h-7 rounded bg-surface-dim/40 text-outline flex items-center justify-center shrink-0">
+                                                                <span class="material-symbols-outlined text-sm">error_outline</span>
+                                                            </span>
+                                                            <div class="min-w-0">
+                                                                <h4 class="text-xs font-bold text-on-surface">{{ $requirement['name'] }}</h4>
+                                                                <div class="flex items-center gap-2 text-[11px] text-secondary mt-0.5 flex-wrap">
+                                                                    <span class="text-red-600 dark:text-red-400">{{ __('training.documents_not_uploaded') }}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforelse
+                                                @endforeach
                                             </div>
-                                        @endforelse
+                                        </div>
                                     @empty
                                         <div class="p-4 text-center">
                                             <span class="material-symbols-outlined text-2xl text-outline" aria-hidden="true">folder_off</span>
@@ -931,7 +960,7 @@
                                             <div class="flex items-start gap-2.5 min-w-0">
                                                 <span class="material-symbols-outlined text-outline text-lg mt-0.5 shrink-0" aria-hidden="true">inventory_2</span>
                                                 <div class="min-w-0">
-                                                    <h4 class="text-xs font-bold text-secondary leading-snug">{{ $doc->documentType?->name ?? __('training.documents_title') }}</h4>
+                                                    <h4 class="text-xs font-bold text-secondary leading-snug">{{ $doc->document_key ? $tr->documentKeyLabel($doc->document_key) : ($doc->documentType?->name ?? __('training.documents_title')) }}</h4>
                                                     <div class="flex items-center gap-2 text-[11px] text-secondary/80 mt-0.5 flex-wrap" dir="ltr">
                                                         <span class="font-mono">{{ $fmtSize($doc->size) }}</span>
                                                         <span class="text-surface-dim">•</span>
