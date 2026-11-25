@@ -23,6 +23,8 @@
 
         $selectedRole = old('role', $currentRole);
 
+        $selectedPermissions = old('permissions', $user->getDirectPermissions()->pluck('name')->all());
+
         // Build territory list for the form: prefer old() on validation failure,
         // otherwise use the saved territories
         $formTerritories = old('territories')
@@ -108,6 +110,9 @@
                 </div>
                 @error('services')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
             </div>
+
+            {{-- Centralized formation planning overrides --}}
+            @include('admin.users._planned_permissions')
 
             {{-- Territory assignments (manager only) --}}
             @php $showTerritory = $selectedRole === 'manager'; @endphp

@@ -22,7 +22,8 @@
             'user'        => 'Simple citizen account — no back-office access.',
         ];
 
-        $oldTerritories = old('territories', []);
+        $oldTerritories     = old('territories', []);
+        $selectedPermissions = old('permissions', []);
     @endphp
 
     <div class="max-w-2xl">
@@ -97,6 +98,9 @@
                 </div>
                 @error('services')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
             </div>
+
+            {{-- Centralized formation planning overrides --}}
+            @include('admin.users._planned_permissions')
 
             {{-- Territory assignments (manager only) --}}
             <div id="territory-section" class="{{ old('role') !== 'manager' ? 'hidden' : '' }} p-4 rounded-lg bg-surface-container dark:bg-gray-900/50 border border-surface-dim dark:border-gray-600 space-y-4">

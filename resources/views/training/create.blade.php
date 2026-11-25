@@ -89,7 +89,7 @@
                                 <span class="material-symbols-outlined text-primary text-[20px] mt-px shrink-0" aria-hidden="true">hub</span>
                                 <div class="min-w-0 flex-1">
                                     <p class="text-xs font-bold text-primary uppercase tracking-wider mb-1">{{ __('training.centralized_title') }}</p>
-                                    <p class="text-body-sm text-on-surface dark:text-gray-200 leading-relaxed">{{ __('training.centralized_hint') }}</p>
+                                    <p id="centralized-hint" class="text-body-sm text-on-surface dark:text-gray-200 leading-relaxed">{{ __('training.centralized_hint', ['place' => $defaultPlaceLabel]) }}</p>
                                 </div>
                             </div>
 
@@ -265,59 +265,65 @@
         var CENTRALIZED    = @json(\App\Models\TrainingRequest::CENTRALIZED_TYPES);
         var PLANNED         = @json($plannedSessions ?? []);
         var initialSession  = @json((string) ($tr?->planned_session_id ?? old('planned_session_id') ?? ''));
-        var lblSeatLeft     = @json(__('training.seats_left'));
-        var lblUnlimited    = @json(__('training.seats_unlimited'));
-        var lblFull         = @json(__('training.seats_full'));
-        var lblFrom         = @json(__('training.from'));
-        var lblTo           = @json(__('training.to'));
+        var hintTemplate    = @json(__('training.centralized_hint'));
+        var defaultPlace    = @json($defaultPlaceLabel);
+        var lblPlace        = @json(__('training.planned_place'));
         var lblChoose       = @json(__('training.choose_planned_session'));
-        var lblChosen       = @json(__('training.chosen_session'));
 
         var centBox   = document.getElementById('centralized-box');
         var sessList  = document.getElementById('planned-sessions-list');
         var waitBox   = document.getElementById('waitlist-notice');
         var regionV   = document.getElementById('region-visavis');
+        var hintEl    = document.getElementById('centralized-hint');
         var sessionHidden = document.querySelector('input[name="planned_session_id"]');
+
+        function setHint(place) {
+            if (hintEl) hintEl.textContent = hintTemplate.replace(':place', place || defaultPlace);
+        }
 
         function buildSessionRadios(type) {
             if (!sessList) return;
             sessList.innerHTML = '';
             waitBox.classList.add('hidden');
             var list = (PLANNED && PLANNED[type]) || [];
-            if (!list.length) { waitBox.classList.remove('hidden'); return; }
+            if (!list.length) { setHint(defaultPlace); waitBox.classList.remove('hidden'); return; }
 
             var title = document.createElement('p');
             title.className = 'text-body-sm font-bold text-on-surface dark:text-gray-100 mb-1';
             title.textContent = lblChoose;
             sessList.appendChild(title);
 
+            setHint(defaultPlace);
+            var chosenPlace = null;
+
             list.forEach(function (s) {
                 var id = String(s.id);
-                var left = s.seats_left; // null = unlimited
-                var full = (left === 0);
                 var chosen = (id === initialSession);
                 var wrap = document.createElement('label');
                 wrap.className = 'flex items-center gap-3 rounded border p-3 cursor-pointer transition '
-                    + (full ? 'border-surface-dim opacity-60 cursor-not-allowed dark:border-gray-700'
-                        : chosen ? 'border-primary bg-primary/10 dark:bg-primary/20'
+                    + (chosen ? 'border-primary bg-primary/10 dark:bg-primary/20'
                         : 'border-surface-dim hover:border-primary/50 dark:border-gray-700');
                 var radio = document.createElement('input');
                 radio.type = 'radio';
                 radio.name = 'planned_session_id';
                 radio.value = id;
-                radio.disabled = full;
                 radio.className = 'h-4 w-4 text-primary focus:ring-primary';
-                if (chosen) { radio.checked = true; }
+                if (chosen) { radio.checked = true; chosenPlace = s.place_label; }
+                radio.addEventListener('change', function () {
+                    if (radio.checked) setHint(s.place_label);
+                });
+
                 var info = document.createElement('div');
                 info.className = 'min-w-0 flex-1';
-                var when = '<span dir="ltr">' + s.starts_at + '</span>'
-                    + (s.ends_at ? ' — <span dir="ltr">' + s.ends_at + '</span>' : '');
+                var when = '<span dir="ltr">' + (s.date_label || s.starts_at) + '</span>';
                 info.innerHTML = '<p class="text-body-sm font-semibold text-on-surface dark:text-gray-100">' + when + '</p>'
-                    + '<p class="text-[11px] text-outline mt-0.5">' + (left === null ? lblUnlimited : (full ? lblFull : lblSeatLeft + ': ' + left)) + '</p>';
+                    + '<p class="text-[11px] text-outline mt-0.5">' + lblPlace + ': ' + s.place_label + '</p>';
                 wrap.appendChild(radio);
                 wrap.appendChild(info);
                 sessList.appendChild(wrap);
             });
+
+            if (chosenPlace) setHint(chosenPlace);
         }
 
         function handleTypeChange() {

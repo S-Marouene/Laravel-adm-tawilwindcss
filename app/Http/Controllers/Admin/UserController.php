@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Delegation;
 use App\Models\Governorate;
 use App\Models\Service;
+use App\Models\TrainingPlannedSession;
 use App\Models\User;
 use App\Models\UserTerritory;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -31,11 +32,12 @@ class UserController extends Controller
     {
         $this->authorize('create users');
 
-        $roles       = $this->availableRoles();
-        $governorates = Governorate::with('delegations')->orderBy('id')->get();
-        $services    = Service::orderBy('sort_order')->get();
+        $roles              = $this->availableRoles();
+        $governorates       = Governorate::with('delegations')->orderBy('id')->get();
+        $services           = Service::orderBy('sort_order')->get();
+        $plannedPermissions = TrainingPlannedSession::PERMISSIONS;
 
-        return view('admin.users.create', compact('roles', 'governorates', 'services'));
+        return view('admin.users.create', compact('roles', 'governorates', 'services', 'plannedPermissions'));
     }
 
     public function store(Request $request)
@@ -49,6 +51,9 @@ class UserController extends Controller
             'role'     => ['nullable', 'string', 'exists:roles,name'],
             'services' => ['nullable', 'array'],
             'services.*' => ['integer', 'exists:services,id'],
+            // Direct overrides for the centralized formation planning (on top of the role)
+            'permissions'   => ['nullable', 'array'],
+            'permissions.*' => ['string', Rule::in(TrainingPlannedSession::PERMISSIONS)],
             // Territories: array of objects sent as territories[0][governorate_id], territories[0][delegation_id]
             'territories'                  => ['nullable', 'array'],
             'territories.*.governorate_id' => ['required', 'integer', 'exists:governorates,id'],
@@ -66,6 +71,7 @@ class UserController extends Controller
         $this->syncRoleSafely($user, $validated['role'] ?? null);
         $user->services()->sync($validated['services'] ?? []);
         $this->syncTerritories($user, $validated['territories'] ?? []);
+        $this->syncPlannedPermissionOverrides($user, $validated['permissions'] ?? []);
 
         ActivityLogger::created("user {$user->name} ({$user->email})", $user, [
             'name'  => $user->name,
@@ -81,14 +87,16 @@ class UserController extends Controller
     {
         $this->authorize('edit users');
 
-        $roles        = $this->availableRoles();
-        $currentRole  = $user->roles->first()?->name;
-        $governorates = Governorate::with('delegations')->orderBy('id')->get();
-        $services     = Service::orderBy('sort_order')->get();
-        $user->load(['territories.governorate', 'territories.delegation', 'services']);
+        $roles              = $this->availableRoles();
+        $currentRole        = $user->roles->first()?->name;
+        $governorates       = Governorate::with('delegations')->orderBy('id')->get();
+        $services           = Service::orderBy('sort_order')->get();
+        $plannedPermissions = TrainingPlannedSession::PERMISSIONS;
+        $user->load(['territories.governorate', 'territories.delegation', 'services', 'permissions']);
 
         return view('admin.users.edit', compact(
             'user', 'roles', 'currentRole', 'governorates', 'services',
+            'plannedPermissions',
         ));
     }
 
@@ -103,6 +111,8 @@ class UserController extends Controller
             'role'     => ['nullable', 'string', 'exists:roles,name'],
             'services' => ['nullable', 'array'],
             'services.*' => ['integer', 'exists:services,id'],
+            'permissions'   => ['nullable', 'array'],
+            'permissions.*' => ['string', Rule::in(TrainingPlannedSession::PERMISSIONS)],
             'territories'                  => ['nullable', 'array'],
             'territories.*.governorate_id' => ['required', 'integer', 'exists:governorates,id'],
             'territories.*.delegation_id'  => ['nullable', 'integer', 'exists:delegations,id'],
@@ -126,6 +136,7 @@ class UserController extends Controller
         $this->syncRoleSafely($user, $validated['role'] ?? null);
         $user->services()->sync($validated['services'] ?? []);
         $this->syncTerritories($user, $validated['territories'] ?? []);
+        $this->syncPlannedPermissionOverrides($user, $validated['permissions'] ?? []);
 
         ActivityLogger::updated("user {$user->name}", $user, $changes);
 
@@ -247,6 +258,26 @@ class UserController extends Controller
                 'delegation_id'  => $delId ?: null,
             ]);
         }
+    }
+
+    /**
+     * Direct permission overrides for the centralized formation planning.
+     *
+     * A regional "manager" role is read-only by default; an administrator can
+     * grant insert/update/delete to a particular user here without changing
+     * their role. Direct permissions granted for other features are preserved.
+     */
+    private function syncPlannedPermissionOverrides(User $user, array $names): void
+    {
+        $allowed  = TrainingPlannedSession::PERMISSIONS;
+        $selected = array_values(array_unique(array_intersect($names, $allowed)));
+
+        $otherDirect = $user->permissions()
+            ->whereNotIn('name', $allowed)
+            ->pluck('name')
+            ->all();
+
+        $user->syncPermissions(array_merge($otherDirect, $selected));
     }
 
     /**

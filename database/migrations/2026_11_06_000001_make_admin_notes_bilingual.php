@@ -56,11 +56,19 @@ return new class extends Migration
                     });
 
                 // 2. Change the column type from TEXT (string) to JSON.
-                DB::statement(sprintf(
-                    'ALTER TABLE `%s` MODIFY `%s` JSON NULL',
-                    $table,
-                    $column
-                ));
+                // MySQL needs the explicit MODIFY statement; other drivers
+                // (e.g. SQLite in tests) use Laravel's portable schema change.
+                if (Schema::getConnection()->getDriverName() === 'mysql') {
+                    DB::statement(sprintf(
+                        'ALTER TABLE `%s` MODIFY `%s` JSON NULL',
+                        $table,
+                        $column
+                    ));
+                } else {
+                    Schema::table($table, function (Blueprint $blueprint) use ($column) {
+                        $blueprint->json($column)->nullable()->change();
+                    });
+                }
             }
         }
     }
@@ -90,11 +98,17 @@ return new class extends Migration
                         }
                     });
 
-                DB::statement(sprintf(
-                    'ALTER TABLE `%s` MODIFY `%s` TEXT NULL',
-                    $table,
-                    $column
-                ));
+                if (Schema::getConnection()->getDriverName() === 'mysql') {
+                    DB::statement(sprintf(
+                        'ALTER TABLE `%s` MODIFY `%s` TEXT NULL',
+                        $table,
+                        $column
+                    ));
+                } else {
+                    Schema::table($table, function (Blueprint $blueprint) use ($column) {
+                        $blueprint->text($column)->nullable()->change();
+                    });
+                }
             }
         }
     }

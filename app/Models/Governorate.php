@@ -45,6 +45,39 @@ class Governorate extends Model
     }
 
     /**
+     * Compact label without the "Direction régionale de ..." prefix.
+     * Used when a planned session's place is shown to citizens.
+     */
+    public function shortName(): string
+    {
+        $name = $this->name;
+
+        $short = match (app()->getLocale()) {
+            'fr'    => preg_replace("/^Direction régionale (?:de l'|de |d'|du |des )/iu", '', $name),
+            'en'    => preg_replace('/^Regional Directorate of /i', '', $name),
+            default => preg_replace('/^الإدارة الجهوية ب/u', '', $name),
+        };
+
+        return trim($short ?: $name);
+    }
+
+    /** Ben Arous is the default central training site (seeded as id 4). */
+    public static function benArous(): ?self
+    {
+        return static::query()
+            ->where('name_fr', 'Direction régionale de Ben Arous')
+            ->orWhere('name_en', 'Regional Directorate of Ben Arous')
+            ->orWhere('name_ar', 'الإدارة الجهوية ببن عروس')
+            ->first()
+            ?? static::find(4);
+    }
+
+    public static function benArousId(): ?int
+    {
+        return static::benArous()?->id;
+    }
+
+    /**
      * All governorates keyed by id => localized name, for use in select dropdowns.
      * Uses the accessor (computed from name_ar/fr/en) — must load full rows first.
      */

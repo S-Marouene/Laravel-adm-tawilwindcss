@@ -575,7 +575,10 @@
                             </div>
                             {{-- Centralized formations (prévention 1/2 + BNS) — session / wait list --}}
                             @if ($tr->isCentralized())
-                                @php $sess = $tr->plannedSession; @endphp
+                                @php
+                                    $sess = $tr->plannedSession;
+                                    $placeLabel = $sess?->placeLabel() ?? \App\Models\TrainingPlannedSession::defaultPlaceLabel();
+                                @endphp
                                 <div class="col-span-2 sm:col-span-3 lg:col-span-4 rounded @if($tr->isWaitListed()) border border-amber-300 bg-amber-50 dark:border-amber-700/50 dark:bg-amber-900/20 @else border border-primary/30 bg-primary/5 dark:border-primary/40 dark:bg-primary/10 @endif p-3 flex items-start gap-2.5">
                                     <span class="material-symbols-outlined text-base mt-px shrink-0 @if($tr->isWaitListed()) text-amber-600 @else text-primary @endif" aria-hidden="true">hub</span>
                                     <div class="min-w-0">
@@ -583,9 +586,9 @@
                                         @if ($tr->isWaitListed())
                                             <span class="block text-xs font-bold text-amber-900 dark:text-amber-200">{{ __('training.waitlist_badge') }}</span>
                                         @else
-                                            <span class="block text-xs font-bold text-on-surface dark:text-gray-100" dir="ltr">{{ $sess->starts_at->format('d/m/Y H:i') }}@if($sess->ends_at) — {{ $sess->ends_at->format('d/m/Y H:i') }}@endif</span>
+                                            <span class="block text-xs font-bold text-on-surface dark:text-gray-100" dir="ltr">{{ $sess->starts_at->format('d/m/Y') }}@if($sess->ends_at) — {{ $sess->ends_at->format('d/m/Y') }}@endif</span>
                                         @endif
-                                        <span class="block text-[11px] text-secondary mt-0.5">{{ __('training.centralized_hint_short') }}</span>
+                                        <span class="block text-[11px] text-secondary mt-0.5">{{ __('training.centralized_hint_short', ['place' => $placeLabel]) }}</span>
                                     </div>
                                 </div>
                             @endif

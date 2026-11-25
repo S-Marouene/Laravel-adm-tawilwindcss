@@ -14,20 +14,40 @@ class TrainingPlannedSession extends Model
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_CANCELLED = 'cancelled';
 
+    // Granular Spatie permissions for the yearly plan of centralized formations.
+    // Viewing is intentionally separate from writing so a regional manager can
+    // follow the planning without being able to create/edit/cancel a session.
+    public const PERM_VIEW   = 'view training-planned-sessions';
+    public const PERM_CREATE = 'create training-planned-sessions';
+    public const PERM_EDIT   = 'edit training-planned-sessions';
+    public const PERM_DELETE = 'delete training-planned-sessions';
+
+    /** Permissions an administrator may grant directly to a user. */
+    public const PERMISSIONS = [
+        self::PERM_VIEW,
+        self::PERM_CREATE,
+        self::PERM_EDIT,
+        self::PERM_DELETE,
+    ];
+
     protected $fillable = [
         'training_type',
+        'governorate_id',
         'starts_at',
         'ends_at',
         'capacity',
         'status',
+        'is_active',
         'notes',
         'created_by',
     ];
 
     protected $casts = [
-        'starts_at' => 'datetime',
-        'ends_at'  => 'datetime',
-        'capacity' => 'integer',
+        'starts_at'     => 'datetime',
+        'ends_at'       => 'datetime',
+        'capacity'      => 'integer',
+        'is_active'     => 'boolean',
+        'governorate_id' => 'integer',
     ];
 
     protected $attributes = [
@@ -43,6 +63,12 @@ class TrainingPlannedSession extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /** The governorate where this centralized session is physically held. */
+    public function governorate(): BelongsTo
+    {
+        return $this->belongsTo(Governorate::class);
+    }
+
     public function requests(): HasMany
     {
         return $this->hasMany(TrainingRequest::class, 'planned_session_id');
@@ -52,8 +78,26 @@ class TrainingPlannedSession extends Model
     // Scopes
     // -----------------------------------------------------------------------
 
-    /** Sessions that can still be chosen by a citizen. */
+    /**
+     * Sessions that can still be chosen by a citizen.
+     *
+     * Capacity is intentionally NOT part of this scope: citizens may submit
+     * even when a session is full; the central service later selects the
+     * participants from the roster. `is_active` is the on/off switch.
+     */
     public function scopeSelectable(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_PLANNED)
+            ->where('is_active', true)
+            ->where('starts_at', '>', now());
+    }
+
+    /**
+     * Sessions an administrator may assign requests to. Unlike the public
+     * scope, this ignores is_active: closing submissions must not prevent the
+     * centrale from finalizing the roster afterwards.
+     */
+    public function scopeAssignable(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_PLANNED)
             ->where('starts_at', '>', now());
@@ -75,7 +119,15 @@ class TrainingPlannedSession extends Model
 
     public function isSelectable(): bool
     {
-        return $this->isPlanned() && $this->starts_at->isFuture() && $this->seatsLeft() !== 0;
+        return $this->is_active
+            && $this->isPlanned()
+            && $this->starts_at->isFuture();
+    }
+
+    /** Assignment stays available after submissions are closed. */
+    public function isAssignable(): bool
+    {
+        return $this->isPlanned() && $this->starts_at->isFuture();
     }
 
     /** Number of persons enrolled (a society counts its participants, an individual = 1). */
@@ -164,6 +216,18 @@ class TrainingPlannedSession extends Model
         return __('training.type_' . $this->training_type);
     }
 
+    /** Short localized name of the place where the session is held. */
+    public function placeLabel(): string
+    {
+        return $this->governorate?->shortName() ?? self::defaultPlaceLabel();
+    }
+
+    /** Fallback place used before an administrator picks another governorate. */
+    public static function defaultPlaceLabel(): string
+    {
+        return Governorate::benArous()?->shortName() ?? __('training.planned_place_default');
+    }
+
     public function statusLabel(): string
     {
         return match ($this->status) {
@@ -173,5 +237,16 @@ class TrainingPlannedSession extends Model
             self::STATUS_CANCELLED => __('training.planned_status_cancelled'),
             default               => ucfirst($this->status),
         };
+    }
+
+    /** @return array<string, string> Permission name => translated label. */
+    public static function permissionLabels(): array
+    {
+        return [
+            self::PERM_VIEW   => __('training.planned_perm_view'),
+            self::PERM_CREATE => __('training.planned_perm_create'),
+            self::PERM_EDIT   => __('training.planned_perm_edit'),
+            self::PERM_DELETE => __('training.planned_perm_delete'),
+        ];
     }
 }

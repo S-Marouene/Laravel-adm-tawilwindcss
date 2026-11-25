@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Delegation;
 use App\Models\Governorate;
 use App\Models\Service;
+use App\Models\TrainingPlannedSession;
 use App\Models\User;
 use App\Models\UserTerritory;
 use Illuminate\Database\Seeder;
@@ -39,6 +40,10 @@ class RolePermissionSeeder extends Seeder
             'view building-works-declarations', 'manage building-works-declarations',
             // Paid special interventions
             'view special-interventions', 'manage special-interventions',
+            // Training: the centrale organizes the yearly plan of centralized sessions
+            'view training', 'manage training',
+            TrainingPlannedSession::PERM_VIEW, TrainingPlannedSession::PERM_CREATE,
+            TrainingPlannedSession::PERM_EDIT, TrainingPlannedSession::PERM_DELETE,
         ],
 
         'manager' => [
@@ -50,6 +55,9 @@ class RolePermissionSeeder extends Seeder
             'view building-works-declarations', 'manage building-works-declarations',
             // Paid special interventions
             'view special-interventions', 'manage special-interventions',
+            // Training: regional directions are the contact point and may follow
+            // the plan, but cannot insert/update the centralized sessions.
+            'view training', TrainingPlannedSession::PERM_VIEW,
         ],
 
         'user' => [],
@@ -102,6 +110,9 @@ class RolePermissionSeeder extends Seeder
             'view building-works-declarations', 'manage building-works-declarations',
             // Paid special interventions
             'view special-interventions', 'manage special-interventions',
+            // Training / formation (demandes + programmation centralisée)
+            'view training', 'manage training',
+            ...TrainingPlannedSession::PERMISSIONS,
             // Activity logs
             'view activity-logs', 'delete activity-logs',
             // Website settings (super-admin only)
@@ -189,7 +200,8 @@ class RolePermissionSeeder extends Seeder
         );
         $manager->syncRoles(['manager']);
         $preventionService = Service::where('key', Service::SERVICE_PREVENTION)->value('id');
-        $manager->services()->sync([$preventionService]);
+        $trainingService   = Service::where('key', Service::SERVICE_TRAINING)->value('id');
+        $manager->services()->sync(array_filter([$preventionService, $trainingService]));
 
         // Assign territories: first governorate (all delegations) + first delegation of second gov
         $firstGov = Governorate::orderBy('id')->first();

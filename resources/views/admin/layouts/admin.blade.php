@@ -281,6 +281,28 @@
                     @endif
                     @endcan
 
+                    {{-- Training / formation — requests + centralized planning --}}
+                    @canany(['view training', \App\Models\TrainingPlannedSession::PERM_VIEW])
+                    @if(auth()->user()->hasService(App\Models\Service::SERVICE_TRAINING))
+                        @can('view training')
+                        <a href="{{ route('admin.training.index') }}" data-tooltip="{{ __('services.training') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.training.index', 'admin.training.show') ? 'active' : '' }}">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0118 12.5a12.18 12.18 0 01-6 1.5 12.18 12.18 0 01-6-1.5 12.083 12.083 0 01-.16-1.922L12 14zm0 0v6m-6-3l6 3 6-3"/>
+                            </svg>
+                            <span x-show="!collapsed" class="truncate">{{ __('services.training') }}</span>
+                        </a>
+                        @endcan
+                        @can(\App\Models\TrainingPlannedSession::PERM_VIEW)
+                        <a href="{{ route('admin.training.planned.index') }}" data-tooltip="{{ __('training.planned_title') }}" class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.training.planned.*') ? 'active' : '' }}">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span x-show="!collapsed" class="truncate">{{ __('training.planned_title') }}</span>
+                        </a>
+                        @endcan
+                    @endif
+                    @endcanany
+
                     @can('view delegations')
                     {{-- Reference data: collapsible submenu --}}
                     <div x-data="{ refOpen: {{ request()->routeIs('admin.governorates.*', 'admin.delegations.*', 'admin.building-types.*', 'admin.building-activities.*', 'admin.document-types.*') ? 'true' : 'false' }} }" class="space-y-0.5">

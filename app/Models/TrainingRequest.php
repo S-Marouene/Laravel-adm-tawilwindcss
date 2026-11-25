@@ -43,8 +43,8 @@ class TrainingRequest extends Model
     public const DEPOSITOR_INDIVIDUAL = 'individual';
     public const DEPOSITOR_COMPANY    = 'company';
 
-    // Centralized formations — held at the centrale (Tunis – Ben Arous),
-    // planned yearly; the chosen regional direction is only the contact point.
+    // Centralized formations — held yearly at a central site stored on the
+    // planned session; the chosen regional direction is only the contact point.
     public const CENTRALIZED_TYPES = ['prevention_level1', 'prevention_level2'];
 
     // -----------------------------------------------------------------------

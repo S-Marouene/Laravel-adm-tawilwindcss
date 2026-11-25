@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Governorate;
 use App\Models\TrainingDocument;
+use App\Models\TrainingPlannedSession;
 use App\Models\TrainingRequest;
 use App\Models\Service;
 use App\Services\DossierNotifier;
@@ -40,7 +41,7 @@ class TrainingController extends Controller
     {
         if ($trainingRequest->user_id !== auth()->id()) abort(403);
 
-        $trainingRequest->load(['user', 'governorate', 'delegation', 'plannedSession', 'documents', 'participants', 'events.actor', 'sessions']);
+        $trainingRequest->load(['user', 'governorate', 'delegation', 'plannedSession.governorate', 'documents', 'participants', 'events.actor', 'sessions']);
 
         return view('training.show', [
             'trainingRequest'      => $trainingRequest,
@@ -67,6 +68,7 @@ class TrainingController extends Controller
             'delegations'     => $this->delegations(),
             'drafts'           => $drafts,
             'plannedSessions'  => $this->plannedSessionsForSelect(),
+            'defaultPlaceLabel' => TrainingPlannedSession::defaultPlaceLabel(),
         ]);
     }
 
@@ -83,6 +85,7 @@ class TrainingController extends Controller
             'delegations'     => $this->delegations(),
             'trainingRequest' => $trainingRequest,
             'plannedSessions' => $this->plannedSessionsForSelect($trainingRequest),
+            'defaultPlaceLabel' => TrainingPlannedSession::defaultPlaceLabel(),
         ]);
     }
 
@@ -462,21 +465,24 @@ class TrainingController extends Controller
 
     /**
      * Selectable centralized sessions grouped by training_type,
-     * shaped for the step-1 view: type => [ [id, starts_at, ends_at, seats_left, capacity], ... ]
+     * shaped for the step-1 view: type => [ [id, starts_at, ends_at, place_label], ... ]
      */
     private function plannedSessionsForSelect(?TrainingRequest $tr = null): array
     {
-        $query = \App\Models\TrainingPlannedSession::forCentralizedTypes()->selectable()
+        $query = TrainingPlannedSession::forCentralizedTypes()
+            ->selectable()
+            ->with('governorate')
             ->orderBy('starts_at');
 
         $grouped = [];
         $query->get()->each(function ($s) use (&$grouped) {
             $grouped[$s->training_type][] = [
-                'id'        => $s->id,
-                'starts_at' => $s->starts_at->format('Y-m-d H:i'),
-                'ends_at'   => $s->ends_at?->format('Y-m-d H:i'),
-                'seats_left' => $s->seatsLeft(),
-                'capacity'  => $s->capacity,
+                'id'         => $s->id,
+                'starts_at'  => $s->starts_at->format('Y-m-d'),
+                'ends_at'    => $s->ends_at?->format('Y-m-d'),
+                'date_label' => $s->starts_at->format('d/m/Y')
+                    . ($s->ends_at ? ' — ' . $s->ends_at->format('d/m/Y') : ''),
+                'place_label' => $s->placeLabel(),
             ];
         });
 
@@ -485,11 +491,12 @@ class TrainingController extends Controller
             $chosen = $tr->plannedSession;
             if ($chosen && ! in_array($chosen->id, array_column($grouped[$chosen->training_type] ?? [], 'id'))) {
                 $grouped[$chosen->training_type][] = [
-                    'id'        => $chosen->id,
-                    'starts_at' => $chosen->starts_at->format('Y-m-d H:i'),
-                    'ends_at'   => $chosen->ends_at?->format('Y-m-d H:i'),
-                    'seats_left' => $chosen->seatsLeft(),
-                    'capacity'  => $chosen->capacity,
+                    'id'          => $chosen->id,
+                    'starts_at'   => $chosen->starts_at->format('Y-m-d'),
+                    'ends_at'     => $chosen->ends_at?->format('Y-m-d'),
+                    'date_label'  => $chosen->starts_at->format('d/m/Y')
+                        . ($chosen->ends_at ? ' — ' . $chosen->ends_at->format('d/m/Y') : ''),
+                    'place_label' => $chosen->placeLabel(),
                 ];
             }
         }
@@ -508,7 +515,7 @@ class TrainingController extends Controller
             'planned_session_id' => [
                 'nullable', 'integer',
                 function (string $attribute, mixed $value, \Closure $fail) {
-                    $session = \App\Models\TrainingPlannedSession::find($value);
+                    $session = TrainingPlannedSession::find($value);
                     if (! $session) { $fail(__('training.planned_session_invalid')); return; }
                     if ($session->training_type !== request()->input('training_type')) { $fail(__('training.planned_session_type_mismatch')); return; }
                     if (! $session->isSelectable()) { $fail(__('training.planned_session_unavailable')); return; }

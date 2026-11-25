@@ -5,7 +5,7 @@
                 <h2 class="text-xl font-bold text-on-surface dark:text-gray-100">{{ __('training.index_title') }}</h2>
                 <p class="mt-0.5 text-sm text-secondary dark:text-gray-400">{{ __('training.index_subtitle') }}</p>
             </div>
-            @can('manage training')
+            @can(\App\Models\TrainingPlannedSession::PERM_VIEW)
             <a href="{{ route('admin.training.planned.index') }}" class="admin-add-button px-4 py-2 text-sm whitespace-nowrap">
                 <span class="material-symbols-outlined text-[16px] mr-1 align-middle" aria-hidden="true">event_available</span>
                 {{ __('training.planned_title') }}
