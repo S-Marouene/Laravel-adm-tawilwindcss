@@ -476,32 +476,41 @@ class TrainingController extends Controller
 
         $grouped = [];
         $query->get()->each(function ($s) use (&$grouped) {
-            $grouped[$s->training_type][] = [
-                'id'         => $s->id,
-                'starts_at'  => $s->starts_at->format('Y-m-d'),
-                'ends_at'    => $s->ends_at?->format('Y-m-d'),
-                'date_label' => $s->starts_at->format('d/m/Y')
-                    . ($s->ends_at ? ' — ' . $s->ends_at->format('d/m/Y') : ''),
-                'place_label' => $s->placeLabel(),
-            ];
+            $grouped[$s->training_type][] = $this->plannedSessionPayload($s);
         });
 
         // When editing, always keep the currently chosen session in the list
         if ($tr && $tr->planned_session_id) {
             $chosen = $tr->plannedSession;
             if ($chosen && ! in_array($chosen->id, array_column($grouped[$chosen->training_type] ?? [], 'id'))) {
-                $grouped[$chosen->training_type][] = [
-                    'id'          => $chosen->id,
-                    'starts_at'   => $chosen->starts_at->format('Y-m-d'),
-                    'ends_at'     => $chosen->ends_at?->format('Y-m-d'),
-                    'date_label'  => $chosen->starts_at->format('d/m/Y')
-                        . ($chosen->ends_at ? ' — ' . $chosen->ends_at->format('d/m/Y') : ''),
-                    'place_label' => $chosen->placeLabel(),
-                ];
+                $grouped[$chosen->training_type][] = $this->plannedSessionPayload($chosen);
             }
         }
 
         return $grouped;
+    }
+
+    /**
+     * Shape one planned session for the citizen picker. The governorate ID is
+     * passed alongside the already-translated labels so the place can always
+     * be resolved through the language dictionaries on the client side.
+     *
+     * @return array<string, mixed>
+     */
+    private function plannedSessionPayload(TrainingPlannedSession $session): array
+    {
+        return [
+            'id'                  => $session->id,
+            'training_type'       => $session->training_type,
+            'training_type_label' => $session->typeLabel(),
+            'governorate_id'      => $session->placeId(),
+            'starts_at'           => $session->starts_at->format('Y-m-d'),
+            'ends_at'             => $session->ends_at?->format('Y-m-d'),
+            'date_label'          => $session->starts_at->format('d/m/Y')
+                . ($session->ends_at ? ' — ' . $session->ends_at->format('d/m/Y') : ''),
+            'place_label'         => $session->placeLabel(),
+            'place_name'          => $session->placeName(),
+        ];
     }
 
     // ── Step 1: type de formation + direction régionale ──

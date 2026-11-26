@@ -346,8 +346,38 @@ test('the citizen form exposes the session place but not remaining seats', funct
     $this->actingAs($citizen)->get(route('training.create'))
         ->assertOk()
         ->assertSee('place_label', false)
+        ->assertSee('place_name', false)
+        ->assertSee('training_type_label', false)
+        ->assertSee('"governorate_id":'.$governorate->id, false)
         ->assertSee('Ben Arous', false)
         ->assertDontSee('Places restantes');
+});
+
+test('the request details show the training, the date and the full session place', function () {
+    [$governorate, $delegation] = citizenTerritory();
+    $session = plannedTrainingSession();
+    $session->update(['governorate_id' => $governorate->id]);
+
+    $citizen = User::factory()->create();
+    $citizen->assignRole('user');
+
+    $trainingRequest = TrainingRequest::create([
+        'user_id'            => $citizen->id,
+        'governorate_id'     => $governorate->id,
+        'delegation_id'      => $delegation->id,
+        'training_type'      => 'prevention_level1',
+        'training_kind'      => 'new',
+        'status'             => TrainingRequest::STATUS_UNDER_CONSULTATION,
+        'current_step'       => 3,
+        'planned_session_id' => $session->id,
+    ]);
+
+    $this->actingAs($citizen)->get(route('training.show', $trainingRequest))
+        ->assertOk()
+        ->assertSee(__('training.type_prevention_level1'))
+        ->assertSee($session->starts_at->format('d/m/Y'))
+        ->assertSee(__('training.planned_place'))
+        ->assertSee('Direction régionale de Ben Arous');
 });
 
 test('planned session dates are date-only in forms, storage and listings', function () {

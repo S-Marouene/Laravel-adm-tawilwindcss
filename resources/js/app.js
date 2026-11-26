@@ -2,6 +2,9 @@ import Alpine from 'alpinejs';
 import Swal from 'sweetalert2';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import flatpickr from 'flatpickr';
+import { French } from 'flatpickr/dist/l10n/fr.js';
+import { Arabic } from 'flatpickr/dist/l10n/ar.js';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import 'boxicons/css/boxicons.min.css';
 
@@ -1310,5 +1313,85 @@ Alpine.data('bilingualTranslator', () => ({
         return false;
     }, true);
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATE INPUTS — always displayed and typed as dd/mm/yyyy
+   ─────────────────────────────────────────────────────────────────────────
+   Native <input type="date"> renders in the browser/OS locale (often
+   mm/dd/yyyy), which cannot be forced. Flatpickr wraps every date input
+   with an alt input that shows d/m/Y while the original (hidden) input
+   keeps its Y-m-d value — so all Laravel validation, casts and database
+   writes keep working unchanged.
+
+   Works automatically for every <input type="date"> present on load and
+   for any date input injected later (modals, Alpine x-for, AJAX).
+   ═══════════════════════════════════════════════════════════════════════════ */
+function initDatePickers(root = document) {
+    const isArabic  = document.documentElement.getAttribute('lang')?.startsWith('ar');
+    const locale    = isArabic ? Arabic : French;
+    const placeholder = isArabic ? 'يي/شش/سسسس' : 'jj/mm/aaaa';
+
+    const inputs = [];
+    if (root.matches?.('input[type="date"]')) inputs.push(root);
+    inputs.push(...(root.querySelectorAll?.('input[type="date"]') ?? []));
+
+    inputs.forEach((input) => {
+        if (input.dataset.datepickerReady) return;
+        input.dataset.datepickerReady = '1';
+
+        const min = input.getAttribute('min');
+        const max = input.getAttribute('max');
+
+        flatpickr(input, {
+            altInput:      true,
+            altFormat:     'd/m/Y',   // what the user sees / types
+            dateFormat:    'Y-m-d',   // what the form submits
+            allowInput:    true,      // keyboard entry in dd/mm/yyyy
+            disableMobile: true,      // keep the dd/mm/yyyy field on mobile too
+            locale,
+            minDate:       min || undefined,
+            maxDate:       max || undefined,
+            onReady(_dates, _str, instance) {
+                const alt = instance.altInput;
+                if (!alt) return;
+                if (!alt.placeholder) alt.placeholder = placeholder;
+                alt.setAttribute('inputmode', 'numeric');
+                alt.setAttribute('autocomplete', 'off');
+                if (input.getAttribute('aria-label')) {
+                    alt.setAttribute('aria-label', input.getAttribute('aria-label'));
+                }
+
+                // The original input becomes hidden, so point its <label>
+                // at the visible alt input to keep clicks/focus working.
+                if (input.id) {
+                    alt.id = `${input.id}__display`;
+                    const selector = `label[for="${window.CSS?.escape ? CSS.escape(input.id) : input.id}"]`;
+                    document.querySelectorAll(selector).forEach((label) => {
+                        label.setAttribute('for', alt.id);
+                    });
+                }
+            },
+        });
+    });
+}
+
+window.initDatePickers = initDatePickers;
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => initDatePickers());
+} else {
+    initDatePickers();
+}
+
+// Catch date inputs rendered after page load (Alpine, modals, AJAX…)
+if (typeof MutationObserver !== 'undefined') {
+    new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === 1) initDatePickers(node);
+            });
+        });
+    }).observe(document.documentElement, { childList: true, subtree: true });
+}
 
 Alpine.start();

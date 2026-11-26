@@ -222,6 +222,21 @@ class TrainingPlannedSession extends Model
         return $this->governorate?->shortName() ?? self::defaultPlaceLabel();
     }
 
+    /**
+     * Full localized name of the place, exactly as offered in the
+     * "Ajouter une session programmée" form (governorate select).
+     */
+    public function placeName(): string
+    {
+        return $this->governorate?->name ?? self::defaultPlaceLabel();
+    }
+
+    /** Governorate ID of the place, used by the citizen side to stay locale-safe. */
+    public function placeId(): ?int
+    {
+        return $this->governorate_id ?? Governorate::benArousId();
+    }
+
     /** Fallback place used before an administrator picks another governorate. */
     public static function defaultPlaceLabel(): string
     {

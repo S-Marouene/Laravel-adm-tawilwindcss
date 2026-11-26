@@ -166,7 +166,7 @@
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                         @foreach ($typeSessions as $s)
                             <tr class="hover:bg-surface-container dark:hover:bg-gray-700/30">
-                                <td class="px-6 py-4 text-sm text-secondary dark:text-gray-300">{{ $s->placeLabel() }}</td>
+                                <td class="px-6 py-4 text-sm text-secondary dark:text-gray-300">{{ $s->placeName() }}</td>
                                 <td class="px-6 py-4 text-sm font-semibold text-on-surface dark:text-gray-100" dir="ltr">{{ $s->starts_at?->format('d/m/Y') }}</td>
                                 <td class="px-6 py-4 text-sm text-secondary dark:text-gray-300" dir="ltr">{{ $s->ends_at?->format('d/m/Y') ?? '—' }}</td>
                                 <td class="px-6 py-4 text-sm"><span class="admin-badge">{{ $s->statusLabel() }}</span></td>
@@ -275,7 +275,7 @@
                                                     <input type="hidden" name="training_request_id" value="{{ $tr->id }}">
                                                     <select name="planned_session_id" class="text-xs px-2 py-1 rounded border border-surface-dim dark:border-gray-600 bg-surface-container-lowest dark:bg-gray-900/50">
                                                         @foreach ($sessionsForType as $sf)
-                                                            <option value="{{ $sf->id }}">{{ $sf->starts_at->format('d/m/Y') }} — {{ $sf->placeLabel() }}</option>
+                                                            <option value="{{ $sf->id }}">{{ $sf->starts_at->format('d/m/Y') }} — {{ $sf->placeName() }}</option>
                                                         @endforeach
                                                     </select>
                                                     <button type="submit" class="px-3 py-1 text-xs font-semibold bg-gov-600 text-white rounded hover:bg-gov-700">{{ __('training.planned_assign') }}</button>

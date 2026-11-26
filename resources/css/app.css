@@ -7,6 +7,7 @@
 
 /* Google Fonts: Roboto (latin complet) — Janna LT (arabe) auto-hébergée + Material Symbols (iconographie institutionnelle) */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100..900&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+@import "flatpickr/dist/flatpickr.min.css";
 
 /* Janna LT — police arabe institutionnelle (auto-hébergée) */
 @font-face {
@@ -2040,3 +2041,76 @@ body.swal2-toast-shown .swal2-container {
 }
 
 [x-cloak] { display: none !important; }
+
+/* ── Flatpickr (date inputs shown as dd/mm/yyyy) ─────────────────────────
+   Align the calendar popup with the app's design tokens in both themes. */
+.flatpickr-calendar {
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px -5px rgba(19, 27, 46, .18), 0 8px 10px -6px rgba(19, 27, 46, .12);
+    font-family: inherit;
+}
+
+.flatpickr-calendar .flatpickr-day.selected,
+.flatpickr-calendar .flatpickr-day.startRange,
+.flatpickr-calendar .flatpickr-day.endRange,
+.flatpickr-calendar .flatpickr-day.selected:hover {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.flatpickr-calendar .flatpickr-day.today {
+    border-color: var(--color-primary);
+}
+
+.flatpickr-calendar .flatpickr-day.today:hover {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.dark .flatpickr-calendar {
+    background: var(--color-surface-container-low);
+    border-color: var(--color-outline-variant);
+    color: var(--color-on-surface);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, .55);
+}
+
+.dark .flatpickr-calendar .flatpickr-months,
+.dark .flatpickr-calendar .flatpickr-month,
+.dark .flatpickr-calendar .flatpickr-weekdays,
+.dark .flatpickr-calendar .flatpickr-weekday,
+.dark .flatpickr-calendar .flatpickr-days {
+    background: transparent;
+    color: var(--color-on-surface);
+}
+
+.dark .flatpickr-calendar .flatpickr-current-month .flatpickr-monthDropdown-months,
+.dark .flatpickr-calendar .flatpickr-current-month input.cur-year {
+    color: var(--color-on-surface);
+}
+
+.dark .flatpickr-calendar .flatpickr-day {
+    color: var(--color-on-surface);
+}
+
+.dark .flatpickr-calendar .flatpickr-day:hover,
+.dark .flatpickr-calendar .flatpickr-day.prevMonthDay:hover,
+.dark .flatpickr-calendar .flatpickr-day.nextMonthDay:hover {
+    background: var(--color-surface-dim);
+    border-color: var(--color-surface-dim);
+}
+
+.dark .flatpickr-calendar .flatpickr-day.prevMonthDay,
+.dark .flatpickr-calendar .flatpickr-day.nextMonthDay {
+    color: var(--color-secondary);
+}
+
+.dark .flatpickr-calendar.arrowTop::before,
+.dark .flatpickr-calendar.arrowTop::after {
+    border-bottom-color: var(--color-surface-container-low);
+}
+
+.dark .flatpickr-calendar.arrowBottom::before,
+.dark .flatpickr-calendar.arrowBottom::after {
+    border-top-color: var(--color-surface-container-low);
+}

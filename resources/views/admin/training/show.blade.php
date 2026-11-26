@@ -90,12 +90,19 @@
                     $sess = $tr->plannedSession;
                     $isWait = $tr->isWaitListed();
                     $placeLabel = $sess?->placeLabel() ?? \App\Models\TrainingPlannedSession::defaultPlaceLabel();
+                    $placeName  = $sess?->placeName() ?? \App\Models\TrainingPlannedSession::defaultPlaceLabel();
                 @endphp
                 <div class="mb-6 rounded-lg border @if($isWait) border-amber-300 bg-amber-50 dark:border-amber-700/50 dark:bg-amber-900/20 @else border-primary/30 bg-primary/5 dark:border-primary/40 dark:bg-primary/10 @endif p-4">
                     <div class="flex items-start gap-3">
                         <span class="material-symbols-outlined text-[22px] @if($isWait) text-amber-600 @else text-primary @endif mt-px shrink-0" aria-hidden="true">hub</span>
                         <div class="min-w-0 flex-1">
                             <p class="text-xs font-bold uppercase tracking-wider @if($isWait) text-amber-800 dark:text-amber-300 @else text-primary @endif mb-1">{{ __('training.centralized_title') }}</p>
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-on-surface dark:text-gray-100 mb-1">
+                                <span><span class="font-semibold">{{ __('training.training_type') }}:</span> {{ __('training.type_' . $tr->training_type) }}</span>
+                                @unless ($isWait)
+                                    <span><span class="font-semibold">{{ __('training.planned_place') }}:</span> {{ $placeName }}</span>
+                                @endunless
+                            </div>
                             <p class="text-sm text-on-surface dark:text-gray-200 mb-1">{{ __('training.centralized_hint_admin', ['place' => $placeLabel]) }}</p>
                             @if ($isWait)
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-200 text-amber-900 text-xs font-bold dark:bg-amber-900/40 dark:text-amber-200">

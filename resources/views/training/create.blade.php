@@ -268,7 +268,18 @@
         var hintTemplate    = @json(__('training.centralized_hint'));
         var defaultPlace    = @json($defaultPlaceLabel);
         var lblPlace        = @json(__('training.planned_place'));
+        var lblDate         = @json(__('training.planned_starts_at'));
+        var lblTraining     = @json(__('training.training_type'));
         var lblChoose       = @json(__('training.choose_planned_session'));
+
+        // Governorate id => localized name, so a session's place is always
+        // resolved through its ID and follows the active language.
+        var PLACE_NAMES = @json($gouvernorats);
+
+        function resolvePlaceName(id) {
+            if (id === null || id === undefined || id === '') return null;
+            return PLACE_NAMES[String(id)] || null;
+        }
 
         var centBox   = document.getElementById('centralized-box');
         var sessList  = document.getElementById('planned-sessions-list');
@@ -303,6 +314,10 @@
                 wrap.className = 'flex items-center gap-3 rounded border p-3 cursor-pointer transition '
                     + (chosen ? 'border-primary bg-primary/10 dark:bg-primary/20'
                         : 'border-surface-dim hover:border-primary/50 dark:border-gray-700');
+                // Keep the raw IDs on the card: the selected session is posted by
+                // id, and the place is always resolved through its governorate id.
+                wrap.dataset.governorateId = s.governorate_id || '';
+                wrap.dataset.trainingType  = s.training_type || '';
                 var radio = document.createElement('input');
                 radio.type = 'radio';
                 radio.name = 'planned_session_id';
@@ -315,9 +330,32 @@
 
                 var info = document.createElement('div');
                 info.className = 'min-w-0 flex-1';
-                var when = '<span dir="ltr">' + (s.date_label || s.starts_at) + '</span>';
-                info.innerHTML = '<p class="text-body-sm font-semibold text-on-surface dark:text-gray-100">' + when + '</p>'
-                    + '<p class="text-[11px] text-outline mt-0.5">' + lblPlace + ': ' + s.place_label + '</p>';
+
+                // Training type (already translated server-side)
+                var trainingLine = document.createElement('p');
+                trainingLine.className = 'text-body-sm font-semibold text-on-surface dark:text-gray-100';
+                trainingLine.textContent = lblTraining + ': ' + (s.training_type_label || s.training_type || '');
+
+                // Date — dd/mm/yyyy, forced LTR so it stays readable in Arabic
+                var dateLine = document.createElement('p');
+                dateLine.className = 'text-[11px] text-outline mt-0.5';
+                dateLine.textContent = lblDate + ': ';
+                var when = document.createElement('span');
+                when.dir = 'ltr';
+                when.textContent = s.date_label || s.starts_at || '';
+                dateLine.appendChild(when);
+
+                // Place — resolved from the governorate ID so it follows the
+                // current locale instead of a frozen string.
+                var placeLine = document.createElement('p');
+                placeLine.className = 'text-[11px] text-outline mt-0.5';
+                var placeName = resolvePlaceName(s.governorate_id)
+                    || s.place_name || s.place_label || defaultPlace;
+                placeLine.textContent = lblPlace + ': ' + placeName;
+
+                info.appendChild(trainingLine);
+                info.appendChild(dateLine);
+                info.appendChild(placeLine);
                 wrap.appendChild(radio);
                 wrap.appendChild(info);
                 sessList.appendChild(wrap);
