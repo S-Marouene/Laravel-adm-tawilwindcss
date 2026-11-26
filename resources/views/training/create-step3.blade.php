@@ -121,17 +121,21 @@
                                                     <div class="min-w-0 flex-1">
                                                         <div class="flex flex-wrap items-center gap-2">
                                                             <p class="text-body-sm font-bold text-on-surface dark:text-gray-100">{{ $loop->iteration }}. {{ $doc['name'] }}</p>
-                                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-accent-600 bg-accent-50 rounded border border-accent-500/20">
-                                                                <span class="material-symbols-outlined text-[13px]" aria-hidden="true">priority_high</span>{{ __('training.document_required') }}
-                                                            </span>
                                                         </div>
                                                         @if ($hasUploaded)
+                                                            @php $isImage = str($uploadedFile->mime_type ?? '')->startsWith('image/'); @endphp
                                                             <div class="mt-2 flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-container-lowest p-2.5 dark:border-gray-700 dark:bg-gray-800/60">
-                                                                <span class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-gov-50 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300">
-                                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
+                                                                <span class="flex h-12 w-12 flex-none items-center justify-center overflow-hidden rounded-lg border border-surface-dim bg-surface-container-low dark:border-gray-600">
+                                                                    @if ($isImage)
+                                                                        <img src="{{ route('training.documents.preview', $uploadedFile) }}" alt="{{ $uploadedFile->original_name }}" class="h-full w-full object-cover">
+                                                                    @else
+                                                                        <span class="material-symbols-outlined text-gov-700 text-[22px] dark:text-gov-300" aria-hidden="true">description</span>
+                                                                    @endif
                                                                 </span>
                                                                 <div class="min-w-0 flex-1">
-                                                                    <p class="truncate text-xs font-semibold text-on-surface dark:text-gray-100">{{ $uploadedFile->original_name }}</p>
+                                                                    <a href="{{ route('training.documents.download', $uploadedFile) }}" class="block truncate text-xs font-semibold text-on-surface hover:text-primary dark:text-gray-100">
+                                                                        {{ $uploadedFile->original_name }}
+                                                                    </a>
                                                                     <p class="text-[11px] text-outline">{{ number_format($uploadedFile->size / 1024, 0) }} KB</p>
                                                                 </div>
                                                             </div>
@@ -141,7 +145,7 @@
                                                             <label class="inline-flex cursor-pointer items-center gap-2 rounded border border-surface-dim bg-surface-container-lowest px-3 py-2 text-xs font-semibold text-on-surface transition hover:bg-surface-container dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                                                 <span class="material-symbols-outlined text-[15px] text-primary" aria-hidden="true">upload_file</span>
                                                                 <span class="upload-label">{{ $hasUploaded ? __('training.replace_file') : __('training.upload_file') }}</span>
-                                                                <input type="file" name="documents[{{ $doc['key'] }}][]" class="sr-only file-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple>
+                                                                <input type="file" name="documents[{{ $doc['key'] }}]" class="sr-only file-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
                                                             </label>
                                                         </div>
                                                     </div>
@@ -192,40 +196,85 @@
             var done = 0;
             document.querySelectorAll('.doc-card').forEach(function (card) {
                 var input = card.querySelector('.file-input');
-                var staged = input && input.files ? input.files.length : 0;
-                if (staged > 0 || card.dataset.hasServer === '1') done++;
+                var staged = input && input._staged ? 1 : 0;
+                if (staged || card.dataset.hasServer === '1') done++;
             });
             prog.textContent = done + '/' + total;
         }
-        function stagedFiles(inp) { if (!inp._staged) inp._staged = []; return inp._staged; }
-        function syncFiles(inp) { var dt = new DataTransfer(); stagedFiles(inp).forEach(function(f){ dt.items.add(f); }); inp.files = dt.files; }
+
+        // One file per document: replacing it swaps the staged File object.
+        function setStaged(inp, file) {
+            if (inp._previewUrl) { URL.revokeObjectURL(inp._previewUrl); inp._previewUrl = null; }
+            inp._staged = file || null;
+            if (file && file.type && file.type.indexOf('image/') === 0) {
+                inp._previewUrl = URL.createObjectURL(file);
+            }
+            var dt = new DataTransfer();
+            if (inp._staged) dt.items.add(inp._staged);
+            inp.files = dt.files;
+        }
+
+        function makeThumb(file, url) {
+            var box = document.createElement('span');
+            box.className = 'flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded border border-surface-dim bg-surface-container-low dark:border-gray-600';
+            if (url) {
+                var img = document.createElement('img');
+                img.src = url;
+                img.alt = file.name;
+                img.className = 'h-full w-full object-cover';
+                box.appendChild(img);
+            } else {
+                box.innerHTML = '<span class="material-symbols-outlined text-outline text-[20px]" aria-hidden="true">description</span>';
+            }
+            return box;
+        }
+
         function renderPreview(card) {
             var inp = card.querySelector('.file-input');
             var pl  = card.querySelector('.preview-list');
             if (!pl) return;
             pl.innerHTML = '';
-            var staged = stagedFiles(inp);
-            if (!staged.length) { pl.classList.add('hidden'); return; }
+            var file = inp._staged || null;
+            if (!file) { pl.classList.add('hidden'); return; }
             pl.classList.remove('hidden');
-            staged.forEach(function (file, idx) {
-                var row = document.createElement('div');
-                row.className = 'flex items-center gap-2 rounded border border-surface-dim bg-surface-container-lowest px-3 py-2 text-xs dark:border-gray-700 dark:bg-gray-800';
-                var kbSize = (file.size/1024).toFixed(0) + ' KB';
-                row.innerHTML = '<svg class="h-5 w-5 shrink-0 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg><span class="flex-1 min-w-0 truncate text-on-surface dark:text-gray-200 font-medium">'+file.name+'</span><span class="text-outline shrink-0">'+kbSize+'</span><button type="button" class="shrink-0 remove-staged text-outline hover:text-red-600 transition" data-idx="'+idx+'" title="'+LABEL_REMOVE+'"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>';
-                row.querySelector('.remove-staged').addEventListener('click', function(){
-                    stagedFiles(inp).splice(parseInt(this.dataset.idx,10),1);
-                    syncFiles(inp); renderPreview(card); refreshCard(card);
-                });
-                pl.appendChild(row);
+
+            var row = document.createElement('div');
+            row.className = 'flex items-center gap-2 rounded border border-surface-dim bg-surface-container-lowest px-2 py-2 text-xs dark:border-gray-700 dark:bg-gray-800';
+            row.appendChild(makeThumb(file, inp._previewUrl));
+
+            var meta = document.createElement('span');
+            meta.className = 'min-w-0 flex-1';
+            var name = document.createElement('span');
+            name.className = 'block truncate font-medium text-on-surface dark:text-gray-200';
+            name.textContent = file.name;
+            var size = document.createElement('span');
+            size.className = 'block text-[11px] text-outline';
+            size.textContent = (file.size / 1024).toFixed(0) + ' KB';
+            meta.appendChild(name);
+            meta.appendChild(size);
+            row.appendChild(meta);
+
+            var remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'shrink-0 text-outline hover:text-red-600 transition';
+            remove.title = LABEL_REMOVE;
+            remove.innerHTML = '<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+            remove.addEventListener('click', function () {
+                setStaged(inp, null);
+                renderPreview(card);
+                refreshCard(card);
             });
+            row.appendChild(remove);
+            pl.appendChild(row);
         }
+
         function refreshCard(card) {
             var inp = card.querySelector('.file-input');
             var hasServer = card.dataset.hasServer === '1';
-            var stagedCount = stagedFiles(inp).length;
+            var hasStaged = !!(inp && inp._staged);
             var statusIcon = card.querySelector('.status-icon');
             var uploadLabel = card.querySelector('.upload-label');
-            if (stagedCount === 0 && !hasServer) {
+            if (!hasStaged && !hasServer) {
                 card.classList.add('border-surface-dim'); card.classList.remove('border-gov-300','bg-gov-50/30','dark:border-gov-800/40','dark:bg-gov-900/10');
                 statusIcon.className='status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-surface-container text-outline dark:bg-gray-700 dark:text-gray-500';
                 statusIcon.innerHTML='<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>';
@@ -234,16 +283,18 @@
                 statusIcon.className='status-icon mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-gov-100 text-gov-700 dark:bg-gov-900/40 dark:text-gov-300';
                 statusIcon.innerHTML='<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>';
             }
-            if (uploadLabel) uploadLabel.textContent = (stagedCount > 0 || hasServer) ? LABEL_REPLACE : LABEL_UPLOAD;
+            if (uploadLabel) uploadLabel.textContent = (hasStaged || hasServer) ? LABEL_REPLACE : LABEL_UPLOAD;
             updateProgress();
         }
+
         document.querySelectorAll('.file-input').forEach(function (inp) {
             inp.addEventListener('change', function () {
-                var files = Array.prototype.slice.call(this.files);
+                var file = this.files && this.files[0];
                 var card = this.closest('.doc-card');
-                if (!card || !files.length) return;
-                stagedFiles(inp).push.apply(stagedFiles(inp), files);
-                syncFiles(inp); renderPreview(card); refreshCard(card);
+                if (!card || !file) return;
+                setStaged(inp, file);
+                renderPreview(card);
+                refreshCard(card);
             });
         });
         if (form) { form.addEventListener('submit', function(){ if(btn)btn.disabled=true; var lt=btn?btn.getAttribute('data-loading-text'):null; if(lbl&&lt)lbl.textContent=lt; }); }

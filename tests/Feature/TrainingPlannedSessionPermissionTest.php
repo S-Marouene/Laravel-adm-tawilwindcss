@@ -350,6 +350,8 @@ test('the citizen form exposes the session place but not remaining seats', funct
         ->assertSee('training_type_label', false)
         ->assertSee('"governorate_id":'.$governorate->id, false)
         ->assertSee('Ben Arous', false)
+        ->assertSee(__('training.centralized_hint_intro'), false)
+        ->assertDontSee('Cette formation se déroule au centre', false)
         ->assertDontSee('Places restantes');
 });
 

@@ -68,7 +68,6 @@ class TrainingController extends Controller
             'delegations'     => $this->delegations(),
             'drafts'           => $drafts,
             'plannedSessions'  => $this->plannedSessionsForSelect(),
-            'defaultPlaceLabel' => TrainingPlannedSession::defaultPlaceLabel(),
         ]);
     }
 
@@ -85,7 +84,6 @@ class TrainingController extends Controller
             'delegations'     => $this->delegations(),
             'trainingRequest' => $trainingRequest,
             'plannedSessions' => $this->plannedSessionsForSelect($trainingRequest),
-            'defaultPlaceLabel' => TrainingPlannedSession::defaultPlaceLabel(),
         ]);
     }
 
@@ -217,31 +215,28 @@ class TrainingController extends Controller
 
         $rules = [];
         foreach ($requirements as $key => $requirement) {
-            $rules["documents.{$key}"]   = ['nullable', 'array', 'max:10'];
-            $rules["documents.{$key}.*"] = ['nullable', 'file', 'max:10240'];
+            // One document per requirement: the field is a single file, not an array.
+            $rules["documents.{$key}"] = ['nullable', 'file', 'max:10240'];
         }
         $request->validate($rules);
 
         $uploadDir = "training-documents/{$trainingRequest->id}";
         foreach ($requirements as $key => $requirement) {
-            $files = $request->file("documents.{$key}");
-            if (! $files) continue;
-            if (! is_array($files)) $files = [$files];
-            foreach ($files as $file) {
-                if (! $file || ! $file->isValid()) continue;
-                $path = $file->store($uploadDir, 'local');
-                TrainingDocument::create([
-                    'training_request_id' => $trainingRequest->id,
-                    'document_type_id'    => null,
-                    'document_key'        => $key,
-                    'participant_id'      => $requirement['participant_id'],
-                    'file_path'           => $path,
-                    'original_name'       => $file->getClientOriginalName(),
-                    'mime_type'           => $file->getMimeType(),
-                    'size'                => $file->getSize(),
-                    'status'              => 'uploaded',
-                ]);
-            }
+            $file = $request->file("documents.{$key}");
+            if (! $file || ! $file->isValid()) continue;
+
+            $path = $file->store($uploadDir, 'local');
+            TrainingDocument::create([
+                'training_request_id' => $trainingRequest->id,
+                'document_type_id'    => null,
+                'document_key'        => $key,
+                'participant_id'      => $requirement['participant_id'],
+                'file_path'           => $path,
+                'original_name'       => $file->getClientOriginalName(),
+                'mime_type'           => $file->getMimeType(),
+                'size'                => $file->getSize(),
+                'status'              => 'uploaded',
+            ]);
         }
 
         $isResubmission = $trainingRequest->events()->where('type', 'correction_requested')->exists();
@@ -421,6 +416,20 @@ class TrainingController extends Controller
         abort_unless($trainingDocument->trainingRequest->user_id === auth()->id(), 403);
 
         return \Storage::disk('local')->download($trainingDocument->file_path, $trainingDocument->original_name);
+    }
+
+    /** Inline image preview for the small thumbnails on step 3. */
+    public function previewDocument(TrainingDocument $trainingDocument)
+    {
+        abort_unless($trainingDocument->trainingRequest->user_id === auth()->id(), 403);
+
+        $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+        abort_unless(in_array($trainingDocument->mime_type, $allowed, true), 404);
+
+        $path = \Storage::disk('local')->path($trainingDocument->file_path);
+        abort_unless(is_file($path), 404);
+
+        return response()->file($path, ['Content-Type' => $trainingDocument->mime_type]);
     }
 
     public function downloadTemplate(\App\Models\DocumentType $documentType)

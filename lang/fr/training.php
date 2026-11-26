@@ -312,6 +312,10 @@ return [
     'reference'               => 'Référence',
     'created_at'              => 'Date de dépôt',
     'centralized_title'      => 'Formation centralisée',
+    // Generic + dynamic hints used by the citizen step-1 form. New keys keep
+    // this wording independent from any older database translation override.
+    'centralized_hint_intro'  => 'Les formations centralisées se déroulent dans l’un des centres régionaux. Sélectionnez la session qui vous convient : chaque fiche indique ses dates et son lieu.',
+    'formation_locked_hint'   => 'Choisissez d’abord la direction régionale et la délégation pour accéder au type de formation.',
     'centralized_hint'        => 'Cette formation se déroule au centre (:place). La direction régionale choisie reste votre interlocutrice pour la correspondance, la convocation et le suivi.',
     'centralized_hint_admin'  => 'Formation centralisée, organisée au centre (:place). La direction régionale est l\'interlocutrice.',
     'centralized_hint_short'  => 'Formation centralisée — Centre (:place). La direction régionale est l\'interlocutrice.',
