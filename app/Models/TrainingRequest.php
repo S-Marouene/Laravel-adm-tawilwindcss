@@ -47,6 +47,10 @@ class TrainingRequest extends Model
     // planned session; the chosen regional direction is only the contact point.
     public const CENTRALIZED_TYPES = ['prevention_level1', 'prevention_level2'];
 
+    // Sentinel used by the "none of these dates, I want another one" radio:
+    // it keeps the request on the waiting list (no planned session attached).
+    public const PLANNED_SESSION_OTHER = 'other_date';
+
     // -----------------------------------------------------------------------
     // Status constants
     // -----------------------------------------------------------------------

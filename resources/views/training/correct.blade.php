@@ -562,6 +562,17 @@ $showOldCard = $previousRows->isNotEmpty() || $archivedDocs->isNotEmpty();
 
         <div x-show="openOld" x-cloak class="px-5 pb-5 border-t border-amber-200/70 dark:border-amber-800/40 space-y-4">
 
+            {{-- Admin correction note --}}
+            @if (! empty($note))
+            <div class="pt-4 rounded border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 px-3.5 py-2.5">
+                <p class="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 mb-1 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm" aria-hidden="true">rate_review</span>
+                    {{ __('training.admin_note_label') }}
+                </p>
+                <p class="text-xs text-on-surface dark:text-gray-200 whitespace-pre-line leading-relaxed">{{ $note }}</p>
+            </div>
+            @endif
+
             {{-- Previous field values --}}
             @if ($previousRows->isNotEmpty())
             <div class="pt-4">
@@ -609,6 +620,40 @@ $showOldCard = $previousRows->isNotEmpty() || $archivedDocs->isNotEmpty();
                 </div>
             </div>
             @endif
+
+            <p class="text-[10px] text-secondary dark:text-gray-400 flex items-start gap-1 leading-relaxed">
+                <span class="material-symbols-outlined text-sm mt-px text-amber-700 dark:text-amber-500" aria-hidden="true">save</span>
+                {{ __('training.old_version_footnote') }}
+            </p>
+        </div>
+    </div>
+    @endif
+
+    {{-- ── Prior correction rounds (all archived versions) ── --}}
+    @if (! empty($allCorrectionRounds) && count($allCorrectionRounds) > 1)
+    <div class="bg-surface-container-lowest rounded border border-surface-dim dark:border-gray-700 shadow-sm"
+         x-data="{ openPrior: false }">
+        <button type="button" @click="openPrior = !openPrior"
+            class="w-full flex items-center gap-3 px-5 py-3 text-start hover:bg-surface-container dark:hover:bg-gray-700/40 transition-colors">
+            <div class="w-7 h-7 rounded-full bg-surface-container dark:bg-gray-700 text-secondary flex items-center justify-center flex-shrink-0 text-xs">
+                <span class="material-symbols-outlined text-sm" aria-hidden="true">manage_history</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs font-semibold text-secondary dark:text-gray-400">
+                    {{ __('training.prior_corrections_title', ['count' => count($allCorrectionRounds) - 1]) }}
+                </p>
+            </div>
+            <svg class="w-4 h-4 text-secondary transition-transform flex-shrink-0"
+                 :class="openPrior ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+        <div x-show="openPrior" x-cloak class="px-5 pb-4 pt-3 border-t border-surface-dim dark:border-gray-700">
+            @include('training.partials.correction-history', [
+                'allCorrectionRounds' => array_slice($allCorrectionRounds, 0, -1),
+                'archivedDocuments'   => $archivedDocs,
+                'trainingRequest'     => $tr,
+            ])
         </div>
     </div>
     @endif

@@ -297,6 +297,7 @@ class TrainingController extends Controller
             'docsToFix'       => $docsToFix,
             'documentGroups'  => $documentGroups,
             'archivedDocs'    => $archivedDocs,
+            'allCorrectionRounds' => $trainingRequest->allCorrectionRounds(),
             'gouvernorats'    => Governorate::with('delegations')->orderBy('id')->get(),
         ]);
     }
@@ -530,9 +531,15 @@ class TrainingController extends Controller
             'governorate_id' => ['required', 'integer', 'exists:governorates,id'],
             'delegation_id'  => ['required', 'integer', 'exists:delegations,id'],
             'training_type'  => ['required', 'string', 'in:' . implode(',', array_keys(TrainingRequest::TYPES))],
+            'notes'          => ['nullable', 'string', 'max:3000'],
             'planned_session_id' => [
-                'nullable', 'integer',
+                'nullable',
                 function (string $attribute, mixed $value, \Closure $fail) {
+                    // "None of these dates" — deliberately left unassigned so
+                    // the request stays on the waiting list.
+                    if ($value === TrainingRequest::PLANNED_SESSION_OTHER) return;
+                    if (! is_scalar($value)) { $fail(__('training.planned_session_invalid')); return; }
+
                     $session = TrainingPlannedSession::find($value);
                     if (! $session) { $fail(__('training.planned_session_invalid')); return; }
                     if ($session->training_type !== request()->input('training_type')) { $fail(__('training.planned_session_type_mismatch')); return; }
@@ -546,16 +553,21 @@ class TrainingController extends Controller
     {
         $type = $validated['training_type'];
 
-        // Only centralized formations are linked to a planned session
+        // Only centralized formations are linked to a planned session.
+        // The "other date" choice means: no session yet → waiting list.
+        $chosenSession = $validated['planned_session_id'] ?? null;
         $plannedSessionId = in_array($type, TrainingRequest::CENTRALIZED_TYPES, true)
-            ? ($validated['planned_session_id'] ?? null)
+            && $chosenSession !== null
+            && $chosenSession !== TrainingRequest::PLANNED_SESSION_OTHER
+            ? (int) $chosenSession
             : null;
 
         return [
             'governorate_id'     => $validated['governorate_id'],
             'delegation_id'      => $validated['delegation_id'],
-            'training_type'     => $type,
+            'training_type'      => $type,
             'planned_session_id' => $plannedSessionId,
+            'notes'              => $validated['notes'] ?? null,
         ];
     }
 
@@ -567,7 +579,6 @@ class TrainingController extends Controller
 
         $rules = [
             'depositor_type' => ['required', 'string', 'in:individual,company'],
-            'notes'          => ['nullable', 'string', 'max:3000'],
         ];
 
         if ($isCompany) {
@@ -600,7 +611,6 @@ class TrainingController extends Controller
                 'nom_prenom'     => $validated['company_name'],
                 'phone'          => $validated['phone'],
                 'training_kind'  => TrainingRequest::KIND_NEW, // actual kind lives on each participant
-                'notes'          => $validated['notes'] ?? null,
             ];
         }
 
@@ -611,7 +621,6 @@ class TrainingController extends Controller
             'nom_prenom'     => $validated['nom_prenom'],
             'phone'          => $validated['phone'],
             'training_kind'  => $validated['training_kind'] ?? TrainingRequest::KIND_NEW,
-            'notes'          => $validated['notes'] ?? null,
         ];
     }
 

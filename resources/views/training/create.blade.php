@@ -9,6 +9,7 @@
     $valGov    = old('governorate_id',  $tr?->governorate_id ?? '');
     $valDelId  = old('delegation_id',   $tr?->delegation_id  ?? '');
     $valType   = old('training_type',   $tr?->training_type  ?? '');
+    $valNotes  = old('notes', $tr?->notes ?? '');
 
     $wizardSteps = [
         ['state' => 'active',  'title' => __('training.step_one_title'), 'editing' => $isEditing],
@@ -167,12 +168,43 @@
                                 {{-- Planned sessions of the selected type --}}
                                 <div id="planned-sessions-list" class="space-y-2"></div>
 
+                                {{-- Explicit choice: none of the planned dates --}}
+                                <div id="other-date-box" class="hidden space-y-2">
+                                    <label for="other-date-radio"
+                                        class="flex items-start gap-3 rounded border border-surface-dim bg-surface-container-lowest p-3 cursor-pointer transition hover:border-primary/50 has-[:checked]:border-primary has-[:checked]:bg-primary/10 dark:border-gray-700 dark:bg-gray-900/40 dark:has-[:checked]:bg-primary/20">
+                                        <input type="radio" name="planned_session_id" id="other-date-radio"
+                                            value="{{ \App\Models\TrainingRequest::PLANNED_SESSION_OTHER }}"
+                                            class="mt-0.5 h-4 w-4 text-primary focus:ring-primary">
+                                        <span class="min-w-0 flex-1">
+                                            <span class="flex items-center gap-1.5 text-body-sm font-semibold text-on-surface dark:text-gray-100">
+                                                <span class="material-symbols-outlined text-[18px] text-primary shrink-0" aria-hidden="true">event_busy</span>
+                                                {{ __('training.session_other_date') }}
+                                            </span>
+                                        </span>
+                                    </label>
+                                    <p id="other-date-hint" class="hidden text-xs text-primary dark:text-primary-container leading-relaxed ps-1">
+                                        {{ __('training.session_other_date_hint') }}
+                                    </p>
+                                </div>
+
                                 {{-- Wait list notice --}}
                                 <div id="waitlist-notice" class="hidden flex items-start gap-3 rounded border border-amber-300 bg-amber-50 p-3 dark:border-amber-700/50 dark:bg-amber-900/20">
                                     <span class="material-symbols-outlined text-amber-600 text-[18px] mt-px shrink-0" aria-hidden="true">hourglass_top</span>
                                     <p class="text-body-sm text-amber-900 dark:text-amber-200 leading-relaxed">{{ __('training.waitlist_notice') }}</p>
                                 </div>
                                 @error('planned_session_id')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
+                            </div>
+
+                            {{-- Observations (moved here from step 2) --}}
+                            <div class="space-y-1.5">
+                                <label for="notes" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">{{ __('training.notes') }}</label>
+                                <textarea id="notes" name="notes" rows="3" maxlength="3000" placeholder="{{ __('training.notes_placeholder') }}"
+                                    class="block w-full px-3.5 py-2.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('notes') border-red-400 @enderror">{{ $valNotes }}</textarea>
+                                <p class="flex items-start gap-1.5 text-xs text-secondary">
+                                    <span class="material-symbols-outlined text-sm text-outline shrink-0" aria-hidden="true">info</span>
+                                    <span>{{ __('training.notes_hint') }}</span>
+                                </p>
+                                @error('notes')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
                             </div>
                         </div>
                     </div>
@@ -288,6 +320,7 @@
         var lblDate         = @json(__('training.planned_starts_at'));
         var lblTraining     = @json(__('training.training_type'));
         var lblChoose       = @json(__('training.choose_planned_session'));
+        var otherValue      = @json(\App\Models\TrainingRequest::PLANNED_SESSION_OTHER);
 
         // Governorate id => localized name, so a session's place is always
         // resolved through its ID and follows the active language.
@@ -300,9 +333,11 @@
 
         var centBox   = document.getElementById('centralized-box');
         var sessList  = document.getElementById('planned-sessions-list');
+        var otherBox  = document.getElementById('other-date-box');
+        var otherRadio = document.getElementById('other-date-radio');
+        var otherHint = document.getElementById('other-date-hint');
         var waitBox   = document.getElementById('waitlist-notice');
         var regionV   = document.getElementById('region-visavis');
-        var sessionHidden = document.querySelector('input[name="planned_session_id"]');
 
         // A session's place always comes from its governorate id (localized),
         // never from a hard-coded default. No extra hint is shown on selection.
@@ -310,12 +345,26 @@
             return resolvePlaceName(s.governorate_id) || s.place_name || s.place_label || '';
         }
 
+        // The extra "another date" choice is only offered when programmed
+        // sessions exist; selecting it keeps the request on the waiting list.
+        function syncOtherHint() {
+            if (!otherHint || !otherRadio) return;
+            otherHint.classList.toggle('hidden', !otherRadio.checked);
+        }
+
         function buildSessionRadios(type) {
             if (!sessList) return;
             sessList.innerHTML = '';
             waitBox.classList.add('hidden');
+            if (otherBox) otherBox.classList.add('hidden');
+            if (otherHint) otherHint.classList.add('hidden');
             var list = (PLANNED && PLANNED[type]) || [];
-            if (!list.length) { waitBox.classList.remove('hidden'); return; }
+            if (!list.length) {
+                // No programmed session: implicit waiting list, no radio shown.
+                if (otherRadio) otherRadio.checked = false;
+                waitBox.classList.remove('hidden');
+                return;
+            }
 
             var title = document.createElement('p');
             title.className = 'text-body-sm font-bold text-on-surface dark:text-gray-100 mb-1';
@@ -373,7 +422,18 @@
                 wrap.appendChild(info);
                 sessList.appendChild(wrap);
             });
+
+            // Extra radio — only when programmed sessions exist. The waiting
+            // list is the default when nothing is selected yet.
+            if (otherBox) otherBox.classList.remove('hidden');
+            if (otherRadio) otherRadio.checked = (initialSession === otherValue || initialSession === '');
+            syncOtherHint();
         }
+
+        if (otherRadio) otherRadio.addEventListener('change', syncOtherHint);
+        if (sessList) sessList.addEventListener('change', function (e) {
+            if (e.target && e.target.name === 'planned_session_id') syncOtherHint();
+        });
 
         function handleTypeChange() {
             if (!typeSelect) return;
@@ -385,7 +445,16 @@
 
             // Centralized hint + session picker
             if (centBox) centBox.classList.toggle('hidden', !isCentralized);
-            if (isCentralized) buildSessionRadios(type);
+            if (isCentralized) {
+                buildSessionRadios(type);
+            } else {
+                // Discard any hidden selection so it is not posted with a
+                // different training type.
+                if (sessList) sessList.innerHTML = '';
+                if (otherRadio) otherRadio.checked = false;
+                if (otherBox) otherBox.classList.add('hidden');
+                if (otherHint) otherHint.classList.add('hidden');
+            }
         }
         if (typeSelect) typeSelect.addEventListener('change', handleTypeChange);
         handleTypeChange();

@@ -995,6 +995,39 @@
                         </div>
                         @endif
 
+                        {{-- Full correction history — every archived version --}}
+                        @if (! empty($allCorrectionRounds))
+                        <div class="bg-surface-container-lowest border border-amber-200 dark:border-amber-700/40 rounded-lg shadow-sm overflow-hidden no-print"
+                             x-data="{ openHistory: false }">
+                            <button type="button" @click="openHistory = !openHistory"
+                                class="w-full flex items-center gap-2 p-5 md:px-6 border-b border-amber-100 dark:border-amber-800/30 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-colors text-start">
+                                <span class="w-8 h-8 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-base" aria-hidden="true">manage_history</span>
+                                </span>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                                        {{ __('training.correction_history_title') }}
+                                    </h3>
+                                    <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+                                        {{ count($allCorrectionRounds) }} {{ count($allCorrectionRounds) === 1 ? __('training.correction_history_round_singular') : __('training.correction_history_round_plural') }}
+                                    </p>
+                                </div>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 me-1" dir="ltr">{{ count($allCorrectionRounds) }}</span>
+                                <svg class="w-4 h-4 text-amber-700 dark:text-amber-400 transition-transform shrink-0" :class="openHistory ? 'rotate-180' : ''"
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div x-show="openHistory" x-cloak class="p-5 md:p-6">
+                                @include('training.partials.correction-history', [
+                                    'allCorrectionRounds' => $allCorrectionRounds,
+                                    'archivedDocuments'   => $archivedDocuments,
+                                    'trainingRequest'     => $trainingRequest,
+                                ])
+                            </div>
+                        </div>
+                        @endif
+
                         {{-- Phone tracking reminder --}}
                         <div class="bg-surface-container-lowest border border-surface-dim rounded-lg shadow-sm overflow-hidden no-print">
                             <div class="p-5 md:px-6">

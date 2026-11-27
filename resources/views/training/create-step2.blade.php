@@ -7,7 +7,6 @@
     $valCin  = old('cin', $tr->cin ?? '');
     $valPhone = old('phone', $tr->phone ?? '');
     $valKind  = old('training_kind', $tr->training_kind ?? 'new');
-    $valNotes = old('notes', $tr->notes ?? '');
 
     $step1Lines = array_filter([
         __('training.type_' . $tr->training_type),
@@ -179,14 +178,6 @@
                                     <p class="text-[11px] text-amber-600 dark:text-amber-400 mt-1">{{ __('training.fee_note') }}</p>
                                 </div>
                             </div>
-                        </div>
-
-                        {{-- Notes --}}
-                        <div class="space-y-1.5">
-                            <label for="notes" class="block text-body-sm font-bold text-on-surface dark:text-gray-200">{{ __('training.notes') }}</label>
-                            <textarea id="notes" name="notes" rows="3" maxlength="3000" placeholder="{{ __('training.notes_placeholder') }}"
-                                class="block w-full px-3.5 py-2.5 text-body-md text-on-surface rounded border border-surface-dim bg-surface-container-lowest shadow-sm transition focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-outline dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 @error('notes') border-red-400 @enderror">{{ $valNotes }}</textarea>
-                            @error('notes')<p class="text-xs text-red-600" role="alert">{{ $message }}</p>@enderror
                         </div>
                     </div>
 

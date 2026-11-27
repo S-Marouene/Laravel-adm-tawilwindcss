@@ -92,6 +92,7 @@ class TrainingController extends Controller
             'trainingRequest' => $trainingRequest,
             'documentGroups'  => $documentGroups,
             'uploadedDocs'    => $uploadedDocs,
+            'allCorrectionRounds' => $trainingRequest->allCorrectionRounds(),
             'governorates'    => $governorates,
             'gouvernorats'    => Governorate::forSelect(),
             'delegations'     => Governorate::delegationsMap(),

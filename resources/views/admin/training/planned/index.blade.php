@@ -103,6 +103,9 @@
                                 <span class="min-w-0">
                                     <span class="block text-xs font-bold text-on-surface dark:text-gray-100">{{ $tr->nom_prenom }}</span>
                                     <span class="block text-[11px] text-secondary">{{ $tr->reference ?? '—' }} · {{ $tr->cin }}@if($tr->governorate) · {{ $tr->governorate->name }}@endif</span>
+                                    @if (filled($tr->notes))
+                                        <span class="block text-[11px] text-amber-900 dark:text-amber-200 mt-0.5" dir="auto">{{ $tr->notes }}</span>
+                                    @endif
                                     @if ($tr->isCompany() && $tr->participants->isNotEmpty())
                                         <span class="block text-[11px] text-secondary mt-0.5">{{ $tr->participants->pluck('nom_prenom')->filter()->implode(' · ') }}</span>
                                     @endif
@@ -256,6 +259,7 @@
                                 <th class="py-2 pr-4">{{ __('training.reference') }}</th>
                                 <th class="py-2 pr-4">{{ __('training.nom_prenom') }}</th>
                                 <th class="py-2 pr-4">{{ __('training.code_structure') }}</th>
+                                <th class="py-2 pr-4">{{ __('training.notes') }}</th>
                                 <th class="py-2 pr-4">{{ __('training.created_at') }}</th>
                                 <th class="py-2 pr-4">{{ __('training.planned_assign') }}</th>
                             </tr></thead>
@@ -265,6 +269,7 @@
                                         <td class="py-2 pr-4 text-xs font-mono text-secondary">{{ $tr->reference ?? '—' }}</td>
                                         <td class="py-2 pr-4 text-xs text-on-surface dark:text-gray-200">{{ $tr->nom_prenom }}</td>
                                         <td class="py-2 pr-4 text-xs text-secondary">{{ $tr->governorate?->name }}</td>
+                                        <td class="py-2 pr-4 text-xs text-secondary max-w-xs whitespace-pre-line" dir="auto">{{ $tr->notes ?: '—' }}</td>
                                         <td class="py-2 pr-4 text-xs text-secondary" dir="ltr">{{ $tr->created_at?->format('d/m/Y') }}</td>
                                         <td class="py-2 pr-4">
                                             @if(! $canEdit)
